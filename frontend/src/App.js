@@ -1,19 +1,29 @@
-// src/App.js
 import React from "react";
+import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
 import Header from "./components/layout/Header";
 import Sidebar from "./components/layout/Sidebar";
 
+const Dashboard = () => <div>Dashboard Content</div>;
+const Timesheets = () => <div>Timesheets Content</div>;
+const Invoices = () => <div>Invoices Content</div>;
+
 function App() {
   return (
-    <div className="nk-app-root">
-      <Header />
-      <div className="nk-main-container">
-        <Sidebar />
-        <main className="nk-main-content">
-          <h1>Welcome to TimePulse!</h1>
-        </main>
+    <BrowserRouter>
+      <div className="nk-app-root">
+        <Header />
+        <div className="nk-main-container">
+          <Sidebar />
+          <main className="nk-main-content">
+            <Routes>
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/timesheets" element={<Timesheets />} />
+              <Route path="/invoices" element={<Invoices />} />
+            </Routes>
+          </main>
+        </div>
       </div>
-    </div>
+    </BrowserRouter>
   );
 }
 

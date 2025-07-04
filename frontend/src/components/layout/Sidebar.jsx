@@ -1,5 +1,6 @@
 // src/components/layout/Sidebar.jsx
 import React from "react";
+import { Link } from "react-router-dom";
 
 const Sidebar = () => {
   return (
@@ -7,19 +8,19 @@ const Sidebar = () => {
       <div className="nk-sidebar-content">
         <ul className="nk-menu">
           <li className="nk-menu-item">
-            <a href="/dashboard" className="nk-menu-link">
+            <Link to="/" className="nk-menu-link">
               Dashboard
-            </a>
+            </Link>
           </li>
           <li className="nk-menu-item">
-            <a href="/timesheets" className="nk-menu-link">
+            <Link to="/timesheets" className="nk-menu-link">
               Timesheets
-            </a>
+            </Link>
           </li>
           <li className="nk-menu-item">
-            <a href="/invoices" className="nk-menu-link">
+            <Link to="/invoices" className="nk-menu-link">
               Invoices
-            </a>
+            </Link>
           </li>
         </ul>
       </div>

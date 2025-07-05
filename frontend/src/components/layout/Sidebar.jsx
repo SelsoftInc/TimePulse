@@ -56,6 +56,15 @@ const Sidebar = ({ collapsed, toggleSidebar }) => {
               {!collapsed && <span className="sidebar-text">Reports</span>}
             </Link>
           </li>
+          
+          <li className="sidebar-item">
+            <Link to="/settings" className="sidebar-link">
+              <div className="sidebar-icon">
+                <i className="fa fa-cog"></i>
+              </div>
+              {!collapsed && <span className="sidebar-text">Settings</span>}
+            </Link>
+          </li>
         </ul>
         
         {/* Sidebar collapse button */}

@@ -8,9 +8,9 @@ import EmployeeTimesheet from "./components/timesheets/EmployeeTimesheet";
 import InvoiceDashboard from "./components/invoices/InvoiceDashboard";
 import ReportsDashboard from "./components/reports/ReportsDashboard";
 import ClientOverview from "./components/clients/ClientOverview";
+import TenantSettings from "./components/settings/TenantSettings";
 
-// Settings placeholder (will be implemented later)
-const Settings = () => <div className="nk-content"><div className="container-fluid"><div className="nk-content-inner"><div className="nk-content-body"><h3>Settings Page</h3><p>This page will be implemented in a future update.</p></div></div></div></div>;
+// Settings component now uses TenantSettings
 
 function App() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -33,7 +33,7 @@ function App() {
               <Route path="/clients/:clientId" element={<ClientOverview />} />
               <Route path="/invoices" element={<InvoiceDashboard />} />
               <Route path="/reports" element={<ReportsDashboard />} />
-              <Route path="/settings" element={<Settings />} />
+              <Route path="/settings" element={<TenantSettings />} />
             </Routes>
           </main>
         </div>

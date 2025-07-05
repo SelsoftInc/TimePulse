@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TimePulse - Simple Login</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            background-color: #f5f6fa;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .login-container {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            width: 350px;
+        }
+        .login-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .login-header h2 {
+            color: #364a63;
+            margin-bottom: 10px;
+        }
+        .login-header p {
+            color: #8094ae;
+            margin: 0;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #526484;
+        }
+        .form-control {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #dbdfea;
+            border-radius: 4px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        .form-control:focus {
+            outline: none;
+            border-color: #6576ff;
+        }
+        .btn-primary {
+            background-color: #6576ff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 12px;
+            font-size: 14px;
+            font-weight: 500;
+            width: 100%;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .btn-primary:hover {
+            background-color: #4b5ddd;
+        }
+        .demo-credentials {
+            background-color: #e8f5e9;
+            border-left: 3px solid #4caf50;
+            padding: 10px 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .demo-credentials p {
+            margin: 0;
+            color: #2e7d32;
+        }
+        .demo-credentials code {
+            background-color: rgba(0, 0, 0, 0.08);
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-family: monospace;
+            font-weight: bold;
+        }
+        .error-message {
+            background-color: #ffebee;
+            color: #f44336;
+            padding: 12px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            text-align: center;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-header">
+            <h2>TimePulse Login</h2>
+            <p>Use test credentials to login</p>
+        </div>
+        
+        <div class="demo-credentials">
+            <p><strong>Demo Access:</strong> Use username: <code>test</code> and password: <code>test</code></p>
+        </div>
+        
+        <div id="error-message" class="error-message"></div>
+        
+        <div class="form-group">
+            <label for="username">Username</label>
+            <input type="text" id="username" class="form-control" placeholder="Enter username">
+        </div>
+        
+        <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" class="form-control" placeholder="Enter password">
+        </div>
+        
+        <button id="login-button" class="btn-primary">Sign In</button>
+    </div>
+
+    <script>
+        document.getElementById('login-button').addEventListener('click', function() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const errorMessage = document.getElementById('error-message');
+            
+            // Clear previous error
+            errorMessage.style.display = 'none';
+            
+            // Check credentials
+            if (username === 'test' && password === 'test') {
+                // Set token
+                localStorage.setItem('token', 'mock-jwt-token');
+                
+                // Set user info
+                const userInfo = {
+                    id: 'user-123',
+                    email: 'test@example.com',
+                    name: 'Demo User'
+                };
+                localStorage.setItem('user', JSON.stringify(userInfo));
+                localStorage.setItem('userInfo', JSON.stringify(userInfo));
+                
+                // Create a default tenant
+                const defaultTenant = {
+                    id: 'tenant-123',
+                    name: 'Demo Company',
+                    subdomain: 'demo',
+                    status: 'active',
+                    role: 'admin'
+                };
+                
+                // Store tenants
+                localStorage.setItem('tenants', JSON.stringify([defaultTenant]));
+                
+                // Navigate to workspaces
+                window.location.href = '/workspaces';
+            } else {
+                // Show error
+                errorMessage.textContent = 'Invalid credentials. Use username: test, password: test';
+                errorMessage.style.display = 'block';
+            }
+        });
+
+        // Allow Enter key to submit the form
+        document.getElementById('password').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                document.getElementById('login-button').click();
+            }
+        });
+    </script>
+</body>
+</html>

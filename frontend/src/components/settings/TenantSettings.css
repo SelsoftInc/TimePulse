@@ -411,6 +411,49 @@ input:checked + .slider:before {
   margin-top: 30px;
 }
 
+/* Logout button */
+.settings-logout-container {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #e5e9f2;
+  width: 100%;
+}
+
+.settings-logout-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 12px;
+  background-color: #fff;
+  border: 1px solid #e85347;
+  border-radius: 4px;
+  color: #e85347;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.settings-logout-button:hover {
+  background-color: #e85347;
+  color: #fff;
+}
+
+.settings-logout-button i {
+  margin-right: 8px;
+}
+
+/* Dark mode styles for logout button */
+.dark-mode .settings-logout-container {
+  border-top-color: #2e3a59;
+}
+
+.dark-mode .settings-logout-button {
+  background-color: #1c2531;
+  border-color: #e85347;
+}
+
 /* Responsive */
 @media (max-width: 992px) {
   .tenant-settings-content {

@@ -5,10 +5,39 @@
   min-height: 100vh;
   background-color: #f5f7fa;
   transition: all 0.3s ease;
+  width: calc(100% - 240px); /* Ensure content width is calculated correctly */
+  position: relative;
+  z-index: 1;
 }
 
 .nk-main-content.expanded {
   margin-left: 70px;
+  width: calc(100% - 70px); /* Adjust width when sidebar is collapsed */
+}
+
+/* Responsive adjustments */
+@media (max-width: 991px) {
+  .nk-main-content {
+    margin-left: 0;
+    width: 100%;
+    padding-top: 120px; /* Increased padding to account for header + mobile nav */
+  }
+  
+  .nk-main-content.expanded {
+    margin-left: 0;
+    width: 100%;
+  }
+}
+
+@media (max-width: 767px) {
+  .nk-content {
+    padding: 15px 10px;
+  }
+  
+  /* Adjust timesheet status grid for small screens */
+  .timesheet-status-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 .nk-content {

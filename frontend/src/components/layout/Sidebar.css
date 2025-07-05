@@ -14,6 +14,35 @@
   box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
 }
 
+/* Responsive sidebar styles */
+@media (max-width: 991px) {
+  .app-sidebar {
+    z-index: 1001; /* Ensure sidebar appears above content */
+  }
+}
+
+@media (max-width: 767px) {
+  .app-sidebar {
+    width: 240px; /* Keep full width on mobile */
+    left: -240px; /* Hide off-screen by default */
+    top: 60px; /* Position below header */
+    height: calc(100vh - 60px);
+  }
+  
+  .app-sidebar.mobile-visible {
+    left: 0; /* Show when mobile-visible class is applied */
+  }
+  
+  .app-sidebar.collapsed {
+    width: 240px; /* Keep full width even when collapsed on mobile */
+    left: -240px; /* Hide when collapsed */
+  }
+  
+  .app-sidebar.collapsed.mobile-visible {
+    left: 0; /* Show when mobile-visible class is applied */
+  }
+}
+
 .app-sidebar.collapsed {
   width: 70px;
 }

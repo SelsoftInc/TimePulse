@@ -1,0 +1,151 @@
+/* Clients.css */
+.table-clients {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.table-clients thead th {
+  background-color: #f5f6fa;
+  font-weight: 600;
+  color: #526484;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 10px 15px;
+  border-bottom: 1px solid #e5e9f2;
+}
+
+.table-clients tbody td {
+  padding: 15px;
+  vertical-align: middle;
+  border-bottom: 1px solid #e5e9f2;
+  color: #526484;
+  font-size: 14px;
+}
+
+.client-name {
+  font-weight: 600;
+  color: #364a63;
+  transition: color 0.3s;
+}
+
+.client-name:hover {
+  color: #1976d2;
+  text-decoration: none;
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.25em 0.75em;
+  font-size: 75%;
+  font-weight: 500;
+  line-height: 1;
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: baseline;
+  border-radius: 3px;
+}
+
+.badge-success {
+  background-color: #1ee0ac;
+  color: #fff;
+}
+
+.badge-warning {
+  background-color: #f4bd0e;
+  color: #fff;
+}
+
+.btn-icon {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.btn-trigger {
+  background-color: transparent;
+  border-color: transparent;
+  color: #8094ae;
+}
+
+.btn-trigger:hover {
+  background-color: #f5f6fa;
+  color: #526484;
+}
+
+.dropdown-menu {
+  min-width: 140px;
+  padding: 10px 0;
+  border-radius: 4px;
+  box-shadow: 0 3px 12px rgba(43, 55, 72, 0.15);
+  border: 1px solid #e5e9f2;
+}
+
+.dropdown-item {
+  padding: 8px 15px;
+  font-size: 13px;
+  color: #526484;
+}
+
+.dropdown-item:hover {
+  background-color: #f5f6fa;
+  color: #364a63;
+}
+
+.dropdown-item i {
+  width: 20px;
+  text-align: center;
+  color: #8094ae;
+}
+
+.text-danger {
+  color: #e85347 !important;
+}
+
+.mr-1 {
+  margin-right: 0.25rem;
+}
+
+/* Dark mode overrides */
+.dark-mode .table-clients thead th {
+  background-color: #1c2531;
+  color: #c4cefe;
+  border-bottom: 1px solid #2e3a59;
+}
+
+.dark-mode .table-clients tbody td {
+  border-bottom: 1px solid #2e3a59;
+  color: #b7c2d0;
+}
+
+.dark-mode .client-name {
+  color: #e5e9f2;
+}
+
+.dark-mode .client-name:hover {
+  color: #1976d2;
+}
+
+.dark-mode .btn-trigger:hover {
+  background-color: #2e3a59;
+  color: #e5e9f2;
+}
+
+.dark-mode .dropdown-menu {
+  background-color: #1c2531;
+  border-color: #2e3a59;
+}
+
+.dark-mode .dropdown-item {
+  color: #b7c2d0;
+}
+
+.dark-mode .dropdown-item:hover {
+  background-color: #2e3a59;
+  color: #e5e9f2;
+}

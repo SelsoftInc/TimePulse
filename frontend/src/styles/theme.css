@@ -1,0 +1,70 @@
+/* Theme styles for TimePulse */
+
+/* Light mode is the default */
+:root {
+  --background-color: #f5f9ff;
+  --text-color: #333333;
+  --card-bg: #ffffff;
+  --border-color: #e0e0e0;
+  --sidebar-bg: #1976d2;
+  --sidebar-text: #ffffff;
+  --header-bg: #1976d2;
+  --header-text: #ffffff;
+  --hover-bg: #f0f7ff;
+  --accent-color: #1976d2;
+  --shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Dark mode styles */
+body.dark-mode {
+  --background-color: #121212;
+  --text-color: #e0e0e0;
+  --card-bg: #1e1e1e;
+  --border-color: #333333;
+  --sidebar-bg: #1a1a1a;
+  --sidebar-text: #e0e0e0;
+  --header-bg: #1a1a1a;
+  --header-text: #ffffff;
+  --hover-bg: #2c2c2c;
+  --accent-color: #2196f3;
+  --shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Apply theme variables */
+body {
+  background-color: var(--background-color);
+  color: var(--text-color);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.nk-header {
+  background-color: var(--header-bg) !important;
+  color: var(--header-text);
+  box-shadow: var(--shadow);
+}
+
+.card, .nk-card {
+  background-color: var(--card-bg);
+  border-color: var(--border-color);
+  box-shadow: var(--shadow);
+}
+
+.sidebar {
+  background-color: var(--sidebar-bg);
+  color: var(--sidebar-text);
+}
+
+/* Dark mode specific overrides */
+body.dark-mode .user-avatar {
+  background-color: #333333;
+  color: #ffffff;
+}
+
+body.dark-mode .app-brand-logo {
+  filter: brightness(1.2);
+}
+
+/* Smooth transitions */
+.header-action-icon, .sidebar-icon, .card, .nk-card {
+  transition: all 0.3s ease;
+}

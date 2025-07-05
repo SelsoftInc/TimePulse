@@ -1,0 +1,72 @@
+/* TenantLayout.css */
+.nk-app-root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.nk-main-container {
+  display: flex;
+  flex: 1;
+  position: relative;
+}
+
+/* Media queries for responsive layout */
+@media (max-width: 991px) {
+  .nk-main-container {
+    flex-direction: column;
+  }
+  
+  .app-sidebar {
+    width: 100%;
+    height: auto;
+    position: relative;
+    padding-top: 0;
+  }
+  
+  .app-sidebar.collapsed {
+    width: 100%;
+    height: 60px;
+    overflow: hidden;
+  }
+  
+  .nk-main-content {
+    margin-left: 0 !important;
+    width: 100%;
+  }
+  
+  .sidebar-content {
+    padding-bottom: 20px;
+  }
+}
+
+/* Mobile navigation overlay */
+.mobile-nav-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 99;
+}
+
+@media (max-width: 767px) {
+  .app-sidebar {
+    position: fixed;
+    left: -240px;
+    top: 60px;
+    height: calc(100vh - 60px);
+    transition: left 0.3s ease;
+    z-index: 1000;
+  }
+  
+  .app-sidebar.mobile-visible {
+    left: 0;
+  }
+  
+  .mobile-nav-overlay.visible {
+    display: block;
+  }
+}

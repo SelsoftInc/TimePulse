@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="50" viewBox="0 0 240 50">
+  <!-- Background shape for visual interest -->
+  <rect x="0" y="5" width="240" height="40" rx="20" ry="20" fill="#f5f9ff" opacity="0.3" />
+  
+  <!-- Modern Clock Icon with gradient -->
+  <defs>
+    <linearGradient id="clockGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1976d2" />
+      <stop offset="100%" stop-color="#2196f3" />
+    </linearGradient>
+  </defs>
+  
+  <g transform="translate(15, 10) scale(0.6)">
+    <!-- Outer circle with gradient -->
+    <circle cx="25" cy="25" r="23" fill="none" stroke="url(#clockGradient)" stroke-width="3" />
+    
+    <!-- Hour and minute hands -->
+    <line x1="25" y1="25" x2="25" y2="10" stroke="#1976d2" stroke-width="3" stroke-linecap="round" />
+    <line x1="25" y1="25" x2="35" y2="32" stroke="#1976d2" stroke-width="3" stroke-linecap="round" />
+    
+    <!-- Center dot -->
+    <circle cx="25" cy="25" r="2" fill="#1976d2" />
+    
+    <!-- Time markers (12, 3, 6, 9) -->
+    <line x1="25" y1="5" x2="25" y2="8" stroke="#1976d2" stroke-width="2.5" />
+    <line x1="45" y1="25" x2="42" y2="25" stroke="#1976d2" stroke-width="2.5" />
+    <line x1="25" y1="45" x2="25" y2="42" stroke="#1976d2" stroke-width="2.5" />
+    <line x1="5" y1="25" x2="8" y2="25" stroke="#1976d2" stroke-width="2.5" />
+    
+    <!-- Additional subtle time markers -->
+    <line x1="35" y1="10" x2="33" y2="12" stroke="#1976d2" stroke-width="1.5" />
+    <line x1="40" y1="35" x2="38" y2="33" stroke="#1976d2" stroke-width="1.5" />
+    <line x1="15" y1="40" x2="17" y2="38" stroke="#1976d2" stroke-width="1.5" />
+    <line x1="10" y1="15" x2="12" y2="17" stroke="#1976d2" stroke-width="1.5" />
+  </g>
+  
+  <!-- Dynamic Pulse Wave -->
+  <path d="M60,25 L70,25 L75,15 L85,35 L95,10 L105,30 L115,25" 
+        fill="none" 
+        stroke="#1976d2" 
+        stroke-width="2.5" 
+        stroke-linecap="round" 
+        stroke-linejoin="round" />
+  
+  <!-- TimePulse Text with modern typography -->
+  <text x="125" y="30" font-family="Arial, sans-serif" font-size="18" font-weight="600" fill="#1976d2" letter-spacing="0.5">
+    TimePulse
+  </text>
+  
+  <!-- Tagline -->
+  <text x="125" y="42" font-family="Arial, sans-serif" font-size="8" fill="#555555">
+    Time Tracking Simplified
+  </text>
+</svg>

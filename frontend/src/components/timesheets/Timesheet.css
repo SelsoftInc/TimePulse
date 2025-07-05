@@ -1,0 +1,138 @@
+/* Timesheet component styles */
+
+/* Timesheet grid layout */
+.timesheet-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.timesheet-day {
+  display: flex;
+  flex-direction: column;
+}
+
+.timesheet-day label {
+  font-size: 0.85rem;
+  margin-bottom: 5px;
+  font-weight: 500;
+  text-align: center;
+}
+
+.timesheet-total {
+  display: flex;
+  flex-direction: column;
+  background-color: #f7f7f7;
+  border-radius: 4px;
+  padding: 0 10px;
+}
+
+.timesheet-total label {
+  font-size: 0.85rem;
+  margin-bottom: 5px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.timesheet-total .form-control-plaintext {
+  text-align: center;
+  font-size: 1rem;
+}
+
+/* Status badges */
+.badge-gray {
+  background-color: #e5e9f2;
+  color: #516079;
+}
+
+/* Time summary card */
+.analytic-au-data {
+  display: flex;
+  flex-direction: column;
+  padding: 1.25rem;
+  border-radius: 4px;
+  background-color: #f5f6fa;
+  margin-bottom: 1rem;
+}
+
+.analytic-au-data .title {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #8094ae;
+  margin-bottom: 0.5rem;
+}
+
+.analytic-au-data .amount {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #364a63;
+  margin-bottom: 0.5rem;
+}
+
+.analytic-au-data .change {
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+}
+
+.analytic-au-data .change.up {
+  color: #1ee0ac;
+}
+
+.analytic-au-data .change.down {
+  color: #e85347;
+}
+
+.analytic-au-data .change em {
+  font-size: 1rem;
+  margin-right: 0.25rem;
+}
+
+/* Progress bars */
+.progress-list {
+  margin-top: 1.5rem;
+}
+
+.progress-wrap {
+  margin-bottom: 1rem;
+}
+
+.progress-text {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.progress-label {
+  font-size: 0.875rem;
+  color: #526484;
+}
+
+.progress-amount {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #364a63;
+}
+
+/* Responsive adjustments */
+@media (max-width: 767px) {
+  .timesheet-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  
+  .timesheet-total {
+    grid-column: span 4;
+    margin-top: 10px;
+  }
+}
+
+@media (max-width: 575px) {
+  .timesheet-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .timesheet-total {
+    grid-column: span 2;
+  }
+}

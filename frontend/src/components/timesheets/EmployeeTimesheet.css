@@ -1,0 +1,348 @@
+/* EmployeeTimesheet.css */
+
+/* Form styles */
+.form-group {
+  margin-bottom: 1.25rem;
+}
+
+.form-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #526484;
+  margin-bottom: 0.5rem;
+  display: block;
+}
+
+.form-control {
+  display: block;
+  width: 100%;
+  height: calc(2.125rem + 2px);
+  padding: 0.4375rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 400;
+  line-height: 1.25rem;
+  color: #3c4d62;
+  background-color: #fff;
+  background-clip: padding-box;
+  border: 1px solid #dbdfea;
+  border-radius: 4px;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.form-control:focus {
+  color: #3c4d62;
+  background-color: #fff;
+  border-color: #6576ff;
+  outline: 0;
+  box-shadow: 0 0 0 3px rgba(101, 118, 255, 0.1);
+}
+
+.form-control[readonly] {
+  background-color: #f5f6fa;
+  opacity: 1;
+}
+
+textarea.form-control {
+  height: auto;
+}
+
+.form-select {
+  display: block;
+  width: 100%;
+  height: calc(2.125rem + 2px);
+  padding: 0.4375rem 2rem 0.4375rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 400;
+  line-height: 1.25rem;
+  color: #3c4d62;
+  background-color: #fff;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  background-size: 16px 12px;
+  border: 1px solid #dbdfea;
+  border-radius: 4px;
+  appearance: none;
+}
+
+/* Timesheet grid */
+.timesheet-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr) auto;
+  gap: 15px;
+  align-items: center;
+}
+
+.timesheet-day {
+  display: flex;
+  flex-direction: column;
+}
+
+.timesheet-day label {
+  font-size: 0.85rem;
+  margin-bottom: 5px;
+  font-weight: 500;
+  text-align: center;
+}
+
+.timesheet-day input {
+  text-align: center;
+}
+
+.timesheet-total {
+  display: flex;
+  flex-direction: column;
+  background-color: #f7f7f7;
+  border-radius: 4px;
+  padding: 0 15px;
+  height: calc(2.125rem + 2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.total-hours {
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.text-success {
+  color: #1ee0ac;
+}
+
+.text-warning {
+  color: #f4bd0e;
+}
+
+.text-danger {
+  color: #e85347;
+}
+
+.text-soft {
+  color: #8094ae;
+  font-size: 12px;
+}
+
+/* File upload */
+.custom-file {
+  position: relative;
+  display: inline-block;
+  width: 100%;
+  height: calc(2.125rem + 2px);
+  margin-bottom: 0;
+}
+
+.custom-file-input {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  height: calc(2.125rem + 2px);
+  margin: 0;
+  opacity: 0;
+}
+
+.custom-file-label {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 1;
+  height: calc(2.125rem + 2px);
+  padding: 0.4375rem 1rem;
+  font-weight: 400;
+  line-height: 1.25rem;
+  color: #3c4d62;
+  background-color: #fff;
+  border: 1px solid #dbdfea;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+}
+
+.custom-file-label::after {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 3;
+  display: block;
+  height: calc(2.125rem + 2px);
+  padding: 0.4375rem 1rem;
+  line-height: 1.25rem;
+  color: #3c4d62;
+  content: "Browse";
+  background-color: #f5f6fa;
+  border-left: 1px solid #dbdfea;
+  border-radius: 0 4px 4px 0;
+}
+
+/* Attached files */
+.attached-files {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.file-item {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #e5e9f2;
+}
+
+.file-name {
+  flex-grow: 1;
+  font-size: 0.875rem;
+}
+
+.file-size {
+  color: #8094ae;
+  font-size: 0.75rem;
+  margin-right: 1rem;
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.4375rem 1.125rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1.25rem;
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: middle;
+  user-select: none;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+  cursor: pointer;
+}
+
+.btn-primary {
+  color: #fff;
+  background-color: #6576ff;
+  border-color: #6576ff;
+}
+
+.btn-primary:hover {
+  color: #fff;
+  background-color: #4b61ff;
+  border-color: #4b61ff;
+}
+
+.btn-outline-light {
+  color: #526484;
+  background-color: transparent;
+  border-color: #dbdfea;
+}
+
+.btn-outline-light:hover {
+  color: #526484;
+  background-color: #f5f6fa;
+  border-color: #dbdfea;
+}
+
+.btn-outline-danger {
+  color: #e85347;
+  background-color: transparent;
+  border-color: #e85347;
+}
+
+.btn-outline-danger:hover {
+  color: #fff;
+  background-color: #e85347;
+  border-color: #e85347;
+}
+
+.btn-sm {
+  padding: 0.25rem 0.75rem;
+  font-size: 0.75rem;
+  line-height: 1.25;
+}
+
+.btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: calc(1.5rem + 2px);
+  width: calc(1.5rem + 2px);
+  padding: 0;
+}
+
+.mr-1 {
+  margin-right: 0.25rem;
+}
+
+.mr-3 {
+  margin-right: 1rem;
+}
+
+.mt-4 {
+  margin-top: 1.5rem;
+}
+
+/* Layout */
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  margin-right: -12px;
+  margin-left: -12px;
+}
+
+.col-12,
+.col-lg-6 {
+  position: relative;
+  width: 100%;
+  padding-right: 12px;
+  padding-left: 12px;
+}
+
+@media (min-width: 992px) {
+  .col-lg-6 {
+    flex: 0 0 50%;
+    max-width: 50%;
+  }
+}
+
+.g-4 > * {
+  padding: 0.5rem;
+}
+
+/* Card */
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  word-wrap: break-word;
+  background-color: #fff;
+  background-clip: border-box;
+}
+
+.card-bordered {
+  border: 1px solid #dbdfea;
+  border-radius: 4px;
+}
+
+.card-inner {
+  padding: 1.5rem;
+}
+
+.card-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  margin: -0.25rem -0.75rem 1rem;
+  padding: 0 0.75rem 1rem;
+  border-bottom: 1px solid #e5e9f2;
+}
+
+.card-title {
+  font-size: 1rem;
+  margin-bottom: 0;
+  color: #364a63;
+  font-weight: 700;
+}

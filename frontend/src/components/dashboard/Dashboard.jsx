@@ -1,6 +1,7 @@
 // src/components/dashboard/Dashboard.jsx
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
+import "./Dashboard.css";
 
 // DashCard component - A reusable card component following DashLite styling
 const DashCard = ({ title, icon, value, subtitle, trend, trendValue, trendDirection, color }) => {
@@ -267,8 +268,39 @@ const InvoiceWidget = ({ invoices }) => {
   );
 };
 
-// Main Dashboard component
 const Dashboard = () => {
+  // Current project selection
+  const [selectedProject, setSelectedProject] = useState("TimePulse Development - Acme Corp");
+
+  // Sample data for timesheet summary
+  const weeklyHours = {
+    total: 38.5,
+    max: 40
+  };
+  
+  const monthlyHours = {
+    total: 168.5,
+    max: 160
+  };
+  
+  // Timesheet status counts
+  const timesheetStatus = {
+    pending: 3,
+    approved: 15,
+    rejected: 1,
+    overdue: 1
+  };
+  
+  // Project selection options
+  const projects = [
+    "TimePulse Development - Acme Corp",
+    "UI/UX Design - TechStart Inc",
+    "API Integration - Globex Corp"
+  ];
+  
+  // Current week
+  const currentWeek = "Week of July 5 - July 11, 2023";
+  
   // Sample dashboard stats for the StatRow component
   const dashboardStats = [
     { title: "Total Hours", icon: "clock", value: "168.5h", subtitle: "This Month", trend: true, trendValue: "12%", trendDirection: "up", color: "primary", iconColor: "#2196F3" },
@@ -390,6 +422,106 @@ const Dashboard = () => {
                     </Link>
                   </div>
                 </div>
+              </div>
+            </div>
+            
+            {/* Timesheet Summary */}
+            <div className="timesheet-summary-card">
+              <h4 className="timesheet-summary-title">Timesheet Summary</h4>
+              
+              <div className="hours-progress-container">
+                <div className="hours-section">
+                  <div className="hours-label">Weekly Hours</div>
+                  <div className="hours-progress">
+                    <div className="progress-bar weekly" style={{ width: `${(weeklyHours.total / weeklyHours.max) * 100}%` }}></div>
+                  </div>
+                  <div className="hours-value">{weeklyHours.total}/{weeklyHours.max}h</div>
+                </div>
+                
+                <div className="hours-section">
+                  <div className="hours-label">Monthly Hours</div>
+                  <div className="hours-progress">
+                    <div className="progress-bar monthly" style={{ width: `${(monthlyHours.total / monthlyHours.max) * 100}%` }}></div>
+                  </div>
+                  <div className="hours-value">{monthlyHours.total}/{monthlyHours.max}h</div>
+                </div>
+              </div>
+              
+              <div className="timesheet-status-grid">
+                <div className="status-item pending">
+                  <div className="status-label">Pending</div>
+                  <div className="status-count">{timesheetStatus.pending}</div>
+                  <div className="status-label-small">Timesheets</div>
+                </div>
+                
+                <div className="status-item approved">
+                  <div className="status-label">Approved</div>
+                  <div className="status-count">{timesheetStatus.approved}</div>
+                  <div className="status-label-small">Timesheets</div>
+                </div>
+                
+                <div className="status-item rejected">
+                  <div className="status-label">Rejected</div>
+                  <div className="status-count">{timesheetStatus.rejected}</div>
+                  <div className="status-label-small">Timesheets</div>
+                </div>
+                
+                <div className="status-item overdue">
+                  <div className="status-label">Overdue</div>
+                  <div className="status-count">{timesheetStatus.overdue}</div>
+                  <div className="status-label-small">Timesheets</div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Project Selection */}
+            <div className="project-selection-card">
+              <div className="project-selection-header">
+                <h4 className="project-selection-title">Project Selection</h4>
+                <div className="project-selection-subtitle">Select the project for this timesheet</div>
+              </div>
+              
+              <div className="project-select-container">
+                <select 
+                  className="project-select" 
+                  value={selectedProject}
+                  onChange={(e) => setSelectedProject(e.target.value)}
+                >
+                  {projects.map((project, index) => (
+                    <option key={index} value={project}>{project}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            
+            {/* Week Selection */}
+            <div className="week-selection-card">
+              <div className="week-header">
+                <h4 className="week-title">{currentWeek}</h4>
+                <div className="week-draft-indicator">Draft</div>
+              </div>
+            </div>
+            
+            {/* Timesheet Entry would go here */}
+            
+            {/* Quick Tips */}
+            <div className="quick-tips-card">
+              <h4 className="quick-tips-title">Quick Tips</h4>
+              
+              <div className="tips-container">
+                <div className="tip-item">
+                  <div className="tip-highlight"></div>
+                  <div className="tip-content">
+                    <div className="tip-header">Timesheet Submission</div>
+                    <div className="tip-text">Submit your timesheet weekly by Sunday 11:59 PM to ensure timely processing.</div>
+                  </div>
+                </div>
+                
+                <ul className="tip-list">
+                  <li>Enter time in 0.5 hour increments</li>
+                  <li>Don't forget to select the correct project</li>
+                  <li>Add notes for any unusual time entries</li>
+                </ul>
               </div>
             </div>
             

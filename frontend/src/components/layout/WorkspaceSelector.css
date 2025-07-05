@@ -1,0 +1,40 @@
+.workspace-selector {
+  padding: 15px 10px;
+  border-bottom: 1px solid rgba(219, 223, 234, 0.2);
+  margin-bottom: 10px;
+}
+
+.workspace-current {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.workspace-icon {
+  width: 32px;
+  height: 32px;
+  background-color: #2196f3;
+  color: white;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  margin-right: 10px;
+  font-size: 12px;
+}
+
+.workspace-details {
+  flex: 1;
+}
+
+.workspace-name {
+  font-weight: 500;
+  font-size: 14px;
+  color: #fff;
+}
+
+.workspace-tagline {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.7);
+}

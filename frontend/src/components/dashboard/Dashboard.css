@@ -1,0 +1,272 @@
+/* Dashboard.css */
+
+/* Timesheet Summary Card */
+.timesheet-summary-card {
+  background-color: #fff;
+  border-radius: 4px;
+  border: 1px solid #dbdfea;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.timesheet-summary-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #364a63;
+  margin-bottom: 20px;
+}
+
+/* Hours Progress Bars */
+.hours-progress-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.hours-section {
+  flex: 1;
+  min-width: 200px;
+}
+
+.hours-label {
+  font-size: 14px;
+  color: #526484;
+  margin-bottom: 8px;
+}
+
+.hours-progress {
+  height: 8px;
+  background-color: #e5e9f2;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.progress-bar {
+  height: 100%;
+  border-radius: 4px;
+}
+
+.progress-bar.weekly {
+  background-color: #6576ff;
+}
+
+.progress-bar.monthly {
+  background-color: #1ee0ac;
+}
+
+.hours-value {
+  font-size: 14px;
+  font-weight: 500;
+  color: #364a63;
+  text-align: right;
+}
+
+/* Timesheet Status Grid */
+.timesheet-status-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 15px;
+}
+
+@media (max-width: 768px) {
+  .timesheet-status-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.status-item {
+  padding: 15px;
+  border-radius: 4px;
+  text-align: center;
+}
+
+.status-item.pending {
+  background-color: #fff8e1;
+}
+
+.status-item.approved {
+  background-color: #e8f5e9;
+}
+
+.status-item.rejected {
+  background-color: #ffebee;
+}
+
+.status-item.overdue {
+  background-color: #fce4ec;
+}
+
+.status-label {
+  font-size: 14px;
+  color: #526484;
+  margin-bottom: 5px;
+}
+
+.status-count {
+  font-size: 24px;
+  font-weight: 700;
+  color: #364a63;
+  margin-bottom: 5px;
+}
+
+.status-label-small {
+  font-size: 12px;
+  color: #8094ae;
+}
+
+/* Project Selection Card */
+.project-selection-card {
+  background-color: #fff;
+  border-radius: 4px;
+  border: 1px solid #dbdfea;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.project-selection-header {
+  margin-bottom: 15px;
+}
+
+.project-selection-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #364a63;
+  margin-bottom: 5px;
+}
+
+.project-selection-subtitle {
+  font-size: 13px;
+  color: #8094ae;
+}
+
+.project-select-container {
+  position: relative;
+}
+
+.project-select {
+  width: 100%;
+  padding: 10px 15px;
+  border: 1px solid #dbdfea;
+  border-radius: 4px;
+  font-size: 14px;
+  color: #364a63;
+  background-color: #fff;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 16px 12px;
+}
+
+.project-select:focus {
+  outline: none;
+  border-color: #6576ff;
+}
+
+/* Week Selection Card */
+.week-selection-card {
+  background-color: #fff;
+  border-radius: 4px;
+  border: 1px solid #dbdfea;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.week-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.week-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #364a63;
+  margin: 0;
+}
+
+.week-draft-indicator {
+  background-color: #f5f6fa;
+  color: #8094ae;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 3px 10px;
+  border-radius: 3px;
+}
+
+/* Quick Tips Card */
+.quick-tips-card {
+  background-color: #fff;
+  border-radius: 4px;
+  border: 1px solid #dbdfea;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.quick-tips-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #364a63;
+  margin-bottom: 20px;
+}
+
+.tips-container {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.tip-item {
+  display: flex;
+  gap: 15px;
+}
+
+.tip-highlight {
+  width: 4px;
+  background-color: #6576ff;
+  border-radius: 2px;
+}
+
+.tip-content {
+  flex: 1;
+}
+
+.tip-header {
+  font-size: 15px;
+  font-weight: 600;
+  color: #364a63;
+  margin-bottom: 5px;
+}
+
+.tip-text {
+  font-size: 14px;
+  color: #526484;
+  line-height: 1.5;
+}
+
+.tip-list {
+  list-style-type: none;
+  padding-left: 20px;
+  margin: 0;
+}
+
+.tip-list li {
+  position: relative;
+  padding-left: 20px;
+  margin-bottom: 8px;
+  font-size: 14px;
+  color: #526484;
+}
+
+.tip-list li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 8px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #6576ff;
+}

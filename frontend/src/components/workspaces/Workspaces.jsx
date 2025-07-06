@@ -14,9 +14,11 @@ const Workspaces = () => {
     // Check if user is logged in
     const token = localStorage.getItem('token');
     if (!token) {
-      navigate('/login');
+      navigate('/simple-login');
       return;
     }
+    
+    console.log('Workspaces component - User is authenticated');
 
     // Fetch workspaces from localStorage or use mock data
     const fetchWorkspaces = async () => {

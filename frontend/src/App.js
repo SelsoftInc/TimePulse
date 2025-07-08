@@ -16,12 +16,12 @@ import EmployeeDetail from "./components/employees/EmployeeDetail";
 import VendorList from "./components/vendors/VendorList";
 import VendorForm from "./components/vendors/VendorForm";
 import VendorDetail from "./components/vendors/VendorDetail";
-import TenantSettings from "./components/settings/TenantSettings";
+import EmployerSettings from "./components/settings/EmployerSettings";
 import TestLogin from "./components/auth/TestLogin";
 import SimpleLogin from "./components/auth/SimpleLogin";
 import Register from "./components/auth/Register";
 import Workspaces from "./components/workspaces/Workspaces";
-import TenantLayout from "./components/layout/TenantLayout";
+import EmployerLayout from "./components/layout/EmployerLayout";
 
 // Import AuthProvider and useAuth hook
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
@@ -69,86 +69,86 @@ function App() {
           element={<ProtectedRoute><Workspaces /></ProtectedRoute>} 
         />
         
-        {/* Tenant-specific routes using TenantLayout */}
+        {/* Employer-specific routes using EmployerLayout */}
         <Route path="/:subdomain" element={
-          <ProtectedRoute><TenantLayout><Dashboard /></TenantLayout></ProtectedRoute>
+          <ProtectedRoute><EmployerLayout><Dashboard /></EmployerLayout></ProtectedRoute>
         } />
         <Route path="/:subdomain/dashboard" element={
-          <ProtectedRoute><TenantLayout><Dashboard /></TenantLayout></ProtectedRoute>
+          <ProtectedRoute><EmployerLayout><Dashboard /></EmployerLayout></ProtectedRoute>
         } />
         <Route path="/:subdomain/timesheets" element={
           <ProtectedRoute requiredPermission={PERMISSIONS.VIEW_TIMESHEET}>
-            <TenantLayout><Timesheet /></TenantLayout>
+            <EmployerLayout><Timesheet /></EmployerLayout>
           </ProtectedRoute>
         } />
         <Route path="/:subdomain/timesheets/edit/:employeeId" element={
           <ProtectedRoute requiredPermission={PERMISSIONS.EDIT_TIMESHEET}>
-            <TenantLayout><EmployeeTimesheet /></TenantLayout>
+            <EmployerLayout><EmployeeTimesheet /></EmployerLayout>
           </ProtectedRoute>
         } />
         <Route path="/:subdomain/clients" element={
           <ProtectedRoute requiredPermission={PERMISSIONS.VIEW_CLIENT}>
-            <TenantLayout><ClientsList /></TenantLayout>
+            <EmployerLayout><ClientsList /></EmployerLayout>
           </ProtectedRoute>
         } />
         <Route path="/:subdomain/clients/new" element={
           <ProtectedRoute requiredPermission={PERMISSIONS.CREATE_CLIENT}>
-            <TenantLayout><ClientForm /></TenantLayout>
+            <EmployerLayout><ClientForm /></EmployerLayout>
           </ProtectedRoute>
         } />
         <Route path="/:subdomain/clients/:clientId" element={
           <ProtectedRoute requiredPermission={PERMISSIONS.VIEW_CLIENT}>
-            <TenantLayout><ClientOverview /></TenantLayout>
+            <EmployerLayout><ClientOverview /></EmployerLayout>
           </ProtectedRoute>
         } />
         <Route path="/:subdomain/employees" element={
           <ProtectedRoute requiredPermission={PERMISSIONS.VIEW_EMPLOYEE}>
-            <TenantLayout><EmployeeList /></TenantLayout>
+            <EmployerLayout><EmployeeList /></EmployerLayout>
           </ProtectedRoute>
         } />
         <Route path="/:subdomain/employees/new" element={
           <ProtectedRoute requiredPermission={PERMISSIONS.CREATE_EMPLOYEE}>
-            <TenantLayout><EmployeeForm /></TenantLayout>
+            <EmployerLayout><EmployeeForm /></EmployerLayout>
           </ProtectedRoute>
         } />
         <Route path="/:subdomain/employees/:id" element={
           <ProtectedRoute requiredPermission={PERMISSIONS.VIEW_EMPLOYEE}>
-            <TenantLayout><EmployeeDetail /></TenantLayout>
+            <EmployerLayout><EmployeeDetail /></EmployerLayout>
           </ProtectedRoute>
         } />
         <Route path="/:subdomain/vendors" element={
           <ProtectedRoute requiredPermission={PERMISSIONS.VIEW_VENDOR}>
-            <TenantLayout><VendorList /></TenantLayout>
+            <EmployerLayout><VendorList /></EmployerLayout>
           </ProtectedRoute>
         } />
         <Route path="/:subdomain/vendors/new" element={
           <ProtectedRoute requiredPermission={PERMISSIONS.CREATE_VENDOR}>
-            <TenantLayout><VendorForm /></TenantLayout>
+            <EmployerLayout><VendorForm /></EmployerLayout>
           </ProtectedRoute>
         } />
         <Route path="/:subdomain/vendors/:id" element={
           <ProtectedRoute requiredPermission={PERMISSIONS.VIEW_VENDOR}>
-            <TenantLayout><VendorDetail /></TenantLayout>
+            <EmployerLayout><VendorDetail /></EmployerLayout>
           </ProtectedRoute>
         } />
         <Route path="/:subdomain/invoices" element={
           <ProtectedRoute requiredPermission={PERMISSIONS.VIEW_INVOICE}>
-            <TenantLayout><Invoice /></TenantLayout>
+            <EmployerLayout><Invoice /></EmployerLayout>
           </ProtectedRoute>
         } />
         <Route path="/:subdomain/invoices/dashboard" element={
           <ProtectedRoute requiredPermission={PERMISSIONS.VIEW_INVOICE}>
-            <TenantLayout><InvoiceDashboard /></TenantLayout>
+            <EmployerLayout><InvoiceDashboard /></EmployerLayout>
           </ProtectedRoute>
         } />
         <Route path="/:subdomain/reports" element={
           <ProtectedRoute requiredPermission={PERMISSIONS.VIEW_REPORTS}>
-            <TenantLayout><ReportsDashboard /></TenantLayout>
+            <EmployerLayout><ReportsDashboard /></EmployerLayout>
           </ProtectedRoute>
         } />
         <Route path="/:subdomain/settings" element={
           <ProtectedRoute requiredPermission={PERMISSIONS.MANAGE_SETTINGS}>
-            <TenantLayout><TenantSettings /></TenantLayout>
+            <EmployerLayout><EmployerSettings /></EmployerLayout>
           </ProtectedRoute>
         } />
         

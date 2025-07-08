@@ -1,0 +1,68 @@
+.employer-settings-container {
+  display: flex;
+  gap: 2rem;
+}
+
+.settings-sidebar {
+  flex: 0 0 250px;
+}
+
+.employer-settings-content {
+  flex: 1;
+}
+
+.settings-menu {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  background-color: #fff;
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.settings-menu li {
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.settings-menu li:last-child {
+  border-bottom: none;
+}
+
+.settings-menu li button {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 1rem;
+  text-align: left;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.settings-menu li button:hover {
+  background-color: #f8f9fa;
+}
+
+.settings-menu li.active button {
+  background-color: #e6f3ff;
+  color: #0971fe;
+  font-weight: 500;
+}
+
+.settings-menu li button i {
+  margin-right: 10px;
+  width: 20px;
+  text-align: center;
+}
+
+@media (max-width: 768px) {
+  .employer-settings-container {
+    flex-direction: column;
+  }
+  
+  .settings-sidebar {
+    flex: 0 0 auto;
+    margin-bottom: 1rem;
+  }
+}

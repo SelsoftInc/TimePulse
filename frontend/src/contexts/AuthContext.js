@@ -9,7 +9,7 @@ const AuthContext = createContext();
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [currentTenant, setCurrentTenant] = useState(null);
+  const [currentEmployer, setCurrentEmployer] = useState(null);
   const [loading, setLoading] = useState(true);
 
   // Initialize auth state from localStorage on component mount
@@ -26,12 +26,12 @@ export const AuthProvider = ({ children }) => {
         
         // Get user info
         const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
-        const tenant = JSON.parse(localStorage.getItem('currentTenant') || 'null');
+        const employer = JSON.parse(localStorage.getItem('currentEmployer') || localStorage.getItem('currentTenant') || 'null');
         
         if (userInfo && Object.keys(userInfo).length > 0) {
           setUser(userInfo);
           setIsAuthenticated(true);
-          setCurrentTenant(tenant);
+          setCurrentEmployer(employer);
         }
       } catch (error) {
         console.error('Error initializing auth:', error);
@@ -44,14 +44,14 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   // Login function
-  const login = (userData, tenantData) => {
+  const login = (userData, employerData) => {
     // Store user data in localStorage
     localStorage.setItem('token', 'mock-jwt-token');
     localStorage.setItem('userInfo', JSON.stringify(userData));
     
-    if (tenantData) {
-      localStorage.setItem('currentTenant', JSON.stringify(tenantData));
-      setCurrentTenant(tenantData);
+    if (employerData) {
+      localStorage.setItem('currentEmployer', JSON.stringify(employerData));
+      setCurrentEmployer(employerData);
     }
     
     setUser(userData);
@@ -62,52 +62,53 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('userInfo');
-    localStorage.removeItem('currentTenant');
+    localStorage.removeItem('currentEmployer');
+    localStorage.removeItem('currentTenant'); // Remove legacy item too
     
     setUser(null);
     setIsAuthenticated(false);
-    setCurrentTenant(null);
+    setCurrentEmployer(null);
   };
 
-  // Set current tenant
-  const switchTenant = (tenant) => {
-    localStorage.setItem('currentTenant', JSON.stringify(tenant));
-    setCurrentTenant(tenant);
+  // Set current employer
+  const switchEmployer = (employer) => {
+    localStorage.setItem('currentEmployer', JSON.stringify(employer));
+    setCurrentEmployer(employer);
   };
 
   // Check if user has a specific permission
   const checkPermission = (permission) => {
-    if (!user || !currentTenant) return false;
-    return hasPermission(currentTenant.role, permission);
+    if (!user || !currentEmployer) return false;
+    return hasPermission(currentEmployer.role, permission);
   };
 
   // Check if user is an admin
   const isAdmin = () => {
-    if (!currentTenant) return false;
-    return currentTenant.role === ROLES.ADMIN;
+    if (!currentEmployer) return false;
+    return currentEmployer.role === ROLES.ADMIN;
   };
 
   // Check if user is an account manager
   const isAccountManager = () => {
-    if (!currentTenant) return false;
-    return currentTenant.role === ROLES.ACCOUNT_MANAGER;
+    if (!currentEmployer) return false;
+    return currentEmployer.role === ROLES.ACCOUNT_MANAGER;
   };
 
   // Check if user is an approver
   const isApprover = () => {
-    if (!currentTenant) return false;
-    return currentTenant.role === ROLES.APPROVER;
+    if (!currentEmployer) return false;
+    return currentEmployer.role === ROLES.APPROVER;
   };
 
   // Context value
   const value = {
     user,
     isAuthenticated,
-    currentTenant,
+    currentEmployer,
     loading,
     login,
     logout,
-    switchTenant,
+    switchEmployer,
     checkPermission,
     isAdmin,
     isAccountManager,

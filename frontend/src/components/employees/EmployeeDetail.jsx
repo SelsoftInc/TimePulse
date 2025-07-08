@@ -41,6 +41,30 @@ const EmployeeDetail = () => {
         employmentType: isSubcontractor ? 'Subcontractor' : 'W2',
         vendor: isSubcontractor ? (id === '3' ? 'TechVendor Inc.' : 'QA Solutions LLC') : null,
         vendorId: isSubcontractor ? (id === '3' ? 1 : 2) : null,
+        endClient: {
+          name: id === '1' ? 'JPMorgan Chase' : 
+                id === '2' ? 'IBM Corporation' : 
+                id === '3' ? 'Accenture PLC' : 
+                'Cognizant Technology Solutions',
+          location: id === '1' ? 'New York, NY' : 
+                   id === '2' ? 'Austin, TX' : 
+                   id === '3' ? 'Chicago, IL' : 
+                   'Teaneck, NJ',
+          hiringManager: {
+            name: id === '1' ? 'Robert Wilson' : 
+                 id === '2' ? 'Jennifer Lee' : 
+                 id === '3' ? 'Michael Chen' : 
+                 'Sarah Thompson',
+            email: id === '1' ? 'robert.wilson@jpmc.com' : 
+                  id === '2' ? 'jennifer.lee@ibm.com' : 
+                  id === '3' ? 'michael.chen@accenture.com' : 
+                  'sarah.thompson@cognizant.com',
+            phone: id === '1' ? '(212) 555-1234' : 
+                  id === '2' ? '(512) 555-6789' : 
+                  id === '3' ? '(312) 555-9012' : 
+                  '(201) 555-3456'
+          }
+        },
         hourlyRate: id === '1' ? 125 : id === '2' ? 150 : id === '3' ? 110 : 95,
         enableOvertime: true,
         overtimeMultiplier: 1.5,
@@ -159,7 +183,9 @@ const EmployeeDetail = () => {
                       </div>
                       <div className="profile-ud-item">
                         <div className="profile-ud-label">Client</div>
-                        <div className="profile-ud-value">{employee.client}</div>
+                        <div className="profile-ud-value">
+                          {employee.client || <span className="text-muted">Not assigned</span>}
+                        </div>
                       </div>
                       <div className="profile-ud-item">
                         <div className="profile-ud-label">Employment Type</div>
@@ -173,7 +199,13 @@ const EmployeeDetail = () => {
                         <div className="profile-ud-item">
                           <div className="profile-ud-label">Vendor</div>
                           <div className="profile-ud-value">
-                            <Link to={`/${subdomain}/vendors/${employee.vendorId}`}>{employee.vendor}</Link>
+                            {employee.vendor ? (
+                              <Link to={`/${subdomain}/vendors/${employee.vendorId}`}>
+                                {employee.vendor}
+                              </Link>
+                            ) : (
+                              <span className="text-muted">No vendor assigned</span>
+                            )}
                           </div>
                         </div>
                       )}
@@ -279,6 +311,61 @@ const EmployeeDetail = () => {
                     </div>
                   )}
 
+                  {/* End Client Details */}
+                  {employee.endClient && (
+                    <div className="nk-block">
+                      <div className="nk-block-head">
+                        <h5 className="title">End Client Details</h5>
+                      </div>
+                      <div className="card card-bordered">
+                        <div className="card-inner">
+                          <div className="profile-ud-list">
+                            <div className="profile-ud-item">
+                              <div className="profile-ud-label">Client Name</div>
+                              <div className="profile-ud-value">{employee.endClient.name}</div>
+                            </div>
+                            <div className="profile-ud-item">
+                              <div className="profile-ud-label">Location</div>
+                              <div className="profile-ud-value">{employee.endClient.location}</div>
+                            </div>
+                          </div>
+                          
+                          {employee.endClient.hiringManager && (
+                            <>
+                              <div className="nk-divider divider md"></div>
+                              
+                              <div className="nk-block-head">
+                                <h6 className="title">Hiring Manager</h6>
+                              </div>
+                              <div className="profile-ud-list">
+                                <div className="profile-ud-item">
+                                  <div className="profile-ud-label">Name</div>
+                                  <div className="profile-ud-value">{employee.endClient.hiringManager.name}</div>
+                                </div>
+                                <div className="profile-ud-item">
+                                  <div className="profile-ud-label">Email</div>
+                                  <div className="profile-ud-value">
+                                    <a href={`mailto:${employee.endClient.hiringManager.email}`}>
+                                      {employee.endClient.hiringManager.email}
+                                    </a>
+                                  </div>
+                                </div>
+                                <div className="profile-ud-item">
+                                  <div className="profile-ud-label">Phone</div>
+                                  <div className="profile-ud-value">
+                                    <a href={`tel:${employee.endClient.hiringManager.phone}`}>
+                                      {employee.endClient.hiringManager.phone}
+                                    </a>
+                                  </div>
+                                </div>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
                   {/* Notes */}
                   <div className="nk-block">
                     <div className="nk-block-head">

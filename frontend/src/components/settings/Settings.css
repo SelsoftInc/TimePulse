@@ -1,0 +1,273 @@
+/* Settings Styles */
+
+.settings-container {
+  display: flex;
+  min-height: calc(100vh - 70px);
+}
+
+.settings-sidebar {
+  width: 250px;
+  background-color: #f8f9fa;
+  border-right: 1px solid #e9ecef;
+  padding: 1.5rem 0;
+}
+
+.settings-content {
+  flex: 1;
+  padding: 1.5rem 2rem;
+  background-color: #fff;
+}
+
+.settings-menu {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.settings-menu-item {
+  padding: 0.75rem 1.5rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+}
+
+.settings-menu-item:hover {
+  background-color: #e9ecef;
+}
+
+.settings-menu-item.active {
+  background-color: #e9ecef;
+  border-left: 3px solid #007bff;
+  font-weight: 500;
+}
+
+.settings-menu-item i {
+  margin-right: 0.75rem;
+  width: 20px;
+  text-align: center;
+}
+
+.settings-title {
+  font-size: 1.5rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.settings-description {
+  color: #6c757d;
+  margin-bottom: 1.5rem;
+}
+
+.settings-section {
+  margin-bottom: 2rem;
+}
+
+/* Billing Settings */
+.plan-details {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.plan-option {
+  border: 1px solid #dee2e6;
+  border-radius: 0.25rem;
+  padding: 1.25rem;
+  cursor: pointer;
+  transition: border-color 0.2s, transform 0.2s;
+  position: relative;
+}
+
+.plan-option:hover {
+  border-color: #adb5bd;
+  transform: translateY(-2px);
+}
+
+.plan-option.active {
+  border-color: #007bff;
+  border-width: 2px;
+}
+
+.plan-header {
+  margin-bottom: 1rem;
+}
+
+.plan-header h4 {
+  margin-bottom: 0.5rem;
+}
+
+.plan-price {
+  font-size: 1.25rem;
+}
+
+.plan-price .amount {
+  font-weight: bold;
+}
+
+.plan-price .period {
+  color: #6c757d;
+  font-size: 0.875rem;
+}
+
+.plan-features {
+  margin-top: 1rem;
+}
+
+.plan-users {
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+.plan-features ul {
+  padding-left: 1.25rem;
+  margin-bottom: 0;
+}
+
+.plan-features li {
+  margin-bottom: 0.25rem;
+}
+
+.plan-current {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background-color: #007bff;
+  color: white;
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+}
+
+.billing-cycle {
+  margin-top: 1.5rem;
+}
+
+.cycle-options {
+  display: flex;
+  gap: 1rem;
+}
+
+.payment-method {
+  display: flex;
+  align-items: center;
+  padding: 1rem;
+  border: 1px solid #dee2e6;
+  border-radius: 0.25rem;
+  margin-bottom: 1rem;
+}
+
+.payment-icon {
+  font-size: 2rem;
+  margin-right: 1rem;
+}
+
+.payment-details {
+  flex: 1;
+}
+
+.payment-name {
+  font-weight: 500;
+}
+
+.payment-expiry {
+  color: #6c757d;
+  font-size: 0.875rem;
+}
+
+/* Notification Settings */
+.notification-list {
+  margin-bottom: 1.5rem;
+}
+
+.notification-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 0;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.notification-item:last-child {
+  border-bottom: none;
+}
+
+.notification-info h5 {
+  margin-bottom: 0.25rem;
+}
+
+.notification-info p {
+  color: #6c757d;
+  margin-bottom: 0;
+  font-size: 0.875rem;
+}
+
+/* Integration Settings */
+.integration-card {
+  transition: transform 0.2s;
+}
+
+.integration-card:hover {
+  transform: translateY(-2px);
+}
+
+.integration-header {
+  display: flex;
+  align-items: center;
+}
+
+.integration-icon {
+  font-size: 2rem;
+  margin-right: 1.5rem;
+  width: 40px;
+  text-align: center;
+}
+
+.integration-info {
+  flex: 1;
+}
+
+.integration-info h3 {
+  margin-bottom: 0.25rem;
+}
+
+.integration-info p {
+  margin-bottom: 0;
+  color: #6c757d;
+}
+
+.integration-details {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e9ecef;
+}
+
+.integration-detail-item {
+  margin-bottom: 0.5rem;
+  display: flex;
+}
+
+.detail-label {
+  font-weight: 500;
+  width: 120px;
+}
+
+.api-key-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  border: 1px solid #dee2e6;
+  border-radius: 0.25rem;
+}
+
+.api-key-name {
+  font-weight: 500;
+}
+
+.api-key-value {
+  font-family: monospace;
+  color: #6c757d;
+}

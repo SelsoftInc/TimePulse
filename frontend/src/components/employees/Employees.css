@@ -1,3 +1,16 @@
+/* Table responsive styles */
+.table-responsive {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  width: 100%;
+  margin-bottom: 1rem;
+}
+
+.table {
+  min-width: 1200px; /* Ensure table has minimum width to show all columns */
+  margin-bottom: 0;
+}
+
 .document-preview {
   border: 1px solid #e5e9f2;
   padding: 15px;

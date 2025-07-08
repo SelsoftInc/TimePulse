@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { PERMISSIONS } from '../../utils/roles';
 import PermissionGuard from '../common/PermissionGuard';
 import { useAuth } from '../../contexts/AuthContext';
+import './Employees.css';
 
 const EmployeeList = () => {
   const { subdomain } = useParams();
@@ -26,7 +27,16 @@ const EmployeeList = () => {
           joinDate: '2023-01-15',
           hourlyRate: 125,
           client: 'JPMC',
-          employmentType: 'W2'
+          employmentType: 'W2',
+          endClient: {
+            name: 'JPMorgan Chase',
+            location: 'New York, NY',
+            hiringManager: {
+              name: 'Robert Wilson',
+              email: 'robert.wilson@jpmc.com',
+              phone: '(212) 555-1234'
+            }
+          }
         },
         {
           id: 2,
@@ -38,8 +48,8 @@ const EmployeeList = () => {
           department: 'Project Management',
           joinDate: '2023-02-01',
           hourlyRate: 150,
-          client: 'IBM',
-          employmentType: 'W2'
+          employmentType: 'W2',
+          // Example of employee without client info
         },
         {
           id: 3,
@@ -54,7 +64,16 @@ const EmployeeList = () => {
           client: 'Accenture',
           employmentType: 'Subcontractor',
           vendorId: 1,
-          vendor: 'TechVendor Inc.'
+          vendor: 'TechVendor Inc.',
+          endClient: {
+            name: 'Accenture PLC',
+            location: 'Chicago, IL',
+            hiringManager: {
+              name: 'Michael Chen',
+              email: 'michael.chen@accenture.com',
+              phone: '(312) 555-9012'
+            }
+          }
         },
         {
           id: 4,
@@ -69,7 +88,16 @@ const EmployeeList = () => {
           client: 'Cognizant',
           employmentType: 'Subcontractor',
           vendorId: 2,
-          vendor: 'QA Solutions LLC'
+          vendor: 'QA Solutions LLC',
+          endClient: {
+            name: 'Cognizant Technology Solutions',
+            location: 'Teaneck, NJ',
+            hiringManager: {
+              name: 'Sarah Thompson',
+              email: 'sarah.thompson@cognizant.com',
+              phone: '(201) 555-3456'
+            }
+          }
         }
       ];
       
@@ -106,14 +134,16 @@ const EmployeeList = () => {
             </div>
           ) : (
             <div className="card">
-              <div className="card-inner">
-                <table className="table table-employees">
+              <div className="card-inner table-responsive">
+                <table className="table">
                   <thead>
                     <tr>
                       <th>Name</th>
                       <th>Position</th>
                       <th>Department</th>
+                      <th>Vendor</th>
                       <th>Client</th>
+                      <th>End Client</th>
                       <th>Employment Type</th>
                       {checkPermission(PERMISSIONS.MANAGE_SETTINGS) && (
                         <th>Hourly Rate</th>
@@ -135,7 +165,36 @@ const EmployeeList = () => {
                         </td>
                         <td>{employee.position}</td>
                         <td>{employee.department}</td>
-                        <td>{employee.client}</td>
+                        <td>
+                          {employee.employmentType === 'Subcontractor' ? (
+                            employee.vendor ? (
+                              <Link to={`/${subdomain}/vendors/${employee.vendorId}`} className="vendor-link">
+                                {employee.vendor}
+                              </Link>
+                            ) : (
+                              <span className="text-muted">No vendor assigned</span>
+                            )
+                          ) : (
+                            <span className="text-muted">N/A</span>
+                          )}
+                        </td>
+                        <td>
+                          {employee.client ? (
+                            employee.client
+                          ) : (
+                            <span className="text-muted">Not assigned</span>
+                          )}
+                        </td>
+                        <td>
+                          {employee.endClient ? (
+                            <div className="d-flex flex-column">
+                              <span>{employee.endClient.name}</span>
+                              <small className="text-muted">{employee.endClient.location}</small>
+                            </div>
+                          ) : (
+                            <span className="text-muted">Not assigned</span>
+                          )}
+                        </td>
                         <td>
                           <span className={`badge badge-${employee.employmentType === 'W2' ? 'primary' : 'info'}`}>
                             {employee.employmentType}

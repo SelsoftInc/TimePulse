@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../auth/Auth.css';
 import CreateWorkspaceModal from './CreateWorkspaceModal';
-import TenantWorkspaceSwitcher from './TenantWorkspaceSwitcher';
+import EmployerWorkspaceSwitcher from './EmployerWorkspaceSwitcher';
 
 const Workspaces = () => {
   const [workspaces, setWorkspaces] = useState([]);
@@ -26,22 +26,22 @@ const Workspaces = () => {
         // Simulate API call
         await new Promise(resolve => setTimeout(resolve, 500));
         
-        // Check if we have tenants in localStorage
-        const storedTenants = localStorage.getItem('tenants');
+        // Check if we have employers in localStorage
+        const storedEmployers = localStorage.getItem('employers') || localStorage.getItem('tenants');
         
-        if (storedTenants) {
-          const parsedTenants = JSON.parse(storedTenants);
+        if (storedEmployers) {
+          const parsedEmployers = JSON.parse(storedEmployers);
           // Add additional fields needed for display
-          const enhancedTenants = parsedTenants.map(tenant => ({
-            ...tenant,
-            industry: tenant.industry || 'Technology',
-            createdAt: tenant.createdAt || new Date().toISOString().split('T')[0],
-            lastAccessed: tenant.lastAccessed || new Date().toISOString().split('T')[0]
+          const enhancedEmployers = parsedEmployers.map(employer => ({
+            ...employer,
+            industry: employer.industry || 'Technology',
+            createdAt: employer.createdAt || new Date().toISOString().split('T')[0],
+            lastAccessed: employer.lastAccessed || new Date().toISOString().split('T')[0]
           }));
           
-          setWorkspaces(enhancedTenants);
+          setWorkspaces(enhancedEmployers);
         } else {
-          // Use mock data if no tenants in localStorage
+          // Use mock data if no employers in localStorage
           const mockWorkspaces = [
             {
               id: 'ws-1',
@@ -64,7 +64,7 @@ const Workspaces = () => {
           ];
           
           // Store mock workspaces in localStorage for future use
-          localStorage.setItem('tenants', JSON.stringify(mockWorkspaces));
+          localStorage.setItem('employers', JSON.stringify(mockWorkspaces));
           setWorkspaces(mockWorkspaces);
         }
       } catch (error) {
@@ -84,10 +84,10 @@ const Workspaces = () => {
   };
 
   const handleSwitchWorkspace = (workspace) => {
-    // Set the selected tenant in localStorage
-    localStorage.setItem('currentTenant', JSON.stringify(workspace));
+    // Set the selected employer in localStorage
+    localStorage.setItem('currentEmployer', JSON.stringify(workspace));
     
-    // Navigate to the dashboard with the tenant subdomain
+    // Navigate to the dashboard with the employer subdomain
     navigate(`/${workspace.subdomain}/dashboard`);
   };
 
@@ -103,13 +103,13 @@ const Workspaces = () => {
     <div className="workspace-container">
       <div className="workspace-header">
         <div className="workspace-title">
-          <h1>Your Workspaces</h1>
-          <p>Select a workspace to manage your projects</p>
+          <h1>Your Employers</h1>
+          <p>Select an employer workspace to manage your projects</p>
         </div>
       </div>
 
-      {/* Using the TenantWorkspaceSwitcher component */}
-      <TenantWorkspaceSwitcher 
+      {/* Using the EmployerWorkspaceSwitcher component */}
+      <EmployerWorkspaceSwitcher 
         workspaces={workspaces}
         onSelect={handleSwitchWorkspace}
         onCreateNew={() => setShowModal(true)}

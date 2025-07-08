@@ -1,6 +1,8 @@
 // src/components/layout/Header.jsx
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { PERMISSIONS } from "../../utils/roles";
+import PermissionGuard from "../common/PermissionGuard";
 import "./Header.css";
 
 const Header = ({ toggleSidebar }) => {
@@ -87,9 +89,11 @@ const Header = ({ toggleSidebar }) => {
               <i className={`fas ${darkMode ? 'fa-sun' : 'fa-moon'} header-action-icon`}></i>
             </div>
             
-            <div className="header-action-item" onClick={goToSettings} style={{ cursor: 'pointer' }}>
-              <i className="fas fa-cog header-action-icon"></i>
-            </div>
+            <PermissionGuard requiredPermission={PERMISSIONS.MANAGE_SETTINGS} fallback={null}>
+              <div className="header-action-item" onClick={goToSettings} style={{ cursor: 'pointer' }}>
+                <i className="fas fa-cog header-action-icon"></i>
+              </div>
+            </PermissionGuard>
             
             {/* User dropdown */}
             <div className="user-dropdown">

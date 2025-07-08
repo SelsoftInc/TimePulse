@@ -1,34 +1,29 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Header from './Header';
 import Sidebar from './Sidebar';
+import RoleSelector from '../common/RoleSelector';
+import { useAuth } from '../../contexts/AuthContext';
 import './TenantLayout.css';
 
 const TenantLayout = ({ children }) => {
   const { subdomain } = useParams();
   const navigate = useNavigate();
-  const [currentTenant, setCurrentTenant] = useState(null);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [mobileNavVisible, setMobileNavVisible] = useState(false);
+  const { currentTenant, switchTenant, isAuthenticated, loading } = useAuth();
+  const [sidebarCollapsed, setSidebarCollapsed] = React.useState(false);
+  const [mobileNavVisible, setMobileNavVisible] = React.useState(false);
 
   useEffect(() => {
-    // Check if user is authenticated
-    const token = localStorage.getItem('token');
-    if (!token) {
-      navigate('/login');
+    // If not authenticated, redirect to login
+    if (!loading && !isAuthenticated) {
+      navigate('/simple-login');
       return;
     }
 
-    // Get current tenant from localStorage
-    const storedTenant = localStorage.getItem('currentTenant');
-    
-    if (storedTenant) {
-      const parsedTenant = JSON.parse(storedTenant);
-      
+    // If authenticated but no current tenant or subdomain doesn't match
+    if (!loading && isAuthenticated && currentTenant) {
       // Check if the URL subdomain matches the current tenant
-      if (parsedTenant.subdomain === subdomain) {
-        setCurrentTenant(parsedTenant);
-      } else {
+      if (currentTenant.subdomain !== subdomain) {
         // Find the tenant that matches the subdomain
         const storedTenants = localStorage.getItem('tenants');
         if (storedTenants) {
@@ -37,8 +32,7 @@ const TenantLayout = ({ children }) => {
           
           if (matchingTenant) {
             // Set the matching tenant as current
-            localStorage.setItem('currentTenant', JSON.stringify(matchingTenant));
-            setCurrentTenant(matchingTenant);
+            switchTenant(matchingTenant);
           } else {
             // No matching tenant found, redirect to workspaces
             navigate('/workspaces');
@@ -48,11 +42,11 @@ const TenantLayout = ({ children }) => {
           navigate('/workspaces');
         }
       }
-    } else {
+    } else if (!loading && isAuthenticated && !currentTenant) {
       // No current tenant, redirect to workspaces
       navigate('/workspaces');
     }
-  }, [subdomain, navigate]);
+  }, [subdomain, navigate, currentTenant, isAuthenticated, loading, switchTenant]);
 
   const toggleSidebar = () => {
     setSidebarCollapsed(!sidebarCollapsed);
@@ -70,15 +64,14 @@ const TenantLayout = ({ children }) => {
     }
   };
 
+  const { logout } = useAuth();
+  
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    localStorage.removeItem('userInfo');
-    localStorage.removeItem('currentTenant');
-    navigate('/login');
+    logout();
+    navigate('/simple-login');
   };
 
-  if (!currentTenant) {
+  if (loading || !currentTenant) {
     return <div className="loading-spinner">Loading tenant...</div>;
   }
 
@@ -99,6 +92,9 @@ const TenantLayout = ({ children }) => {
         />
         
         <main className={`nk-main-content ${sidebarCollapsed ? 'expanded' : ''}`}>
+          <div className="role-selector-container">
+            <RoleSelector />
+          </div>
           {children}
         </main>
       </div>

@@ -4,12 +4,12 @@ const PaymentInformation = () => {
   const [paymentInfo, setPaymentInfo] = useState({
     bankName: 'First National Bank',
     bankAddress: '456 Financial Blvd\nNew York, NY 10001',
-    accountName: 'Acme Corporation',
+    accountName: 'Selsoft',
     accountNumber: '1234567890',
     routingNumber: '021000021',
     swiftCode: 'FNBAUS33',
     iban: '',
-    paypalEmail: 'payments@acmecorp.com',
+    paypalEmail: 'payments@selsoft.com',
     usePaypal: true
   });
 

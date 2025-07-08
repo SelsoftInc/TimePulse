@@ -525,7 +525,7 @@ const Invoice = () => {
       case "approved": return "success";
       case "rejected": return "danger";
       case "sent": return "info";
-      case "paid": return "primary";
+      case "paid": return "success"; 
       default: return "gray";
     }
   };

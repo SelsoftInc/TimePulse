@@ -44,8 +44,8 @@ const Login = () => {
         // Create a default tenant for testing
         const defaultTenant = {
           id: 'tenant-123',
-          name: 'Demo Company',
-          subdomain: 'demo',
+          name: 'Selsoft',
+          subdomain: 'selsoft',
           status: 'active',
           role: 'admin'
         };

@@ -1,6 +1,8 @@
 // src/components/dashboard/Dashboard.jsx
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
+import { PERMISSIONS } from "../../utils/roles";
+import PermissionGuard from "../common/PermissionGuard";
 import "./Dashboard.css";
 
 // DashCard component - A reusable card component following DashLite styling
@@ -58,10 +60,12 @@ const TimesheetTable = ({ timesheets }) => {
             <h6 className="title">Recent Timesheets</h6>
           </div>
           <div className="card-tools">
-            <Link to="/timesheets" className="btn btn-sm btn-primary">
-              <em className="icon ni ni-plus"></em>
-              <span>Add New</span>
-            </Link>
+            <PermissionGuard requiredPermission={PERMISSIONS.CREATE_TIMESHEET} fallback={null}>
+              <Link to="/timesheets" className="btn btn-sm btn-primary">
+                <em className="icon ni ni-plus"></em>
+                <span>Add New</span>
+              </Link>
+            </PermissionGuard>
           </div>
         </div>
       </div>
@@ -156,10 +160,12 @@ const TimesheetProgress = ({ stats }) => {
             <p className="text-soft">Your weekly and monthly hours</p>
           </div>
           <div className="card-tools">
-            <Link to="/timesheets" className="btn btn-sm btn-outline-primary">
-              <em className="icon ni ni-clock mr-1"></em>
-              <span>Log Time</span>
-            </Link>
+            <PermissionGuard requiredPermission={PERMISSIONS.CREATE_TIMESHEET} fallback={null}>
+              <Link to="/timesheets" className="btn btn-sm btn-outline-primary">
+                <em className="icon ni ni-clock mr-1"></em>
+                <span>Log Time</span>
+              </Link>
+            </PermissionGuard>
           </div>
         </div>
         
@@ -225,6 +231,14 @@ const InvoiceWidget = ({ invoices }) => {
             <h6 className="title">Invoice Summary</h6>
             <p className="text-soft">Overview of invoice status</p>
           </div>
+          <div className="card-tools">
+            <PermissionGuard requiredPermission={PERMISSIONS.CREATE_INVOICE} fallback={null}>
+              <Link to="/invoices" className="btn btn-sm btn-primary">
+                <em className="icon ni ni-plus"></em>
+                <span>Create Invoice</span>
+              </Link>
+            </PermissionGuard>
+          </div>
         </div>
         <div className="align-end flex-sm-wrap g-4 flex-md-nowrap mb-4">
           <div className="nk-sale-data">
@@ -270,7 +284,7 @@ const InvoiceWidget = ({ invoices }) => {
 
 const Dashboard = () => {
   // Current project selection
-  const [selectedProject, setSelectedProject] = useState("TimePulse Development - Acme Corp");
+  const [selectedProject, setSelectedProject] = useState("TimePulse Development - JPMC");
 
   // Sample data for timesheet summary
   const weeklyHours = {
@@ -293,9 +307,11 @@ const Dashboard = () => {
   
   // Project selection options
   const projects = [
-    "TimePulse Development - Acme Corp",
-    "UI/UX Design - TechStart Inc",
-    "API Integration - Globex Corp"
+    "TimePulse Development - JPMC",
+    "UI/UX Design - Accenture",
+    "API Integration - Cognizant",
+    "Mobile App Testing - Virtusa",
+    "Cloud Migration - IBM"
   ];
   
   // Current week
@@ -326,7 +342,7 @@ const Dashboard = () => {
     {
       employee: { name: "John Smith", initials: "JS", role: "Developer" },
       project: "Cloud Migration",
-      client: "Acme Corp",
+      client: "JPMC",
       week: "Jul 1 - Jul 7",
       hours: "40.0",
       status: { label: "Pending", color: "warning" }
@@ -334,7 +350,7 @@ const Dashboard = () => {
     {
       employee: { name: "Sarah Johnson", initials: "SJ", role: "Designer" },
       project: "Website Redesign",
-      client: "TechStart Inc",
+      client: "Accenture",
       week: "Jul 1 - Jul 7",
       hours: "37.5",
       status: { label: "Approved", color: "success" }
@@ -342,7 +358,7 @@ const Dashboard = () => {
     {
       employee: { name: "Michael Chen", initials: "MC", role: "QA Engineer" },
       project: "Mobile App Testing",
-      client: "Globex Corp",
+      client: "Virtusa",
       week: "Jul 1 - Jul 7",
       hours: "42.0",
       status: { label: "Rejected", color: "danger" }
@@ -350,7 +366,7 @@ const Dashboard = () => {
     {
       employee: { name: "Emily Davis", initials: "ED", role: "Project Manager" },
       project: "ERP Implementation",
-      client: "Initech LLC",
+      client: "Cognizant",
       week: "Jul 1 - Jul 7",
       hours: "40.0",
       status: { label: "Approved", color: "success" }
@@ -358,7 +374,7 @@ const Dashboard = () => {
     {
       employee: { name: "Robert Wilson", initials: "RW", role: "DevOps" },
       project: "Infrastructure Setup",
-      client: "Massive Dynamic",
+      client: "IBM",
       week: "Jul 1 - Jul 7",
       hours: "45.0",
       status: { label: "Pending", color: "warning" }
@@ -368,36 +384,44 @@ const Dashboard = () => {
   // Sample invoice data
   const invoiceData = [
     {
-      client: "Acme Corp",
+      client: "JPMC",
       number: "INV-001",
-      amount: 24500,
+      amount: 80000,
       date: "Due Jul 15, 2025",
       status: "pending",
       progress: 65
     },
     {
-      client: "TechStart Inc",
+      client: "Accenture",
       number: "INV-002",
-      amount: 18750,
+      amount: 50000,
       date: "Paid Jun 28, 2025",
       status: "paid",
       progress: 100
     },
     {
-      client: "Globex Corp",
+      client: "Virtusa",
       number: "INV-003",
-      amount: 42000,
+      amount: 30000,
       date: "Due Jul 20, 2025",
       status: "pending",
       progress: 40
     },
     {
-      client: "Initech LLC",
+      client: "Cognizant",
       number: "INV-004",
-      amount: 36000,
-      date: "Overdue Jun 30, 2025",
-      status: "overdue",
+      amount: 45000,
+      date: "Due Jun 30, 2025",
+      status: "pending",
       progress: 20
+    },
+    {
+      client: "IBM",
+      number: "INV-005",
+      amount: 90000,
+      date: "Paid Jul 5, 2025",
+      status: "paid",
+      progress: 100
     }
   ];
 

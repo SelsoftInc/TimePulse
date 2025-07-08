@@ -143,49 +143,71 @@
   font-size: 0.75rem;
   font-weight: 500;
   line-height: 1;
-  border-radius: 3px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  letter-spacing: 0.01em;
 }
 
 .badge-dot {
   position: relative;
-  padding-left: 1.25rem;
+  padding-left: 1.75rem;
+  padding-right: 0.75rem;
+  padding-top: 0.35rem;
+  padding-bottom: 0.35rem;
+  border-radius: 12px;
+  font-weight: 500;
+  background-color: #f5f6fa;
+  margin-right: 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  min-width: 60px;
+  justify-content: flex-start;
+  font-size: 0.8rem;
 }
 
 .badge-dot:before {
   position: absolute;
   content: '';
-  left: 0.35rem;
+  left: 0.65rem;
   top: 50%;
   transform: translateY(-50%);
   display: inline-block;
-  height: 0.5rem;
-  width: 0.5rem;
+  height: 0.6rem;
+  width: 0.6rem;
   border-radius: 50%;
   background: currentColor;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.8);
 }
 
 .badge-gray {
   color: #8094ae;
+  background-color: #eef0f3;
 }
 
 .badge-warning {
   color: #f4bd0e;
+  background-color: #fff8e8;
 }
 
 .badge-danger {
   color: #e85347;
+  background-color: #ffefed;
 }
 
 .badge-success {
   color: #1ee0ac;
+  background-color: #e6fbf4;
 }
 
 .badge-info {
   color: #09c2de;
+  background-color: #e5f8fb;
 }
 
 .badge-primary {
   color: #6576ff;
+  background-color: #eef0ff;
 }
 
 /* Table styles */

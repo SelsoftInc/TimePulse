@@ -5,6 +5,13 @@
   min-height: 100vh;
 }
 
+.role-selector-container {
+  padding: 1rem;
+  background-color: #f5f6fa;
+  border-bottom: 1px solid #e5e9f2;
+  margin-bottom: 1rem;
+}
+
 .nk-main-container {
   display: flex;
   flex: 1;

@@ -45,8 +45,8 @@ const Workspaces = () => {
           const mockWorkspaces = [
             {
               id: 'ws-1',
-              name: 'Demo Company',
-              subdomain: 'demo',
+              name: 'Selsoft',
+              subdomain: 'selsoft',
               status: 'active',
               industry: 'Technology',
               createdAt: '2025-01-15',

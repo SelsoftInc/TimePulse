@@ -13,29 +13,60 @@
   border-radius: 3px;
 }
 
+.badge-dot {
+  position: relative;
+  padding-left: 1.75rem;
+  padding-right: 0.75rem;
+  padding-top: 0.35rem;
+  padding-bottom: 0.35rem;
+  border-radius: 12px;
+  font-weight: 500;
+  background-color: #f5f6fa;
+  margin-right: 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  min-width: 60px;
+  justify-content: flex-start;
+}
+
+.badge-dot:before {
+  position: absolute;
+  content: '';
+  left: 0.65rem;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-block;
+  height: 0.6rem;
+  width: 0.6rem;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.8);
+}
+
 .badge-success {
-  color: #fff;
-  background-color: #1ee0ac;
+  color: #1ee0ac;
+  background-color: #e6fbf4;
 }
 
 .badge-info {
-  color: #fff;
-  background-color: #09c2de;
+  color: #09c2de;
+  background-color: #e5f8fb;
 }
 
 .badge-warning {
-  color: #fff;
-  background-color: #f4bd0e;
+  color: #f4bd0e;
+  background-color: #fff8e8;
 }
 
-.badge-light {
-  color: #526484;
-  background-color: #e5e9f2;
+.badge-gray {
+  color: #8094ae;
+  background-color: #eef0f3;
 }
 
 .badge-secondary {
-  color: #fff;
-  background-color: #6e82a5;
+  color: #6e82a5;
+  background-color: #eef0f3;
 }
 
 /* Table styles */

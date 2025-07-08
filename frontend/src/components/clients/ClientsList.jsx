@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { PERMISSIONS } from '../../utils/roles';
+import PermissionGuard from '../common/PermissionGuard';
 import './Clients.css';
 
 const ClientsList = () => {
@@ -14,43 +16,53 @@ const ClientsList = () => {
       const mockClients = [
         {
           id: 1,
-          name: 'Acme Corporation',
-          contactPerson: 'John Doe',
-          email: 'john@acmecorp.com',
+          name: 'JPMC',
+          contactPerson: 'John Morgan',
+          email: 'john@jpmc.com',
           phone: '(555) 123-4567',
           status: 'active',
-          projectCount: 3,
-          totalBilled: 12500
+          employeeCount: 7,
+          totalBilled: 80000
         },
         {
           id: 2,
-          name: 'Globex Industries',
+          name: 'Accenture',
           contactPerson: 'Jane Smith',
-          email: 'jane@globex.com',
+          email: 'jane@accenture.com',
           phone: '(555) 987-6543',
           status: 'active',
-          projectCount: 2,
-          totalBilled: 8750
+          employeeCount: 5,
+          totalBilled: 50000
         },
         {
           id: 3,
-          name: 'Stark Enterprises',
-          contactPerson: 'Tony Stark',
-          email: 'tony@stark.com',
+          name: 'Virtusa',
+          contactPerson: 'Tony Veer',
+          email: 'tony@virtusa.com',
           phone: '(555) 111-2222',
-          status: 'inactive',
-          projectCount: 1,
-          totalBilled: 5000
+          status: 'active',
+          employeeCount: 3,
+          totalBilled: 30000
         },
         {
           id: 4,
-          name: 'Wayne Industries',
-          contactPerson: 'Bruce Wayne',
-          email: 'bruce@wayne.com',
+          name: 'Cognizant',
+          contactPerson: 'Bruce Cohen',
+          email: 'bruce@cognizant.com',
           phone: '(555) 333-4444',
           status: 'active',
-          projectCount: 4,
-          totalBilled: 15000
+          employeeCount: 5,
+          totalBilled: 45000
+        },
+        {
+          id: 5,
+          name: 'IBM',
+          contactPerson: 'Lisa Blue',
+          email: 'lisa@ibm.com',
+          phone: '(555) 555-5555',
+          status: 'active',
+          employeeCount: 10,
+          totalBilled: 90000
         }
       ];
       
@@ -69,9 +81,11 @@ const ClientsList = () => {
               <p className="nk-block-subtitle">Manage your client relationships</p>
             </div>
             <div className="nk-block-head-content">
-              <button className="btn btn-primary">
-                <i className="fas fa-plus mr-1"></i> Add New Client
-              </button>
+              <PermissionGuard requiredPermission={PERMISSIONS.CREATE_CLIENT}>
+                <Link to={`/${subdomain}/clients/new`} className="btn btn-primary">
+                  <i className="fas fa-plus mr-1"></i> Add New Client
+                </Link>
+              </PermissionGuard>
             </div>
           </div>
         </div>
@@ -94,7 +108,7 @@ const ClientsList = () => {
                       <th>Email</th>
                       <th>Phone</th>
                       <th>Status</th>
-                      <th>Projects</th>
+                      <th>Employees</th>
                       <th>Total Billed</th>
                       <th className="text-right">Actions</th>
                     </tr>
@@ -115,7 +129,7 @@ const ClientsList = () => {
                             {client.status === 'active' ? 'Active' : 'Inactive'}
                           </span>
                         </td>
-                        <td>{client.projectCount}</td>
+                        <td>{client.employeeCount}</td>
                         <td>${client.totalBilled.toLocaleString()}</td>
                         <td className="text-right">
                           <div className="dropdown">

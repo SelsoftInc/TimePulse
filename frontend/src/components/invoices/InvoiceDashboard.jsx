@@ -100,15 +100,15 @@ const InvoiceDashboard = () => {
   const renderStatusBadge = (status) => {
     switch(status) {
       case 'Paid':
-        return <span className="badge badge-success">✅ Paid</span>;
+        return <span className="badge badge-dot badge-success">Paid</span>;
       case 'Sent':
-        return <span className="badge badge-info">📤 Sent</span>;
+        return <span className="badge badge-dot badge-info">Sent</span>;
       case 'Generated':
-        return <span className="badge badge-warning">📄 Generated</span>;
+        return <span className="badge badge-dot badge-warning">Generated</span>;
       case 'Draft':
-        return <span className="badge badge-light">📝 Draft</span>;
+        return <span className="badge badge-dot badge-gray">Draft</span>;
       default:
-        return <span className="badge badge-secondary">{status}</span>;
+        return <span className="badge badge-dot badge-secondary">{status}</span>;
     }
   };
   

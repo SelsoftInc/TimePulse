@@ -27,8 +27,8 @@ const SimpleLogin = () => {
       // Create a default tenant
       const defaultTenant = {
         id: 'tenant-123',
-        name: 'Demo Company',
-        subdomain: 'demo',
+        name: 'Selsoft',
+        subdomain: 'selsoft',
         status: 'active',
         role: 'admin'
       };
@@ -37,8 +37,8 @@ const SimpleLogin = () => {
       const mockWorkspaces = [
         {
           id: 'tenant-123',
-          name: 'Demo Company',
-          subdomain: 'demo',
+          name: 'Selsoft',
+          subdomain: 'selsoft',
           status: 'active',
           role: 'admin',
           industry: 'Technology',

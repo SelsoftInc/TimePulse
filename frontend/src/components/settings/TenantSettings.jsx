@@ -4,7 +4,6 @@ import './TenantSettings.css';
 import CompanyInformation from './CompanyInformation';
 import InvoicePreferences from './InvoicePreferences';
 import PaymentInformation from './PaymentInformation';
-import SowSettings from './SowSettings';
 import EmailNotifications from './EmailNotifications';
 import SecurityPrivacy from './SecurityPrivacy';
 import TimeRegion from './TimeRegion';
@@ -30,7 +29,6 @@ const TenantSettings = () => {
     { id: 'company', title: 'Company Information', icon: 'fa-building' },
     { id: 'invoice', title: 'Invoice Preferences', icon: 'fa-file-invoice' },
     { id: 'payment', title: 'Payment Information', icon: 'fa-credit-card' },
-    { id: 'sow', title: 'Statement of Work (SOW) Settings', icon: 'fa-file-contract' },
     { id: 'email', title: 'Email Notifications', icon: 'fa-envelope' },
     { id: 'security', title: 'Security & Privacy', icon: 'fa-shield-alt' },
     { id: 'time', title: 'Time & Region', icon: 'fa-globe' },
@@ -46,8 +44,6 @@ const TenantSettings = () => {
         return <InvoicePreferences />;
       case 'payment':
         return <PaymentInformation />;
-      case 'sow':
-        return <SowSettings />;
       case 'email':
         return <EmailNotifications />;
       case 'security':

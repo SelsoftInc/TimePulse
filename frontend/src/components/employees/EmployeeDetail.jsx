@@ -17,29 +17,39 @@ const EmployeeDetail = () => {
     setLoading(true);
     setTimeout(() => {
       // Mock employee data with SOW details
+      // For demo purposes, we'll show different data based on the ID
+      // In a real app, this would come from an API
+      const isSubcontractor = id === '3' || id === '4';
+      
       const mockEmployee = {
         id: parseInt(id),
         firstName: 'John',
         lastName: 'Smith',
-        name: 'John Smith',
-        position: 'Senior Developer',
-        email: 'john.smith@selsoft.com',
-        phone: '(555) 123-4567',
-        status: 'active',
-        department: 'Engineering',
-        joinDate: '2023-01-15',
+        name: id === '1' ? 'John Smith' : id === '2' ? 'Sarah Johnson' : id === '3' ? 'Michael Brown' : 'Emily Davis',
+        position: id === '1' ? 'Senior Developer' : id === '2' ? 'Project Manager' : id === '3' ? 'UI/UX Designer' : 'QA Engineer',
+        email: id === '1' ? 'john.smith@selsoft.com' : id === '2' ? 'sarah.johnson@selsoft.com' : id === '3' ? 'michael.brown@selsoft.com' : 'emily.davis@selsoft.com',
+        phone: id === '1' ? '(555) 123-4567' : id === '2' ? '(555) 234-5678' : id === '3' ? '(555) 345-6789' : '(555) 456-7890',
+        status: id === '4' ? 'inactive' : 'active',
+        department: id === '1' ? 'Engineering' : id === '2' ? 'Project Management' : id === '3' ? 'Design' : 'Quality Assurance',
+        joinDate: id === '1' ? '2023-01-15' : id === '2' ? '2023-01-31' : id === '3' ? '2023-03-09' : '2023-01-19',
         address: '123 Main St',
         city: 'San Francisco',
         state: 'CA',
         zip: '94105',
         country: 'United States',
-        client: 'JPMC',
-        hourlyRate: 125,
+        client: id === '1' ? 'JPMC' : id === '2' ? 'IBM' : id === '3' ? 'Accenture' : 'Cognizant',
+        employmentType: isSubcontractor ? 'Subcontractor' : 'W2',
+        vendor: isSubcontractor ? (id === '3' ? 'TechVendor Inc.' : 'QA Solutions LLC') : null,
+        vendorId: isSubcontractor ? (id === '3' ? 1 : 2) : null,
+        hourlyRate: id === '1' ? 125 : id === '2' ? 150 : id === '3' ? 110 : 95,
         enableOvertime: true,
         overtimeMultiplier: 1.5,
-        overtimeRate: 187.5,
+        overtimeRate: id === '1' ? 187.5 : id === '2' ? 225 : id === '3' ? 165 : 142.5,
         approvalWorkflow: 'manager',
-        notes: 'Experienced developer with 8+ years in React and Node.js',
+        notes: id === '1' ? 'Experienced developer with 8+ years in React and Node.js' : 
+               id === '2' ? 'Certified PMP with experience managing large-scale IT projects' :
+               id === '3' ? 'Creative designer with expertise in UI/UX and design systems' :
+               'Detail-oriented QA engineer with automation testing skills',
         sowDocument: {
           name: 'John_Smith_SOW_2023.pdf',
           size: 1024 * 1024 * 2.5, // 2.5MB
@@ -151,6 +161,22 @@ const EmployeeDetail = () => {
                         <div className="profile-ud-label">Client</div>
                         <div className="profile-ud-value">{employee.client}</div>
                       </div>
+                      <div className="profile-ud-item">
+                        <div className="profile-ud-label">Employment Type</div>
+                        <div className="profile-ud-value">
+                          <span className={`badge badge-${employee.employmentType === 'W2' ? 'primary' : 'info'}`}>
+                            {employee.employmentType}
+                          </span>
+                        </div>
+                      </div>
+                      {employee.employmentType === 'Subcontractor' && (
+                        <div className="profile-ud-item">
+                          <div className="profile-ud-label">Vendor</div>
+                          <div className="profile-ud-value">
+                            <Link to={`/${subdomain}/vendors/${employee.vendorId}`}>{employee.vendor}</Link>
+                          </div>
+                        </div>
+                      )}
                       <div className="profile-ud-item">
                         <div className="profile-ud-label">Join Date</div>
                         <div className="profile-ud-value">{new Date(employee.joinDate).toLocaleDateString()}</div>

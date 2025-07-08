@@ -25,7 +25,8 @@ const EmployeeList = () => {
           department: 'Engineering',
           joinDate: '2023-01-15',
           hourlyRate: 125,
-          client: 'JPMC'
+          client: 'JPMC',
+          employmentType: 'W2'
         },
         {
           id: 2,
@@ -37,7 +38,8 @@ const EmployeeList = () => {
           department: 'Project Management',
           joinDate: '2023-02-01',
           hourlyRate: 150,
-          client: 'IBM'
+          client: 'IBM',
+          employmentType: 'W2'
         },
         {
           id: 3,
@@ -49,7 +51,10 @@ const EmployeeList = () => {
           department: 'Design',
           joinDate: '2023-03-10',
           hourlyRate: 110,
-          client: 'Accenture'
+          client: 'Accenture',
+          employmentType: 'Subcontractor',
+          vendorId: 1,
+          vendor: 'TechVendor Inc.'
         },
         {
           id: 4,
@@ -61,7 +66,10 @@ const EmployeeList = () => {
           department: 'Quality Assurance',
           joinDate: '2023-01-20',
           hourlyRate: 95,
-          client: 'Cognizant'
+          client: 'Cognizant',
+          employmentType: 'Subcontractor',
+          vendorId: 2,
+          vendor: 'QA Solutions LLC'
         }
       ];
       
@@ -106,6 +114,7 @@ const EmployeeList = () => {
                       <th>Position</th>
                       <th>Department</th>
                       <th>Client</th>
+                      <th>Employment Type</th>
                       {checkPermission(PERMISSIONS.MANAGE_SETTINGS) && (
                         <th>Hourly Rate</th>
                       )}
@@ -127,6 +136,11 @@ const EmployeeList = () => {
                         <td>{employee.position}</td>
                         <td>{employee.department}</td>
                         <td>{employee.client}</td>
+                        <td>
+                          <span className={`badge badge-${employee.employmentType === 'W2' ? 'primary' : 'info'}`}>
+                            {employee.employmentType}
+                          </span>
+                        </td>
                         {checkPermission(PERMISSIONS.MANAGE_SETTINGS) && (
                           <td>${employee.hourlyRate}</td>
                         )}

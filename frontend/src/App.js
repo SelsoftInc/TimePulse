@@ -15,6 +15,7 @@ import EmployeeForm from "./components/employees/EmployeeForm";
 import EmployeeDetail from "./components/employees/EmployeeDetail";
 import VendorList from "./components/vendors/VendorList";
 import VendorForm from "./components/vendors/VendorForm";
+import VendorDetail from "./components/vendors/VendorDetail";
 import TenantSettings from "./components/settings/TenantSettings";
 import TestLogin from "./components/auth/TestLogin";
 import SimpleLogin from "./components/auth/SimpleLogin";
@@ -123,6 +124,11 @@ function App() {
         <Route path="/:subdomain/vendors/new" element={
           <ProtectedRoute requiredPermission={PERMISSIONS.CREATE_VENDOR}>
             <TenantLayout><VendorForm /></TenantLayout>
+          </ProtectedRoute>
+        } />
+        <Route path="/:subdomain/vendors/:id" element={
+          <ProtectedRoute requiredPermission={PERMISSIONS.VIEW_VENDOR}>
+            <TenantLayout><VendorDetail /></TenantLayout>
           </ProtectedRoute>
         } />
         <Route path="/:subdomain/invoices" element={

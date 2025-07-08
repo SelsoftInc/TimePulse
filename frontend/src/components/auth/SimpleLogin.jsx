@@ -1,23 +1,17 @@
-import React, { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
 import './Auth.css';
 
 const SimpleLogin = () => {
-  const navigate = useNavigate();
-
-  // Check if user is already authenticated on component mount
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      console.log('User already authenticated, redirecting to workspaces');
-      navigate('/workspaces');
-    }
-  }, [navigate]);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   const handleSimpleLogin = () => {
+    setIsLoggingIn(true);
     console.log('Simple login button clicked');
     
     try {
+      // Clear any existing data first
+      localStorage.clear();
+      
       // Set token
       localStorage.setItem('token', 'mock-jwt-token');
       
@@ -39,21 +33,41 @@ const SimpleLogin = () => {
         role: 'admin'
       };
       
+      // Create mock workspaces/tenants
+      const mockWorkspaces = [
+        {
+          id: 'tenant-123',
+          name: 'Demo Company',
+          subdomain: 'demo',
+          status: 'active',
+          role: 'admin',
+          industry: 'Technology',
+          createdAt: '2025-01-15',
+          lastAccessed: '2025-07-05'
+        },
+        {
+          id: 'tenant-456',
+          name: 'Test Organization',
+          subdomain: 'test-org',
+          status: 'trial',
+          role: 'admin',
+          industry: 'Consulting',
+          createdAt: '2025-06-10',
+          lastAccessed: '2025-07-03'
+        }
+      ];
+      
       // Store tenant and current tenant
-      localStorage.setItem('tenants', JSON.stringify([defaultTenant]));
+      localStorage.setItem('tenants', JSON.stringify(mockWorkspaces));
       localStorage.setItem('currentTenant', JSON.stringify(defaultTenant));
       
       console.log('Authentication data set, navigating to workspaces');
       
-      // Dispatch a custom event to notify the app about authentication change
-      window.dispatchEvent(new Event('auth-change'));
-      
-      // Force a small delay before navigation to ensure localStorage is updated
-      setTimeout(() => {
-        navigate('/workspaces');
-      }, 100);
+      // Use window.location for a full page reload to ensure app state is reset
+      window.location.href = '/workspaces';
     } catch (error) {
       console.error('Error during login:', error);
+      setIsLoggingIn(false);
     }
   };
 
@@ -72,8 +86,9 @@ const SimpleLogin = () => {
           <button 
             onClick={handleSimpleLogin} 
             className="btn-primary btn-block btn-lg"
+            disabled={isLoggingIn}
           >
-            Access Demo Account
+            {isLoggingIn ? 'Logging in...' : 'Access Demo Account'}
           </button>
           
           <div className="simple-login-info">

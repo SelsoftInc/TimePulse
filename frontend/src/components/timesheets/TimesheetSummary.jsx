@@ -265,15 +265,12 @@ const TimesheetSummary = () => {
                               </td>
                               <td className="text-center">
                                 <span className="hours-value">{timesheet.billableProjectHrs}</span>
-                                <div className="hours-label">Hours</div>
                               </td>
                               <td className="text-center">
                                 <span className="hours-value">{timesheet.timeOffHolidayHrs}</span>
-                                <div className="hours-label">Time off/Holiday Hrs</div>
                               </td>
                               <td className="text-center">
                                 <span className="hours-value">{timesheet.totalTimeHours}</span>
-                                <div className="hours-label">Total Time Hours</div>
                               </td>
                             </tr>
                           ))}

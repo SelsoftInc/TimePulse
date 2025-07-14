@@ -1,6 +1,26 @@
 import React, { useState, useEffect } from "react";
 import "./Invoice.css";
 
+// Utility function for status display
+const getStatusDisplay = (status) => {
+  switch(status.toLowerCase()) {
+    case "draft":
+      return { class: "secondary", icon: "fas fa-edit", text: "Draft" };
+    case "pending":
+      return { class: "warning", icon: "fas fa-clock", text: "Pending" };
+    case "approved":
+      return { class: "success", icon: "fas fa-check-circle", text: "Approved" };
+    case "rejected":
+      return { class: "danger", icon: "fas fa-times-circle", text: "Rejected" };
+    case "sent":
+      return { class: "info", icon: "fas fa-paper-plane", text: "Sent" };
+    case "paid":
+      return { class: "success", icon: "fas fa-dollar-sign", text: "Paid" };
+    default:
+      return { class: "secondary", icon: "fas fa-question-circle", text: status };
+  }
+};
+
 // Invoice Detail Modal Component
 const InvoiceDetailModal = ({ invoice, onClose, onApprove, onReject }) => {
   const [notes, setNotes] = useState("");
@@ -26,9 +46,15 @@ const InvoiceDetailModal = ({ invoice, onClose, onApprove, onReject }) => {
               </div>
               <div className="detail-group">
                 <span className="detail-label">Status:</span>
-                <span className={`badge badge-dot badge-${invoice.status.toLowerCase()}`}>
-                  {invoice.status}
-                </span>
+                {(() => {
+                  const statusInfo = getStatusDisplay(invoice.status);
+                  return (
+                    <span className={`badge badge-${statusInfo.class} d-inline-flex align-items-center`}>
+                      <i className={`${statusInfo.icon} me-1`} style={{ fontSize: '12px' }}></i>
+                      {statusInfo.text}
+                    </span>
+                  );
+                })()}
               </div>
             </div>
             <div className="invoice-detail-total">
@@ -518,17 +544,9 @@ const Invoice = () => {
     setShowUploadModal(false);
   };
   
-  const getStatusClass = (status) => {
-    switch(status.toLowerCase()) {
-      case "draft": return "gray";
-      case "pending": return "warning";
-      case "approved": return "success";
-      case "rejected": return "danger";
-      case "sent": return "info";
-      case "paid": return "success"; 
-      default: return "gray";
-    }
-  };
+
+
+
   
   return (
     <div className="nk-content">
@@ -655,9 +673,15 @@ const Invoice = () => {
                                 <span className="tb-lead">${invoice.total.toFixed(2)}</span>
                               </div>
                               <div className="nk-tb-col">
-                                <span className={`badge badge-dot badge-${getStatusClass(invoice.status)}`}>
-                                  {invoice.status}
-                                </span>
+                                {(() => {
+                                  const statusInfo = getStatusDisplay(invoice.status);
+                                  return (
+                                    <span className={`badge badge-${statusInfo.class} d-inline-flex align-items-center`}>
+                                      <i className={`${statusInfo.icon} me-1`} style={{ fontSize: '12px' }}></i>
+                                      {statusInfo.text}
+                                    </span>
+                                  );
+                                })()}
                               </div>
                               <div className="nk-tb-col nk-tb-col-tools">
                                 <ul className="nk-tb-actions gx-1">

@@ -98,6 +98,8 @@ const RoleSelector = () => {
         }}
         title="Switch role"
         data-testid="role-selector-button"
+        aria-expanded={isOpen}
+        aria-haspopup="true"
       >
         <div className="role-button-content">
           <i className={`fas ${getCurrentRoleIcon()} role-button-icon`}></i>
@@ -107,22 +109,30 @@ const RoleSelector = () => {
       </button>
       
       {isOpen && (
-        <div className="role-selector-dropdown">
+        <div 
+          className="role-selector-dropdown" 
+          role="menu"
+          aria-orientation="vertical"
+          data-testid="role-dropdown"
+        >
           <div className="role-dropdown-header">Switch Role</div>
           
-          {availableRoles.map(role => (
-            <div 
-              key={role.id}
-              className={`role-option ${currentEmployer?.role === role.id ? 'active' : ''}`}
-              onClick={() => handleRoleChange(role.id)}
-              data-testid={`role-option-${role.id}`}
-            >
-              <i className={`fas ${role.icon} role-icon`}></i>
-              <span>{role.name}</span>
-              {currentEmployer?.role === role.id && <i className="fas fa-check role-check"></i>}
-              {isRoleLoginRequired(role.id) && <span className="role-login-required">Login Required</span>}
-            </div>
-          ))}
+          <div className="role-options-container">
+            {availableRoles.map(role => (
+              <div 
+                key={role.id}
+                className={`role-option ${currentEmployer?.role === role.id ? 'active' : ''}`}
+                onClick={() => handleRoleChange(role.id)}
+                data-testid={`role-option-${role.id}`}
+                role="menuitem"
+              >
+                <i className={`fas ${role.icon} role-icon`}></i>
+                <span className="role-name">{role.name}</span>
+                {currentEmployer?.role === role.id && <i className="fas fa-check role-check"></i>}
+                {isRoleLoginRequired(role.id) && <span className="role-login-required">Login Required</span>}
+              </div>
+            ))}
+          </div>
           
           <div className="role-dropdown-footer">
             <small>Future version will require separate login for each role</small>

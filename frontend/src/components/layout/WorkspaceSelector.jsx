@@ -15,8 +15,21 @@ const WorkspaceSelector = () => {
     const currentTenant = localStorage.getItem('currentTenant');
     if (currentTenant) {
       const tenant = JSON.parse(currentTenant);
+      // Generate abbreviation from company name instead of tenant ID
+      const generateAbbreviation = (name) => {
+        if (!name) return 'WS';
+        const words = name.trim().split(/\s+/);
+        if (words.length >= 2) {
+          // Use first letter of first two words
+          return (words[0][0] + words[1][0]).toUpperCase();
+        } else {
+          // Use first two letters of single word
+          return name.substring(0, 2).toUpperCase();
+        }
+      };
+      
       setWorkspace({
-        id: tenant.id.substring(0, 2).toUpperCase(),
+        id: generateAbbreviation(tenant.name),
         name: tenant.name,
         tagline: tenant.subdomain || 'Workspace'
       });

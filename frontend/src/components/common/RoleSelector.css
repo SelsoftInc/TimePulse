@@ -71,12 +71,12 @@
 .role-dropdown-header {
   padding: 0.75rem 1rem;
   font-weight: 600;
-  color: #526484;
+  color: #4a5568;
   border-bottom: 1px solid #e5e9f2;
-  font-size: 0.85rem;
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
+  background-color: #f9fafc;
 }
 
 .role-dropdown-header::after {
@@ -102,19 +102,51 @@
 
 .role-selector-dropdown {
   position: absolute;
-  top: 100%;
+  top: calc(100% + 5px);
   right: 0;
-  min-width: 240px;
-  background-color: white;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  min-width: 220px;
+  z-index: 1050; /* Increased z-index to ensure dropdown appears above other elements */
+  overflow: visible; /* Changed from hidden to visible to ensure dropdown content is fully shown */
+  animation: fadeIn 0.2s ease-in-out;
   border: 1px solid #e5e9f2;
-  border-radius: 6px;
-  margin-top: 0.5rem;
-  z-index: 1000;
-  box-shadow: 0 4px 16px rgba(43, 55, 72, 0.15);
-  animation: fadeInDown 0.2s ease-out;
+  display: flex;
+  flex-direction: column;
 }
 
-@keyframes fadeInDown {
+/* Container for role options with scrolling */
+.role-options-container {
+  max-height: 250px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #e5e9f2 transparent;
+}
+
+/* Custom scrollbar styling */
+.role-options-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.role-options-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.role-options-container::-webkit-scrollbar-thumb {
+  background-color: #e5e9f2;
+  border-radius: 20px;
+}
+
+/* Style for the role name to ensure proper display */
+.role-name {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@keyframes fadeIn {
   from {
     opacity: 0;
     transform: translateY(-10px);
@@ -133,6 +165,10 @@
   align-items: center;
   transition: all 0.2s;
   position: relative;
+  background-color: #fff;
+  color: #364a63; /* Added explicit text color */
+  width: 100%; /* Ensure full width */
+  box-sizing: border-box; /* Ensure padding is included in width calculation */
 }
 
 /* Add hover effect for better UX */
@@ -159,6 +195,7 @@
 
 .role-option:hover {
   background-color: #f5f6fa;
+  color: #6576ff; /* Change text color on hover for better visibility */
 }
 
 .role-option.active {
@@ -195,7 +232,31 @@
   background-color: #f9fafc;
 }
 
-.role-selector i {
-  margin-left: auto;
+/* Fixed icon styling to prevent overlap */
+.role-selector-button i {
   color: #8094ae;
+}
+
+.role-selector .role-button-icon {
+  margin-right: 8px;
+  margin-left: 0;
+  color: #8094ae;
+}
+
+.role-selector .role-chevron {
+  margin-left: auto;
+  margin-right: 0;
+  color: #8094ae;
+}
+
+.role-option i.role-icon {
+  margin-right: 8px;
+  margin-left: 0;
+  color: #6576ff;
+}
+
+.role-option i.role-check {
+  margin-left: auto;
+  margin-right: 0;
+  color: #1ee0ac;
 }

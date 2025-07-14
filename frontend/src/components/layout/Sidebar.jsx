@@ -85,34 +85,6 @@ const Sidebar = ({ collapsed, toggleSidebar, className = '' }) => {
             </li>
           </PermissionGuard>
           
-          <PermissionGuard requiredPermission={PERMISSIONS.VIEW_REPORTS} fallback={null}>
-            <li className="sidebar-item">
-              <Link 
-                to={`/${currentSubdomain}/reports`} 
-                className={`sidebar-link ${currentPath.includes(`/${currentSubdomain}/reports`) ? 'active' : ''}`}
-              >
-                <div className="sidebar-icon">
-                  <i className="fa fa-chart-bar"></i>
-                </div>
-                {!collapsed && <span className="sidebar-text">Reports</span>}
-              </Link>
-            </li>
-          </PermissionGuard>
-          
-          <PermissionGuard requiredPermission={PERMISSIONS.MANAGE_SETTINGS} fallback={null}>
-            <li className="sidebar-item">
-              <Link 
-                to={`/${currentSubdomain}/settings`} 
-                className={`sidebar-link ${currentPath.includes(`/${currentSubdomain}/settings`) ? 'active' : ''}`}
-              >
-                <div className="sidebar-icon">
-                  <i className="fa fa-cog"></i>
-                </div>
-                {!collapsed && <span className="sidebar-text">Settings</span>}
-              </Link>
-            </li>
-          </PermissionGuard>
-          
           <PermissionGuard requiredPermission={PERMISSIONS.VIEW_EMPLOYEE} fallback={null}>
             <li className="sidebar-item">
               <Link 
@@ -137,6 +109,36 @@ const Sidebar = ({ collapsed, toggleSidebar, className = '' }) => {
                   <i className="fa fa-truck"></i>
                 </div>
                 {!collapsed && <span className="sidebar-text">Vendors</span>}
+              </Link>
+            </li>
+          </PermissionGuard>
+          
+          {/* Reports moved to second-to-last position */}
+          <PermissionGuard requiredPermission={PERMISSIONS.VIEW_REPORTS} fallback={null}>
+            <li className="sidebar-item">
+              <Link 
+                to={`/${currentSubdomain}/reports`} 
+                className={`sidebar-link ${currentPath.includes(`/${currentSubdomain}/reports`) ? 'active' : ''}`}
+              >
+                <div className="sidebar-icon">
+                  <i className="fa fa-chart-bar"></i>
+                </div>
+                {!collapsed && <span className="sidebar-text">Reports</span>}
+              </Link>
+            </li>
+          </PermissionGuard>
+          
+          {/* Settings moved to last position */}
+          <PermissionGuard requiredPermission={PERMISSIONS.MANAGE_SETTINGS} fallback={null}>
+            <li className="sidebar-item">
+              <Link 
+                to={`/${currentSubdomain}/settings`} 
+                className={`sidebar-link ${currentPath.includes(`/${currentSubdomain}/settings`) ? 'active' : ''}`}
+              >
+                <div className="sidebar-icon">
+                  <i className="fa fa-cog"></i>
+                </div>
+                {!collapsed && <span className="sidebar-text">Settings</span>}
               </Link>
             </li>
           </PermissionGuard>

@@ -243,7 +243,7 @@ const TimesheetSummary = () => {
                           <tr>
                             <th>Week Range</th>
                             <th>Status</th>
-                            <th>Billable Project Hrs</th>
+                            <th>Hours</th>
                             <th>Time off/Holiday Hrs</th>
                             <th>Total Time Hours</th>
                           </tr>
@@ -265,7 +265,7 @@ const TimesheetSummary = () => {
                               </td>
                               <td className="text-center">
                                 <span className="hours-value">{timesheet.billableProjectHrs}</span>
-                                <div className="hours-label">Billable Project Hrs</div>
+                                <div className="hours-label">Hours</div>
                               </td>
                               <td className="text-center">
                                 <span className="hours-value">{timesheet.timeOffHolidayHrs}</span>

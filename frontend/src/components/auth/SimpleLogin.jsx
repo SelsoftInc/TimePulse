@@ -30,7 +30,7 @@ const SimpleLogin = () => {
         name: 'Selsoft',
         subdomain: 'selsoft',
         status: 'active',
-        role: 'admin'
+        role: 'employee'
       };
       
       // Create mock workspaces/tenants
@@ -40,7 +40,7 @@ const SimpleLogin = () => {
           name: 'Selsoft',
           subdomain: 'selsoft',
           status: 'active',
-          role: 'admin',
+          role: 'employee',
           industry: 'Technology',
           createdAt: '2025-01-15',
           lastAccessed: '2025-07-05'

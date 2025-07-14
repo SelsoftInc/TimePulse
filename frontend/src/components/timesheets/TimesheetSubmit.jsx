@@ -1,12 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
 import './Timesheet.css';
 
 const TimesheetSubmit = () => {
   const { subdomain, weekId } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
   const fileInputRef = useRef(null);
   const cameraInputRef = useRef(null);
   const [loading, setLoading] = useState(false);
@@ -26,7 +24,6 @@ const TimesheetSubmit = () => {
   
   // Mock data
   const [sowData, setSowData] = useState([]);
-  const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
   
   useEffect(() => {
     // Check if device is mobile
@@ -80,7 +77,7 @@ const TimesheetSubmit = () => {
           // Mock timesheet data for the given week
           // In a real app, fetch from API
           const mockTimesheet = {
-            week: 'Jul 10, 2025',
+            week: '07-JUL-2025 To 13-JUL-2025',
             sowId: '1',
             hours: [8, 8, 8, 8, 8, 0, 0],
             notes: 'Worked on feature implementation',
@@ -92,15 +89,27 @@ const TimesheetSubmit = () => {
           setHours(mockTimesheet.hours);
           setNotes(mockTimesheet.notes);
         } else {
-          // Set current week
+          // Set current week in date range format
           const today = new Date();
           const dayOfWeek = today.getDay(); // 0 is Sunday, 1 is Monday, etc.
           const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek; // Calculate days until Monday
           const monday = new Date(today);
           monday.setDate(today.getDate() + mondayOffset);
           
-          const options = { month: 'short', day: 'numeric', year: 'numeric' };
-          setWeek(monday.toLocaleDateString('en-US', options));
+          // Calculate Sunday (end of week)
+          const sunday = new Date(monday);
+          sunday.setDate(monday.getDate() + 6);
+          
+          // Format dates like "12-JUL-2025 To 18-JUL-2025"
+          const formatDate = (date) => {
+            const day = date.getDate().toString().padStart(2, '0');
+            const month = date.toLocaleDateString('en-US', { month: 'short' }).toUpperCase();
+            const year = date.getFullYear();
+            return `${day}-${month}-${year}`;
+          };
+          
+          const weekRange = `${formatDate(monday)} To ${formatDate(sunday)}`;
+          setWeek(weekRange);
         }
       } catch (error) {
         console.error('Error loading timesheet data:', error);
@@ -382,30 +391,133 @@ const TimesheetSubmit = () => {
                       )}
                     </div>
                     
+                    {/* Timesheet Table */}
                     <div className="form-group mb-4">
-                      <label className="form-label">Hours</label>
-                      <div className="timesheet-grid">
-                        {days.map((day, index) => (
-                          <div key={index} className="timesheet-day">
-                            <label htmlFor={`day-${index}`}>{day}</label>
-                            <input
-                              id={`day-${index}`}
-                              type="number"
-                              min="0"
-                              max="24"
-                              step="0.5"
-                              value={hours[index] || ""}
-                              onChange={(e) => handleHourChange(index, e.target.value)}
-                              className="form-control"
-                            />
-                          </div>
-                        ))}
-                        <div className="timesheet-total">
-                          <label>Total</label>
-                          <div className="form-control-plaintext fw-bold">
-                            {hours.reduce((sum, hour) => sum + hour, 0).toFixed(1)}
-                          </div>
-                        </div>
+                      <div className="table-responsive">
+                        <table className="table table-bordered timesheet-table">
+                          <thead className="table-primary">
+                            <tr>
+                              <th style={{width: '80px'}}>Client ID</th>
+                              <th style={{width: '200px'}}>Client Name</th>
+                              <th style={{width: '60px'}}>SAT</th>
+                              <th style={{width: '60px'}}>SUN</th>
+                              <th style={{width: '60px'}}>MON</th>
+                              <th style={{width: '60px'}}>TUE</th>
+                              <th style={{width: '60px'}}>WED</th>
+                              <th style={{width: '60px'}}>THU</th>
+                              <th style={{width: '60px'}}>FRI</th>
+                              <th style={{width: '80px'}}>Total Hours</th>
+                              <th style={{width: '150px'}}>Comment</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {sowData.map((sow, rowIndex) => (
+                              <tr key={sow.id}>
+                                <td className="text-center">{sow.id}</td>
+                                <td>{sow.client}</td>
+                                {hours.map((hour, dayIndex) => (
+                                  <td key={dayIndex} className="text-center">
+                                    <input 
+                                      type="number" 
+                                      className="form-control form-control-sm text-center" 
+                                      style={{width: '50px', margin: '0 auto'}}
+                                      value={rowIndex === 0 ? hour : 0} 
+                                      onChange={(e) => rowIndex === 0 && handleHourChange(dayIndex, e.target.value)}
+                                      min="0" 
+                                      max="24" 
+                                      step="0.5"
+                                    />
+                                  </td>
+                                ))}
+                                <td className="text-center fw-bold">
+                                  {rowIndex === 0 ? hours.reduce((sum, hour) => sum + parseFloat(hour || 0), 0).toFixed(1) : '0.0'}
+                                </td>
+                                <td>
+                                  <input 
+                                    type="text" 
+                                    className="form-control form-control-sm" 
+                                    placeholder="Comment"
+                                  />
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                          <tfoot className="table-light">
+                            <tr>
+                              <td colSpan="2" className="text-end fw-bold">Total Client Related Hours:</td>
+                              <td className="text-center fw-bold">{hours[0] || 0}</td>
+                              <td className="text-center fw-bold">{hours[1] || 0}</td>
+                              <td className="text-center fw-bold">{hours[2] || 0}</td>
+                              <td className="text-center fw-bold">{hours[3] || 0}</td>
+                              <td className="text-center fw-bold">{hours[4] || 0}</td>
+                              <td className="text-center fw-bold">{hours[5] || 0}</td>
+                              <td className="text-center fw-bold">{hours[6] || 0}</td>
+                              <td className="text-center fw-bold">
+                                {hours.reduce((sum, hour) => sum + parseFloat(hour || 0), 0).toFixed(1)}
+                              </td>
+                              <td></td>
+                            </tr>
+                          </tfoot>
+                        </table>
+                      </div>
+                    </div>
+
+                    {/* Holiday/Time off Section */}
+                    <div className="form-group mb-4">
+                      <h6 className="form-label">Holiday/Time off</h6>
+                      <div className="table-responsive">
+                        <table className="table table-bordered">
+                          <tbody>
+                            <tr>
+                              <td style={{width: '200px'}}>Holiday (Public/National)</td>
+                              <td className="text-center" style={{width: '60px'}}>0</td>
+                              <td className="text-center" style={{width: '60px'}}>0</td>
+                              <td className="text-center" style={{width: '60px'}}>0</td>
+                              <td className="text-center" style={{width: '60px'}}>0</td>
+                              <td className="text-center" style={{width: '60px'}}>0</td>
+                              <td className="text-center" style={{width: '60px'}}>0</td>
+                              <td className="text-center" style={{width: '60px'}}>0</td>
+                              <td className="text-center fw-bold" style={{width: '80px'}}>0.00</td>
+                            </tr>
+                            <tr>
+                              <td>Time Off</td>
+                              <td className="text-center">0</td>
+                              <td className="text-center">0</td>
+                              <td className="text-center">0</td>
+                              <td className="text-center">0</td>
+                              <td className="text-center">0</td>
+                              <td className="text-center">0</td>
+                              <td className="text-center">0</td>
+                              <td className="text-center fw-bold">0.00</td>
+                            </tr>
+                          </tbody>
+                          <tfoot className="table-light">
+                            <tr>
+                              <td className="text-end fw-bold">Total Personal Hours:</td>
+                              <td className="text-center fw-bold">0.00</td>
+                              <td className="text-center fw-bold">0.00</td>
+                              <td className="text-center fw-bold">0.00</td>
+                              <td className="text-center fw-bold">0.00</td>
+                              <td className="text-center fw-bold">0.00</td>
+                              <td className="text-center fw-bold">0.00</td>
+                              <td className="text-center fw-bold">0.00</td>
+                              <td className="text-center fw-bold">0.00</td>
+                            </tr>
+                            <tr>
+                              <td className="text-end fw-bold">Grand Total:</td>
+                              <td className="text-center fw-bold">{hours[0] || 0}</td>
+                              <td className="text-center fw-bold">{hours[1] || 0}</td>
+                              <td className="text-center fw-bold">{hours[2] || 0}</td>
+                              <td className="text-center fw-bold">{hours[3] || 0}</td>
+                              <td className="text-center fw-bold">{hours[4] || 0}</td>
+                              <td className="text-center fw-bold">{hours[5] || 0}</td>
+                              <td className="text-center fw-bold">{hours[6] || 0}</td>
+                              <td className="text-center fw-bold">
+                                {hours.reduce((sum, hour) => sum + parseFloat(hour || 0), 0).toFixed(1)}
+                              </td>
+                            </tr>
+                          </tfoot>
+                        </table>
                       </div>
                     </div>
                     
@@ -424,6 +536,7 @@ const TimesheetSubmit = () => {
                     
                     <div className="form-group mb-4">
                       <label className="form-label">Attachments</label>
+                      <p className="form-note text-soft mb-2">Upload approved timesheet proof, work samples, or supporting documents</p>
                       <div 
                         className="upload-zone" 
                         onDragOver={handleDragOver}
@@ -506,19 +619,20 @@ const TimesheetSubmit = () => {
                       )}
                     </div>
                     
-                    <div className="form-group mt-5">
-                      <div className="d-flex justify-content-between">
+                    {/* Action Buttons */}
+                    <div className="form-group mt-4">
+                      <div className="d-flex gap-3 justify-content-center">
                         <button 
                           type="button" 
-                          className="btn btn-dim btn-outline-primary"
+                          className="btn btn-success"
                           onClick={handleSaveDraft}
                           disabled={submitting}
                         >
-                          {submitting ? 'Saving...' : 'Save as Draft'}
+                          Save For Later
                         </button>
                         <button 
                           type="submit" 
-                          className="btn btn-primary"
+                          className="btn btn-success"
                           disabled={submitting}
                         >
                           {submitting ? (
@@ -526,9 +640,23 @@ const TimesheetSubmit = () => {
                               <span className="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
                               Submitting...
                             </>
-                          ) : 'Submit Timesheet'}
+                          ) : 'Submit with Confirmation'}
+                        </button>
+                        <button 
+                          type="button" 
+                          className="btn btn-success"
+                          onClick={() => navigate(`/${subdomain}/timesheets`)}
+                        >
+                          Return to Timesheet Summary
                         </button>
                       </div>
+                    </div>
+                    
+                    {/* Find My Approvers Section */}
+                    <div className="text-center mt-4">
+                      <button type="button" className="btn btn-link text-primary">
+                        Find My Approvers
+                      </button>
                     </div>
                   </form>
                 </div>

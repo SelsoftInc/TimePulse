@@ -1,9 +1,7 @@
 // src/components/dashboard/Dashboard.jsx
 import React, { useState, useEffect } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
-import { PERMISSIONS } from "../../utils/roles";
+import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
-import PermissionGuard from "../common/PermissionGuard";
 import "./Dashboard.css";
 
 // DashCards component - Shows summary statistics
@@ -106,6 +104,12 @@ const DashCards = ({ stats }) => {
 
 // TimesheetTable component - Shows timesheet entries
 const TimesheetTable = ({ timesheetData, isEmployeeRole }) => {
+  const { subdomain } = useParams();
+  const navigate = useNavigate();
+  
+  const handleAddTimesheet = () => {
+    navigate(`/${subdomain}/timesheets/submit`);
+  };
   return (
     <div className="card card-bordered card-full">
       <div className="card-inner">
@@ -114,7 +118,7 @@ const TimesheetTable = ({ timesheetData, isEmployeeRole }) => {
             <h6 className="title">Recent Timesheets</h6>
           </div>
           <div className="card-tools">
-            <button className="btn btn-primary btn-sm">
+            <button className="btn btn-primary btn-sm" onClick={handleAddTimesheet}>
               <em className="icon ni ni-plus"></em>
               <span>Add Timesheet</span>
             </button>
@@ -281,8 +285,6 @@ const InvoiceWidget = ({ invoiceData }) => {
 
 // Main Dashboard component
 const Dashboard = () => {
-  const navigate = useNavigate();
-  const { subdomain } = useParams();
   const { currentEmployer } = useAuth();
   
   // Determine if user is in employee role

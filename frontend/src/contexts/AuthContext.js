@@ -100,6 +100,12 @@ export const AuthProvider = ({ children }) => {
     return currentEmployer.role === ROLES.APPROVER;
   };
 
+  // Check if user is an employee
+  const isEmployee = () => {
+    if (!currentEmployer) return false;
+    return currentEmployer.role === ROLES.EMPLOYEE;
+  };
+
   // Context value
   const value = {
     user,
@@ -112,7 +118,8 @@ export const AuthProvider = ({ children }) => {
     checkPermission,
     isAdmin,
     isAccountManager,
-    isApprover
+    isApprover,
+    isEmployee
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

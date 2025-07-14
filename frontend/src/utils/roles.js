@@ -6,11 +6,13 @@
  * - Admin: Can create Employees, Vendors, End Clients and manage all aspects of the system
  * - Account Manager: Can manage projects, timesheets, and invoices but cannot create users
  * - Approver: Can approve timesheets and invoices but has limited management capabilities
+ * - Employee: Can create and view their own timesheets
  */
 export const ROLES = {
   ADMIN: 'admin',
   ACCOUNT_MANAGER: 'account_manager',
   APPROVER: 'approver',
+  EMPLOYEE: 'employee',
 };
 
 /**
@@ -109,6 +111,13 @@ export const ROLE_PERMISSIONS = {
     
     // Reports - view only
     PERMISSIONS.VIEW_REPORTS,
+  ],
+  
+  [ROLES.EMPLOYEE]: [
+    // Timesheet - create and view own timesheets
+    PERMISSIONS.CREATE_TIMESHEET,
+    PERMISSIONS.VIEW_TIMESHEET,
+    PERMISSIONS.EDIT_TIMESHEET,
   ],
 };
 

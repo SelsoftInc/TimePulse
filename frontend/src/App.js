@@ -3,7 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import "./styles/theme.css";
 import Dashboard from "./components/dashboard/Dashboard";
 import EmployeeDashboard from "./components/dashboard/EmployeeDashboard";
-import Timesheet from "./components/timesheets/Timesheet";
+import TimesheetSummary from "./components/timesheets/TimesheetSummary";
 import EmployeeTimesheet from "./components/timesheets/EmployeeTimesheet";
 import TimesheetSubmit from "./components/timesheets/TimesheetSubmit";
 import MobileTimesheetUpload from "./components/timesheets/MobileTimesheetUpload";
@@ -89,7 +89,7 @@ function App() {
         } />
         <Route path="/:subdomain/timesheets" element={
           <ProtectedRoute requiredPermission={PERMISSIONS.VIEW_TIMESHEET}>
-            <EmployerLayout><Timesheet /></EmployerLayout>
+            <EmployerLayout><TimesheetSummary /></EmployerLayout>
           </ProtectedRoute>
         } />
         <Route path="/:subdomain/timesheets/edit/:employeeId" element={

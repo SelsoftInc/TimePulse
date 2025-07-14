@@ -5,6 +5,7 @@ import { PERMISSIONS } from "../../utils/roles";
 import { useAuth } from "../../contexts/AuthContext";
 import PermissionGuard from "../common/PermissionGuard";
 import TimesheetAlerts from "../notifications/TimesheetAlerts";
+import RoleSelector from "../common/RoleSelector";
 import "./Header.css";
 
 const Header = ({ toggleSidebar }) => {
@@ -89,6 +90,11 @@ const Header = ({ toggleSidebar }) => {
           
           {/* Right side tools */}
           <div className="nk-header-tools">
+            {/* Role Selector */}
+            <div className="header-action-item header-role-selector">
+              <RoleSelector />
+            </div>
+            
             {/* Action icons */}
             <div className="header-action-item dropdown">
               <TimesheetAlerts subdomain={subdomain} />

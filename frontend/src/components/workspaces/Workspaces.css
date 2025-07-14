@@ -41,7 +41,8 @@
   display: flex;
   flex-direction: column;
   border: 1px solid rgba(0, 0, 0, 0.05);
-  max-height: 220px;
+  min-height: 220px;
+  height: 100%;
 }
 
 .workspace-card:hover {
@@ -52,6 +53,8 @@
 .workspace-card-content {
   cursor: pointer;
   flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 .workspace-card-header {
@@ -114,11 +117,15 @@
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
+  flex: 1;
 }
 
 .workspace-info-item, .workspace-date-item {
   color: #718096;
   font-size: 0.8rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
 }
 
 .workspace-icon {
@@ -130,7 +137,8 @@
   display: flex;
   justify-content: space-between;
   gap: 1rem;
-  padding: 0.15rem 0;
+  padding: 0.25rem 0;
+  align-items: flex-start;
 }
 
 
@@ -138,6 +146,8 @@
 .date-label {
   font-weight: 500;
   white-space: nowrap;
+  font-size: 0.7rem;
+  color: #a0aec0;
 }
 
 .date-value {
@@ -149,6 +159,8 @@
   border-top: 1px solid #f0f0f0;
   text-align: center;
   margin-top: auto;
+  position: relative;
+  z-index: 2;
 }
 
 .workspace-enter-btn {
@@ -166,6 +178,7 @@
   justify-content: center;
   gap: 0.5rem;
   transition: all 0.2s ease;
+  height: 38px;
 }
 
 .workspace-enter-btn:hover {
@@ -193,7 +206,13 @@
 
 .new-workspace-content {
   text-align: center;
-  padding: 3rem 2rem;
+  padding: 2rem;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
 .new-workspace-icon {

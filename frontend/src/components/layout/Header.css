@@ -47,6 +47,11 @@
   align-items: center;
 }
 
+.header-role-selector {
+  position: relative;
+  margin-right: 8px;
+}
+
 .header-action-icon {
   font-size: 20px;
 }

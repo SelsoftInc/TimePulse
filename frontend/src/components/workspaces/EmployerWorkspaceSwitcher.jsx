@@ -11,8 +11,8 @@ const EmployerWorkspaceSwitcher = ({ workspaces, onSelect, onCreateNew }) => {
           key={workspace.id} 
           className="workspace-card"
         >
-          <div className="workspace-card-content" onClick={() => onSelect(workspace)}>
-            <div className="workspace-card-header">
+          <div className="workspace-card-content">
+            <div className="workspace-card-header" onClick={() => onSelect(workspace)}>
               <div className="workspace-logo">
                 <span className="workspace-initial">{workspace.name.charAt(0)}</span>
               </div>
@@ -24,7 +24,7 @@ const EmployerWorkspaceSwitcher = ({ workspaces, onSelect, onCreateNew }) => {
               </div>
             </div>
             
-            <div className="workspace-info-grid">
+            <div className="workspace-info-grid" onClick={() => onSelect(workspace)}>
               <div className="workspace-info-row">
                 <div className="workspace-info-item">
                   <span>{workspace.subdomain}</span>
@@ -36,9 +36,11 @@ const EmployerWorkspaceSwitcher = ({ workspaces, onSelect, onCreateNew }) => {
               
               <div className="workspace-info-row">
                 <div className="workspace-date-item">
+                  <span className="date-label">Created:</span>
                   <span className="date-value">{workspace.createdAt}</span>
                 </div>
                 <div className="workspace-date-item">
+                  <span className="date-label">Last access:</span>
                   <span className="date-value">{workspace.lastAccessed}</span>
                 </div>
               </div>

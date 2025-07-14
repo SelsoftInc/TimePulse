@@ -1,14 +1,18 @@
 // src/components/dashboard/Dashboard.jsx
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { PERMISSIONS } from "../../utils/roles";
 import PermissionGuard from "../common/PermissionGuard";
 import "./Dashboard.css";
 
 // DashCard component - A reusable card component following DashLite styling
-const DashCard = ({ title, icon, value, subtitle, trend, trendValue, trendDirection, color }) => {
+const DashCard = ({ title, icon, value, subtitle, trend, trendValue, trendDirection, color, onClick }) => {
   return (
-    <div className="card card-bordered h-100">
+    <div 
+      className="card card-bordered h-100" 
+      onClick={onClick} 
+      style={onClick ? { cursor: 'pointer' } : {}}
+    >
       <div className="card-inner">
         <div className="card-title-group align-start mb-2">
           <div className="card-title">
@@ -283,6 +287,8 @@ const InvoiceWidget = ({ invoices }) => {
 };
 
 const Dashboard = () => {
+  const navigate = useNavigate();
+  const { subdomain } = useParams();
   // Current project selection
   const [selectedProject, setSelectedProject] = useState("TimePulse Development - JPMC");
 
@@ -322,7 +328,16 @@ const Dashboard = () => {
     { title: "Total Hours", icon: "clock", value: "168.5h", subtitle: "This Month", trend: true, trendValue: "12%", trendDirection: "up", color: "primary", iconColor: "#2196F3" },
     { title: "Pending Timesheets", icon: "file-text", value: "3", subtitle: "Awaiting Approval", trend: true, trendValue: "2", trendDirection: "up", color: "warning", iconColor: "#FFC107" },
     { title: "Approved Timesheets", icon: "check-circle", value: "12", subtitle: "This Month", trend: true, trendValue: "8%", trendDirection: "up", color: "success", iconColor: "#4CAF50" },
-    { title: "Overdue Timesheets", icon: "alert-circle", value: "1", subtitle: "Action Required", trend: false, color: "danger", iconColor: "#F44336" }
+    { 
+      title: "Overdue Timesheets", 
+      icon: "alert-circle", 
+      value: "1", 
+      subtitle: "Action Required", 
+      trend: false, 
+      color: "danger", 
+      iconColor: "#F44336",
+      onClick: () => navigate(`/${subdomain}/employees/4/invoices/overdue`)
+    }
   ];
   
   // Additional timesheet statistics for detailed reporting
@@ -490,7 +505,12 @@ const Dashboard = () => {
                   <div className="status-label-small">Timesheets</div>
                 </div>
                 
-                <div className="status-item overdue">
+                <div 
+                  className="status-item overdue" 
+                  onClick={() => navigate(`/${subdomain}/employees/4/invoices/overdue`)}
+                  style={{ cursor: 'pointer' }}
+                  title="Click to view overdue timesheet details"
+                >
                   <div className="status-label">Overdue</div>
                   <div className="status-count">{timesheetStatus.overdue}</div>
                   <div className="status-label-small">Timesheets</div>

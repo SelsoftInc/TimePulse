@@ -1,12 +1,16 @@
 // src/components/layout/Header.jsx
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { PERMISSIONS } from "../../utils/roles";
+import { useAuth } from "../../contexts/AuthContext";
 import PermissionGuard from "../common/PermissionGuard";
+import TimesheetAlerts from "../notifications/TimesheetAlerts";
 import "./Header.css";
 
 const Header = ({ toggleSidebar }) => {
   const navigate = useNavigate();
+  const { subdomain } = useParams();
+  const { user } = useAuth();
   const [darkMode, setDarkMode] = useState(false);
   
   // Initialize theme from localStorage on component mount
@@ -47,6 +51,11 @@ const Header = ({ toggleSidebar }) => {
 
   // Get user initials for avatar
   const getUserInitials = () => {
+    // Use user from context if available, otherwise fall back to localStorage
+    if (user?.name) {
+      return user.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+    }
+    
     const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
     if (userInfo.name) {
       return userInfo.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
@@ -81,8 +90,8 @@ const Header = ({ toggleSidebar }) => {
           {/* Right side tools */}
           <div className="nk-header-tools">
             {/* Action icons */}
-            <div className="header-action-item">
-              <i className="fas fa-bell header-action-icon"></i>
+            <div className="header-action-item dropdown">
+              <TimesheetAlerts subdomain={subdomain} />
             </div>
             
             <div className="header-action-item" onClick={toggleTheme} style={{ cursor: 'pointer' }}>

@@ -2,8 +2,11 @@ import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import "./styles/theme.css";
 import Dashboard from "./components/dashboard/Dashboard";
+import EmployeeDashboard from "./components/dashboard/EmployeeDashboard";
 import Timesheet from "./components/timesheets/Timesheet";
 import EmployeeTimesheet from "./components/timesheets/EmployeeTimesheet";
+import TimesheetSubmit from "./components/timesheets/TimesheetSubmit";
+import MobileTimesheetUpload from "./components/timesheets/MobileTimesheetUpload";
 import Invoice from "./components/invoices/Invoice";
 import InvoiceDashboard from "./components/invoices/InvoiceDashboard";
 import ReportsDashboard from "./components/reports/ReportsDashboard";
@@ -13,6 +16,10 @@ import ClientForm from "./components/clients/ClientForm";
 import EmployeeList from "./components/employees/EmployeeList";
 import EmployeeForm from "./components/employees/EmployeeForm";
 import EmployeeDetail from "./components/employees/EmployeeDetail";
+import EmployeeInvite from "./components/employees/EmployeeInvite";
+import EmployeeRegister from "./components/auth/EmployeeRegister";
+import LeaveManagement from "./components/leave/LeaveManagement";
+import EmployeeDocuments from "./components/documents/EmployeeDocuments";
 import VendorList from "./components/vendors/VendorList";
 import VendorForm from "./components/vendors/VendorForm";
 import VendorDetail from "./components/vendors/VendorDetail";
@@ -62,6 +69,7 @@ function App() {
         <Route path="/test-login" element={<TestLogin />} />
         <Route path="/simple-login" element={<SimpleLogin />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/register/:token" element={<EmployeeRegister />} />
         
         {/* Workspace management route */}
         <Route 
@@ -76,6 +84,9 @@ function App() {
         <Route path="/:subdomain/dashboard" element={
           <ProtectedRoute><EmployerLayout><Dashboard /></EmployerLayout></ProtectedRoute>
         } />
+        <Route path="/:subdomain/employee-dashboard" element={
+          <ProtectedRoute><EmployerLayout><EmployeeDashboard /></EmployerLayout></ProtectedRoute>
+        } />
         <Route path="/:subdomain/timesheets" element={
           <ProtectedRoute requiredPermission={PERMISSIONS.VIEW_TIMESHEET}>
             <EmployerLayout><Timesheet /></EmployerLayout>
@@ -84,6 +95,31 @@ function App() {
         <Route path="/:subdomain/timesheets/edit/:employeeId" element={
           <ProtectedRoute requiredPermission={PERMISSIONS.EDIT_TIMESHEET}>
             <EmployerLayout><EmployeeTimesheet /></EmployerLayout>
+          </ProtectedRoute>
+        } />
+        <Route path="/:subdomain/timesheets/submit" element={
+          <ProtectedRoute>
+            <EmployerLayout><TimesheetSubmit /></EmployerLayout>
+          </ProtectedRoute>
+        } />
+        <Route path="/:subdomain/timesheets/mobile-upload" element={
+          <ProtectedRoute>
+            <EmployerLayout><MobileTimesheetUpload /></EmployerLayout>
+          </ProtectedRoute>
+        } />
+        <Route path="/:subdomain/timesheets/submit/:weekId" element={
+          <ProtectedRoute>
+            <EmployerLayout><TimesheetSubmit /></EmployerLayout>
+          </ProtectedRoute>
+        } />
+        <Route path="/:subdomain/leave" element={
+          <ProtectedRoute>
+            <EmployerLayout><LeaveManagement /></EmployerLayout>
+          </ProtectedRoute>
+        } />
+        <Route path="/:subdomain/documents" element={
+          <ProtectedRoute>
+            <EmployerLayout><EmployeeDocuments /></EmployerLayout>
           </ProtectedRoute>
         } />
         <Route path="/:subdomain/clients" element={
@@ -109,6 +145,11 @@ function App() {
         <Route path="/:subdomain/employees/new" element={
           <ProtectedRoute requiredPermission={PERMISSIONS.CREATE_EMPLOYEE}>
             <EmployerLayout><EmployeeForm /></EmployerLayout>
+          </ProtectedRoute>
+        } />
+        <Route path="/:subdomain/employees/invite" element={
+          <ProtectedRoute requiredPermission={PERMISSIONS.CREATE_EMPLOYEE}>
+            <EmployerLayout><EmployeeInvite /></EmployerLayout>
           </ProtectedRoute>
         } />
         <Route path="/:subdomain/employees/:id" element={

@@ -1,5 +1,7 @@
 import React from 'react';
 import './Workspaces.css';
+// Using Font Awesome for better icons
+import { FaArrowRight, FaPlusCircle } from 'react-icons/fa';
 
 const EmployerWorkspaceSwitcher = ({ workspaces, onSelect, onCreateNew }) => {
   return (
@@ -8,29 +10,44 @@ const EmployerWorkspaceSwitcher = ({ workspaces, onSelect, onCreateNew }) => {
         <div 
           key={workspace.id} 
           className="workspace-card"
-          onClick={() => onSelect(workspace)}
         >
-          <div className="workspace-card-header">
-            <h3>{workspace.name}</h3>
-            <span className={`workspace-status ${workspace.status}`}>
-              {workspace.status === 'active' ? 'Active' : 'Trial'}
-            </span>
-          </div>
-          <div className="workspace-card-body">
-            <p className="workspace-subdomain">
-              <i className="fas fa-link"></i> {workspace.subdomain}
-            </p>
-            <p className="workspace-industry">
-              <i className="fas fa-industry"></i> {workspace.industry}
-            </p>
-            <div className="workspace-dates">
-              <p><i className="fas fa-calendar-plus"></i> Created: {workspace.createdAt}</p>
-              <p><i className="fas fa-calendar-check"></i> Last accessed: {workspace.lastAccessed}</p>
+          <div className="workspace-card-content" onClick={() => onSelect(workspace)}>
+            <div className="workspace-card-header">
+              <div className="workspace-logo">
+                <span className="workspace-initial">{workspace.name.charAt(0)}</span>
+              </div>
+              <div className="workspace-header-content">
+                <h3>{workspace.name}</h3>
+                <span className={`workspace-status ${workspace.status}`}>
+                  {workspace.status === 'active' ? 'ACTIVE' : 'TRIAL'}
+                </span>
+              </div>
+            </div>
+            
+            <div className="workspace-info-grid">
+              <div className="workspace-info-row">
+                <div className="workspace-info-item">
+                  <span>{workspace.subdomain}</span>
+                </div>
+                <div className="workspace-info-item">
+                  <span>{workspace.industry}</span>
+                </div>
+              </div>
+              
+              <div className="workspace-info-row">
+                <div className="workspace-date-item">
+                  <span className="date-value">{workspace.createdAt}</span>
+                </div>
+                <div className="workspace-date-item">
+                  <span className="date-value">{workspace.lastAccessed}</span>
+                </div>
+              </div>
             </div>
           </div>
+          
           <div className="workspace-card-footer">
-            <button className="btn btn-primary">
-              <i className="fas fa-sign-in-alt"></i> Enter Workspace
+            <button className="workspace-enter-btn" onClick={() => onSelect(workspace)}>
+              Enter Workspace <FaArrowRight className="btn-icon" />
             </button>
           </div>
         </div>
@@ -40,7 +57,7 @@ const EmployerWorkspaceSwitcher = ({ workspaces, onSelect, onCreateNew }) => {
       <div className="workspace-card new-workspace" onClick={onCreateNew}>
         <div className="new-workspace-content">
           <div className="new-workspace-icon">
-            <i className="fas fa-plus-circle"></i>
+            <FaPlusCircle />
           </div>
           <h3>Create New Employer</h3>
           <p>Set up a new employer workspace</p>

@@ -16,14 +16,16 @@ const TimesheetSubmit = () => {
   
   // Form state
   const [week, setWeek] = useState('');
-  const [sowId, setSowId] = useState('');
-  const [hours, setHours] = useState(Array(7).fill(0));
+  const [clientHours, setClientHours] = useState([]);
+  const [holidayHours, setHolidayHours] = useState({
+    holiday: Array(7).fill(0),
+    timeOff: Array(7).fill(0)
+  });
   const [notes, setNotes] = useState('');
   const [attachments, setAttachments] = useState([]);
   const [previewImages, setPreviewImages] = useState([]);
   
-  // Mock data
-  const [sowData, setSowData] = useState([]);
+  // Mock data removed - using clientHours state instead
   
   useEffect(() => {
     // Check if device is mobile
@@ -41,36 +43,32 @@ const TimesheetSubmit = () => {
         // Simulate API call
         await new Promise(resolve => setTimeout(resolve, 800));
         
-        // Mock SOW data
-        const mockSowData = [
+        // Mock client data with multiple clients
+        const mockClientData = [
           { 
             id: '1', 
-            project: 'Web Development', 
-            client: 'JPMC', 
-            startDate: '2025-01-01', 
-            endDate: '2025-12-31',
-            hourlyRate: 125
+            clientName: 'JPMC', 
+            project: 'Web Development',
+            hourlyRate: 125,
+            hours: Array(7).fill(0)
           },
           { 
             id: '2', 
-            project: 'Mobile App', 
-            client: 'IBM', 
-            startDate: '2025-03-01', 
-            endDate: '2025-09-30',
-            hourlyRate: 150
+            clientName: 'IBM', 
+            project: 'Mobile App',
+            hourlyRate: 150,
+            hours: Array(7).fill(0)
           },
           { 
             id: '3', 
-            project: 'UI/UX Design', 
-            client: 'Accenture', 
-            startDate: '2025-02-15', 
-            endDate: '2025-08-15',
-            hourlyRate: 110
+            clientName: 'Accenture', 
+            project: 'UI/UX Design',
+            hourlyRate: 110,
+            hours: Array(7).fill(0)
           }
         ];
         
-        setSowData(mockSowData);
-        setSowId(mockSowData[0]?.id || '');
+        setClientHours(mockClientData);
         
         // If weekId is provided, load existing timesheet data
         if (weekId) {
@@ -78,15 +76,22 @@ const TimesheetSubmit = () => {
           // In a real app, fetch from API
           const mockTimesheet = {
             week: '07-JUL-2025 To 13-JUL-2025',
-            sowId: '1',
-            hours: [8, 8, 8, 8, 8, 0, 0],
+            clientHours: [
+              { id: '1', clientName: 'JPMC', project: 'Web Development', hourlyRate: 125, hours: [8, 8, 8, 8, 8, 0, 0] },
+              { id: '2', clientName: 'IBM', project: 'Mobile App', hourlyRate: 150, hours: [0, 0, 0, 0, 0, 0, 0] },
+              { id: '3', clientName: 'Accenture', project: 'UI/UX Design', hourlyRate: 110, hours: [0, 0, 0, 0, 0, 0, 0] }
+            ],
+            holidayHours: {
+              holiday: [0, 0, 0, 0, 0, 0, 0],
+              timeOff: [0, 0, 0, 0, 0, 0, 0]
+            },
             notes: 'Worked on feature implementation',
             attachments: []
           };
           
           setWeek(mockTimesheet.week);
-          setSowId(mockTimesheet.sowId);
-          setHours(mockTimesheet.hours);
+          setClientHours(mockTimesheet.clientHours);
+          setHolidayHours(mockTimesheet.holidayHours);
           setNotes(mockTimesheet.notes);
         } else {
           // Set current week in date range format
@@ -122,10 +127,36 @@ const TimesheetSubmit = () => {
     loadTimesheetData();
   }, [weekId]);
   
-  const handleHourChange = (index, value) => {
-    const newHours = [...hours];
-    newHours[index] = value === '' ? 0 : Math.min(24, Math.max(0, parseFloat(value)));
-    setHours(newHours);
+  const handleClientHourChange = (clientIndex, dayIndex, value) => {
+    const newClientHours = [...clientHours];
+    newClientHours[clientIndex].hours[dayIndex] = value === '' ? 0 : Math.min(24, Math.max(0, parseFloat(value)));
+    setClientHours(newClientHours);
+  };
+
+  const handleHolidayHourChange = (type, dayIndex, value) => {
+    const newHolidayHours = { ...holidayHours };
+    newHolidayHours[type] = [...newHolidayHours[type]];
+    newHolidayHours[type][dayIndex] = value === '' ? 0 : Math.min(24, Math.max(0, parseFloat(value)));
+    setHolidayHours(newHolidayHours);
+  };
+
+  const getTotalHoursForDay = (dayIndex) => {
+    const clientTotal = clientHours.reduce((sum, client) => sum + (client.hours[dayIndex] || 0), 0);
+    const holidayTotal = (holidayHours.holiday[dayIndex] || 0) + (holidayHours.timeOff[dayIndex] || 0);
+    return clientTotal + holidayTotal;
+  };
+
+  const getTotalHoursForClient = (clientIndex) => {
+    return clientHours[clientIndex]?.hours.reduce((sum, hours) => sum + (hours || 0), 0) || 0;
+  };
+
+  const getGrandTotal = () => {
+    const clientTotal = clientHours.reduce((sum, client) => 
+      sum + client.hours.reduce((clientSum, hours) => clientSum + (hours || 0), 0), 0
+    );
+    const holidayTotal = holidayHours.holiday.reduce((sum, hours) => sum + (hours || 0), 0) +
+                        holidayHours.timeOff.reduce((sum, hours) => sum + (hours || 0), 0);
+    return clientTotal + holidayTotal;
   };
   
   const handleFileUpload = (e) => {
@@ -208,15 +239,10 @@ const TimesheetSubmit = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Validate form
-    if (!sowId) {
-      setError('Please select a Statement of Work');
-      return;
-    }
-    
-    const totalHours = hours.reduce((sum, hour) => sum + hour, 0);
-    if (totalHours === 0) {
-      setError('Please enter at least one hour');
+    // Validate form - check if any client has hours
+    const totalClientHours = getGrandTotal();
+    if (totalClientHours === 0) {
+      setError('Please enter at least one hour for any client or holiday/time off');
       return;
     }
     
@@ -230,8 +256,8 @@ const TimesheetSubmit = () => {
       // Create form data for file upload
       const formData = new FormData();
       formData.append('week', week);
-      formData.append('sowId', sowId);
-      formData.append('hours', JSON.stringify(hours));
+      formData.append('clientHours', JSON.stringify(clientHours));
+      formData.append('holidayHours', JSON.stringify(holidayHours));
       formData.append('notes', notes);
       
       attachments.forEach((file, index) => {
@@ -241,9 +267,9 @@ const TimesheetSubmit = () => {
       // In a real app, send formData to API
       console.log('Submitting timesheet:', {
         week,
-        sowId,
-        hours,
-        totalHours,
+        clientHours,
+        holidayHours,
+        totalHours: totalClientHours,
         notes,
         attachments: attachments.map(file => file.name)
       });
@@ -273,8 +299,8 @@ const TimesheetSubmit = () => {
       // In a real app, send data to API
       console.log('Saving draft:', {
         week,
-        sowId,
-        hours,
+        clientHours,
+        holidayHours,
         notes,
         attachments: attachments.map(file => file.name)
       });
@@ -370,25 +396,17 @@ const TimesheetSubmit = () => {
                     <div className="form-group mb-4">
                       <label className="form-label">Select Statement of Work (SOW)</label>
                       <div className="form-control-wrap">
-                        <select 
-                          className="form-select" 
-                          value={sowId}
-                          onChange={(e) => setSowId(e.target.value)}
-                          required
-                        >
-                          <option value="">Select SOW</option>
-                          {sowData.map(sow => (
-                            <option key={sow.id} value={sow.id}>
-                              {sow.project} - {sow.client} (${sow.hourlyRate}/hr)
-                            </option>
-                          ))}
+                        <select className="form-select" disabled>
+                          <option>Select SOW</option>
+                          <option selected>✓ Web Development - JPMC ($125/hr)</option>
+                          <option selected>✓ Mobile App - IBM ($150/hr)</option>
+                          <option selected>✓ UI/UX Design - Accenture ($110/hr)</option>
                         </select>
                       </div>
-                      {sowId && (
-                        <div className="form-note">
-                          Selected SOW: {sowData.find(sow => sow.id === sowId)?.project || "None"}
-                        </div>
-                      )}
+                      <div className="form-note text-info">
+                        <em className="icon ni ni-info"></em>
+                        Having multiple clients is the idea that the employee can work in different clients?
+                      </div>
                     </div>
                     
                     {/* Timesheet Table */}
@@ -411,18 +429,18 @@ const TimesheetSubmit = () => {
                             </tr>
                           </thead>
                           <tbody>
-                            {sowData.map((sow, rowIndex) => (
-                              <tr key={sow.id}>
-                                <td className="text-center">{sow.id}</td>
-                                <td>{sow.client}</td>
-                                {hours.map((hour, dayIndex) => (
+                            {clientHours.map((client, clientIndex) => (
+                              <tr key={client.id}>
+                                <td className="text-center">{client.id}</td>
+                                <td>{client.clientName}</td>
+                                {client.hours.map((hour, dayIndex) => (
                                   <td key={dayIndex} className="text-center">
                                     <input 
                                       type="number" 
                                       className="form-control form-control-sm text-center" 
                                       style={{width: '50px', margin: '0 auto'}}
-                                      value={rowIndex === 0 ? hour : 0} 
-                                      onChange={(e) => rowIndex === 0 && handleHourChange(dayIndex, e.target.value)}
+                                      value={hour || 0} 
+                                      onChange={(e) => handleClientHourChange(clientIndex, dayIndex, e.target.value)}
                                       min="0" 
                                       max="24" 
                                       step="0.5"
@@ -430,7 +448,7 @@ const TimesheetSubmit = () => {
                                   </td>
                                 ))}
                                 <td className="text-center fw-bold">
-                                  {rowIndex === 0 ? hours.reduce((sum, hour) => sum + parseFloat(hour || 0), 0).toFixed(1) : '0.0'}
+                                  {getTotalHoursForClient(clientIndex).toFixed(1)}
                                 </td>
                                 <td>
                                   <input 
@@ -445,15 +463,15 @@ const TimesheetSubmit = () => {
                           <tfoot className="table-light">
                             <tr>
                               <td colSpan="2" className="text-end fw-bold">Total Client Related Hours:</td>
-                              <td className="text-center fw-bold">{hours[0] || 0}</td>
-                              <td className="text-center fw-bold">{hours[1] || 0}</td>
-                              <td className="text-center fw-bold">{hours[2] || 0}</td>
-                              <td className="text-center fw-bold">{hours[3] || 0}</td>
-                              <td className="text-center fw-bold">{hours[4] || 0}</td>
-                              <td className="text-center fw-bold">{hours[5] || 0}</td>
-                              <td className="text-center fw-bold">{hours[6] || 0}</td>
+                              {Array.from({length: 7}, (_, dayIndex) => (
+                                <td key={dayIndex} className="text-center fw-bold">
+                                  {clientHours.reduce((sum, client) => sum + (client.hours[dayIndex] || 0), 0).toFixed(1)}
+                                </td>
+                              ))}
                               <td className="text-center fw-bold">
-                                {hours.reduce((sum, hour) => sum + parseFloat(hour || 0), 0).toFixed(1)}
+                                {clientHours.reduce((sum, client) => 
+                                  sum + client.hours.reduce((clientSum, hours) => clientSum + (hours || 0), 0), 0
+                                ).toFixed(1)}
                               </td>
                               <td></td>
                             </tr>
@@ -470,50 +488,67 @@ const TimesheetSubmit = () => {
                           <tbody>
                             <tr>
                               <td style={{width: '200px'}}>Holiday (Public/National)</td>
-                              <td className="text-center" style={{width: '60px'}}>0</td>
-                              <td className="text-center" style={{width: '60px'}}>0</td>
-                              <td className="text-center" style={{width: '60px'}}>0</td>
-                              <td className="text-center" style={{width: '60px'}}>0</td>
-                              <td className="text-center" style={{width: '60px'}}>0</td>
-                              <td className="text-center" style={{width: '60px'}}>0</td>
-                              <td className="text-center" style={{width: '60px'}}>0</td>
-                              <td className="text-center fw-bold" style={{width: '80px'}}>0.00</td>
+                              {holidayHours.holiday.map((hour, dayIndex) => (
+                                <td key={dayIndex} className="text-center" style={{width: '60px'}}>
+                                  <input 
+                                    type="number" 
+                                    className="form-control form-control-sm text-center" 
+                                    style={{width: '50px', margin: '0 auto'}}
+                                    value={hour || 0}
+                                    onChange={(e) => handleHolidayHourChange('holiday', dayIndex, e.target.value)}
+                                    min="0" 
+                                    max="24" 
+                                    step="0.5"
+                                  />
+                                </td>
+                              ))}
+                              <td className="text-center fw-bold" style={{width: '80px'}}>
+                                {holidayHours.holiday.reduce((sum, hour) => sum + (hour || 0), 0).toFixed(1)}
+                              </td>
                             </tr>
                             <tr>
                               <td>Time Off</td>
-                              <td className="text-center">0</td>
-                              <td className="text-center">0</td>
-                              <td className="text-center">0</td>
-                              <td className="text-center">0</td>
-                              <td className="text-center">0</td>
-                              <td className="text-center">0</td>
-                              <td className="text-center">0</td>
-                              <td className="text-center fw-bold">0.00</td>
+                              {holidayHours.timeOff.map((hour, dayIndex) => (
+                                <td key={dayIndex} className="text-center">
+                                  <input 
+                                    type="number" 
+                                    className="form-control form-control-sm text-center" 
+                                    style={{width: '50px', margin: '0 auto'}}
+                                    value={hour || 0}
+                                    onChange={(e) => handleHolidayHourChange('timeOff', dayIndex, e.target.value)}
+                                    min="0" 
+                                    max="24" 
+                                    step="0.5"
+                                  />
+                                </td>
+                              ))}
+                              <td className="text-center fw-bold">
+                                {holidayHours.timeOff.reduce((sum, hour) => sum + (hour || 0), 0).toFixed(1)}
+                              </td>
                             </tr>
                           </tbody>
                           <tfoot className="table-light">
                             <tr>
                               <td className="text-end fw-bold">Total Personal Hours:</td>
-                              <td className="text-center fw-bold">0.00</td>
-                              <td className="text-center fw-bold">0.00</td>
-                              <td className="text-center fw-bold">0.00</td>
-                              <td className="text-center fw-bold">0.00</td>
-                              <td className="text-center fw-bold">0.00</td>
-                              <td className="text-center fw-bold">0.00</td>
-                              <td className="text-center fw-bold">0.00</td>
-                              <td className="text-center fw-bold">0.00</td>
+                              {Array.from({length: 7}, (_, dayIndex) => (
+                                <td key={dayIndex} className="text-center fw-bold">
+                                  {((holidayHours.holiday[dayIndex] || 0) + (holidayHours.timeOff[dayIndex] || 0)).toFixed(1)}
+                                </td>
+                              ))}
+                              <td className="text-center fw-bold">
+                                {(holidayHours.holiday.reduce((sum, hour) => sum + (hour || 0), 0) + 
+                                  holidayHours.timeOff.reduce((sum, hour) => sum + (hour || 0), 0)).toFixed(1)}
+                              </td>
                             </tr>
                             <tr>
                               <td className="text-end fw-bold">Grand Total:</td>
-                              <td className="text-center fw-bold">{hours[0] || 0}</td>
-                              <td className="text-center fw-bold">{hours[1] || 0}</td>
-                              <td className="text-center fw-bold">{hours[2] || 0}</td>
-                              <td className="text-center fw-bold">{hours[3] || 0}</td>
-                              <td className="text-center fw-bold">{hours[4] || 0}</td>
-                              <td className="text-center fw-bold">{hours[5] || 0}</td>
-                              <td className="text-center fw-bold">{hours[6] || 0}</td>
+                              {Array.from({length: 7}, (_, dayIndex) => (
+                                <td key={dayIndex} className="text-center fw-bold">
+                                  {getTotalHoursForDay(dayIndex).toFixed(1)}
+                                </td>
+                              ))}
                               <td className="text-center fw-bold">
-                                {hours.reduce((sum, hour) => sum + parseFloat(hour || 0), 0).toFixed(1)}
+                                {getGrandTotal().toFixed(1)}
                               </td>
                             </tr>
                           </tfoot>

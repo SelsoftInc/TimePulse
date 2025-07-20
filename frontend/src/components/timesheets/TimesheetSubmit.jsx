@@ -16,6 +16,9 @@ const TimesheetSubmit = () => {
   
   // Form state
   const [week, setWeek] = useState('');
+  const [availableWeeks, setAvailableWeeks] = useState([]);
+  const [selectedWeek, setSelectedWeek] = useState('');
+  const [isReadOnly, setIsReadOnly] = useState(false);
   const [clientHours, setClientHours] = useState([]);
   const [holidayHours, setHolidayHours] = useState({
     holiday: Array(7).fill(0),
@@ -70,6 +73,50 @@ const TimesheetSubmit = () => {
         
         setClientHours(mockClientData);
         
+        // Generate available weeks dynamically
+        const generateAvailableWeeks = () => {
+          const weeks = [];
+          const today = new Date();
+          
+          // Generate weeks from 8 weeks ago to 4 weeks in the future
+          for (let i = -8; i <= 4; i++) {
+            const weekStart = new Date(today);
+            const dayOfWeek = today.getDay();
+            const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+            weekStart.setDate(today.getDate() + mondayOffset + (i * 7));
+            
+            const weekEnd = new Date(weekStart);
+            weekEnd.setDate(weekStart.getDate() + 6);
+            
+            const formatDate = (date) => {
+              const day = String(date.getDate()).padStart(2, '0');
+              const month = date.toLocaleString('en-US', { month: 'short' }).toUpperCase();
+              const year = date.getFullYear();
+              return `${day}-${month}-${year}`;
+            };
+            
+            const weekValue = `${formatDate(weekStart)} To ${formatDate(weekEnd)}`;
+            
+            // Mark older weeks as completed (for demo purposes, weeks older than 4 weeks)
+            const isOld = i < -4;
+            const status = isOld ? 'completed' : 'pending';
+            const readonly = isOld;
+            
+            weeks.push({
+              value: weekValue,
+              label: weekValue,
+              status,
+              readonly
+            });
+          }
+          
+          return weeks.reverse(); // Most recent first
+        };
+        
+        const mockAvailableWeeks = generateAvailableWeeks();
+        
+        setAvailableWeeks(mockAvailableWeeks);
+        
         // If weekId is provided, load existing timesheet data
         if (weekId) {
           // Mock timesheet data for the given week
@@ -90,31 +137,53 @@ const TimesheetSubmit = () => {
           };
           
           setWeek(mockTimesheet.week);
+          setSelectedWeek(mockTimesheet.week);
           setClientHours(mockTimesheet.clientHours);
           setHolidayHours(mockTimesheet.holidayHours);
           setNotes(mockTimesheet.notes);
+          
+          // Check if this week is read-only (completed with invoice raised)
+          const selectedWeekData = mockAvailableWeeks.find(w => w.value === mockTimesheet.week);
+          if (selectedWeekData && selectedWeekData.readonly) {
+            setIsReadOnly(true);
+          }
         } else {
-          // Set current week in date range format
-          const today = new Date();
-          const dayOfWeek = today.getDay(); // 0 is Sunday, 1 is Monday, etc.
-          const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek; // Calculate days until Monday
-          const monday = new Date(today);
-          monday.setDate(today.getDate() + mondayOffset);
+          // Find and set current week from available weeks
+          const currentWeek = mockAvailableWeeks.find(week => {
+            // Find the week that contains today's date
+            const today = new Date();
+            const [startStr, endStr] = week.value.split(' To ');
+            
+            // Parse start date
+            const startParts = startStr.split('-');
+            const startDate = new Date(
+              parseInt(startParts[2]), // year
+              new Date(Date.parse(startParts[1] + ' 1, 2000')).getMonth(), // month
+              parseInt(startParts[0]) // day
+            );
+            
+            // Parse end date
+            const endParts = endStr.split('-');
+            const endDate = new Date(
+              parseInt(endParts[2]), // year
+              new Date(Date.parse(endParts[1] + ' 1, 2000')).getMonth(), // month
+              parseInt(endParts[0]) // day
+            );
+            
+            return today >= startDate && today <= endDate;
+          });
           
-          // Calculate Sunday (end of week)
-          const sunday = new Date(monday);
-          sunday.setDate(monday.getDate() + 6);
-          
-          // Format dates like "12-JUL-2025 To 18-JUL-2025"
-          const formatDate = (date) => {
-            const day = date.getDate().toString().padStart(2, '0');
-            const month = date.toLocaleDateString('en-US', { month: 'short' }).toUpperCase();
-            const year = date.getFullYear();
-            return `${day}-${month}-${year}`;
-          };
-          
-          const weekRange = `${formatDate(monday)} To ${formatDate(sunday)}`;
-          setWeek(weekRange);
+          if (currentWeek) {
+            setWeek(currentWeek.value);
+            setSelectedWeek(currentWeek.value);
+          } else {
+            // Fallback to first available week if current week not found
+            const firstWeek = mockAvailableWeeks[0];
+            if (firstWeek) {
+              setWeek(firstWeek.value);
+              setSelectedWeek(firstWeek.value);
+            }
+          }
         }
       } catch (error) {
         console.error('Error loading timesheet data:', error);
@@ -126,6 +195,31 @@ const TimesheetSubmit = () => {
     
     loadTimesheetData();
   }, [weekId]);
+  
+  const handleWeekChange = (selectedWeekValue) => {
+    setSelectedWeek(selectedWeekValue);
+    setWeek(selectedWeekValue);
+    
+    // Check if selected week is read-only
+    const selectedWeekData = availableWeeks.find(w => w.value === selectedWeekValue);
+    if (selectedWeekData && selectedWeekData.readonly) {
+      setIsReadOnly(true);
+      // Load existing timesheet data for read-only view
+      // In a real app, this would fetch from API
+    } else {
+      setIsReadOnly(false);
+      // Reset form for new timesheet
+      setClientHours(clientHours.map(client => ({
+        ...client,
+        hours: Array(7).fill(0)
+      })));
+      setHolidayHours({
+        holiday: Array(7).fill(0),
+        timeOff: Array(7).fill(0)
+      });
+      setNotes('');
+    }
+  };
   
   const handleClientHourChange = (clientIndex, dayIndex, value) => {
     const newClientHours = [...clientHours];
@@ -382,15 +476,28 @@ const TimesheetSubmit = () => {
                 <div className="card-inner">
                   <form onSubmit={handleSubmit}>
                     <div className="form-group mb-4">
-                      <label className="form-label">Week</label>
+                      <label className="form-label">Select Week</label>
                       <div className="form-control-wrap">
-                        <input 
-                          type="text" 
-                          className="form-control" 
-                          value={week} 
-                          readOnly 
-                        />
+                        <select 
+                          className="form-select" 
+                          value={selectedWeek}
+                          onChange={(e) => handleWeekChange(e.target.value)}
+                          disabled={isReadOnly}
+                        >
+                          <option value="">Select a week...</option>
+                          {availableWeeks.map((week) => (
+                            <option key={week.value} value={week.value}>
+                              {week.label}{week.readonly ? ' (Read Only - Invoice Raised)' : ''}
+                            </option>
+                          ))}
+                        </select>
                       </div>
+                      {isReadOnly && (
+                        <div className="form-note text-warning mt-2">
+                          <em className="icon ni ni-info"></em>
+                          This timesheet is read-only because the invoice has been raised.
+                        </div>
+                      )}
                     </div>
                     
                     <div className="form-group mb-4">
@@ -403,10 +510,7 @@ const TimesheetSubmit = () => {
                           <option selected>✓ UI/UX Design - Accenture ($110/hr)</option>
                         </select>
                       </div>
-                      <div className="form-note text-info">
-                        <em className="icon ni ni-info"></em>
-                        Having multiple clients is the idea that the employee can work in different clients?
-                      </div>
+
                     </div>
                     
                     {/* Timesheet Table */}
@@ -444,6 +548,8 @@ const TimesheetSubmit = () => {
                                       min="0" 
                                       max="24" 
                                       step="0.5"
+                                      readOnly={isReadOnly}
+                                      disabled={isReadOnly}
                                     />
                                   </td>
                                 ))}
@@ -499,6 +605,8 @@ const TimesheetSubmit = () => {
                                     min="0" 
                                     max="24" 
                                     step="0.5"
+                                    readOnly={isReadOnly}
+                                    disabled={isReadOnly}
                                   />
                                 </td>
                               ))}
@@ -519,6 +627,8 @@ const TimesheetSubmit = () => {
                                     min="0" 
                                     max="24" 
                                     step="0.5"
+                                    readOnly={isReadOnly}
+                                    disabled={isReadOnly}
                                   />
                                 </td>
                               ))}
@@ -565,6 +675,8 @@ const TimesheetSubmit = () => {
                           value={notes}
                           onChange={(e) => setNotes(e.target.value)}
                           placeholder="Add any notes or comments about this timesheet"
+                          readOnly={isReadOnly}
+                          disabled={isReadOnly}
                         ></textarea>
                       </div>
                     </div>
@@ -573,10 +685,11 @@ const TimesheetSubmit = () => {
                       <label className="form-label">Attachments</label>
                       <p className="form-note text-soft mb-2">Upload approved timesheet proof, work samples, or supporting documents</p>
                       <div 
-                        className="upload-zone" 
-                        onDragOver={handleDragOver}
-                        onDrop={handleDrop}
-                        onClick={() => fileInputRef.current?.click()}
+                        className={`upload-zone ${isReadOnly ? 'disabled' : ''}`} 
+                        onDragOver={!isReadOnly ? handleDragOver : undefined}
+                        onDrop={!isReadOnly ? handleDrop : undefined}
+                        onClick={!isReadOnly ? () => fileInputRef.current?.click() : undefined}
+                        style={isReadOnly ? { pointerEvents: 'none', opacity: 0.6 } : {}}
                       >
                         <div className="dz-message">
                           <span className="dz-message-text">Drag and drop files here or click to browse</span>
@@ -657,26 +770,35 @@ const TimesheetSubmit = () => {
                     {/* Action Buttons */}
                     <div className="form-group mt-4">
                       <div className="d-flex gap-3 justify-content-center">
-                        <button 
-                          type="button" 
-                          className="btn btn-success"
-                          onClick={handleSaveDraft}
-                          disabled={submitting}
-                        >
-                          Save For Later
-                        </button>
-                        <button 
-                          type="submit" 
-                          className="btn btn-success"
-                          disabled={submitting}
-                        >
-                          {submitting ? (
-                            <>
-                              <span className="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
-                              Submitting...
-                            </>
-                          ) : 'Submit with Confirmation'}
-                        </button>
+                        {!isReadOnly ? (
+                          <>
+                            <button 
+                              type="button" 
+                              className="btn btn-success"
+                              onClick={handleSaveDraft}
+                              disabled={submitting}
+                            >
+                              Save For Later
+                            </button>
+                            <button 
+                              type="submit" 
+                              className="btn btn-success"
+                              disabled={submitting}
+                            >
+                              {submitting ? (
+                                <>
+                                  <span className="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                                  Submitting...
+                                </>
+                              ) : 'Submit with Confirmation'}
+                            </button>
+                          </>
+                        ) : (
+                          <div className="alert alert-info text-center">
+                            <em className="icon ni ni-info-fill"></em>
+                            <strong>Read-Only View:</strong> This timesheet cannot be modified as the invoice has been raised.
+                          </div>
+                        )}
                         <button 
                           type="button" 
                           className="btn btn-success"

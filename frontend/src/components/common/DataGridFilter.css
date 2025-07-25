@@ -1,0 +1,141 @@
+/* Data Grid Filter Styles */
+.data-grid-filter {
+  background: #f8f9fa;
+  border: 1px solid #e3e7f1;
+  border-radius: 6px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.filter-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #e3e7f1;
+}
+
+.filter-title {
+  font-weight: 600;
+  color: #364a63;
+  display: flex;
+  align-items: center;
+}
+
+.filter-title i {
+  color: #8094ae;
+}
+
+.active-filters-count {
+  background: #0971f1;
+  color: white;
+  font-size: 0.75rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 12px;
+  margin-left: 0.5rem;
+  font-weight: 500;
+}
+
+.result-count {
+  color: #8094ae;
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+}
+
+.filter-controls {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  align-items: end;
+}
+
+.filter-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.filter-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #364a63;
+  margin-bottom: 0.5rem;
+}
+
+.filter-select,
+.filter-input {
+  font-size: 0.875rem;
+  border: 1px solid #dbdfea;
+  border-radius: 4px;
+  padding: 0.5rem 0.75rem;
+  background: white;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.filter-select:focus,
+.filter-input:focus {
+  border-color: #0971f1;
+  box-shadow: 0 0 0 0.2rem rgba(9, 113, 241, 0.25);
+  outline: 0;
+}
+
+.date-range-filter {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.date-range-filter .filter-input {
+  flex: 1;
+}
+
+.date-separator {
+  color: #8094ae;
+  font-size: 0.875rem;
+  white-space: nowrap;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .filter-controls {
+    grid-template-columns: 1fr;
+  }
+  
+  .filter-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  
+  .date-range-filter {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .date-separator {
+    text-align: center;
+    padding: 0.25rem 0;
+  }
+}
+
+/* Animation for filter changes */
+.filter-item {
+  transition: opacity 0.2s ease-in-out;
+}
+
+.filter-item:hover {
+  opacity: 0.9;
+}
+
+/* Clear button styling */
+.btn-outline-secondary {
+  border-color: #dbdfea;
+  color: #8094ae;
+}
+
+.btn-outline-secondary:hover {
+  background-color: #e3e7f1;
+  border-color: #c4c8d1;
+  color: #526484;
+}

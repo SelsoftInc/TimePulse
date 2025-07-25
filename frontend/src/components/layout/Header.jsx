@@ -104,7 +104,7 @@ const Header = ({ toggleSidebar }) => {
               <i className={`fas ${darkMode ? 'fa-sun' : 'fa-moon'} header-action-icon`}></i>
             </div>
             
-            <PermissionGuard requiredPermission={PERMISSIONS.MANAGE_SETTINGS} fallback={null}>
+            <PermissionGuard requiredPermission={PERMISSIONS.VIEW_SETTINGS} fallback={null}>
               <div className="header-action-item" onClick={goToSettings} style={{ cursor: 'pointer' }}>
                 <i className="fas fa-cog header-action-icon"></i>
               </div>

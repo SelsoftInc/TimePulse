@@ -8,8 +8,10 @@ import EmployeeTimesheet from "./components/timesheets/EmployeeTimesheet";
 import TimesheetSubmit from "./components/timesheets/TimesheetSubmit";
 import TimesheetApproval from "./components/timesheets/TimesheetApproval";
 import MobileTimesheetUpload from "./components/timesheets/MobileTimesheetUpload";
+import TimesheetToInvoice from "./components/timesheets/TimesheetToInvoice";
 import Invoice from "./components/invoices/Invoice";
 import InvoiceDashboard from "./components/invoices/InvoiceDashboard";
+import InvoiceForm from "./components/invoices/InvoiceForm";
 import ReportsDashboard from "./components/reports/ReportsDashboard";
 import ClientsList from "./components/clients/ClientsList";
 import ClientDetails from "./components/clients/ClientDetails";
@@ -25,7 +27,8 @@ import EmployeeDocuments from "./components/documents/EmployeeDocuments";
 import VendorList from "./components/vendors/VendorList";
 import VendorForm from "./components/vendors/VendorForm";
 import VendorDetail from "./components/vendors/VendorDetail";
-import EmployerSettings from "./components/settings/EmployerSettings";
+import EmployerSettings from './components/settings/EmployerSettings';
+import InvoiceSettings from './components/settings/InvoiceSettings';
 import TestLogin from "./components/auth/TestLogin";
 import SimpleLogin from "./components/auth/SimpleLogin";
 import Register from "./components/auth/Register";
@@ -119,6 +122,11 @@ function App() {
             <EmployerLayout><TimesheetApproval /></EmployerLayout>
           </ProtectedRoute>
         } />
+        <Route path="/:subdomain/timesheets/to-invoice" element={
+          <ProtectedRoute requiredPermission={PERMISSIONS.CREATE_INVOICE}>
+            <EmployerLayout><TimesheetToInvoice /></EmployerLayout>
+          </ProtectedRoute>
+        } />
         <Route path="/:subdomain/leave" element={
           <ProtectedRoute>
             <EmployerLayout><LeaveManagement /></EmployerLayout>
@@ -194,14 +202,24 @@ function App() {
             <EmployerLayout><InvoiceDashboard /></EmployerLayout>
           </ProtectedRoute>
         } />
+        <Route path="/:subdomain/invoices/create" element={
+          <ProtectedRoute requiredPermission={PERMISSIONS.CREATE_INVOICE}>
+            <EmployerLayout><InvoiceForm /></EmployerLayout>
+          </ProtectedRoute>
+        } />
         <Route path="/:subdomain/reports" element={
           <ProtectedRoute requiredPermission={PERMISSIONS.VIEW_REPORTS}>
             <EmployerLayout><ReportsDashboard /></EmployerLayout>
           </ProtectedRoute>
         } />
         <Route path="/:subdomain/settings" element={
-          <ProtectedRoute requiredPermission={PERMISSIONS.MANAGE_SETTINGS}>
+          <ProtectedRoute requiredPermission={PERMISSIONS.VIEW_SETTINGS}>
             <EmployerLayout><EmployerSettings /></EmployerLayout>
+          </ProtectedRoute>
+        } />
+        <Route path="/:subdomain/settings/invoices" element={
+          <ProtectedRoute requiredPermission={PERMISSIONS.MANAGE_SETTINGS}>
+            <EmployerLayout><InvoiceSettings /></EmployerLayout>
           </ProtectedRoute>
         } />
         

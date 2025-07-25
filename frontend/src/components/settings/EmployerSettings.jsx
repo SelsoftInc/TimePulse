@@ -1,15 +1,18 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
+import { PERMISSIONS } from '../../utils/roles';
 import './EmployerSettings.css';
 import CompanyInformation from './CompanyInformation';
-import SecurityPrivacy from './SecurityPrivacy';
+import ProfileSettings from './ProfileSettings';
 import BillingSettings from './BillingSettings';
 import NotificationSettings from './NotificationSettings';
 import IntegrationSettings from './IntegrationSettings';
 
 const EmployerSettings = () => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('company');
+  const { checkPermission, isEmployee } = useAuth();
+  const [activeTab, setActiveTab] = useState(checkPermission(PERMISSIONS.MANAGE_SETTINGS) ? 'company' : 'security');
 
   // Logout function available for use in settings components
   const handleLogout = () => {
@@ -32,7 +35,8 @@ const EmployerSettings = () => {
       case 'company':
         return <CompanyInformation />;
       case 'security':
-        return <SecurityPrivacy />;
+        // Show ProfileSettings for all roles
+        return <ProfileSettings />;
       case 'billing':
         return <BillingSettings />;
       case 'notifications':
@@ -40,7 +44,7 @@ const EmployerSettings = () => {
       case 'integrations':
         return <IntegrationSettings />;
       default:
-        return <CompanyInformation />;
+        return checkPermission(PERMISSIONS.MANAGE_SETTINGS) ? <CompanyInformation /> : <ProfileSettings />;
     }
   };
 
@@ -50,9 +54,12 @@ const EmployerSettings = () => {
         <div className="nk-block-head">
           <div className="nk-block-between">
             <div className="nk-block-head-content">
-              <h3 className="nk-block-title">Employer Settings</h3>
+              <h3 className="nk-block-title">{isEmployee() ? 'Profile Settings' : 'Settings'}</h3>
               <p className="nk-block-subtitle">
-              Manage your employer settings for automated invoice generation
+              {isEmployee() 
+                ? 'Manage your profile and notification preferences'
+                : 'Manage your employer settings for automated invoice generation'
+              }
               </p>
             </div>
             <div className="nk-block-head-content">
@@ -66,29 +73,41 @@ const EmployerSettings = () => {
       <div className="employer-settings-container">
         <div className="settings-sidebar">
           <ul className="settings-menu">
-            <li className={activeTab === 'company' ? 'active' : ''}>
-              <button onClick={() => setActiveTab('company')}>
-                <i className="fas fa-building"></i> Company Information
-              </button>
-            </li>
+            {/* Admin-only tabs */}
+            {checkPermission(PERMISSIONS.MANAGE_SETTINGS) && (
+              <>
+                <li className={activeTab === 'company' ? 'active' : ''}>
+                  <button onClick={() => setActiveTab('company')}>
+                    <i className="fas fa-building"></i> Company Information
+                  </button>
+                </li>
+                <li className={activeTab === 'billing' ? 'active' : ''}>
+                  <button onClick={() => setActiveTab('billing')}>
+                    <i className="fas fa-credit-card"></i> Billing & Subscription
+                  </button>
+                </li>
+                <li className={activeTab === 'integrations' ? 'active' : ''}>
+                  <button onClick={() => setActiveTab('integrations')}>
+                    <i className="fas fa-plug"></i> Integrations
+                  </button>
+                </li>
+                <li className={activeTab === 'invoices' ? 'active' : ''}>
+                  <button onClick={() => navigate(`/${window.location.pathname.split('/')[1]}/settings/invoices`)}>
+                    <i className="fas fa-file-invoice"></i> Invoice Settings
+                  </button>
+                </li>
+              </>
+            )}
+            
+            {/* Available to all roles */}
             <li className={activeTab === 'security' ? 'active' : ''}>
               <button onClick={() => setActiveTab('security')}>
-                <i className="fas fa-shield-alt"></i> Security & Privacy
-              </button>
-            </li>
-            <li className={activeTab === 'billing' ? 'active' : ''}>
-              <button onClick={() => setActiveTab('billing')}>
-                <i className="fas fa-credit-card"></i> Billing & Subscription
+                <i className="fas fa-user"></i> Profile & Account
               </button>
             </li>
             <li className={activeTab === 'notifications' ? 'active' : ''}>
               <button onClick={() => setActiveTab('notifications')}>
                 <i className="fas fa-bell"></i> Notifications
-              </button>
-            </li>
-            <li className={activeTab === 'integrations' ? 'active' : ''}>
-              <button onClick={() => setActiveTab('integrations')}>
-                <i className="fas fa-plug"></i> Integrations
               </button>
             </li>
           </ul>

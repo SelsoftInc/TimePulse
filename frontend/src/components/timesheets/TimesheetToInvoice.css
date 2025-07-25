@@ -1,0 +1,412 @@
+/* Timesheet to Invoice Conversion Styles */
+
+.timesheet-to-invoice-container {
+  min-height: 100vh;
+  background-color: #f5f6fa;
+}
+
+/* Service Status Indicator */
+.service-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-radius: 8px;
+  background-color: #f8f9fa;
+  border: 1px solid #e3e7ed;
+}
+
+.status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+}
+
+.status-indicator.available {
+  color: #10b981;
+}
+
+.status-indicator.available .icon {
+  color: #10b981;
+}
+
+.status-indicator.unavailable {
+  color: #ef4444;
+}
+
+.status-indicator.unavailable .icon {
+  color: #ef4444;
+}
+
+/* Divider */
+.divider-text {
+  position: relative;
+  text-align: center;
+  margin: 24px 0;
+  color: #8094ae;
+  font-size: 14px;
+}
+
+.divider-text::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background-color: #e3e7ed;
+  z-index: 1;
+}
+
+.divider-text::after {
+  content: 'OR';
+  background-color: white;
+  padding: 0 16px;
+  position: relative;
+  z-index: 2;
+}
+
+/* Client Information Section */
+.client-info-section {
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid #e3e7ed;
+}
+
+.client-info-section .title {
+  margin-bottom: 16px;
+  color: #364a63;
+  font-weight: 600;
+}
+
+/* Processing Status */
+.processing-status {
+  margin-top: 16px;
+}
+
+.processing-status .alert {
+  margin-bottom: 0;
+}
+
+.processing-status .spinner-border-sm {
+  width: 1rem;
+  height: 1rem;
+}
+
+/* Timesheet Data Display */
+.timesheet-data-display {
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  padding: 20px;
+  border: 1px solid #e3e7ed;
+}
+
+.timesheet-entry {
+  background-color: white;
+  border-radius: 6px;
+  padding: 16px;
+  margin-bottom: 16px;
+  border: 1px solid #e3e7ed;
+}
+
+.timesheet-entry:last-child {
+  margin-bottom: 0;
+}
+
+.data-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.data-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #8094ae;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.data-value {
+  font-size: 14px;
+  color: #364a63;
+  font-weight: 500;
+}
+
+.processing-cost {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #e3e7ed;
+  text-align: right;
+}
+
+/* Invoice Preview */
+.invoice-preview {
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  padding: 20px;
+  border: 1px solid #e3e7ed;
+}
+
+.preview-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.preview-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #8094ae;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.preview-value {
+  font-size: 14px;
+  color: #364a63;
+  font-weight: 500;
+}
+
+.preview-value.amount {
+  font-size: 18px;
+  font-weight: 700;
+  color: #10b981;
+}
+
+/* Line Items */
+.line-items {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #e3e7ed;
+}
+
+.line-items .title {
+  margin-bottom: 12px;
+  color: #364a63;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.line-item {
+  background-color: white;
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin-bottom: 8px;
+  border: 1px solid #e3e7ed;
+}
+
+.line-item:last-child {
+  margin-bottom: 0;
+}
+
+.item-description {
+  font-weight: 500;
+  color: #364a63;
+  margin-bottom: 4px;
+}
+
+.item-details {
+  font-size: 13px;
+  color: #8094ae;
+}
+
+/* Form Enhancements */
+.form-control:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 0.2rem rgba(99, 102, 241, 0.25);
+}
+
+.btn-primary {
+  background-color: #6366f1;
+  border-color: #6366f1;
+}
+
+.btn-primary:hover {
+  background-color: #5856eb;
+  border-color: #5856eb;
+}
+
+.btn-primary:focus {
+  box-shadow: 0 0 0 0.2rem rgba(99, 102, 241, 0.25);
+}
+
+/* Alert Enhancements */
+.alert {
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.alert-danger {
+  background-color: #fef2f2;
+  color: #dc2626;
+}
+
+.alert-success {
+  background-color: #f0fdf4;
+  color: #16a34a;
+}
+
+.alert-info {
+  background-color: #eff6ff;
+  color: #2563eb;
+}
+
+.alert .icon {
+  margin-right: 8px;
+}
+
+/* Card Enhancements */
+.card {
+  border: none;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  margin-bottom: 24px;
+}
+
+.card-inner {
+  padding: 24px;
+}
+
+.card-title {
+  color: #364a63;
+  font-weight: 600;
+  margin-bottom: 20px;
+}
+
+.card-title-group {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.card-title-group .card-title {
+  margin-bottom: 0;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .service-status {
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-start;
+  }
+  
+  .card-title-group {
+    flex-direction: column;
+    gap: 16px;
+    align-items: flex-start;
+  }
+  
+  .data-item,
+  .preview-item {
+    margin-bottom: 16px;
+  }
+  
+  .timesheet-entry,
+  .line-item {
+    padding: 12px;
+  }
+  
+  .invoice-preview,
+  .timesheet-data-display {
+    padding: 16px;
+  }
+}
+
+/* Loading States */
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.spinner-border-sm {
+  width: 1rem;
+  height: 1rem;
+}
+
+/* File Input Styling */
+.form-control[type="file"] {
+  padding: 8px 12px;
+}
+
+.form-control[type="file"]::-webkit-file-upload-button {
+  background-color: #f8f9fa;
+  border: 1px solid #e3e7ed;
+  border-radius: 4px;
+  padding: 6px 12px;
+  margin-right: 12px;
+  cursor: pointer;
+  font-size: 13px;
+  color: #364a63;
+}
+
+.form-control[type="file"]::-webkit-file-upload-button:hover {
+  background-color: #e9ecef;
+}
+
+/* Form Notes */
+.form-note {
+  font-size: 12px;
+  color: #8094ae;
+  margin-top: 6px;
+}
+
+/* Success/Error States */
+.has-success .form-control {
+  border-color: #10b981;
+}
+
+.has-error .form-control {
+  border-color: #ef4444;
+}
+
+/* Animation for processing */
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.processing-status {
+  animation: pulse 2s infinite;
+}
+
+/* Hover Effects */
+.line-item:hover,
+.timesheet-entry:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+}
+
+/* Focus States */
+.form-control:focus,
+.btn:focus {
+  outline: none;
+}
+
+/* Print Styles */
+@media print {
+  .timesheet-to-invoice-container {
+    background-color: white;
+  }
+  
+  .card {
+    box-shadow: none;
+    border: 1px solid #e3e7ed;
+  }
+  
+  .btn {
+    display: none;
+  }
+}

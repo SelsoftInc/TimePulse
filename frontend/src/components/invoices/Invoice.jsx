@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import InvoiceSettingsModal from '../common/InvoiceSettingsModal';
 import "./Invoice.css";
 
 // Utility function for status display
@@ -419,9 +420,11 @@ const Invoice = () => {
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [filterStatus, setFilterStatus] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("invoices");
+  const [invoiceSettings, setInvoiceSettings] = useState(null);
   
   // Sample discrepancy data
   const discrepancyData = {
@@ -437,8 +440,25 @@ const Invoice = () => {
   };
   
   useEffect(() => {
-    // Simulate fetching invoices from API
-    const fetchInvoices = async () => {
+    loadInvoiceSettings();
+    fetchInvoices();
+  }, []);
+
+  // Load invoice settings
+  const loadInvoiceSettings = async () => {
+    try {
+      const savedSettings = localStorage.getItem('invoiceSettings');
+      if (savedSettings) {
+        setInvoiceSettings(JSON.parse(savedSettings));
+      }
+    } catch (error) {
+      console.error('Error loading invoice settings:', error);
+    }
+  };
+
+  // Simulate fetching invoices from API
+  const fetchInvoices = async () => {
+    try {
       // Mock data
       const mockInvoices = [
         {
@@ -506,10 +526,10 @@ const Invoice = () => {
       ];
       
       setInvoices(mockInvoices);
-    };
-    
-    fetchInvoices();
-  }, []);
+    } catch (error) {
+      console.error('Error fetching invoices:', error);
+    }
+  };
   
   const filteredInvoices = invoices.filter(invoice => {
     const matchesStatus = filterStatus === "all" || invoice.status.toLowerCase() === filterStatus.toLowerCase();
@@ -543,6 +563,35 @@ const Invoice = () => {
     setInvoices([newInvoice, ...invoices]);
     setShowUploadModal(false);
   };
+
+  // Check if invoice settings are configured
+  const isInvoiceSettingsConfigured = () => {
+    if (!invoiceSettings) return false;
+    
+    // Check required company info
+    if (!invoiceSettings.companyInfo?.companyName || 
+        !invoiceSettings.companyInfo?.address || 
+        !invoiceSettings.companyInfo?.email) {
+      return false;
+    }
+    
+    // Check required invoice setup
+    if (!invoiceSettings.invoiceSetup?.invoicePrefix || 
+        !invoiceSettings.invoiceSetup?.defaultPaymentTerms) {
+      return false;
+    }
+    
+    return true;
+  };
+
+  // Handle create invoice button click
+  const handleCreateInvoice = () => {
+    if (!isInvoiceSettingsConfigured()) {
+      setShowSettingsModal(true);
+    } else {
+      setShowUploadModal(true);
+    }
+  };
   
 
 
@@ -568,10 +617,10 @@ const Invoice = () => {
                       <li>
                         <button 
                           className="btn btn-primary" 
-                          onClick={() => setShowUploadModal(true)}
+                          onClick={handleCreateInvoice}
                         >
                           <em className="icon ni ni-plus"></em>
-                          <span>Upload Invoice</span>
+                          <span>Create Invoice</span>
                         </button>
                       </li>
                     </ul>
@@ -743,6 +792,17 @@ const Invoice = () => {
         <InvoiceUploadModal 
           onClose={() => setShowUploadModal(false)}
           onUpload={handleUploadInvoice}
+        />
+      )}
+      
+      {/* Invoice Settings Modal */}
+      {showSettingsModal && (
+        <InvoiceSettingsModal 
+          onClose={() => setShowSettingsModal(false)}
+          onCreateAnyway={() => {
+            setShowSettingsModal(false);
+            setShowUploadModal(true);
+          }}
         />
       )}
     </div>

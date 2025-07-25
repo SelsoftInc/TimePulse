@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { PERMISSIONS } from '../../utils/roles';
 import PermissionGuard from '../common/PermissionGuard';
 import { useAuth } from '../../contexts/AuthContext';
+import DataGridFilter from '../common/DataGridFilter';
 import './Employees.css';
 
 const EmployeeList = () => {
@@ -10,7 +11,12 @@ const EmployeeList = () => {
   const { checkPermission } = useAuth();
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [employmentTypeFilter, setEmploymentTypeFilter] = useState('all');
+  const [filters, setFilters] = useState({
+    employmentType: 'all',
+    status: 'all',
+    department: 'all',
+    search: ''
+  });
 
   useEffect(() => {
     // In a real app, fetch employees from API
@@ -107,15 +113,100 @@ const EmployeeList = () => {
     }, 800);
   }, []);
 
-  // Filter employees based on employment type
-  const filteredEmployees = employmentTypeFilter === 'all' 
-    ? employees 
-    : employees.filter(emp => emp.employmentType === employmentTypeFilter);
+  // Filter employees based on all filters
+  const filteredEmployees = employees.filter(employee => {
+    // Employment type filter
+    if (filters.employmentType !== 'all' && employee.employmentType !== filters.employmentType) {
+      return false;
+    }
+    
+    // Status filter
+    if (filters.status !== 'all' && employee.status !== filters.status) {
+      return false;
+    }
+    
+    // Department filter
+    if (filters.department !== 'all' && employee.department !== filters.department) {
+      return false;
+    }
+    
+    // Search filter
+    if (filters.search && !employee.name.toLowerCase().includes(filters.search.toLowerCase()) &&
+        !employee.email.toLowerCase().includes(filters.search.toLowerCase()) &&
+        !employee.position.toLowerCase().includes(filters.search.toLowerCase())) {
+      return false;
+    }
+    
+    return true;
+  });
 
-  // Handle filter change
-  const handleFilterChange = (e) => {
-    setEmploymentTypeFilter(e.target.value);
+  // Handle filter changes
+  const handleFilterChange = (filterKey, value) => {
+    setFilters(prev => ({
+      ...prev,
+      [filterKey]: value
+    }));
   };
+
+  // Clear all filters
+  const handleClearFilters = () => {
+    setFilters({
+      employmentType: 'all',
+      status: 'all',
+      department: 'all',
+      search: ''
+    });
+  };
+
+  // Get unique departments for filter options
+  const departments = [...new Set(employees.map(emp => emp.department))].sort();
+
+  // Define filter configuration
+  const filterConfig = [
+    {
+      key: 'employmentType',
+      label: 'Employment Type',
+      type: 'select',
+      value: filters.employmentType,
+      defaultValue: 'all',
+      options: [
+        { value: 'all', label: 'All Types' },
+        { value: 'W2', label: 'W2 Only' },
+        { value: 'Subcontractor', label: 'Subcontractors Only' }
+      ]
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      type: 'select',
+      value: filters.status,
+      defaultValue: 'all',
+      options: [
+        { value: 'all', label: 'All Statuses' },
+        { value: 'active', label: 'Active' },
+        { value: 'inactive', label: 'Inactive' }
+      ]
+    },
+    {
+      key: 'department',
+      label: 'Department',
+      type: 'select',
+      value: filters.department,
+      defaultValue: 'all',
+      options: [
+        { value: 'all', label: 'All Departments' },
+        ...departments.map(dept => ({ value: dept, label: dept }))
+      ]
+    },
+    {
+      key: 'search',
+      label: 'Search',
+      type: 'text',
+      value: filters.search,
+      defaultValue: '',
+      placeholder: 'Search by name, email, or position...'
+    }
+  ];
 
   return (
     <div className="nk-content">
@@ -124,40 +215,32 @@ const EmployeeList = () => {
           <div className="nk-block-between">
             <div className="nk-block-head-content">
               <h3 className="nk-block-title">Employees</h3>
-              <p className="nk-block-subtitle">
-                Manage your team members 
-                <span className="badge badge-light ml-2">
-                  {filteredEmployees.length} of {employees.length} employees
-                </span>
-              </p>
+              <p className="nk-block-subtitle">Manage your team members</p>
             </div>
             <div className="nk-block-head-content">
-              <div className="d-flex align-items-center gap-3">
-                <div className="form-group mb-0">
-                  <label className="form-label mb-1" htmlFor="employmentTypeFilter">Filter by Type:</label>
-                  <select
-                    className="form-select"
-                    id="employmentTypeFilter"
-                    value={employmentTypeFilter}
-                    onChange={handleFilterChange}
-                    style={{ minWidth: '150px' }}
-                  >
-                    <option value="all">All Employees</option>
-                    <option value="W2">W2 Only</option>
-                    <option value="Subcontractor">Subcontractors Only</option>
-                  </select>
-                </div>
-                <PermissionGuard requiredPermission={PERMISSIONS.CREATE_EMPLOYEE}>
-                  <Link to={`/${subdomain}/employees/new`} className="btn btn-primary">
-                    <i className="fas fa-plus mr-1"></i> Add New Employee
-                  </Link>
-                </PermissionGuard>
-              </div>
+              <PermissionGuard requiredPermission={PERMISSIONS.CREATE_EMPLOYEE}>
+                <Link to={`/${subdomain}/employees/new`} className="btn btn-primary">
+                  <i className="fas fa-plus mr-1"></i> Add New Employee
+                </Link>
+              </PermissionGuard>
             </div>
           </div>
         </div>
 
         <div className="nk-block">
+          {/* Filter Section */}
+          <div className="card card-bordered mb-4">
+            <div className="card-inner">
+              <DataGridFilter
+                filters={filterConfig}
+                onFilterChange={handleFilterChange}
+                onClearFilters={handleClearFilters}
+                resultCount={filteredEmployees.length}
+                totalCount={employees.length}
+              />
+            </div>
+          </div>
+          
           {loading ? (
             <div className="d-flex justify-content-center mt-5">
               <div className="spinner-border text-primary" role="status">

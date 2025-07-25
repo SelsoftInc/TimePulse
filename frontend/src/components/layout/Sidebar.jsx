@@ -143,7 +143,7 @@ const Sidebar = ({ collapsed, toggleSidebar, className = '' }) => {
           </PermissionGuard>
           
           {/* Settings moved to last position */}
-          <PermissionGuard requiredPermission={PERMISSIONS.MANAGE_SETTINGS} fallback={null}>
+          <PermissionGuard requiredPermission={PERMISSIONS.VIEW_SETTINGS} fallback={null}>
             <li className="sidebar-item">
               <Link 
                 to={`/${currentSubdomain}/settings`} 

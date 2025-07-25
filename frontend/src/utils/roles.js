@@ -51,6 +51,7 @@ export const PERMISSIONS = {
   EXPORT_REPORTS: 'export_reports',
   
   // Settings permissions
+  VIEW_SETTINGS: 'view_settings',
   MANAGE_SETTINGS: 'manage_settings',
 };
 
@@ -80,6 +81,9 @@ export const ROLE_PERMISSIONS = {
     
     // Reports - view only
     PERMISSIONS.VIEW_REPORTS,
+    
+    // Settings - view only
+    PERMISSIONS.VIEW_SETTINGS,
   ],
   
   [ROLES.EMPLOYEE]: [
@@ -87,6 +91,9 @@ export const ROLE_PERMISSIONS = {
     PERMISSIONS.CREATE_TIMESHEET,
     PERMISSIONS.VIEW_TIMESHEET,
     PERMISSIONS.EDIT_TIMESHEET,
+    
+    // Settings - view only
+    PERMISSIONS.VIEW_SETTINGS,
   ],
 };
 

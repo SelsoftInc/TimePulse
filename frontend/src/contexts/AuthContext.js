@@ -88,12 +88,6 @@ export const AuthProvider = ({ children }) => {
     return currentEmployer.role === ROLES.ADMIN;
   };
 
-  // Check if user is an account manager
-  const isAccountManager = () => {
-    if (!currentEmployer) return false;
-    return currentEmployer.role === ROLES.ACCOUNT_MANAGER;
-  };
-
   // Check if user is an approver
   const isApprover = () => {
     if (!currentEmployer) return false;
@@ -117,7 +111,6 @@ export const AuthProvider = ({ children }) => {
     switchEmployer,
     checkPermission,
     isAdmin,
-    isAccountManager,
     isApprover,
     isEmployee
   };

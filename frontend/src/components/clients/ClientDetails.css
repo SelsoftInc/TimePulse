@@ -1,0 +1,120 @@
+/* Client Details CSS */
+.client-info-section {
+  margin-bottom: 1.5rem;
+}
+
+.client-info-section .sub-text {
+  color: #8094ae;
+  font-size: 0.875rem;
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+.badge.badge-dim.rounded-pill {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8125rem;
+}
+
+.badge.bg-outline-primary {
+  background-color: rgba(9, 113, 241, 0.1) !important;
+  color: #0971f1 !important;
+  border: 1px solid rgba(9, 113, 241, 0.5);
+}
+
+.badge.badge-outline-primary {
+  background-color: rgba(9, 113, 241, 0.1) !important;
+  color: #0971f1 !important;
+  border: 1px solid rgba(9, 113, 241, 0.3);
+}
+
+.client-contact-info {
+  margin-top: 1rem;
+}
+
+.client-address {
+  white-space: pre-line;
+}
+
+.client-stats {
+  background-color: #f5f6fa;
+  border-radius: 4px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.client-stats .amount {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #364a63;
+  line-height: 1.3;
+  display: block;
+}
+
+.client-stats .sub-text {
+  font-size: 0.875rem;
+  color: #8094ae;
+}
+
+.client-employees-section {
+  margin-top: 1.5rem;
+}
+
+.empty-state {
+  padding: 2rem;
+  text-align: center;
+  color: #8094ae;
+}
+
+/* Billing Information Styles */
+.client-detail-item {
+  margin-bottom: 1rem;
+}
+
+.detail-label {
+  font-weight: 600;
+  color: #364a63;
+  display: block;
+  margin-bottom: 0.25rem;
+  font-size: 0.875rem;
+}
+
+.detail-value {
+  color: #526484;
+  font-size: 0.9375rem;
+  line-height: 1.4;
+}
+
+.badge.badge-outline-info {
+  background-color: rgba(26, 188, 156, 0.1);
+  color: #1abc9c;
+  border: 1px solid rgba(26, 188, 156, 0.3);
+}
+
+.badge.badge-outline-success {
+  background-color: rgba(34, 197, 94, 0.1);
+  color: #22c55e;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.badge.badge-outline-warning {
+  background-color: rgba(251, 191, 36, 0.1);
+  color: #fbbf24;
+  border: 1px solid rgba(251, 191, 36, 0.3);
+}
+
+.card-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #364a63;
+  margin-bottom: 1.5rem;
+}
+
+.card-title .icon {
+  color: #8094ae;
+  margin-right: 0.5rem;
+}
+
+.text-muted {
+  color: #8094ae !important;
+  font-style: italic;
+}

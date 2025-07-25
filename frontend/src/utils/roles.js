@@ -4,13 +4,11 @@
 /**
  * Role definitions
  * - Admin: Can create Employees, Vendors, End Clients and manage all aspects of the system
- * - Account Manager: Can manage projects, timesheets, and invoices but cannot create users
  * - Approver: Can approve timesheets and invoices but has limited management capabilities
  * - Employee: Can create and view their own timesheets
  */
 export const ROLES = {
   ADMIN: 'admin',
-  ACCOUNT_MANAGER: 'account_manager',
   APPROVER: 'approver',
   EMPLOYEE: 'employee',
 };
@@ -40,6 +38,7 @@ export const PERMISSIONS = {
   EDIT_TIMESHEET: 'edit_timesheet',
   VIEW_TIMESHEET: 'view_timesheet',
   APPROVE_TIMESHEET: 'approve_timesheet',
+  APPROVE_TIMESHEETS: 'approve_timesheets', // Bulk approval workflow
   
   // Invoice permissions
   CREATE_INVOICE: 'create_invoice',
@@ -64,37 +63,6 @@ export const ROLE_PERMISSIONS = {
     ...Object.values(PERMISSIONS),
   ],
   
-  [ROLES.ACCOUNT_MANAGER]: [
-    // User management - limited
-    PERMISSIONS.VIEW_EMPLOYEE,
-    PERMISSIONS.EDIT_EMPLOYEE,
-    
-    PERMISSIONS.VIEW_VENDOR,
-    PERMISSIONS.EDIT_VENDOR,
-    
-    PERMISSIONS.VIEW_CLIENT,
-    PERMISSIONS.EDIT_CLIENT,
-    
-    // Full timesheet management
-    PERMISSIONS.CREATE_TIMESHEET,
-    PERMISSIONS.EDIT_TIMESHEET,
-    PERMISSIONS.VIEW_TIMESHEET,
-    PERMISSIONS.APPROVE_TIMESHEET,
-    
-    // Full invoice management
-    PERMISSIONS.CREATE_INVOICE,
-    PERMISSIONS.EDIT_INVOICE,
-    PERMISSIONS.VIEW_INVOICE,
-    PERMISSIONS.APPROVE_INVOICE,
-    
-    // Reports
-    PERMISSIONS.VIEW_REPORTS,
-    PERMISSIONS.EXPORT_REPORTS,
-    
-    // Limited settings
-    PERMISSIONS.MANAGE_SETTINGS,
-  ],
-  
   [ROLES.APPROVER]: [
     // User management - view only
     PERMISSIONS.VIEW_EMPLOYEE,
@@ -104,6 +72,7 @@ export const ROLE_PERMISSIONS = {
     // Timesheet - view and approve only
     PERMISSIONS.VIEW_TIMESHEET,
     PERMISSIONS.APPROVE_TIMESHEET,
+    PERMISSIONS.APPROVE_TIMESHEETS,
     
     // Invoice - view and approve only
     PERMISSIONS.VIEW_INVOICE,

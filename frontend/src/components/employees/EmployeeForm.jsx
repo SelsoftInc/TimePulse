@@ -18,6 +18,8 @@ const EmployeeForm = () => {
     department: '',
     startDate: '',
     client: '',
+    clientType: 'internal',
+    approver: '',
     hourlyRate: '',
     overtimeRate: '',
     enableOvertime: false,
@@ -36,11 +38,20 @@ const EmployeeForm = () => {
 
   // Sample client list - in a real app, this would come from an API
   const clients = [
-    { id: 1, name: 'JPMC' },
-    { id: 2, name: 'Accenture' },
-    { id: 3, name: 'Virtusa' },
-    { id: 4, name: 'Cognizant' },
-    { id: 5, name: 'IBM' }
+    { id: 1, name: 'JPMC', type: 'internal' },
+    { id: 2, name: 'Accenture', type: 'internal' },
+    { id: 3, name: 'Virtusa', type: 'internal' },
+    { id: 4, name: 'Cognizant', type: 'external' },
+    { id: 5, name: 'IBM', type: 'external' }
+  ];
+  
+  // Sample approver list - in a real app, this would come from an API
+  const approvers = [
+    { id: 1, name: 'John Smith', email: 'john.smith@company.com', department: 'Engineering' },
+    { id: 2, name: 'Sarah Johnson', email: 'sarah.johnson@company.com', department: 'Design' },
+    { id: 3, name: 'Mike Wilson', email: 'mike.wilson@company.com', department: 'Operations' },
+    { id: 4, name: 'Lisa Brown', email: 'lisa.brown@company.com', department: 'Management' },
+    { id: 5, name: 'David Lee', email: 'david.lee@company.com', department: 'HR' }
   ];
 
   const handleChange = (e) => {
@@ -48,6 +59,17 @@ const EmployeeForm = () => {
     setFormData({
       ...formData,
       [name]: value
+    });
+  };
+  
+  const handleClientChange = (e) => {
+    const clientId = parseInt(e.target.value);
+    const selectedClient = clients.find(client => client.id === clientId);
+    
+    setFormData({
+      ...formData,
+      client: e.target.value,
+      clientType: selectedClient ? selectedClient.type : 'internal'
     });
   };
 
@@ -227,14 +249,56 @@ const EmployeeForm = () => {
                           id="client"
                           name="client"
                           value={formData.client}
-                          onChange={handleChange}
+                          onChange={handleClientChange}
                           required
                         >
                           <option value="">Select Client</option>
                           {clients.map(client => (
-                            <option key={client.id} value={client.name}>{client.name}</option>
+                            <option key={client.id} value={client.name}>{client.name} ({client.type})</option>
                           ))}
                         </select>
+                      </div>
+                    </div>
+                    
+                    <div className="col-lg-6">
+                      <div className="form-group">
+                        <label className="form-label" htmlFor="clientType">Client Type</label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          id="clientType"
+                          name="clientType"
+                          value={formData.clientType}
+                          readOnly
+                          placeholder="Auto-filled based on client selection"
+                        />
+                        <div className="form-note mt-1">
+                          <small className="text-soft">Automatically set based on selected client</small>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="col-lg-6">
+                      <div className="form-group">
+                        <label className="form-label" htmlFor="approver">Assigned Approver*</label>
+                        <select
+                          className="form-select"
+                          id="approver"
+                          name="approver"
+                          value={formData.approver}
+                          onChange={handleChange}
+                          required
+                        >
+                          <option value="">Select Approver</option>
+                          {approvers.map(approver => (
+                            <option key={approver.id} value={approver.name}>
+                              {approver.name} - {approver.department}
+                            </option>
+                          ))}
+                        </select>
+                        <div className="form-note mt-1">
+                          <small className="text-soft">This person will approve/reject employee timesheets</small>
+                        </div>
                       </div>
                     </div>
                     

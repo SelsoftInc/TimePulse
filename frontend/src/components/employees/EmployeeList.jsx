@@ -10,6 +10,7 @@ const EmployeeList = () => {
   const { checkPermission } = useAuth();
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [employmentTypeFilter, setEmploymentTypeFilter] = useState('all');
 
   useEffect(() => {
     // In a real app, fetch employees from API
@@ -106,6 +107,16 @@ const EmployeeList = () => {
     }, 800);
   }, []);
 
+  // Filter employees based on employment type
+  const filteredEmployees = employmentTypeFilter === 'all' 
+    ? employees 
+    : employees.filter(emp => emp.employmentType === employmentTypeFilter);
+
+  // Handle filter change
+  const handleFilterChange = (e) => {
+    setEmploymentTypeFilter(e.target.value);
+  };
+
   return (
     <div className="nk-content">
       <div className="container-fluid">
@@ -113,14 +124,35 @@ const EmployeeList = () => {
           <div className="nk-block-between">
             <div className="nk-block-head-content">
               <h3 className="nk-block-title">Employees</h3>
-              <p className="nk-block-subtitle">Manage your team members</p>
+              <p className="nk-block-subtitle">
+                Manage your team members 
+                <span className="badge badge-light ml-2">
+                  {filteredEmployees.length} of {employees.length} employees
+                </span>
+              </p>
             </div>
             <div className="nk-block-head-content">
-              <PermissionGuard requiredPermission={PERMISSIONS.CREATE_EMPLOYEE}>
-                <Link to={`/${subdomain}/employees/new`} className="btn btn-primary">
-                  <i className="fas fa-plus mr-1"></i> Add New Employee
-                </Link>
-              </PermissionGuard>
+              <div className="d-flex align-items-center gap-3">
+                <div className="form-group mb-0">
+                  <label className="form-label mb-1" htmlFor="employmentTypeFilter">Filter by Type:</label>
+                  <select
+                    className="form-select"
+                    id="employmentTypeFilter"
+                    value={employmentTypeFilter}
+                    onChange={handleFilterChange}
+                    style={{ minWidth: '150px' }}
+                  >
+                    <option value="all">All Employees</option>
+                    <option value="W2">W2 Only</option>
+                    <option value="Subcontractor">Subcontractors Only</option>
+                  </select>
+                </div>
+                <PermissionGuard requiredPermission={PERMISSIONS.CREATE_EMPLOYEE}>
+                  <Link to={`/${subdomain}/employees/new`} className="btn btn-primary">
+                    <i className="fas fa-plus mr-1"></i> Add New Employee
+                  </Link>
+                </PermissionGuard>
+              </div>
             </div>
           </div>
         </div>
@@ -156,7 +188,7 @@ const EmployeeList = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {employees.map(employee => (
+                    {filteredEmployees.map(employee => (
                       <tr key={employee.id}>
                         <td>
                           <Link to={`/${subdomain}/employees/${employee.id}`} className="employee-name fw-medium">

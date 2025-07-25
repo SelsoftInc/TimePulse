@@ -61,12 +61,26 @@ const Sidebar = ({ collapsed, toggleSidebar, className = '' }) => {
             <li className="sidebar-item">
               <Link 
                 to={`/${currentSubdomain}/timesheets`} 
-                className={`sidebar-link ${currentPath.includes(`/${currentSubdomain}/timesheets`) ? 'active' : ''}`}
+                className={`sidebar-link ${currentPath.includes(`/${currentSubdomain}/timesheets`) && !currentPath.includes('/approval') ? 'active' : ''}`}
               >
                 <div className="sidebar-icon">
                   <i className="fa fa-clock"></i>
                 </div>
                 {!collapsed && <span className="sidebar-text">Timesheets</span>}
+              </Link>
+            </li>
+          </PermissionGuard>
+          
+          <PermissionGuard requiredPermission={PERMISSIONS.APPROVE_TIMESHEETS} fallback={null}>
+            <li className="sidebar-item sub-item">
+              <Link 
+                to={`/${currentSubdomain}/timesheets/approval`} 
+                className={`sidebar-link ${currentPath.includes(`/${currentSubdomain}/timesheets/approval`) ? 'active' : ''}`}
+              >
+                <div className="sidebar-icon">
+                  <i className="fa fa-check-circle"></i>
+                </div>
+                {!collapsed && <span className="sidebar-text">Timesheet Approval</span>}
               </Link>
             </li>
           </PermissionGuard>

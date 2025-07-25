@@ -6,16 +6,18 @@ import EmployeeDashboard from "./components/dashboard/EmployeeDashboard";
 import TimesheetSummary from "./components/timesheets/TimesheetSummary";
 import EmployeeTimesheet from "./components/timesheets/EmployeeTimesheet";
 import TimesheetSubmit from "./components/timesheets/TimesheetSubmit";
+import TimesheetApproval from "./components/timesheets/TimesheetApproval";
 import MobileTimesheetUpload from "./components/timesheets/MobileTimesheetUpload";
 import Invoice from "./components/invoices/Invoice";
 import InvoiceDashboard from "./components/invoices/InvoiceDashboard";
 import ReportsDashboard from "./components/reports/ReportsDashboard";
 import ClientsList from "./components/clients/ClientsList";
-import ClientOverview from "./components/clients/ClientOverview";
+import ClientDetails from "./components/clients/ClientDetails";
 import ClientForm from "./components/clients/ClientForm";
 import EmployeeList from "./components/employees/EmployeeList";
 import EmployeeForm from "./components/employees/EmployeeForm";
 import EmployeeDetail from "./components/employees/EmployeeDetail";
+import EmployeeSettings from "./components/employees/EmployeeSettings";
 import EmployeeInvite from "./components/employees/EmployeeInvite";
 import EmployeeRegister from "./components/auth/EmployeeRegister";
 import LeaveManagement from "./components/leave/LeaveManagement";
@@ -112,6 +114,11 @@ function App() {
             <EmployerLayout><TimesheetSubmit /></EmployerLayout>
           </ProtectedRoute>
         } />
+        <Route path="/:subdomain/timesheets/approval" element={
+          <ProtectedRoute requiredPermission={PERMISSIONS.APPROVE_TIMESHEETS}>
+            <EmployerLayout><TimesheetApproval /></EmployerLayout>
+          </ProtectedRoute>
+        } />
         <Route path="/:subdomain/leave" element={
           <ProtectedRoute>
             <EmployerLayout><LeaveManagement /></EmployerLayout>
@@ -134,7 +141,7 @@ function App() {
         } />
         <Route path="/:subdomain/clients/:clientId" element={
           <ProtectedRoute requiredPermission={PERMISSIONS.VIEW_CLIENT}>
-            <EmployerLayout><ClientOverview /></EmployerLayout>
+            <EmployerLayout><ClientDetails /></EmployerLayout>
           </ProtectedRoute>
         } />
         <Route path="/:subdomain/employees" element={
@@ -155,6 +162,11 @@ function App() {
         <Route path="/:subdomain/employees/:id" element={
           <ProtectedRoute requiredPermission={PERMISSIONS.VIEW_EMPLOYEE}>
             <EmployerLayout><EmployeeDetail /></EmployerLayout>
+          </ProtectedRoute>
+        } />
+        <Route path="/:subdomain/employees/:id/settings" element={
+          <ProtectedRoute requiredPermission={PERMISSIONS.EDIT_EMPLOYEE}>
+            <EmployerLayout><EmployeeSettings /></EmployerLayout>
           </ProtectedRoute>
         } />
         <Route path="/:subdomain/vendors" element={

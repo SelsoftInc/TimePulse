@@ -19,14 +19,24 @@ const ClientForm = () => {
     country: 'United States',
     employeeCount: 0,
     status: 'active',
-    notes: ''
+    clientType: 'internal',
+    notes: '',
+    // Billing Information
+    billingAddress: '',
+    billingAddressSameAsMain: true,
+    paymentTerms: 'Net 30',
+    paymentMethod: 'Bank Transfer',
+    bankDetails: '',
+    taxId: '',
+    vatNumber: '',
+    currency: 'USD'
   });
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
     setFormData({
       ...formData,
-      [name]: value
+      [name]: type === 'checkbox' ? checked : value
     });
   };
 
@@ -222,6 +232,184 @@ const ClientForm = () => {
                         </select>
                       </div>
                     </div>
+                    <div className="col-lg-6">
+                      <div className="form-group">
+                        <label className="form-label" htmlFor="clientType">Client Type*</label>
+                        <select
+                          className="form-select"
+                          id="clientType"
+                          name="clientType"
+                          value={formData.clientType}
+                          onChange={handleChange}
+                          required
+                        >
+                          <option value="internal">Internal Client</option>
+                          <option value="external">External Client</option>
+                        </select>
+                        <div className="form-note mt-2">
+                          <small>
+                            {formData.clientType === 'internal' 
+                              ? 'Internal clients allow manual hour entry and AI timesheet upload'
+                              : 'External clients require uploading client-submitted timesheet files'
+                            }
+                          </small>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Billing & Payment Information Section */}
+                    <div className="col-12">
+                      <hr className="my-4" />
+                      <h5 className="mb-3">
+                        <em className="icon ni ni-credit-card mr-2"></em>
+                        Billing & Payment Information
+                      </h5>
+                    </div>
+                    
+                    <div className="col-lg-6">
+                      <div className="form-group">
+                        <label className="form-label" htmlFor="paymentTerms">Payment Terms*</label>
+                        <select
+                          className="form-select"
+                          id="paymentTerms"
+                          name="paymentTerms"
+                          value={formData.paymentTerms}
+                          onChange={handleChange}
+                          required
+                        >
+                          <option value="Due upon receipt">Due upon receipt</option>
+                          <option value="Net 15">Net 15</option>
+                          <option value="Net 30">Net 30</option>
+                          <option value="Net 45">Net 45</option>
+                          <option value="Net 60">Net 60</option>
+                        </select>
+                      </div>
+                    </div>
+                    
+                    <div className="col-lg-6">
+                      <div className="form-group">
+                        <label className="form-label" htmlFor="paymentMethod">Payment Method*</label>
+                        <select
+                          className="form-select"
+                          id="paymentMethod"
+                          name="paymentMethod"
+                          value={formData.paymentMethod}
+                          onChange={handleChange}
+                          required
+                        >
+                          <option value="Bank Transfer">Bank Transfer</option>
+                          <option value="Credit Card">Credit Card</option>
+                          <option value="PayPal">PayPal</option>
+                          <option value="Check">Check</option>
+                          <option value="Wire Transfer">Wire Transfer</option>
+                        </select>
+                      </div>
+                    </div>
+                    
+                    <div className="col-lg-6">
+                      <div className="form-group">
+                        <label className="form-label" htmlFor="currency">Currency*</label>
+                        <select
+                          className="form-select"
+                          id="currency"
+                          name="currency"
+                          value={formData.currency}
+                          onChange={handleChange}
+                          required
+                        >
+                          <option value="USD">USD - US Dollar</option>
+                          <option value="EUR">EUR - Euro</option>
+                          <option value="GBP">GBP - British Pound</option>
+                          <option value="CAD">CAD - Canadian Dollar</option>
+                          <option value="AUD">AUD - Australian Dollar</option>
+                        </select>
+                      </div>
+                    </div>
+                    
+                    <div className="col-lg-6">
+                      <div className="form-group">
+                        <label className="form-label" htmlFor="taxId">Tax ID*</label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          id="taxId"
+                          name="taxId"
+                          value={formData.taxId}
+                          onChange={handleChange}
+                          placeholder="Enter Tax ID (e.g., 13-1234567)"
+                          required
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="col-lg-6">
+                      <div className="form-group">
+                        <label className="form-label" htmlFor="vatNumber">VAT Number</label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          id="vatNumber"
+                          name="vatNumber"
+                          value={formData.vatNumber}
+                          onChange={handleChange}
+                          placeholder="Enter VAT Number (if applicable)"
+                        />
+                      </div>
+                    </div>
+                    
+                    {(formData.paymentMethod === 'Bank Transfer' || formData.paymentMethod === 'Wire Transfer') && (
+                      <div className="col-12">
+                        <div className="form-group">
+                          <label className="form-label" htmlFor="bankDetails">Bank Details</label>
+                          <textarea
+                            className="form-control"
+                            id="bankDetails"
+                            name="bankDetails"
+                            value={formData.bankDetails}
+                            onChange={handleChange}
+                            placeholder="Enter bank details (Bank name, Account number, Routing number, etc.)"
+                            rows="3"
+                          ></textarea>
+                        </div>
+                      </div>
+                    )}
+                    
+                    <div className="col-12">
+                      <div className="form-group">
+                        <div className="custom-control custom-checkbox">
+                          <input
+                            type="checkbox"
+                            className="custom-control-input"
+                            id="billingAddressSameAsMain"
+                            name="billingAddressSameAsMain"
+                            checked={formData.billingAddressSameAsMain}
+                            onChange={handleChange}
+                          />
+                          <label className="custom-control-label" htmlFor="billingAddressSameAsMain">
+                            Billing address is the same as main address
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {!formData.billingAddressSameAsMain && (
+                      <div className="col-12">
+                        <div className="form-group">
+                          <label className="form-label" htmlFor="billingAddress">Billing Address*</label>
+                          <textarea
+                            className="form-control"
+                            id="billingAddress"
+                            name="billingAddress"
+                            value={formData.billingAddress}
+                            onChange={handleChange}
+                            placeholder="Enter billing address"
+                            rows="3"
+                            required={!formData.billingAddressSameAsMain}
+                          ></textarea>
+                        </div>
+                      </div>
+                    )}
+                    
                     <div className="col-lg-12">
                       <div className="form-group">
                         <label className="form-label" htmlFor="notes">Notes</label>

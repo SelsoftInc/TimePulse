@@ -48,8 +48,6 @@ const RoleSelector = () => {
     switch(currentEmployer.role) {
       case ROLES.ADMIN:
         return 'Admin';
-      case ROLES.ACCOUNT_MANAGER:
-        return 'Manager';
       case ROLES.APPROVER:
         return 'Approver';
       case 'employee':
@@ -65,8 +63,6 @@ const RoleSelector = () => {
     switch(currentEmployer.role) {
       case ROLES.ADMIN:
         return 'fa-user-shield';
-      case ROLES.ACCOUNT_MANAGER:
-        return 'fa-user-tie';
       case ROLES.APPROVER:
         return 'fa-user-check';
       case 'employee':
@@ -84,7 +80,6 @@ const RoleSelector = () => {
   const availableRoles = user ? RoleAuthService.getAvailableRolesForUser(user) : [
     { id: 'employee', name: 'Employee', icon: 'fa-user' },
     { id: ROLES.ADMIN, name: 'Admin', icon: 'fa-user-shield' },
-    { id: ROLES.ACCOUNT_MANAGER, name: 'Manager', icon: 'fa-user-tie' },
     { id: ROLES.APPROVER, name: 'Approver', icon: 'fa-user-check' }
   ];
 

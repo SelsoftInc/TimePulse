@@ -57,7 +57,6 @@ class RoleAuthService {
     return [
       { id: 'employee', name: 'Employee', icon: 'fa-user' },
       { id: ROLES.ADMIN, name: 'Admin', icon: 'fa-user-shield' },
-      { id: ROLES.ACCOUNT_MANAGER, name: 'Manager', icon: 'fa-user-tie' },
       { id: ROLES.APPROVER, name: 'Approver', icon: 'fa-user-check' }
     ];
   }

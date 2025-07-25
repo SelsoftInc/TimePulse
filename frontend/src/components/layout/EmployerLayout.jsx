@@ -10,13 +10,13 @@ const EmployerLayout = ({ children }) => {
   // and for potential future features like employer-specific styling
   const { subdomain } = useParams();
   const { currentEmployer } = useAuth();
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   
   // Initialize sidebar state from localStorage on component mount
   useEffect(() => {
     const savedSidebarState = localStorage.getItem('sidebarCollapsed');
-    if (savedSidebarState === 'true') {
-      setSidebarCollapsed(true);
+    if (savedSidebarState !== null) {
+      setSidebarCollapsed(savedSidebarState === 'true');
     }
   }, []);
   

@@ -366,6 +366,62 @@ const EmployeeDetail = () => {
                     </div>
                   )}
                   
+                  {/* Timesheet Settings */}
+                  <div className="nk-block">
+                    <div className="nk-block-head nk-block-between">
+                      <div>
+                        <h5 className="title">Timesheet Settings</h5>
+                      </div>
+                      <div>
+                        <PermissionGuard requiredPermission={PERMISSIONS.EDIT_EMPLOYEE}>
+                          <Link to={`/${subdomain}/employees/${id}/settings`} className="btn btn-sm btn-primary">
+                            <i className="fas fa-cog mr-1"></i> Configure Settings
+                          </Link>
+                        </PermissionGuard>
+                      </div>
+                    </div>
+                    <div className="card card-bordered">
+                      <div className="card-inner">
+                        <div className="row">
+                          <div className="col-md-6">
+                            <div className="profile-ud-list">
+                              <div className="profile-ud-item">
+                                <div className="profile-ud-label">Client</div>
+                                <div className="profile-ud-value">
+                                  {employee.client || 'Not assigned'}
+                                </div>
+                              </div>
+                              <div className="profile-ud-item">
+                                <div className="profile-ud-label">Client Type</div>
+                                <div className="profile-ud-value">
+                                  <span className={`badge badge-${employee.clientType === 'internal' ? 'primary' : 'warning'}`}>
+                                    {employee.clientType === 'internal' ? 'Internal' : 'External'}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="col-md-6">
+                            <div className="profile-ud-list">
+                              <div className="profile-ud-item">
+                                <div className="profile-ud-label">Timesheet Approver</div>
+                                <div className="profile-ud-value">
+                                  {employee.approver || 'Not assigned'}
+                                </div>
+                              </div>
+                              <div className="profile-ud-item">
+                                <div className="profile-ud-label">Approval Workflow</div>
+                                <div className="profile-ud-value">
+                                  {employee.approvalWorkflow || 'Manager Approval'}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
                   {/* Notes */}
                   <div className="nk-block">
                     <div className="nk-block-head">

@@ -1,10 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 import './Timesheet.css';
 
 const TimesheetSubmit = () => {
   const { subdomain, weekId } = useParams();
   const navigate = useNavigate();
+  const { isAdmin, isEmployee } = useAuth();
   const fileInputRef = useRef(null);
   const cameraInputRef = useRef(null);
   const [loading, setLoading] = useState(false);
@@ -28,6 +30,41 @@ const TimesheetSubmit = () => {
   const [attachments, setAttachments] = useState([]);
   const [previewImages, setPreviewImages] = useState([]);
   
+  // AI Processing state
+  const [aiProcessing, setAiProcessing] = useState(false);
+  const [aiProcessedData, setAiProcessedData] = useState(null);
+  const [showAiUpload, setShowAiUpload] = useState(false);
+  
+  // Employee selection for non-employee roles
+  const [selectedEmployee, setSelectedEmployee] = useState('');
+  const [availableEmployees, setAvailableEmployees] = useState([]);
+  
+  // External timesheet file state (for external clients)
+  const [externalTimesheetFile, setExternalTimesheetFile] = useState(null);
+  
+  // Function to determine current client type based on clients with hours
+  const getCurrentClientType = () => {
+    const clientsWithHours = clientHours.filter(client => 
+      client.hours.some(hour => hour > 0)
+    );
+    
+    if (clientsWithHours.length === 0) {
+      // Default to internal if no hours entered yet
+      return 'internal';
+    }
+    
+    // Check if any client with hours is external
+    const hasExternalClient = clientsWithHours.some(client => client.clientType === 'external');
+    
+    if (hasExternalClient) {
+      return 'external';
+    }
+    
+    return 'internal';
+  };
+  
+  const clientType = getCurrentClientType();
+  
   // Mock data removed - using clientHours state instead
   
   useEffect(() => {
@@ -46,13 +83,14 @@ const TimesheetSubmit = () => {
         // Simulate API call
         await new Promise(resolve => setTimeout(resolve, 800));
         
-        // Mock client data with multiple clients
+        // Mock client data with multiple clients and their types
         const mockClientData = [
           { 
             id: '1', 
             clientName: 'JPMC', 
             project: 'Web Development',
             hourlyRate: 125,
+            clientType: 'internal',
             hours: Array(7).fill(0)
           },
           { 
@@ -60,6 +98,7 @@ const TimesheetSubmit = () => {
             clientName: 'IBM', 
             project: 'Mobile App',
             hourlyRate: 150,
+            clientType: 'external',
             hours: Array(7).fill(0)
           },
           { 
@@ -67,11 +106,24 @@ const TimesheetSubmit = () => {
             clientName: 'Accenture', 
             project: 'UI/UX Design',
             hourlyRate: 110,
+            clientType: 'internal',
             hours: Array(7).fill(0)
           }
         ];
         
         setClientHours(mockClientData);
+        
+        // Load available employees for non-employee roles
+        if (!isEmployee()) {
+          const mockEmployees = [
+            { id: '1', name: 'John Doe', email: 'john.doe@company.com', department: 'Engineering' },
+            { id: '2', name: 'Jane Smith', email: 'jane.smith@company.com', department: 'Design' },
+            { id: '3', name: 'Mike Johnson', email: 'mike.johnson@company.com', department: 'Marketing' },
+            { id: '4', name: 'Sarah Wilson', email: 'sarah.wilson@company.com', department: 'Engineering' },
+            { id: '5', name: 'David Brown', email: 'david.brown@company.com', department: 'Sales' }
+          ];
+          setAvailableEmployees(mockEmployees);
+        }
         
         // Generate available weeks dynamically
         const generateAvailableWeeks = () => {
@@ -194,7 +246,7 @@ const TimesheetSubmit = () => {
     };
     
     loadTimesheetData();
-  }, [weekId]);
+  }, [weekId, isEmployee]);
   
   const handleWeekChange = (selectedWeekValue) => {
     setSelectedWeek(selectedWeekValue);
@@ -333,10 +385,25 @@ const TimesheetSubmit = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Validate form - check if any client has hours
-    const totalClientHours = getGrandTotal();
-    if (totalClientHours === 0) {
-      setError('Please enter at least one hour for any client or holiday/time off');
+    // Validate based on client type
+    if (clientType === 'internal') {
+      // For internal clients, validate hours entry
+      const totalClientHours = getGrandTotal();
+      if (totalClientHours === 0) {
+        setError('Please enter at least one hour for any client or holiday/time off');
+        return;
+      }
+    } else {
+      // For external clients, validate file upload
+      if (!externalTimesheetFile) {
+        setError('Please upload the client submitted timesheet file');
+        return;
+      }
+    }
+    
+    // Validate employee selection for non-employee roles
+    if (!isEmployee() && !selectedEmployee) {
+      setError('Please select an employee before submitting');
       return;
     }
     
@@ -349,31 +416,96 @@ const TimesheetSubmit = () => {
       
       // Create form data for file upload
       const formData = new FormData();
-      formData.append('week', week);
-      formData.append('clientHours', JSON.stringify(clientHours));
-      formData.append('holidayHours', JSON.stringify(holidayHours));
-      formData.append('notes', notes);
+      formData.append('week', selectedWeek);
+      formData.append('clientType', clientType);
       
-      attachments.forEach((file, index) => {
-        formData.append(`attachment_${index}`, file);
-      });
+      if (!isEmployee()) {
+        formData.append('employeeId', selectedEmployee);
+      }
+      
+      if (clientType === 'internal') {
+        // Internal client data
+        formData.append('clientHours', JSON.stringify(clientHours));
+        formData.append('holidayHours', JSON.stringify(holidayHours));
+        formData.append('notes', notes);
+        
+        attachments.forEach((file, index) => {
+          formData.append(`attachment_${index}`, file);
+        });
+      } else {
+        // External client data
+        formData.append('externalTimesheetFile', externalTimesheetFile);
+        formData.append('notes', notes);
+      }
       
       // In a real app, send formData to API
-      console.log('Submitting timesheet:', {
-        week,
-        clientHours,
-        holidayHours,
-        totalHours: totalClientHours,
-        notes,
-        attachments: attachments.map(file => file.name)
-      });
+      const submissionData = {
+        week: selectedWeek,
+        clientType,
+        employeeId: !isEmployee() ? selectedEmployee : 'current-user',
+        ...(clientType === 'internal' ? {
+          clientHours,
+          holidayHours,
+          totalHours: getGrandTotal(),
+          attachments: attachments.map(file => file.name)
+        } : {
+          externalTimesheetFile: externalTimesheetFile.name
+        }),
+        notes
+      };
       
-      setSuccess('Timesheet submitted successfully!');
-      
-      // Redirect after a short delay
-      setTimeout(() => {
-        navigate(`/${subdomain}/dashboard`);
-      }, 2000);
+      console.log('Submitting timesheet:', submissionData);
+    
+    // Simulate sending email notification to approver
+    const employeeName = !isEmployee() ? 
+      `${selectedEmployee.split(' - ')[0]}` : 
+      'Current User';
+    
+    // Get approver info from mock data
+    const mockApproverData = {
+      name: 'Sarah Johnson',
+      email: 'sarah.johnson@company.com',
+      department: 'Management'
+    };
+    
+    // Simulate email notification to approver
+    const emailNotification = {
+      to: mockApproverData.email,
+      subject: `Timesheet Approval Required - ${employeeName} - Week ${selectedWeek}`,
+      body: `
+        Dear ${mockApproverData.name},
+        
+        A new timesheet has been submitted and requires your approval:
+        
+        Employee: ${employeeName}
+        Week: ${selectedWeek}
+        Client Type: ${clientType === 'internal' ? 'Internal' : 'External'}
+        Total Hours: ${clientType === 'internal' ? getGrandTotal() : 'N/A (External)'}
+        
+        Please review and approve/reject this timesheet at your earliest convenience.
+        
+        You can access the approval page here: ${window.location.origin}/${subdomain}/timesheets/approval
+        
+        Thank you,
+        TimePulse System
+      `
+    };
+    
+    console.log('Email notification sent to approver:', emailNotification);
+    
+    // Update timesheet status to 'Submitted for Approval'
+    submissionData.status = 'Submitted for Approval';
+    submissionData.submittedDate = new Date().toISOString().split('T')[0];
+    submissionData.approver = mockApproverData.name;
+    
+    console.log('Updated timesheet with approval status:', submissionData);
+    
+    setSuccess(`${clientType === 'internal' ? 'Internal' : 'External'} client timesheet submitted successfully! An approval request has been sent to ${mockApproverData.name}.`);
+    
+    // Redirect after a short delay
+    setTimeout(() => {
+      navigate(`/${subdomain}/timesheets`);
+    }, 2000);
     } catch (error) {
       console.error('Error submitting timesheet:', error);
       setError('Failed to submit timesheet. Please try again.');
@@ -418,6 +550,150 @@ const TimesheetSubmit = () => {
     if (type.includes('pdf')) return 'ni-file-pdf';
     if (type.includes('word') || type.includes('doc')) return 'ni-file-doc';
     return 'ni-file';
+  };
+  
+  // AI Processing Functions
+  const handleAiFileUpload = async (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
+    
+    // Check if employee is selected for non-employee roles
+    if (!isEmployee() && !selectedEmployee) {
+      alert('Please select an employee first before uploading their timesheet.');
+      e.target.value = ''; // Reset file input
+      return;
+    }
+    
+    const file = files[0];
+    
+    // Validate file type
+    const validTypes = [
+      'image/jpeg', 'image/png', 'image/heic', 'image/webp',
+      'application/pdf',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'text/csv'
+    ];
+    
+    if (!validTypes.includes(file.type)) {
+      setError('Please upload a valid file format: Image (JPG, PNG, HEIC), PDF, Excel, or CSV');
+      return;
+    }
+    
+    if (file.size > 10 * 1024 * 1024) {
+      setError('File size must be less than 10MB');
+      return;
+    }
+    
+    setError('');
+    setAiProcessing(true);
+    
+    try {
+      // Simulate AI processing
+      await processTimesheetWithAI(file);
+    } catch (error) {
+      console.error('AI processing error:', error);
+      setError('Failed to process timesheet with AI. Please try again.');
+    } finally {
+      setAiProcessing(false);
+    }
+  };
+  
+  const processTimesheetWithAI = async (file) => {
+    // Simulate AI processing delay
+    await new Promise(resolve => setTimeout(resolve, 3000));
+    
+    // Mock AI extracted data - in real implementation, this would call your AI service
+    const mockExtractedData = {
+      week: selectedWeek || availableWeeks[0]?.value || '14-JUL-2025 To 20-JUL-2025',
+      clientHours: [
+        { 
+          id: '1', 
+          clientName: 'JPMC', 
+          project: 'Web Development',
+          hourlyRate: 125,
+          hours: [8, 8, 7.5, 8, 8, 0, 0] // Mock extracted hours
+        },
+        { 
+          id: '2', 
+          clientName: 'IBM', 
+          project: 'Mobile App',
+          hourlyRate: 150,
+          hours: [0, 0, 0.5, 0, 0, 4, 0] // Mock extracted hours
+        },
+        { 
+          id: '3', 
+          clientName: 'Accenture', 
+          project: 'UI/UX Design',
+          hourlyRate: 110,
+          hours: [0, 0, 0, 0, 0, 0, 0]
+        }
+      ],
+      holidayHours: {
+        holiday: [0, 0, 0, 0, 0, 0, 0],
+        timeOff: [0, 0, 0, 0, 0, 0, 8] // Mock extracted time off
+      },
+      notes: 'Timesheet extracted from uploaded file using AI processing',
+      confidence: 0.95 // AI confidence score
+    };
+    
+    setAiProcessedData(mockExtractedData);
+    setSuccess('AI processing completed! Review the extracted data below.');
+  };
+  
+  const applyAiProcessedData = () => {
+    if (!aiProcessedData) return;
+    
+    // Apply the AI processed data to the form
+    setWeek(aiProcessedData.week);
+    setSelectedWeek(aiProcessedData.week);
+    setClientHours(aiProcessedData.clientHours);
+    setHolidayHours(aiProcessedData.holidayHours);
+    setNotes(aiProcessedData.notes);
+    
+    // Clear AI processed data and hide upload section
+    setAiProcessedData(null);
+    setShowAiUpload(false);
+    setSuccess('AI extracted data has been applied to your timesheet. Please review and submit.');
+  };
+  
+  const discardAiProcessedData = () => {
+    setAiProcessedData(null);
+    setShowAiUpload(false);
+    setSuccess('');
+  };
+  
+  const handleExternalTimesheetUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    // Validate file type
+    const allowedTypes = [
+      'image/jpeg', 'image/jpg', 'image/png', 'image/heic',
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    ];
+    
+    if (!allowedTypes.includes(file.type)) {
+      setError('Please upload a valid file (Image, PDF, or Word document)');
+      return;
+    }
+    
+    // Check file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      setError('File size must be less than 10MB');
+      return;
+    }
+    
+    setExternalTimesheetFile(file);
+    setError('');
+    setSuccess(`External timesheet file "${file.name}" uploaded successfully`);
+  };
+  
+  const removeExternalTimesheetFile = () => {
+    setExternalTimesheetFile(null);
+    setSuccess('');
   };
   
   if (loading) {
@@ -475,6 +751,38 @@ const TimesheetSubmit = () => {
               <div className="card card-bordered">
                 <div className="card-inner">
                   <form onSubmit={handleSubmit}>
+                    {/* Employee Selection for Non-Employee Roles */}
+                    {!isEmployee() && (
+                      <div className="form-group mb-4">
+                        <label className="form-label">
+                          <em className="icon ni ni-user text-primary me-2"></em>
+                          Select Employee
+                        </label>
+                        <div className="form-control-wrap">
+                          <select 
+                            className="form-select" 
+                            value={selectedEmployee}
+                            onChange={(e) => setSelectedEmployee(e.target.value)}
+                            disabled={isReadOnly}
+                            required
+                          >
+                            <option value="">Choose an employee...</option>
+                            {availableEmployees.map((employee) => (
+                              <option key={employee.id} value={employee.id}>
+                                {employee.name} - {employee.department} ({employee.email})
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="form-note mt-2">
+                          <small className="text-soft">
+                            {isAdmin() ? 'As an admin, you can manage timesheets for any employee.' : 
+                             'Select the employee whose timesheet you want to manage.'}
+                          </small>
+                        </div>
+                      </div>
+                    )}
+                    
                     <div className="form-group mb-4">
                       <label className="form-label">Select Week</label>
                       <div className="form-control-wrap">
@@ -499,15 +807,210 @@ const TimesheetSubmit = () => {
                         </div>
                       )}
                     </div>
+                  
+                  {/* External Client File Upload */}
+                  {clientType === 'external' && (
+                    <div className="form-group mb-4">
+                      <div className="card card-bordered">
+                        <div className="card-inner">
+                          <h6 className="card-title mb-3">
+                            <em className="icon ni ni-upload text-primary me-2"></em>
+                            Upload Client Submitted Timesheet
+                          </h6>
+                          <div className="form-note mb-3">
+                            <small className="text-soft">
+                              Upload the timesheet file submitted by the external client (Image, PDF, or Word document)
+                            </small>
+                          </div>
+                            
+                            {!externalTimesheetFile ? (
+                              <div className="upload-zone" onClick={() => document.getElementById('external-file-input').click()}>
+                                <div className="dz-message">
+                                  <span className="dz-message-icon">
+                                    <em className="icon ni ni-upload"></em>
+                                  </span>
+                                  <span className="dz-message-text">
+                                    <strong>Click to upload</strong> or drag and drop
+                                  </span>
+                                  <span className="dz-message-hint">
+                                    Supported formats: JPG, PNG, PDF, DOC, DOCX (Max 10MB)
+                                  </span>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="uploaded-file-preview">
+                                <div className="d-flex align-items-center justify-content-between p-3 border rounded">
+                                  <div className="d-flex align-items-center">
+                                    <em className="icon ni ni-file text-primary me-2"></em>
+                                    <div>
+                                      <div className="fw-bold">{externalTimesheetFile.name}</div>
+                                      <small className="text-muted">
+                                        {(externalTimesheetFile.size / 1024 / 1024).toFixed(2)} MB
+                                      </small>
+                                    </div>
+                                  </div>
+                                  <button 
+                                    type="button" 
+                                    className="btn btn-sm btn-outline-danger"
+                                    onClick={removeExternalTimesheetFile}
+                                    disabled={isReadOnly}
+                                  >
+                                    <em className="icon ni ni-trash"></em>
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                            
+                            <input 
+                              type="file"
+                              id="external-file-input"
+                              className="d-none"
+                              accept=".jpg,.jpeg,.png,.heic,.pdf,.doc,.docx"
+                              onChange={handleExternalTimesheetUpload}
+                              disabled={isReadOnly}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    )}
                     
+                    {/* AI-Powered Timesheet Upload Section - Only for Internal Clients */}
+                    {clientType === 'internal' && (
+                      <div className="form-group mb-4">
+                        <div className="card card-bordered">
+                          <div className="card-inner">
+                            <div className="d-flex justify-content-between align-items-center mb-3">
+                              <h6 className="card-title mb-0">
+                                <em className="icon ni ni-cpu text-primary me-2"></em>
+                                AI-Powered Timesheet Upload
+                              </h6>
+                              <button 
+                                type="button" 
+                                className="btn btn-sm btn-outline-primary"
+                                onClick={() => setShowAiUpload(!showAiUpload)}
+                                disabled={isReadOnly}
+                              >
+                                {showAiUpload ? 'Hide' : 'Upload & Extract'}
+                              </button>
+                            </div>
+                          
+                          <p className="text-soft mb-3">
+                            Upload {!isEmployee() && selectedEmployee ? 
+                              `${availableEmployees.find(emp => emp.id === selectedEmployee)?.name}'s` : 
+                              'your'
+                            } timesheet in any format (image, Excel, PDF, CSV) and let our AI engine automatically extract and populate the timesheet data.
+                          </p>
+                          
+                          {!isEmployee() && !selectedEmployee && (
+                            <div className="alert alert-warning mb-3">
+                              <em className="icon ni ni-alert-circle me-2"></em>
+                              Please select an employee first before uploading their timesheet.
+                            </div>
+                          )}
+                          
+                          {showAiUpload && (
+                            <div className="ai-upload-section">
+                              <div className="form-group">
+                                <div className="form-control-wrap">
+                                  <div className="form-file">
+                                    <input 
+                                      type="file" 
+                                      className="form-file-input" 
+                                      id="aiFileUpload"
+                                      accept=".jpg,.jpeg,.png,.heic,.webp,.pdf,.xlsx,.xls,.csv"
+                                      onChange={handleAiFileUpload}
+                                      disabled={aiProcessing || isReadOnly || (!isEmployee() && !selectedEmployee)}
+                                    />
+                                    <label className="form-file-label" htmlFor="aiFileUpload">
+                                      {aiProcessing ? (
+                                        <>
+                                          <span className="spinner-border spinner-border-sm me-2"></span>
+                                          Processing with AI...
+                                        </>
+                                      ) : (
+                                        'Choose file or drag & drop'
+                                      )}
+                                    </label>
+                                  </div>
+                                </div>
+                                <div className="form-note mt-2">
+                                  <small className="text-soft">
+                                    Supported formats: Images (JPG, PNG, HEIC), PDF, Excel (XLSX, XLS), CSV
+                                  </small>
+                                </div>
+                              </div>
+                              
+                              {aiProcessing && (
+                                <div className="alert alert-info mt-3">
+                                  <div className="d-flex align-items-center">
+                                    <span className="spinner-border spinner-border-sm me-2"></span>
+                                    <div>
+                                      <strong>AI Processing in Progress...</strong>
+                                      <br />
+                                      <small>Analyzing your timesheet and extracting data. This may take a few moments.</small>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                              
+                              {aiProcessedData && (
+                                <div className="alert alert-success mt-3">
+                                  <div className="d-flex justify-content-between align-items-start">
+                                    <div>
+                                      <h6 className="alert-heading">
+                                        <em className="icon ni ni-check-circle me-1"></em>
+                                        AI Extraction Complete!
+                                      </h6>
+                                      <p className="mb-2">
+                                        Confidence Score: <strong>{Math.round(aiProcessedData.confidence * 100)}%</strong>
+                                      </p>
+                                      <p className="mb-0">
+                                        <small>
+                                          Extracted {aiProcessedData.clientHours.reduce((sum, client) => 
+                                            sum + client.hours.reduce((clientSum, hours) => clientSum + hours, 0), 0
+                                          )} total hours across {aiProcessedData.clientHours.filter(client => 
+                                            client.hours.some(h => h > 0)
+                                          ).length} clients.
+                                        </small>
+                                      </p>
+                                    </div>
+                                    <div className="d-flex gap-2">
+                                      <button 
+                                        type="button" 
+                                        className="btn btn-sm btn-success"
+                                        onClick={applyAiProcessedData}
+                                      >
+                                        Apply Data
+                                      </button>
+                                      <button 
+                                        type="button" 
+                                        className="btn btn-sm btn-outline-secondary"
+                                        onClick={discardAiProcessedData}
+                                      >
+                                        Discard
+                                      </button>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    )}
+                    
+                    {/* SOW and Timesheet Table - Only for Internal Clients */}
+                    {clientType === 'internal' && (
+                    <>
                     <div className="form-group mb-4">
                       <label className="form-label">Select Statement of Work (SOW)</label>
                       <div className="form-control-wrap">
                         <select className="form-select" disabled>
                           <option>Select SOW</option>
-                          <option selected>✓ Web Development - JPMC ($125/hr)</option>
-                          <option selected>✓ Mobile App - IBM ($150/hr)</option>
-                          <option selected>✓ UI/UX Design - Accenture ($110/hr)</option>
+                          <option selected>✓ Web Development - JPMC{isAdmin() ? ' ($125/hr)' : ''}</option>
+                          <option selected>✓ Mobile App - IBM{isAdmin() ? ' ($150/hr)' : ''}</option>
+                          <option selected>✓ UI/UX Design - Accenture{isAdmin() ? ' ($110/hr)' : ''}</option>
                         </select>
                       </div>
 
@@ -790,7 +1293,7 @@ const TimesheetSubmit = () => {
                                   <span className="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
                                   Submitting...
                                 </>
-                              ) : 'Submit with Confirmation'}
+                              ) : `Submit ${clientType === 'internal' ? 'Internal Client' : 'External Client'} Timesheet`}
                             </button>
                           </>
                         ) : (
@@ -808,6 +1311,8 @@ const TimesheetSubmit = () => {
                         </button>
                       </div>
                     </div>
+                    </>
+                    )}
                     
                     {/* Find My Approvers Section */}
                     <div className="text-center mt-4">

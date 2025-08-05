@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { uploadAndProcessTimesheet, transformTimesheetToInvoice } from '../../services/engineService';
 import './Timesheet.css';
 
 const TimesheetSubmit = () => {
@@ -34,6 +35,12 @@ const TimesheetSubmit = () => {
   const [aiProcessing, setAiProcessing] = useState(false);
   const [aiProcessedData, setAiProcessedData] = useState(null);
   const [showAiUpload, setShowAiUpload] = useState(false);
+  
+  // Auto-conversion state
+  const [autoConvertToInvoice, setAutoConvertToInvoice] = useState(true);
+  const [conversionProcessing, setConversionProcessing] = useState(false);
+  const [conversionSuccess, setConversionSuccess] = useState(false);
+  const [invoiceData, setInvoiceData] = useState(null);
   
   // Employee selection for non-employee roles
   const [selectedEmployee, setSelectedEmployee] = useState('');
@@ -316,46 +323,60 @@ const TimesheetSubmit = () => {
     setShowCamera(false);
   };
   
-  const handleFiles = (files) => {
-    // Check file size and type
-    const validFiles = files.filter(file => {
-      const isValidType = ['image/jpeg', 'image/png', 'image/heic', 'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'].includes(file.type);
-      const isValidSize = file.size <= 10 * 1024 * 1024; // 10MB max
+  const handleFiles = async (files) => {
+    const newAttachments = [];
+    const newPreviews = [];
+    
+    Array.from(files).forEach(file => {
+      if (file.size > 10 * 1024 * 1024) { // 10MB limit
+        setError('File size must be less than 10MB');
+        return;
+      }
       
-      if (!isValidType) {
+      // Validate file type
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/heic', 'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+      if (!allowedTypes.includes(file.type)) {
         setError('Invalid file type. Please upload images (JPG, PNG, HEIC) or documents (PDF, DOC, DOCX).');
-        return false;
+        return;
       }
       
-      if (!isValidSize) {
-        setError('File too large. Maximum size is 10MB.');
-        return false;
-      }
+      newAttachments.push(file);
       
-      return true;
-    });
-    
-    if (validFiles.length === 0) return;
-    
-    // Clear error if any
-    setError('');
-    
-    // Add files to attachments
-    setAttachments(prev => [...prev, ...validFiles]);
-    
-    // Generate previews for images
-    validFiles.forEach(file => {
+      // Create preview for images
       if (file.type.startsWith('image/')) {
         const reader = new FileReader();
         reader.onload = (e) => {
-          setPreviewImages(prev => [...prev, { file: file.name, url: e.target.result }]);
+          newPreviews.push({
+            file: file.name,
+            url: e.target.result,
+            type: file.type
+          });
+          setPreviewImages(prev => [...prev, ...newPreviews]);
         };
         reader.readAsDataURL(file);
       } else {
-        // For non-image files, use a generic icon
-        setPreviewImages(prev => [...prev, { file: file.name, url: null, type: file.type }]);
+        newPreviews.push({
+          file: file.name,
+          url: null,
+          type: file.type
+        });
+        setPreviewImages(prev => [...prev, ...newPreviews]);
       }
     });
+    
+    setAttachments(prev => [...prev, ...newAttachments]);
+    setError('');
+    
+    // Auto-convert to invoice if enabled and file is an image or document
+    if (autoConvertToInvoice && files.length > 0) {
+      const file = files[0]; // Process the first file
+      if (file.type.startsWith('image/') || 
+          file.type === 'application/pdf' || 
+          file.type.includes('document') ||
+          file.type.includes('spreadsheet')) {
+        await processTimesheetAndConvertToInvoice(file);
+      }
+    }
   };
   
   const removeAttachment = (index) => {
@@ -693,9 +714,61 @@ const TimesheetSubmit = () => {
   
   const removeExternalTimesheetFile = () => {
     setExternalTimesheetFile(null);
-    setSuccess('');
   };
-  
+
+  // Auto-conversion function
+  const processTimesheetAndConvertToInvoice = async (file) => {
+    setConversionProcessing(true);
+    setError('');
+    setConversionSuccess(false);
+    
+    try {
+      // Step 1: Process timesheet with AI engine
+      console.log('Processing timesheet with AI engine...');
+      setSuccess('🔄 Processing timesheet with AI engine...');
+      
+      const engineResponse = await uploadAndProcessTimesheet(file);
+      
+      // Step 2: Transform to invoice format
+      console.log('Converting to invoice format...');
+      setSuccess('🔄 Converting to invoice format...');
+      
+      const clientInfo = {
+        name: clientHours.find(client => client.hours.some(h => h > 0))?.clientName || 'Client',
+        email: 'client@example.com',
+        rate: clientHours.find(client => client.hours.some(h => h > 0))?.hourlyRate || 100
+      };
+      
+      const invoiceData = transformTimesheetToInvoice(engineResponse, clientInfo);
+      setInvoiceData(invoiceData);
+      
+      // Step 3: Show success and offer to navigate to invoice creation
+      setConversionSuccess(true);
+      setSuccess('✅ Timesheet processed successfully! Invoice data is ready.');
+      
+      // Auto-navigate to invoice creation after 3 seconds
+      setTimeout(() => {
+        if (window.confirm('Timesheet converted to invoice successfully! Would you like to create the invoice now?')) {
+          navigate(`/${subdomain}/invoices/create`, {
+            state: { 
+              timesheetData: invoiceData,
+              sourceTimesheet: {
+                week: selectedWeek,
+                file: file.name
+              }
+            }
+          });
+        }
+      }, 3000);
+      
+    } catch (error) {
+      console.error('Error in auto-conversion:', error);
+      setError(`❌ Auto-conversion failed: ${error.message}`);
+    } finally {
+      setConversionProcessing(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="nk-content">
@@ -787,7 +860,7 @@ const TimesheetSubmit = () => {
                       <label className="form-label">Select Week</label>
                       <div className="form-control-wrap">
                         <select 
-                          className="form-select" 
+                          className="form-select timesheet-dropdown" 
                           value={selectedWeek}
                           onChange={(e) => handleWeekChange(e.target.value)}
                           disabled={isReadOnly}
@@ -1006,11 +1079,11 @@ const TimesheetSubmit = () => {
                     <div className="form-group mb-4">
                       <label className="form-label">Select Statement of Work (SOW)</label>
                       <div className="form-control-wrap">
-                        <select className="form-select" disabled>
+                        <select className="form-select timesheet-dropdown" disabled>
                           <option>Select SOW</option>
-                          <option selected>✓ Web Development - JPMC{isAdmin() ? ' ($125/hr)' : ''}</option>
-                          <option selected>✓ Mobile App - IBM{isAdmin() ? ' ($150/hr)' : ''}</option>
-                          <option selected>✓ UI/UX Design - Accenture{isAdmin() ? ' ($110/hr)' : ''}</option>
+                          <option selected>✓ JPMC - Web Development{isAdmin() ? ' ($125/hr)' : ''}</option>
+                          <option selected>✓ IBM - Mobile App{isAdmin() ? ' ($150/hr)' : ''}</option>
+                          <option selected>✓ Accenture - UI/UX{isAdmin() ? ' ($110/hr)' : ''}</option>
                         </select>
                       </div>
 
@@ -1236,6 +1309,61 @@ const TimesheetSubmit = () => {
                         </div>
                       </div>
                       
+                      {/* Auto-conversion toggle */}
+                      <div className="form-group mt-3">
+                        <div className="custom-control custom-switch">
+                          <input 
+                            type="checkbox" 
+                            className="custom-control-input" 
+                            id="autoConvertToggle"
+                            checked={autoConvertToInvoice}
+                            onChange={(e) => setAutoConvertToInvoice(e.target.checked)}
+                          />
+                          <label className="custom-control-label" htmlFor="autoConvertToggle">
+                            🤖 Auto-convert timesheet to invoice using AI
+                          </label>
+                        </div>
+                        <small className="form-note text-soft">
+                          When enabled, uploaded timesheet images will be automatically processed and converted to invoice format
+                        </small>
+                      </div>
+
+                      {/* Conversion status display */}
+                      {conversionProcessing && (
+                        <div className="alert alert-info mt-3">
+                          <div className="d-flex align-items-center">
+                            <div className="spinner-border spinner-border-sm me-2" role="status">
+                              <span className="visually-hidden">Processing...</span>
+                            </div>
+                            <span>🔄 Processing timesheet with AI engine...</span>
+                          </div>
+                        </div>
+                      )}
+
+                      {conversionSuccess && invoiceData && (
+                        <div className="alert alert-success mt-3">
+                          <h6>✅ Conversion Successful!</h6>
+                          <p className="mb-2">Your timesheet has been processed and converted to invoice format.</p>
+                          <button 
+                            type="button" 
+                            className="btn btn-success btn-sm"
+                            onClick={() => {
+                              navigate(`/${subdomain}/invoices/create`, {
+                                state: { 
+                                  timesheetData: invoiceData,
+                                  sourceTimesheet: {
+                                    week: selectedWeek,
+                                    file: 'uploaded-timesheet'
+                                  }
+                                }
+                              });
+                            }}
+                          >
+                            📄 Create Invoice Now
+                          </button>
+                        </div>
+                      )}
+
                       {previewImages.length > 0 && (
                         <div className="attached-files mt-3">
                           <h6 className="title mb-2">Attached Files</h6>

@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Engine API base URL - adjust this based on your engine server configuration
-const ENGINE_API_BASE_URL = process.env.REACT_APP_ENGINE_API_URL || 'http://localhost:8000';
+const ENGINE_API_BASE_URL = process.env.REACT_APP_ENGINE_API_URL || 'http://localhost:8001';
 
 // Create axios instance for engine API
 const engineAPI = axios.create({

@@ -8,7 +8,8 @@ import EmployeeTimesheet from "./components/timesheets/EmployeeTimesheet";
 import TimesheetSubmit from "./components/timesheets/TimesheetSubmit";
 import TimesheetApproval from "./components/timesheets/TimesheetApproval";
 import MobileTimesheetUpload from "./components/timesheets/MobileTimesheetUpload";
-import TimesheetToInvoice from "./components/timesheets/TimesheetToInvoice";
+import TimesheetToInvoice from './components/timesheets/TimesheetToInvoice';
+import TimesheetAutoConvert from './components/timesheets/TimesheetAutoConvert';
 import Invoice from "./components/invoices/Invoice";
 import InvoiceDashboard from "./components/invoices/InvoiceDashboard";
 import InvoiceForm from "./components/invoices/InvoiceForm";
@@ -125,6 +126,11 @@ function App() {
         <Route path="/:subdomain/timesheets/to-invoice" element={
           <ProtectedRoute requiredPermission={PERMISSIONS.CREATE_INVOICE}>
             <EmployerLayout><TimesheetToInvoice /></EmployerLayout>
+          </ProtectedRoute>
+        } />
+        <Route path="/:subdomain/timesheets/auto-convert" element={
+          <ProtectedRoute>
+            <EmployerLayout><TimesheetAutoConvert /></EmployerLayout>
           </ProtectedRoute>
         } />
         <Route path="/:subdomain/leave" element={

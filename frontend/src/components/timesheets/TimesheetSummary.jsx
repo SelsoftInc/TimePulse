@@ -303,6 +303,22 @@ const TimesheetSummary = () => {
                               <em className="icon ni ni-check-circle"></em>
                               <span>Approve Timesheets</span>
                             </button>
+                            <button 
+                              type="button" 
+                              className="btn btn-primary"
+                              onClick={() => navigate(`/${subdomain}/timesheets/to-invoice`)}
+                            >
+                              <em className="icon ni ni-file-docs"></em>
+                              <span>Convert to Invoice</span>
+                            </button>
+                            <button 
+                              type="button" 
+                              className="btn btn-success"
+                              onClick={() => navigate(`/${subdomain}/timesheets/auto-convert`)}
+                            >
+                              <em className="icon ni ni-upload"></em>
+                              <span>🤖 Test Auto-Convert</span>
+                            </button>
                           </li>
                         </PermissionGuard>
                         <PermissionGuard requiredPermission={PERMISSIONS.CREATE_INVOICE} fallback={null}>

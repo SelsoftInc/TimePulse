@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Header from './Header';
 import Sidebar from './Sidebar';
-import RoleSelector from '../common/RoleSelector';
+
 import { useAuth } from '../../contexts/AuthContext';
 import './TenantLayout.css';
 
@@ -68,7 +68,8 @@ const TenantLayout = ({ children }) => {
   
   const handleLogout = () => {
     logout();
-    navigate('/simple-login');
+    // Redirect to tenant-specific login page
+    navigate(`/${subdomain}/login`);
   };
 
   if (loading || !currentTenant) {
@@ -92,9 +93,6 @@ const TenantLayout = ({ children }) => {
         />
         
         <main className={`nk-main-content ${sidebarCollapsed ? 'expanded' : ''}`}>
-          <div className="role-selector-container">
-            <RoleSelector />
-          </div>
           {children}
         </main>
       </div>

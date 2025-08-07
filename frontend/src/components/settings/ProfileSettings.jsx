@@ -35,34 +35,84 @@ const ProfileSettings = () => {
 
   const loadProfileData = async () => {
     try {
-      // Simulate API call to load user profile
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      setLoading(true);
       
-      // Mock profile data - in real app, this would come from API
-      const mockProfile = {
-        firstName: 'John',
-        lastName: 'Doe',
-        email: user?.email || 'john.doe@company.com',
-        phone: '+1 (555) 123-4567',
-        department: 'Engineering',
-        position: isAdmin() ? 'Senior Manager' : isApprover() ? 'Team Lead' : 'Software Developer',
-        employeeId: 'EMP001',
-        startDate: '2023-01-15',
-        manager: isEmployee() ? 'Jane Smith' : '',
-        timezone: 'America/New_York',
-        language: 'en',
-        notifications: {
-          emailReminders: true,
-          timesheetDeadlines: true,
-          approvalRequests: isApprover() || isAdmin(),
-          systemUpdates: isAdmin()
+      if (!user?.tenantId) {
+        console.error('No tenant information available');
+        setLoading(false);
+        return;
+      }
+
+      // Fetch real user data from employees API
+      const response = await fetch(`http://localhost:5001/api/employees?tenantId=${user.tenantId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
-      };
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
       
-      setProfileData(mockProfile);
+      if (data.success && data.employees) {
+        // Find the current user in the employees list by email
+        const currentEmployee = data.employees.find(emp => 
+          emp.email.toLowerCase() === user.email.toLowerCase()
+        );
+        
+        if (currentEmployee) {
+          console.log('🔍 Found employee data:', currentEmployee);
+          
+          const realProfile = {
+            firstName: currentEmployee.firstName || '',
+            lastName: currentEmployee.lastName || '',
+            email: currentEmployee.email,
+            phone: currentEmployee.phone || '',
+            department: currentEmployee.department || '',
+            position: currentEmployee.position || '',
+            employeeId: currentEmployee.employeeId || '',
+            startDate: currentEmployee.joinDate ? new Date(currentEmployee.joinDate).toISOString().split('T')[0] : '',
+            manager: '',
+            timezone: 'America/New_York',
+            language: 'en',
+            notifications: {
+              emailReminders: true,
+              timesheetDeadlines: true,
+              approvalRequests: isApprover() || isAdmin(),
+              systemUpdates: isAdmin()
+            }
+          };
+          
+          console.log('✅ Setting real profile data:', realProfile);
+          setProfileData(realProfile);
+        } else {
+          console.warn('Current user not found in employees list');
+          // Fallback to basic user data
+          setProfileData(prev => ({
+            ...prev,
+            firstName: user.firstName || '',
+            lastName: user.lastName || '',
+            email: user.email || ''
+          }));
+        }
+      } else {
+        console.error('Failed to fetch employee data:', data.error);
+      }
+      
       setLoading(false);
     } catch (error) {
       console.error('Error loading profile data:', error);
+      // Fallback to basic user data from auth context
+      setProfileData(prev => ({
+        ...prev,
+        firstName: user?.firstName || '',
+        lastName: user?.lastName || '',
+        email: user?.email || ''
+      }));
       setLoading(false);
     }
   };
@@ -89,19 +139,77 @@ const ProfileSettings = () => {
   const handleSave = async () => {
     try {
       setLoading(true);
-      // Simulate API call to save profile
-      await new Promise(resolve => setTimeout(resolve, 1500));
       
-      console.log('Saving profile data:', profileData);
+      if (!user?.tenantId) {
+        throw new Error('No tenant information available');
+      }
+
+      // Find the current employee first to get the employee ID
+      const employeesResponse = await fetch(`http://localhost:5001/api/employees?tenantId=${user.tenantId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      if (!employeesResponse.ok) {
+        throw new Error('Failed to fetch employee data');
+      }
+
+      const employeesData = await employeesResponse.json();
+      const currentEmployee = employeesData.employees?.find(emp => 
+        emp.email.toLowerCase() === user.email.toLowerCase()
+      );
+
+      if (!currentEmployee) {
+        throw new Error('Employee record not found');
+      }
+
+      // Prepare update payload
+      const updatePayload = {
+        name: `${profileData.firstName} ${profileData.lastName}`.trim(),
+        email: profileData.email,
+        phone: profileData.phone,
+        department: profileData.department,
+        position: profileData.position,
+        employeeId: profileData.employeeId,
+        joinDate: profileData.startDate ? new Date(profileData.startDate).toISOString() : null
+      };
+
+      console.log('💾 Saving profile data:', updatePayload);
+
+      // Save profile data to backend
+      const response = await fetch(`http://localhost:5001/api/employees/${currentEmployee.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify(updatePayload)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update profile');
+      }
+
+      const result = await response.json();
+      console.log('✅ Profile updated successfully:', result);
+      
       setIsEditing(false);
       setLoading(false);
       
       // Show success message
       alert('Profile updated successfully!');
+      
+      // Reload the profile data to reflect changes
+      await loadProfileData();
+      
     } catch (error) {
       console.error('Error saving profile:', error);
       setLoading(false);
-      alert('Error saving profile. Please try again.');
+      alert(`Error saving profile: ${error.message}`);
     }
   };
 

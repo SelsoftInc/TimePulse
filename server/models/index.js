@@ -76,6 +76,10 @@ models.Tenant = sequelize.define('Tenant', {
     type: DataTypes.JSONB,
     defaultValue: {}
   },
+  logo: {
+    type: DataTypes.TEXT, // Store base64 encoded image
+    allowNull: true
+  },
   status: {
     type: DataTypes.ENUM('active', 'inactive', 'suspended'),
     defaultValue: 'active'
@@ -225,6 +229,10 @@ models.Employee = sequelize.define('Employee', {
     validate: {
       isEmail: true
     }
+  },
+  phone: {
+    type: DataTypes.STRING(20),
+    allowNull: true
   },
   department: {
     type: DataTypes.STRING(100)

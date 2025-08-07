@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Auto Login</title>
+</head>
+<body>
+    <h1>Auto Login...</h1>
+    <p>Logging in with demo credentials...</p>
+    <script>
+        // Wait for page to load then trigger login
+        setTimeout(() => {
+            // Create form data
+            const formData = {
+                email: 'test',
+                password: 'test'
+            };
+
+            // Make login request
+            fetch('/api/auth/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Login response:', data);
+                
+                if (data.token) {
+                    // Store token
+                    localStorage.setItem('token', data.token);
+                    
+                    // Store user info with new tenant ID
+                    const userInfo = {
+                        id: 'user-123',
+                        email: 'test@example.com',
+                        name: 'Demo User',
+                        tenantId: '6d872133-6fab-4804-9abf-187ece5d7d40'
+                    };
+                    localStorage.setItem('user', JSON.stringify(userInfo));
+                    localStorage.setItem('userInfo', JSON.stringify(userInfo));
+                    
+                    // Store tenant info with real UUID
+                    const defaultTenant = {
+                        id: '6d872133-6fab-4804-9abf-187ece5d7d40',
+                        name: 'Selsoft',
+                        subdomain: 'selsoft',
+                        status: 'active',
+                        role: 'admin'
+                    };
+                    localStorage.setItem('currentEmployer', JSON.stringify(defaultTenant));
+                    
+                    console.log('Login successful, redirecting...');
+                    // Redirect to settings page
+                    window.location.href = '/selsoft/settings';
+                } else {
+                    console.error('Login failed:', data);
+                    // Fallback - just set the demo data anyway
+                    const userInfo = {
+                        id: 'user-123',
+                        email: 'test@example.com',
+                        name: 'Demo User',
+                        tenantId: '6d872133-6fab-4804-9abf-187ece5d7d40'
+                    };
+                    localStorage.setItem('user', JSON.stringify(userInfo));
+                    localStorage.setItem('userInfo', JSON.stringify(userInfo));
+                    
+                    const defaultTenant = {
+                        id: '6d872133-6fab-4804-9abf-187ece5d7d40',
+                        name: 'Selsoft',
+                        subdomain: 'selsoft',
+                        status: 'active',
+                        role: 'admin'
+                    };
+                    localStorage.setItem('currentEmployer', JSON.stringify(defaultTenant));
+                    
+                    window.location.href = '/selsoft/settings';
+                }
+            })
+            .catch(error => {
+                console.error('Login error:', error);
+                // Fallback - set demo data anyway
+                const userInfo = {
+                    id: 'user-123',
+                    email: 'test@example.com',
+                    name: 'Demo User',
+                    tenantId: '6d872133-6fab-4804-9abf-187ece5d7d40'
+                };
+                localStorage.setItem('user', JSON.stringify(userInfo));
+                localStorage.setItem('userInfo', JSON.stringify(userInfo));
+                
+                const defaultTenant = {
+                    id: '6d872133-6fab-4804-9abf-187ece5d7d40',
+                    name: 'Selsoft',
+                    subdomain: 'selsoft',
+                    status: 'active',
+                    role: 'admin'
+                };
+                localStorage.setItem('currentEmployer', JSON.stringify(defaultTenant));
+                
+                window.location.href = '/selsoft/settings';
+            });
+        }, 1000);
+    </script>
+</body>
+</html>

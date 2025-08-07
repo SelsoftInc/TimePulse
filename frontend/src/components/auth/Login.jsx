@@ -37,14 +37,15 @@ const Login = () => {
         const userInfo = {
           id: 'user-123',
           email: formData.email === 'test' ? 'test@example.com' : formData.email,
-          name: 'Demo User'
+          name: 'Demo User',
+          tenantId: '6d872133-6fab-4804-9abf-187ece5d7d40'
         };
         localStorage.setItem('user', JSON.stringify(userInfo));
         localStorage.setItem('userInfo', JSON.stringify(userInfo)); // App.js uses userInfo key
         
-        // Create a default tenant for testing
+        // Create a default tenant for testing using real tenant ID
         const defaultTenant = {
-          id: 'tenant-123',
+          id: '6d872133-6fab-4804-9abf-187ece5d7d40',
           name: 'Selsoft',
           subdomain: 'selsoft',
           status: 'active',
@@ -118,7 +119,7 @@ const Login = () => {
     <div className="auth-container">
       <div className="auth-card">
         <div className="auth-header">
-          <img src="/assets/images/logo.png" alt="TimePulse Logo" className="auth-logo" />
+          <img src="/assets/images/logo-text.svg" alt="TimePulse Logo" className="auth-logo" />
           <h2>Welcome to TimePulse</h2>
           <p>Sign in to your account</p>
         </div>

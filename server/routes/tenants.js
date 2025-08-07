@@ -12,7 +12,7 @@ router.get('/:id', async (req, res) => {
 
     // Use raw query to avoid Sequelize timestamp issues
     const tenants = await sequelize.query(
-      'SELECT id, tenant_name, legal_name, subdomain, contact_address, invoice_address, contact_info, tax_info, settings, status FROM tenants WHERE id = :tenantId',
+      'SELECT id, tenant_name, legal_name, subdomain, contact_address, invoice_address, contact_info, tax_info, settings, logo, status FROM tenants WHERE id = :tenantId',
       {
         replacements: { tenantId: id },
         type: sequelize.QueryTypes.SELECT
@@ -36,8 +36,12 @@ router.get('/:id', async (req, res) => {
       contactInfo: tenant.contact_info || {},
       taxInfo: tenant.tax_info || {},
       settings: tenant.settings || {},
+      logo: tenant.logo || null,
       status: tenant.status
     };
+    
+    console.log('🔍 GET tenant - Logo in DB:', !!tenant.logo);
+    console.log('📦 GET tenant - Logo in response:', !!transformedTenant.logo);
 
     res.json({
       success: true,
@@ -58,6 +62,13 @@ router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const updateData = req.body;
+    
+    console.log('🔄 Tenant update request for ID:', id);
+    console.log('📦 Update data received:', Object.keys(updateData));
+    console.log('🖼️ Logo in update data:', !!updateData.logo);
+    if (updateData.logo) {
+      console.log('📏 Logo length:', updateData.logo.length);
+    }
 
     const tenant = await Tenant.findByPk(id);
 
@@ -65,7 +76,13 @@ router.put('/:id', async (req, res) => {
       return res.status(404).json({ error: 'Tenant not found' });
     }
 
+    console.log('💾 Updating tenant with data...');
     await tenant.update(updateData);
+    console.log('✅ Tenant updated successfully');
+    
+    // Verify the logo was saved
+    const updatedTenant = await Tenant.findByPk(id);
+    console.log('🔍 Logo saved to DB:', !!updatedTenant.logo);
 
     res.json({
       success: true,

@@ -15,7 +15,6 @@ const EmployeeList = () => {
   const [filters, setFilters] = useState({
     employmentType: 'all',
     status: 'all',
-    department: 'all',
     search: ''
   });
 
@@ -74,11 +73,7 @@ const EmployeeList = () => {
       return false;
     }
     
-    // Department filter
-    if (filters.department !== 'all' && employee.department !== filters.department) {
-      return false;
-    }
-    
+
     // Search filter
     if (filters.search && !employee.name.toLowerCase().includes(filters.search.toLowerCase()) &&
         !employee.email.toLowerCase().includes(filters.search.toLowerCase()) &&
@@ -102,13 +97,9 @@ const EmployeeList = () => {
     setFilters({
       employmentType: 'all',
       status: 'all',
-      department: 'all',
       search: ''
     });
   };
-
-  // Get unique departments for filter options
-  const departments = [...new Set(employees.map(emp => emp.department))].sort();
 
   // Define filter configuration
   const filterConfig = [
@@ -134,17 +125,6 @@ const EmployeeList = () => {
         { value: 'all', label: 'All Statuses' },
         { value: 'active', label: 'Active' },
         { value: 'inactive', label: 'Inactive' }
-      ]
-    },
-    {
-      key: 'department',
-      label: 'Department',
-      type: 'select',
-      value: filters.department,
-      defaultValue: 'all',
-      options: [
-        { value: 'all', label: 'All Departments' },
-        ...departments.map(dept => ({ value: dept, label: dept }))
       ]
     },
     {
@@ -215,7 +195,6 @@ const EmployeeList = () => {
                     <tr>
                       <th>Name</th>
                       <th>Position</th>
-                      <th>Department</th>
                       <th>Vendor</th>
                       <th>Client</th>
                       <th>End Client</th>
@@ -239,7 +218,6 @@ const EmployeeList = () => {
                           </Link>
                         </td>
                         <td>{employee.position}</td>
-                        <td>{employee.department}</td>
                         <td>
                           {employee.employmentType === 'Subcontractor' ? (
                             employee.vendor ? (
@@ -276,16 +254,28 @@ const EmployeeList = () => {
                           </span>
                         </td>
                         {checkPermission(PERMISSIONS.MANAGE_SETTINGS) && (
-                          <td>${employee.hourlyRate}</td>
+                          <td>
+                            {employee.hourlyRate ? `$${employee.hourlyRate}` : (
+                              <span className="text-muted">Not set</span>
+                            )}
+                          </td>
                         )}
                         <td>{employee.email}</td>
-                        <td>{employee.phone}</td>
+                        <td>
+                          {employee.phone ? employee.phone : (
+                            <span className="text-muted">Not provided</span>
+                          )}
+                        </td>
                         <td>
                           <span className={`badge badge-${employee.status === 'active' ? 'success' : 'warning'}`}>
                             {employee.status === 'active' ? 'Active' : 'Inactive'}
                           </span>
                         </td>
-                        <td>{new Date(employee.joinDate).toLocaleDateString()}</td>
+                        <td>
+                          {employee.joinDate ? new Date(employee.joinDate).toLocaleDateString() : (
+                            <span className="text-muted">Not set</span>
+                          )}
+                        </td>
                         <td className="text-right">
                           <div className="dropdown">
                             <button className="btn btn-sm btn-icon btn-trigger dropdown-toggle">

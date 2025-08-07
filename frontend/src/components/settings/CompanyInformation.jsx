@@ -20,13 +20,28 @@ const CompanyInformation = () => {
       setLoading(true);
       setError('');
       
-      if (!user?.tenantId) {
-        setError('No tenant information available');
+      // Get tenant ID from multiple possible sources
+      let tenantId = user?.tenantId;
+      
+      // Fallback to localStorage if not in user context
+      if (!tenantId) {
+        const storedUser = JSON.parse(localStorage.getItem('userInfo') || '{}');
+        tenantId = storedUser.tenantId;
+      }
+      
+      // Fallback to current tenant
+      if (!tenantId) {
+        const currentTenant = JSON.parse(localStorage.getItem('currentTenant') || '{}');
+        tenantId = currentTenant.id;
+      }
+      
+      if (!tenantId) {
+        setError('No tenant information available. Please log in again.');
         setLoading(false);
         return;
       }
 
-      const response = await fetch(`http://localhost:5001/api/tenants/${user.tenantId}`, {
+      const response = await fetch(`http://localhost:5001/api/tenants/${tenantId}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -51,14 +66,22 @@ const CompanyInformation = () => {
           return obj[key] || '';
         };
         
+        console.log('🔍 Tenant data received:', tenant);
+        console.log('🖼️ Logo in tenant data:', !!tenant.logo);
+        if (tenant.logo) {
+          console.log('📏 Logo length from API:', tenant.logo.length);
+        }
+        
         setCompanyInfo({
           tenantName: tenant.tenantName || '',
           address: formatAddress(tenant.contactAddress),
           taxId: safeGet(tenant.taxInfo, 'taxId'),
           contactEmail: safeGet(tenant.contactInfo, 'email'),
           contactPhone: safeGet(tenant.contactInfo, 'phone'),
-          logo: null // TODO: Handle logo from backend
+          logo: tenant.logo || null
         });
+        
+        console.log('✅ Company info updated with logo:', !!(tenant.logo || null));
       } else {
         setError(data.error || 'Failed to fetch tenant information');
       }
@@ -90,7 +113,7 @@ const CompanyInformation = () => {
 
   useEffect(() => {
     fetchTenantInfo();
-  }, [user?.tenantId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -118,11 +141,28 @@ const CompanyInformation = () => {
 
   const handleSave = async () => {
     try {
+      console.log('🔄 Starting save process...');
+      console.log('📋 Current company info:', companyInfo);
       setLoading(true);
       setError('');
       
-      if (!user?.tenantId) {
-        setError('No tenant information available');
+      // Get tenant ID from multiple possible sources
+      let tenantId = user?.tenantId;
+      
+      // Fallback to localStorage if not in user context
+      if (!tenantId) {
+        const storedUser = JSON.parse(localStorage.getItem('userInfo') || '{}');
+        tenantId = storedUser.tenantId;
+      }
+      
+      // Fallback to current tenant
+      if (!tenantId) {
+        const currentTenant = JSON.parse(localStorage.getItem('currentTenant') || '{}');
+        tenantId = currentTenant.id;
+      }
+      
+      if (!tenantId) {
+        setError('No tenant information available. Please log in again.');
         return;
       }
 
@@ -134,10 +174,19 @@ const CompanyInformation = () => {
         contactInfo: {
           ...(companyInfo.contactEmail && { email: companyInfo.contactEmail }),
           ...(companyInfo.contactPhone && { phone: companyInfo.contactPhone })
-        }
+        },
+        ...(companyInfo.logo && { logo: companyInfo.logo })
       };
+      
+      console.log('📦 Update data to send:', updateData);
+      console.log('🖼️ Logo included:', !!companyInfo.logo);
+      if (companyInfo.logo) {
+        console.log('📏 Logo length:', companyInfo.logo.length);
+      }
 
-      const response = await fetch(`http://localhost:5001/api/tenants/${user.tenantId}`, {
+      console.log(`🌐 Making API call to: http://localhost:5001/api/tenants/${tenantId}`);
+      
+      const response = await fetch(`http://localhost:5001/api/tenants/${tenantId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -146,15 +195,20 @@ const CompanyInformation = () => {
         body: JSON.stringify(updateData)
       });
 
+      console.log('📡 API Response status:', response.status);
+      
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const data = await response.json();
+      console.log('✅ API Response data:', data);
       
       if (data.success) {
+        console.log('🎉 Save successful!');
         alert('Company information saved successfully!');
       } else {
+        console.log('❌ Save failed:', data.error);
         setError(data.error || 'Failed to save company information');
       }
     } catch (error) {

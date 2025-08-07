@@ -20,32 +20,34 @@ router.get('/', async (req, res) => {
 
     // Transform the data to match frontend expectations
     const transformedEmployees = employees.map(emp => ({
-      id: emp.id,
-      name: `${emp.firstName} ${emp.lastName}`,
-      position: emp.position || 'N/A',
-      email: emp.email,
-      phone: emp.phone || 'N/A',
-      status: emp.status || 'active',
-      department: emp.department || 'N/A',
-      joinDate: emp.startDate || new Date().toISOString(),
-      hourlyRate: emp.hourlyRate || 0,
-      client: 'Not assigned', // TODO: Add client association
-      clientId: null,
-      employmentType: emp.employmentType || 'W2',
-      vendor: emp.vendor || null,
-      vendorId: emp.vendorId || null,
-      endClient: emp.endClient ? {
-        name: emp.endClient.name || 'N/A',
-        location: emp.endClient.location || 'N/A',
-        hiringManager: emp.endClient.hiringManager || null
-      } : null,
-      // Additional fields from database
-      employeeId: emp.employeeId,
-      ssn: emp.ssn,
-      address: emp.address,
-      emergencyContact: emp.emergencyContact,
-      bankDetails: emp.bankDetails,
-      documents: emp.documents
+        id: emp.id,
+        name: `${emp.firstName} ${emp.lastName}`,
+        firstName: emp.firstName, // Include separate firstName for profile
+        lastName: emp.lastName,   // Include separate lastName for profile
+        position: emp.position || 'N/A',
+        email: emp.email,
+        phone: emp.phone || null, // Phone numbers from dedicated phone field
+        status: emp.status || 'active',
+        department: emp.department || 'N/A',
+        joinDate: null, // Remove hardcoded join dates - not in Excel sheet  
+        hourlyRate: null, // Remove hardcoded hourly rates - not in Excel sheet
+        client: emp.client || null, // Show actual client or null
+        clientId: emp.clientId || null,
+        employmentType: emp.employmentType || 'W2',
+        vendor: emp.vendor || null,
+        vendorId: emp.vendorId || null,
+        endClient: emp.endClient ? {
+          name: emp.endClient.name || 'N/A',
+          location: emp.endClient.location || 'N/A',
+          hiringManager: emp.endClient.hiringManager || null
+        } : null,
+        // Additional fields from database
+        employeeId: emp.employeeId,
+        ssn: emp.ssn,
+        address: emp.address,
+        emergencyContact: emp.emergencyContact,
+        bankDetails: emp.bankDetails,
+        documents: emp.documents
     }));
 
     res.json({

@@ -5,7 +5,7 @@ import { PERMISSIONS } from "../../utils/roles";
 import { useAuth } from "../../contexts/AuthContext";
 import PermissionGuard from "../common/PermissionGuard";
 import TimesheetAlerts from "../notifications/TimesheetAlerts";
-import RoleSelector from "../common/RoleSelector";
+
 import "./Header.css";
 
 const Header = ({ toggleSidebar }) => {
@@ -13,6 +13,7 @@ const Header = ({ toggleSidebar }) => {
   const { subdomain } = useParams();
   const { user } = useAuth();
   const [darkMode, setDarkMode] = useState(false);
+  const [tenantLogo, setTenantLogo] = useState(null);
   
   // Initialize theme from localStorage on component mount
   useEffect(() => {
@@ -22,6 +23,45 @@ const Header = ({ toggleSidebar }) => {
       document.body.classList.add('dark-mode');
     }
   }, []);
+
+  // Fetch tenant logo
+  useEffect(() => {
+    const fetchTenantLogo = async () => {
+      try {
+        // Get tenant ID from multiple possible sources
+        let tenantId = user?.tenantId;
+        
+        if (!tenantId) {
+          const storedUser = JSON.parse(localStorage.getItem('userInfo') || '{}');
+          tenantId = storedUser.tenantId;
+        }
+        
+        if (!tenantId) {
+          const currentTenant = JSON.parse(localStorage.getItem('currentTenant') || '{}');
+          tenantId = currentTenant.id;
+        }
+        
+        if (!tenantId) return;
+
+        const response = await fetch(`http://localhost:5001/api/tenants/${tenantId}`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.tenant?.logo) {
+            setTenantLogo(data.tenant.logo);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching tenant logo:', error);
+      }
+    };
+
+    fetchTenantLogo();
+  }, [user]);
   
   // Toggle theme function
   const toggleTheme = () => {
@@ -71,9 +111,10 @@ const Header = ({ toggleSidebar }) => {
           {/* Brand logo and name */}
           <div className="app-brand">
             <img 
-              src="/assets/images/logo-text.svg" 
-              alt="TimePulse Logo" 
+              src={tenantLogo || "/assets/images/timepulse-logo.png"} 
+              alt={tenantLogo ? "Company Logo" : "TimePulse Logo"} 
               className="app-brand-logo" 
+              style={tenantLogo ? { maxHeight: '60px', maxWidth: '250px', objectFit: 'contain' } : {}}
             />
           </div>
           
@@ -90,10 +131,7 @@ const Header = ({ toggleSidebar }) => {
           
           {/* Right side tools */}
           <div className="nk-header-tools">
-            {/* Role Selector */}
-            <div className="header-action-item header-role-selector">
-              <RoleSelector />
-            </div>
+
             
             {/* Action icons */}
             <div className="header-action-item dropdown">

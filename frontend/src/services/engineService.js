@@ -1,7 +1,7 @@
 import axios from 'axios';
 
-// Engine API base URL - adjust this based on your engine server configuration
-const ENGINE_API_BASE_URL = process.env.REACT_APP_ENGINE_API_URL || 'http://localhost:8001';
+// Engine API base URL - now using Node.js server
+const ENGINE_API_BASE_URL = process.env.REACT_APP_ENGINE_API_URL || 'http://localhost:5000/api/engine';
 
 // Create axios instance for engine API
 const engineAPI = axios.create({
@@ -89,7 +89,7 @@ export const uploadAndProcessTimesheet = async (file) => {
     const formData = new FormData();
     formData.append('file', file);
 
-    const response = await axios.post(`${ENGINE_API_BASE_URL}/`, formData, {
+    const response = await axios.post(`${ENGINE_API_BASE_URL}/upload-and-process`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
@@ -100,9 +100,9 @@ export const uploadAndProcessTimesheet = async (file) => {
   } catch (error) {
     console.error('Error uploading and processing timesheet:', error);
     throw new Error(
-      error.response?.data?.detail || 
-      error.response?.data?.error ||
-      'Failed to upload and process timesheet. Please check if the engine service is running.'
+      error.response?.data?.error || 
+      error.response?.data?.message ||
+      'Failed to upload and process timesheet. Please check if the server is running.'
     );
   }
 };
@@ -189,7 +189,7 @@ export const transformTimesheetToInvoice = (engineData, clientInfo = {}) => {
  */
 export const checkEngineServiceHealth = async () => {
   try {
-    const response = await axios.get(`${ENGINE_API_BASE_URL}/docs`, {
+    const response = await axios.get(`${ENGINE_API_BASE_URL}/health`, {
       timeout: 5000,
     });
     return response.status === 200;

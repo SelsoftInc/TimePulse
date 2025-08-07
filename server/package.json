@@ -1,10 +1,7 @@
 {
-  "name": "server",
+  "name": "timepulse-server",
   "version": "1.0.0",
   "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
   "keywords": [],
   "author": "",
   "license": "ISC",
@@ -12,8 +9,21 @@
   "dependencies": {
     "cors": "^2.8.5",
     "dotenv": "^17.0.1",
-    "express": "^5.1.0",
+    "express": "^4.18.2",
     "pg": "^8.16.3",
-    "sequelize": "^6.37.7"
+    "sequelize": "^6.37.7",
+    "multer": "^1.4.5-lts.1",
+    "axios": "^1.6.0",
+    "openai": "^4.20.0",
+    "pdf-parse": "^1.1.1",
+    "mammoth": "^1.6.0",
+    "sharp": "^0.33.0",
+    "tesseract.js": "^5.0.0",
+    "form-data": "^4.0.0"
+  },
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
   }
 }

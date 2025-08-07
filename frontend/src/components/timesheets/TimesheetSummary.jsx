@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { PERMISSIONS } from '../../utils/roles';
 import PermissionGuard from '../common/PermissionGuard';
 import DataGridFilter from '../common/DataGridFilter';
+import { uploadAndProcessTimesheet, transformTimesheetToInvoice } from '../../services/engineService';
 import './TimesheetSummary.css';
 
 const TimesheetSummary = () => {
@@ -16,6 +17,9 @@ const TimesheetSummary = () => {
     dateRange: { from: '', to: '' },
     search: ''
   });
+  const [generatingInvoice, setGeneratingInvoice] = useState(false);
+  const [invoiceSuccess, setInvoiceSuccess] = useState('');
+  const [invoiceError, setInvoiceError] = useState('');
 
   useEffect(() => {
     loadTimesheetData();
@@ -197,6 +201,52 @@ const TimesheetSummary = () => {
     }
   };
 
+  // Generate invoice from timesheet using engine API
+  const handleGenerateInvoice = async (file) => {
+    setGeneratingInvoice(true);
+    setInvoiceError('');
+    setInvoiceSuccess('');
+
+    try {
+      // Step 1: Upload and process timesheet using engine
+      const timesheetData = await uploadAndProcessTimesheet(file);
+      
+      // Step 2: Transform engine response to invoice format
+      const clientInfo = {
+        name: 'Sample Client', // You can get this from timesheet data or user selection
+        email: 'client@example.com',
+        hourlyRate: 125, // Default rate, can be customized
+        address: '123 Business St, City, State 12345'
+      };
+      
+      const invoiceData = transformTimesheetToInvoice(timesheetData, clientInfo);
+      
+      // Step 3: Show success and navigate to invoice creation
+      setInvoiceSuccess(`Invoice generated successfully! Total: $${invoiceData.total}`);
+      
+      // Auto-navigate after 2 seconds or show confirmation
+      setTimeout(() => {
+        if (window.confirm('Invoice data is ready! Would you like to create the invoice now?')) {
+          navigate(`/${subdomain}/invoices/create`, {
+            state: {
+              invoiceData,
+              sourceTimesheet: {
+                fileName: file.name,
+                processedData: timesheetData
+              }
+            }
+          });
+        }
+      }, 2000);
+      
+    } catch (error) {
+      console.error('Invoice generation error:', error);
+      setInvoiceError(`Failed to generate invoice: ${error.message}`);
+    } finally {
+      setGeneratingInvoice(false);
+    }
+  };
+
   const handleNewTimesheet = () => {
     navigate(`/${subdomain}/timesheets/submit`);
   };
@@ -323,6 +373,53 @@ const TimesheetSummary = () => {
                         </PermissionGuard>
                         <PermissionGuard requiredPermission={PERMISSIONS.CREATE_INVOICE} fallback={null}>
                           <li>
+                            {/* Generate Invoice with File Upload */}
+                            <div className="mb-3">
+                              <input
+                                type="file"
+                                id="invoiceFileInput"
+                                accept=".pdf,.docx,.doc,.png,.jpg,.jpeg"
+                                style={{ display: 'none' }}
+                                onChange={(e) => {
+                                  const file = e.target.files[0];
+                                  if (file) {
+                                    handleGenerateInvoice(file);
+                                  }
+                                }}
+                              />
+                              <button 
+                                className="btn btn-primary me-2"
+                                onClick={() => document.getElementById('invoiceFileInput').click()}
+                                disabled={generatingInvoice}
+                                title="Upload timesheet and generate invoice using AI"
+                              >
+                                <em className="icon ni ni-file-plus"></em>
+                                <span>{generatingInvoice ? 'Generating...' : '🚀 Generate Invoice'}</span>
+                              </button>
+                            </div>
+                            
+                            {/* Status Messages */}
+                            {generatingInvoice && (
+                              <div className="alert alert-info mb-3">
+                                <em className="icon ni ni-loader"></em>
+                                Processing timesheet and generating invoice...
+                              </div>
+                            )}
+                            
+                            {invoiceSuccess && (
+                              <div className="alert alert-success mb-3">
+                                <em className="icon ni ni-check-circle"></em>
+                                {invoiceSuccess}
+                              </div>
+                            )}
+                            
+                            {invoiceError && (
+                              <div className="alert alert-danger mb-3">
+                                <em className="icon ni ni-cross-circle"></em>
+                                {invoiceError}
+                              </div>
+                            )}
+                            
                             <button 
                               className="btn btn-outline-info"
                               onClick={() => navigate(`/${subdomain}/timesheets/to-invoice`)}

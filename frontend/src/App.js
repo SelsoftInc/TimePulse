@@ -32,6 +32,7 @@ import EmployerSettings from './components/settings/EmployerSettings';
 import InvoiceSettings from './components/settings/InvoiceSettings';
 import TestLogin from "./components/auth/TestLogin";
 import SimpleLogin from "./components/auth/SimpleLogin";
+import Login from "./components/auth/Login";
 import Register from "./components/auth/Register";
 import Workspaces from "./components/workspaces/Workspaces";
 import EmployerLayout from "./components/layout/EmployerLayout";
@@ -51,7 +52,7 @@ const ProtectedRoute = ({ children, requiredPermission }) => {
   
   // Check authentication
   if (!isAuthenticated) {
-    return <Navigate to="/simple-login" />;
+    return <Navigate to="/login" />;
   }
   
   // If permission is required, check if user has it
@@ -70,8 +71,8 @@ function App() {
       <AuthProvider>
         <Routes>
         {/* Public routes */}
-        <Route path="/" element={<Navigate to="/simple-login" />} />
-        <Route path="/login" element={<Navigate to="/simple-login" />} />
+        <Route path="/" element={<Navigate to="/login" />} />
+        <Route path="/login" element={<Login />} />
         <Route path="/test-login" element={<TestLogin />} />
         <Route path="/simple-login" element={<SimpleLogin />} />
         <Route path="/register" element={<Register />} />
@@ -230,7 +231,7 @@ function App() {
         } />
         
         {/* Fallback route */}
-        <Route path="*" element={<Navigate to="/simple-login" />} />
+        <Route path="*" element={<Navigate to="/login" />} />
       </Routes>
       </AuthProvider>
     </BrowserRouter>

@@ -1,0 +1,128 @@
+[
+  {
+    "id": "d1629f91-a8c5-4cfe-90aa-ff0d97556154",
+    "firstName": "Pushban",
+    "lastName": "Rajaiyan",
+    "email": "",
+    "role": "employee",
+    "department": "",
+    "title": "",
+    "permissions": [
+      "VIEW_TIMESHEETS",
+      "CREATE_TIMESHEETS",
+      "EDIT_TIMESHEETS"
+    ],
+    "status": "active",
+    "hashedPassword": "$2a$10$faFMWhqmt/HM.aGe1SZ/eOg2nOyMuNCV66Zpo9rocg30zVCYn7DcK",
+    "mustChangePassword": true,
+    "createdAt": "2025-08-07T01:01:58.376Z"
+  },
+  {
+    "id": "93732513-17ec-4bd6-9b45-7f270b0d977a",
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "email": "",
+    "role": "employee",
+    "department": "",
+    "title": "",
+    "permissions": [
+      "VIEW_TIMESHEETS",
+      "CREATE_TIMESHEETS",
+      "EDIT_TIMESHEETS"
+    ],
+    "status": "active",
+    "hashedPassword": "$2a$10$v6d0n.W3Iu/6S2o8W74.3u3GL4Mf46vnUJZ.xBhWiEvh4PiAWI/le",
+    "mustChangePassword": true,
+    "createdAt": "2025-08-07T01:01:58.446Z"
+  },
+  {
+    "id": "40a35297-8a05-4502-97a2-48d8d24483d5",
+    "firstName": "Uma",
+    "lastName": "Sivalingam",
+    "email": "",
+    "role": "employee",
+    "department": "",
+    "title": "",
+    "permissions": [
+      "VIEW_TIMESHEETS",
+      "CREATE_TIMESHEETS",
+      "EDIT_TIMESHEETS"
+    ],
+    "status": "active",
+    "hashedPassword": "$2a$10$x5dG2li44W5tJZdWmleheO7zgdHoF9iBmJe0WQaJD3H3yE.NHvNca",
+    "mustChangePassword": true,
+    "createdAt": "2025-08-07T01:01:58.517Z"
+  },
+  {
+    "id": "140a2a4c-3c6e-4579-80f3-a5615383d38b",
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "email": "",
+    "role": "employee",
+    "department": "",
+    "title": "",
+    "permissions": [
+      "VIEW_TIMESHEETS",
+      "CREATE_TIMESHEETS",
+      "EDIT_TIMESHEETS"
+    ],
+    "status": "active",
+    "hashedPassword": "$2a$10$.ilHf1t6eroDKLMqVgyaZORpTIhyrarItsgYglHGGYLozXRgc453.",
+    "mustChangePassword": true,
+    "createdAt": "2025-08-07T01:01:58.588Z"
+  },
+  {
+    "id": "bfe6eaee-b5cc-4a0b-9a70-d22f11726b01",
+    "firstName": "Uma",
+    "lastName": "Sivalingam",
+    "email": "",
+    "role": "employee",
+    "department": "",
+    "title": "",
+    "permissions": [
+      "VIEW_TIMESHEETS",
+      "CREATE_TIMESHEETS",
+      "EDIT_TIMESHEETS"
+    ],
+    "status": "active",
+    "hashedPassword": "$2a$10$UV..jRIkeiP8SqOY1K1.GuvSnfv7Eyuxj5mXjCTkRoQFX300vju/S",
+    "mustChangePassword": true,
+    "createdAt": "2025-08-07T01:01:58.658Z"
+  },
+  {
+    "id": "2b8416ba-1f7a-4f7e-b5c2-1c3c11719465",
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "email": "",
+    "role": "employee",
+    "department": "",
+    "title": "",
+    "permissions": [
+      "VIEW_TIMESHEETS",
+      "CREATE_TIMESHEETS",
+      "EDIT_TIMESHEETS"
+    ],
+    "status": "active",
+    "hashedPassword": "$2a$10$AYcEPTA54aNefinsc7ZieeAQ7y52yxmvScmkZyV7Oc6J3rqJDVxN6",
+    "mustChangePassword": true,
+    "createdAt": "2025-08-07T01:01:58.729Z"
+  },
+  {
+    "id": "c0b2d75d-e618-41ea-ad2f-dbab2e648b33",
+    "firstName": "Lalitah",
+    "lastName": "Prabhu",
+    "email": "",
+    "role": "employee",
+    "department": "",
+    "title": "",
+    "permissions": [
+      "VIEW_TIMESHEETS",
+      "CREATE_TIMESHEETS",
+      "EDIT_TIMESHEETS"
+    ],
+    "status": "active",
+    "hashedPassword": "$2a$10$xqxJjo7ZeAN12oDjtAqh9u3RGJW3QRUvfj1xvlwcQd.XUBUMuGEk2",
+    "mustChangePassword": true,
+    "createdAt": "2025-08-07T01:01:58.800Z"
+  }
+]

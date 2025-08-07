@@ -7,18 +7,26 @@
 
 const express = require('express');
 const cors = require('cors');
-const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 require('dotenv').config();
+
+// Import database connection
+const { connectDB } = require('./models');
+
+const app = express();
+const PORT = process.env.PORT || 5001;
 
 // Import route modules
 const timesheetRoutes = require('./routes/timesheets');
 const invoiceRoutes = require('./routes/invoices');
 const engineRoutes = require('./routes/engine');
+const onboardingRoutes = require('./routes/onboarding');
+const employeeRoutes = require('./routes/employees');
+const clientRoutes = require('./routes/clients');
+const tenantRoutes = require('./routes/tenants');
 
-const app = express();
-const PORT = process.env.PORT || 5000;
+
 
 // Middleware
 app.use(cors({
@@ -63,7 +71,11 @@ app.get('/', (req, res) => {
       health: '/health',
       timesheets: '/api/timesheets',
       invoices: '/api/invoices',
-      engine: '/api/engine'
+      engine: '/api/engine',
+      onboarding: '/api/onboarding',
+      employees: '/api/employees',
+      clients: '/api/clients',
+      tenants: '/api/tenants'
     }
   });
 });
@@ -72,6 +84,11 @@ app.get('/', (req, res) => {
 app.use('/api/timesheets', timesheetRoutes);
 app.use('/api/invoices', invoiceRoutes);
 app.use('/api/engine', engineRoutes);
+app.use('/api/onboarding', onboardingRoutes);
+app.use('/api/employees', employeeRoutes);
+app.use('/api/clients', clientRoutes);
+app.use('/api/tenants', tenantRoutes);
+app.use('/api/auth', require('./routes/auth'));
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -91,11 +108,26 @@ app.use('*', (req, res) => {
   });
 });
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`🚀 TimePulse Server running on port ${PORT}`);
-  console.log(`📖 Health check: http://localhost:${PORT}/health`);
-  console.log(`🔧 Environment: ${process.env.NODE_ENV || 'development'}`);
-});
+// Start server with database connection
+const startServer = async () => {
+  try {
+    // Connect to database
+    await connectDB();
+    console.log('✅ Database connected successfully');
+    
+    // Start HTTP server
+    app.listen(PORT, () => {
+      console.log(`🚀 TimePulse Server running on port ${PORT}`);
+      console.log(`📖 Health check: http://localhost:${PORT}/health`);
+      console.log(`🔧 Environment: ${process.env.NODE_ENV || 'development'}`);
+      console.log(`🗄️  Database: Connected`);
+    });
+  } catch (error) {
+    console.error('❌ Failed to start server:', error);
+    process.exit(1);
+  }
+};
+
+startServer();
 
 module.exports = app;

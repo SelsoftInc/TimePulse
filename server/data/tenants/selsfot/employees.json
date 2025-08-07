@@ -1,0 +1,135 @@
+[
+  {
+    "id": "889f7c87-d502-43d4-8b1d-d0658aef0e04",
+    "employeeId": "",
+    "firstName": "Selvakumar",
+    "lastName": "Murugesan",
+    "email": "",
+    "department": "",
+    "title": "",
+    "manager": "",
+    "startDate": "",
+    "hourlyRate": 0,
+    "salaryType": "hourly",
+    "status": "active",
+    "contactInfo": {
+      "phone": "470-208-9651",
+      "address": ""
+    },
+    "createdAt": "2025-08-07T01:01:58.800Z"
+  },
+  {
+    "id": "7e4967f0-f631-4c45-8c52-0102caba9911",
+    "employeeId": "",
+    "firstName": "Suresh Palakad",
+    "lastName": "Krishnan",
+    "email": "",
+    "department": "",
+    "title": "",
+    "manager": "",
+    "startDate": "",
+    "hourlyRate": 0,
+    "salaryType": "hourly",
+    "status": "active",
+    "contactInfo": {
+      "phone": "214-592-3937",
+      "address": ""
+    },
+    "createdAt": "2025-08-07T01:01:58.800Z"
+  },
+  {
+    "id": "35e9fa45-d9ee-44e0-ba47-1ca2d7235b00",
+    "employeeId": "",
+    "firstName": "Panneerselvam",
+    "lastName": "Arulanandam",
+    "email": "",
+    "department": "",
+    "title": "",
+    "manager": "",
+    "startDate": "",
+    "hourlyRate": 0,
+    "salaryType": "hourly",
+    "status": "active",
+    "contactInfo": {
+      "phone": "469-631-1957",
+      "address": ""
+    },
+    "createdAt": "2025-08-07T01:01:58.800Z"
+  },
+  {
+    "id": "d8d65a76-3152-48bc-9cbd-c318760e8754",
+    "employeeId": "",
+    "firstName": "Pushban",
+    "lastName": "Rajaiyan",
+    "email": "",
+    "department": "",
+    "title": "",
+    "manager": "",
+    "startDate": "",
+    "hourlyRate": 0,
+    "salaryType": "hourly",
+    "status": "active",
+    "contactInfo": {
+      "phone": "217-721-3186",
+      "address": ""
+    },
+    "createdAt": "2025-08-07T01:01:58.800Z"
+  },
+  {
+    "id": "1443a0a7-6913-41f2-96bc-c1059db8b294",
+    "employeeId": "",
+    "firstName": "Uma",
+    "lastName": "Sivalingam",
+    "email": "",
+    "department": "",
+    "title": "",
+    "manager": "",
+    "startDate": "",
+    "hourlyRate": 0,
+    "salaryType": "hourly",
+    "status": "active",
+    "contactInfo": {
+      "phone": "972-302-8849",
+      "address": ""
+    },
+    "createdAt": "2025-08-07T01:01:58.800Z"
+  },
+  {
+    "id": "e4002270-be57-4654-b151-9b3ec608e80e",
+    "employeeId": "",
+    "firstName": "Lalitha ",
+    "lastName": "Prabhu",
+    "email": "",
+    "department": "",
+    "title": "",
+    "manager": "",
+    "startDate": "",
+    "hourlyRate": 0,
+    "salaryType": "hourly",
+    "status": "active",
+    "contactInfo": {
+      "phone": "469-328-6751",
+      "address": ""
+    },
+    "createdAt": "2025-08-07T01:01:58.800Z"
+  },
+  {
+    "id": "3ec9e47b-f5bb-4b14-b870-aa01f40b31e4",
+    "employeeId": "",
+    "firstName": "",
+    "lastName": "",
+    "email": "",
+    "department": "",
+    "title": "",
+    "manager": "",
+    "startDate": "",
+    "hourlyRate": 0,
+    "salaryType": "hourly",
+    "status": "active",
+    "contactInfo": {
+      "phone": "",
+      "address": ""
+    },
+    "createdAt": "2025-08-07T01:01:58.800Z"
+  }
+]

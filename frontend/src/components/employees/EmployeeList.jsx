@@ -8,9 +8,10 @@ import './Employees.css';
 
 const EmployeeList = () => {
   const { subdomain } = useParams();
-  const { checkPermission } = useAuth();
+  const { checkPermission, user } = useAuth();
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [filters, setFilters] = useState({
     employmentType: 'all',
     status: 'all',
@@ -18,100 +19,48 @@ const EmployeeList = () => {
     search: ''
   });
 
-  useEffect(() => {
-    // In a real app, fetch employees from API
-    // For now, using mock data
-    setTimeout(() => {
-      const mockEmployees = [
-        {
-          id: 1,
-          name: 'John Smith',
-          position: 'Senior Developer',
-          email: 'john.smith@selsoft.com',
-          phone: '(555) 123-4567',
-          status: 'active',
-          department: 'Engineering',
-          joinDate: '2023-01-15',
-          hourlyRate: 125,
-          client: 'JPMC',
-          employmentType: 'W2',
-          endClient: {
-            name: 'JPMorgan Chase',
-            location: 'New York, NY',
-            hiringManager: {
-              name: 'Robert Wilson',
-              email: 'robert.wilson@jpmc.com',
-              phone: '(212) 555-1234'
-            }
-          }
-        },
-        {
-          id: 2,
-          name: 'Sarah Johnson',
-          position: 'Project Manager',
-          email: 'sarah.johnson@selsoft.com',
-          phone: '(555) 234-5678',
-          status: 'active',
-          department: 'Project Management',
-          joinDate: '2023-02-01',
-          hourlyRate: 150,
-          employmentType: 'W2',
-          // Example of employee without client info
-        },
-        {
-          id: 3,
-          name: 'Michael Brown',
-          position: 'UI/UX Designer',
-          email: 'michael.brown@selsoft.com',
-          phone: '(555) 345-6789',
-          status: 'active',
-          department: 'Design',
-          joinDate: '2023-03-10',
-          hourlyRate: 110,
-          client: 'Accenture',
-          employmentType: 'Subcontractor',
-          vendorId: 1,
-          vendor: 'TechVendor Inc.',
-          endClient: {
-            name: 'Accenture PLC',
-            location: 'Chicago, IL',
-            hiringManager: {
-              name: 'Michael Chen',
-              email: 'michael.chen@accenture.com',
-              phone: '(312) 555-9012'
-            }
-          }
-        },
-        {
-          id: 4,
-          name: 'Emily Davis',
-          position: 'QA Engineer',
-          email: 'emily.davis@selsoft.com',
-          phone: '(555) 456-7890',
-          status: 'inactive',
-          department: 'Quality Assurance',
-          joinDate: '2023-01-20',
-          hourlyRate: 95,
-          client: 'Cognizant',
-          employmentType: 'Subcontractor',
-          vendorId: 2,
-          vendor: 'QA Solutions LLC',
-          endClient: {
-            name: 'Cognizant Technology Solutions',
-            location: 'Teaneck, NJ',
-            hiringManager: {
-              name: 'Sarah Thompson',
-              email: 'sarah.thompson@cognizant.com',
-              phone: '(201) 555-3456'
-            }
-          }
-        }
-      ];
+  // Fetch employees from backend API
+  const fetchEmployees = async () => {
+    try {
+      setLoading(true);
+      setError('');
       
-      setEmployees(mockEmployees);
+      if (!user?.tenantId) {
+        setError('No tenant information available');
+        setLoading(false);
+        return;
+      }
+
+      const response = await fetch(`http://localhost:5001/api/employees?tenantId=${user.tenantId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      if (data.success) {
+        setEmployees(data.employees || []);
+      } else {
+        setError(data.error || 'Failed to fetch employees');
+      }
+    } catch (error) {
+      console.error('Error fetching employees:', error);
+      setError('Failed to load employees. Please try again.');
+    } finally {
       setLoading(false);
-    }, 800);
-  }, []);
+    }
+  };
+
+  useEffect(() => {
+    fetchEmployees();
+  }, [user?.tenantId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Filter employees based on all filters
   const filteredEmployees = employees.filter(employee => {
@@ -241,7 +190,18 @@ const EmployeeList = () => {
             </div>
           </div>
           
-          {loading ? (
+          {error ? (
+            <div className="alert alert-danger" role="alert">
+              <i className="fas fa-exclamation-triangle mr-2"></i>
+              {error}
+              <button 
+                className="btn btn-sm btn-outline-danger ml-3"
+                onClick={fetchEmployees}
+              >
+                <i className="fas fa-redo mr-1"></i> Retry
+              </button>
+            </div>
+          ) : loading ? (
             <div className="d-flex justify-content-center mt-5">
               <div className="spinner-border text-primary" role="status">
                 <span className="sr-only">Loading...</span>

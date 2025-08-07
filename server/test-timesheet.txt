@@ -1,0 +1,19 @@
+TIMESHEET REPORT
+
+Employee: John Doe
+Week: January 20, 2025 to January 26, 2025
+
+Daily Hours:
+Monday: 8 hours
+Tuesday: 8 hours  
+Wednesday: 8 hours
+Thursday: 8 hours
+Friday: 8 hours
+Saturday: 0 hours
+Sunday: 0 hours
+
+Total Hours: 40 hours
+
+Project: Web Development
+Client: Acme Corporation
+Rate: $125/hour

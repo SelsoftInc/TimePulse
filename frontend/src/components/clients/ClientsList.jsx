@@ -2,74 +2,58 @@ import React, { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { PERMISSIONS } from '../../utils/roles';
 import PermissionGuard from '../common/PermissionGuard';
+import { useAuth } from '../../contexts/AuthContext';
 import './Clients.css';
 
 const ClientsList = () => {
   const { subdomain } = useParams();
+  const { user } = useAuth();
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  // Fetch clients from backend API
+  const fetchClients = async () => {
+    try {
+      setLoading(true);
+      setError('');
+      
+      if (!user?.tenantId) {
+        setError('No tenant information available');
+        setLoading(false);
+        return;
+      }
+
+      const response = await fetch(`http://localhost:5001/api/clients?tenantId=${user.tenantId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      if (data.success) {
+        setClients(data.clients || []);
+      } else {
+        setError(data.error || 'Failed to fetch clients');
+      }
+    } catch (error) {
+      console.error('Error fetching clients:', error);
+      setError('Failed to load clients. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    // In a real app, fetch clients from API
-    // For now, using mock data
-    setTimeout(() => {
-      const mockClients = [
-        {
-          id: 1,
-          name: 'JPMC',
-          contactPerson: 'John Morgan',
-          email: 'john@jpmc.com',
-          phone: '(555) 123-4567',
-          status: 'active',
-          employeeCount: 7,
-          totalBilled: 80000
-        },
-        {
-          id: 2,
-          name: 'Accenture',
-          contactPerson: 'Jane Smith',
-          email: 'jane@accenture.com',
-          phone: '(555) 987-6543',
-          status: 'active',
-          employeeCount: 5,
-          totalBilled: 50000
-        },
-        {
-          id: 3,
-          name: 'Virtusa',
-          contactPerson: 'Tony Veer',
-          email: 'tony@virtusa.com',
-          phone: '(555) 111-2222',
-          status: 'active',
-          employeeCount: 3,
-          totalBilled: 30000
-        },
-        {
-          id: 4,
-          name: 'Cognizant',
-          contactPerson: 'Bruce Cohen',
-          email: 'bruce@cognizant.com',
-          phone: '(555) 333-4444',
-          status: 'active',
-          employeeCount: 5,
-          totalBilled: 45000
-        },
-        {
-          id: 5,
-          name: 'IBM',
-          contactPerson: 'Lisa Blue',
-          email: 'lisa@ibm.com',
-          phone: '(555) 555-5555',
-          status: 'active',
-          employeeCount: 10,
-          totalBilled: 90000
-        }
-      ];
-      
-      setClients(mockClients);
-      setLoading(false);
-    }, 800);
-  }, []);
+    fetchClients();
+  }, [user?.tenantId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="nk-content">
@@ -91,7 +75,18 @@ const ClientsList = () => {
         </div>
 
         <div className="nk-block">
-          {loading ? (
+          {error ? (
+            <div className="alert alert-danger" role="alert">
+              <i className="fas fa-exclamation-triangle mr-2"></i>
+              {error}
+              <button 
+                className="btn btn-sm btn-outline-danger ml-3"
+                onClick={fetchClients}
+              >
+                <i className="fas fa-redo mr-1"></i> Retry
+              </button>
+            </div>
+          ) : loading ? (
             <div className="d-flex justify-content-center mt-5">
               <div className="spinner-border text-primary" role="status">
                 <span className="sr-only">Loading...</span>

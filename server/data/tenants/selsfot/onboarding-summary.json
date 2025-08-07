@@ -1,0 +1,41 @@
+{
+  "tenantName": "selsfot",
+  "onboardedAt": "2025-08-07T01:01:58.802Z",
+  "client": {
+    "id": "244d95e8-b303-4eeb-a095-2dc1a2866cd1",
+    "tenantName": "Address1",
+    "legalName": "Address1",
+    "subdomain": "",
+    "contactAddress": {
+      "street": "",
+      "city": "",
+      "state": "",
+      "zipCode": "",
+      "country": "US"
+    },
+    "invoiceAddress": {
+      "street": "",
+      "city": "",
+      "state": "",
+      "zipCode": "",
+      "country": "US"
+    },
+    "contactInfo": {
+      "email": "",
+      "phone": "",
+      "website": ""
+    },
+    "taxInfo": {
+      "taxId": "",
+      "taxRate": 0
+    },
+    "status": "active",
+    "createdAt": "2025-08-07T01:01:58.300Z"
+  },
+  "stats": {
+    "usersCreated": 7,
+    "employeesCreated": 7
+  },
+  "sourceFile": "TimePulse_Client_Onoarding_Document (2).xlsx",
+  "status": "completed"
+}

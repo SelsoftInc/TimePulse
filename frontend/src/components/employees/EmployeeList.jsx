@@ -31,6 +31,11 @@ const EmployeeList = () => {
   // Track which row's actions menu is open
   const [openMenuFor, setOpenMenuFor] = useState(null);
 
+  // Quick Add Client state
+  const [quickAddOpen, setQuickAddOpen] = useState(false);
+  const [quickAddLoading, setQuickAddLoading] = useState(false);
+  const [quickAdd, setQuickAdd] = useState({ name: '', contactPerson: '', email: '', phone: '', taxId: '' });
+
   // Close actions menu when clicking outside
   useEffect(() => {
     const handleDocClick = (e) => {
@@ -42,6 +47,87 @@ const EmployeeList = () => {
     document.addEventListener('mousedown', handleDocClick);
     return () => document.removeEventListener('mousedown', handleDocClick);
   }, [openMenuFor]);
+
+  // Create a new client from within the modal (minimal fields)
+  const createClientInline = async () => {
+    if (!user?.tenantId) {
+      toast.error('No tenant information');
+      return;
+    }
+    if (!quickAdd.name || !quickAdd.contactPerson || !quickAdd.email || !quickAdd.phone || !quickAdd.taxId) {
+      toast.error('Please fill Name, Contact Person, Email, Phone, and Tax ID');
+      return;
+    }
+    try {
+      setQuickAddLoading(true);
+      const payload = {
+        tenantId: user.tenantId,
+        clientName: quickAdd.name,
+        legalName: quickAdd.name,
+        contactPerson: quickAdd.contactPerson,
+        email: quickAdd.email,
+        phone: quickAdd.phone || '',
+        billingAddress: { line1: '', city: '', state: '', zip: '', country: 'United States' },
+        shippingAddress: { line1: '', city: '', state: '', zip: '', country: 'United States' },
+        taxId: quickAdd.taxId,
+        paymentTerms: 30,
+        hourlyRate: null,
+        status: 'active',
+        clientType: 'external'
+      };
+      const resp = await apiFetch(`/api/clients`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      }, { timeoutMs: 15000 });
+      if (!resp.ok) {
+        // Try to extract best error message and field errors
+        const text = await resp.text().catch(() => '');
+        let errJson = null;
+        try { errJson = text ? JSON.parse(text) : null; } catch (_) { /* not json */ }
+        const fieldErrors = errJson?.errors || errJson?.validationErrors;
+        let firstFieldError = '';
+        if (Array.isArray(fieldErrors) && fieldErrors.length) {
+          const fe = fieldErrors[0];
+          firstFieldError = typeof fe === 'string' ? fe : (fe?.message || fe?.msg || JSON.stringify(fe));
+        } else if (fieldErrors && typeof fieldErrors === 'object') {
+          const feKey = Object.keys(fieldErrors)[0];
+          const feVal = fieldErrors[feKey];
+          firstFieldError = Array.isArray(feVal) ? feVal[0] : (feVal?.message || JSON.stringify(feVal));
+        }
+        const serverMsg = errJson?.message || errJson?.error || errJson?.details || firstFieldError || text;
+        const msg = typeof serverMsg === 'string' ? serverMsg : JSON.stringify(serverMsg || {});
+        throw new Error(msg || `Create client failed (${resp.status})`);
+      }
+      // Parse success body
+      const created = await resp.json().catch(() => ({}));
+      // Try to get id and name from response; fallback to refresh
+      const newClientId = created?.client?.id || created?.id;
+      const newClientName = created?.client?.clientName || created?.clientName || quickAdd.name;
+      if (newClientId) {
+        // Update local list and select
+        setClients(prev => [{ id: newClientId, clientName: newClientName, name: newClientName, status: 'active' }, ...prev]);
+        setSelectedClientId(String(newClientId));
+        toast.success('Client created');
+      } else {
+        // Fallback: refresh list then try to select by name
+        await fetchClients();
+        const found = (clients || []).find(x => (x.clientName||x.name) === newClientName);
+        if (found?.id) setSelectedClientId(String(found.id));
+        toast.success('Client created');
+      }
+      setQuickAddOpen(false);
+    } catch (e) {
+      console.error('Inline client create failed:', e);
+      const msg = typeof e?.message === 'string' ? e.message : JSON.stringify(e || {});
+      toast.error(msg || 'Failed to create client');
+    } finally {
+      setQuickAddLoading(false);
+    }
+  };
 
   // Fetch employees from backend API
   const fetchEmployees = async () => {
@@ -116,6 +202,8 @@ const EmployeeList = () => {
     setAssignTarget(employee);
     setSelectedClientId(employee.clientId ? String(employee.clientId) : '');
     setAssignModalOpen(true);
+    setQuickAddOpen(false);
+    setQuickAdd({ name: '', contactPerson: '', email: '', phone: '', taxId: '' });
     fetchClients();
   };
 
@@ -411,7 +499,36 @@ const EmployeeList = () => {
               </div>
               <div className="modal-body">
                 <div className="form-group">
-                  <label className="form-label">Client</label>
+                  <label className="form-label d-flex align-items-center justify-content-between">
+                    <span>Client</span>
+                    <span className="d-flex align-items-center gap-2">
+                      <Link
+                        to={`/${subdomain}/clients/new`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="link-primary small mr-2"
+                        onClick={() => setOpenMenuFor(null)}
+                      >
+                        <i className="fas fa-plus-circle mr-1"></i> Add New Client
+                      </Link>
+                      <button
+                        type="button"
+                        className="btn btn-xs btn-outline-secondary"
+                        onClick={fetchClients}
+                        disabled={clientsLoading}
+                        title="Refresh clients"
+                      >
+                        <i className="fas fa-sync-alt"></i>
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-xs btn-outline-primary ml-2"
+                        onClick={() => setQuickAddOpen(v => !v)}
+                      >
+                        {quickAddOpen ? 'Close quick add' : 'Quick add'}
+                      </button>
+                    </span>
+                  </label>
                   <select className="form-select" value={selectedClientId} onChange={(e) => setSelectedClientId(e.target.value)}>
                     <option value="">-- Unassign --</option>
                     {clients.map(c => (
@@ -420,6 +537,62 @@ const EmployeeList = () => {
                   </select>
                   {clientsLoading && <div className="form-note mt-1"><small className="text-soft">Loading clients…</small></div>}
                   {clientsError && <div className="form-note mt-1"><small className="text-danger">{clientsError}</small></div>}
+                  {quickAddOpen && (
+                    <div className="border rounded p-2 mt-3">
+                      <div className="row g-2">
+                        <div className="col-md-6">
+                          <input
+                            type="text"
+                            className="form-control"
+                            placeholder="Client Name*"
+                            value={quickAdd.name}
+                            onChange={(e) => setQuickAdd(prev => ({ ...prev, name: e.target.value }))}
+                          />
+                        </div>
+                        <div className="col-md-6">
+                          <input
+                            type="text"
+                            className="form-control"
+                            placeholder="Contact Person*"
+                            value={quickAdd.contactPerson}
+                            onChange={(e) => setQuickAdd(prev => ({ ...prev, contactPerson: e.target.value }))}
+                          />
+                        </div>
+                        <div className="col-md-6 mt-2">
+                          <input
+                            type="email"
+                            className="form-control"
+                            placeholder="Email*"
+                            value={quickAdd.email}
+                            onChange={(e) => setQuickAdd(prev => ({ ...prev, email: e.target.value }))}
+                          />
+                        </div>
+                        <div className="col-md-6 mt-2">
+                          <input
+                            type="tel"
+                            className="form-control"
+                            placeholder="Phone*"
+                            value={quickAdd.phone}
+                            onChange={(e) => setQuickAdd(prev => ({ ...prev, phone: e.target.value }))}
+                          />
+                        </div>
+                        <div className="col-md-6 mt-2">
+                          <input
+                            type="text"
+                            className="form-control"
+                            placeholder="Tax ID* (e.g., 13-1234567)"
+                            value={quickAdd.taxId}
+                            onChange={(e) => setQuickAdd(prev => ({ ...prev, taxId: e.target.value }))}
+                          />
+                        </div>
+                        <div className="col-12 mt-2 d-flex justify-content-end">
+                          <button type="button" className="btn btn-sm btn-primary" onClick={createClientInline} disabled={quickAddLoading}>
+                            {quickAddLoading ? 'Creating…' : 'Create & Select'}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
               <div className="modal-footer">

@@ -8,6 +8,7 @@ import ProfileSettings from './ProfileSettings';
 import BillingSettings from './BillingSettings';
 import NotificationSettings from './NotificationSettings';
 import IntegrationSettings from './IntegrationSettings';
+import ConfirmDialog from '../common/ConfirmDialog';
 
 const EmployerSettings = () => {
   const navigate = useNavigate();
@@ -23,12 +24,9 @@ const EmployerSettings = () => {
     navigate('/simple-login');
   };
   
-  // We'll use the logout function in the UI
-  const handleSettingsLogout = () => {
-    if (window.confirm('Are you sure you want to log out?')) {
-      handleLogout();
-    }
-  };
+  // We'll use a confirmation modal in the UI
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const handleSettingsLogout = () => setShowLogoutConfirm(true);
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -118,6 +116,16 @@ const EmployerSettings = () => {
         </div>
       </div>
       </div>
+
+      <ConfirmDialog
+        open={showLogoutConfirm}
+        title="Log out"
+        message="Are you sure you want to log out?"
+        confirmLabel="Log out"
+        cancelLabel="Cancel"
+        onConfirm={handleLogout}
+        onCancel={() => setShowLogoutConfirm(false)}
+      />
     </div>
   );
 };

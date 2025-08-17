@@ -1,10 +1,11 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import { PERMISSIONS } from '../../utils/roles';
 import { API_BASE } from '../../config/api';
 import './Employees.css';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 const EmployeeEdit = () => {
   const { subdomain, id } = useParams();
@@ -12,11 +13,42 @@ const EmployeeEdit = () => {
   const { user, checkPermission } = useAuth();
   const { toast } = useToast();
 
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [employee, setEmployee] = useState(null);
-  const [clients, setClients] = useState([]);
-  const [vendors, setVendors] = useState([]);
+  const tenantId = user?.tenantId;
+  const queryClient = useQueryClient();
+  // React Query: fetch clients
+  const {
+    data: clientsData = [],
+    isLoading: clientsLoading,
+  } = useQuery(['clients', tenantId], async () => {
+    if (!tenantId) return [];
+    const resp = await fetch(`${API_BASE}/api/clients?tenantId=${tenantId}`, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    });
+    if (!resp.ok) throw new Error(`Failed to fetch clients (${resp.status})`);
+    const data = await resp.json();
+    return data.clients || [];
+  }, { enabled: !!tenantId });
+
+  // React Query: fetch vendors (also used for impl partners)
+  const {
+    data: vendorsData = [],
+    isLoading: vendorsLoading,
+  } = useQuery(['vendors', tenantId], async () => {
+    if (!tenantId) return [];
+    const resp = await fetch(`${API_BASE}/api/vendors?tenantId=${tenantId}`, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    });
+    if (!resp.ok) throw new Error(`Failed to fetch vendors (${resp.status})`);
+    const data = await resp.json();
+    return data.vendors || [];
+  }, { enabled: !!tenantId });
 
   const [form, setForm] = useState({
     joinDate: '',
@@ -25,11 +57,12 @@ const EmployeeEdit = () => {
     implPartnerId: ''
   });
 
-  const fetchEmployee = useCallback(async () => {
-    try {
-      setLoading(true);
-      if (!user?.tenantId) throw new Error('No tenant information');
-      const resp = await fetch(`${API_BASE}/api/employees/${id}?tenantId=${user.tenantId}`, {
+  // React Query: fetch employee
+  const { data: employeeData, isLoading: employeeLoading } = useQuery(
+    ['employee', tenantId, id],
+    async () => {
+      if (!tenantId || !id) return null;
+      const resp = await fetch(`${API_BASE}/api/employees/${id}?tenantId=${tenantId}`, {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -37,80 +70,33 @@ const EmployeeEdit = () => {
       });
       if (!resp.ok) throw new Error(`Failed to fetch employee (${resp.status})`);
       const data = await resp.json();
-      const emp = data.employee || data;
-      setEmployee(emp);
-      setForm({
-        joinDate: emp?.startDate ? new Date(emp.startDate).toISOString().slice(0,10) : (emp?.joinDate || ''),
-        clientId: emp?.clientId || '',
-        vendorId: emp?.vendorId || '',
-        implPartnerId: emp?.implPartnerId || ''
-      });
-    } catch (e) {
-      console.error('Fetch employee failed:', e);
-      toast.error(e.message || 'Failed to load employee');
-    } finally {
-      setLoading(false);
-    }
-  }, [id, user?.tenantId, toast]);
+      return data.employee || data;
+    },
+    { enabled: !!tenantId && !!id }
+  );
 
-  const fetchClients = useCallback(async () => {
-    try {
-      if (!user?.tenantId) return;
-      const resp = await fetch(`${API_BASE}/api/clients?tenantId=${user.tenantId}`, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      if (!resp.ok) throw new Error(`Failed to fetch clients (${resp.status})`);
-      const data = await resp.json();
-      setClients(data.clients || []);
-    } catch (e) {
-      console.error('Fetch clients failed:', e);
-    }
-  }, [user?.tenantId]);
-
-  const fetchVendors = useCallback(async () => {
-    try {
-      if (!user?.tenantId) return;
-      const resp = await fetch(`${API_BASE}/api/vendors?tenantId=${user.tenantId}`, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      if (!resp.ok) throw new Error(`Failed to fetch vendors (${resp.status})`);
-      const data = await resp.json();
-      setVendors(data.vendors || []);
-    } catch (e) {
-      console.error('Fetch vendors failed:', e);
-    }
-  }, [user?.tenantId]);
-
+  // Sync local state when employee query resolves
   useEffect(() => {
-    fetchEmployee();
-    fetchClients();
-    fetchVendors();
-  }, [fetchEmployee, fetchClients, fetchVendors]);
+    if (!employeeData) return;
+    const emp = employeeData;
+    setEmployee(emp);
+    setForm({
+      joinDate: emp?.startDate ? new Date(emp.startDate).toISOString().slice(0,10) : (emp?.joinDate || ''),
+      clientId: emp?.clientId || '',
+      vendorId: emp?.vendorId || '',
+      implPartnerId: emp?.implPartnerId || ''
+    });
+  }, [employeeData]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSave = async () => {
-    try {
-      setSaving(true);
-      if (!user?.tenantId) throw new Error('No tenant information');
-
-      const body = {
-        startDate: form.joinDate || null,
-        clientId: form.clientId || null,
-        vendorId: form.vendorId || null,
-        implPartnerId: form.implPartnerId || null,
-      };
-
-      const resp = await fetch(`${API_BASE}/api/employees/${id}?tenantId=${user.tenantId}`, {
+  // React Query: mutation for update
+  const updateEmployeeMutation = useMutation({
+    mutationFn: async (body) => {
+      const resp = await fetch(`${API_BASE}/api/employees/${id}?tenantId=${tenantId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -121,14 +107,31 @@ const EmployeeEdit = () => {
       if (!resp.ok) throw new Error(`Update failed (${resp.status})`);
       const data = await resp.json();
       if (!data.success) throw new Error(data.error || 'Update failed');
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['employee', tenantId, id]);
       toast.success('Employee updated');
       navigate(`/${subdomain}/employees/${id}`);
-    } catch (e) {
+    },
+    onError: (e) => {
       console.error('Save failed:', e);
       toast.error(e.message || 'Failed to save');
-    } finally {
-      setSaving(false);
     }
+  });
+
+  const handleSave = () => {
+    if (!tenantId) {
+      toast.error('No tenant information');
+      return;
+    }
+    const body = {
+      startDate: form.joinDate || null,
+      clientId: form.clientId || null,
+      vendorId: form.vendorId || null,
+      implPartnerId: form.implPartnerId || null,
+    };
+    updateEmployeeMutation.mutate(body);
   };
 
   if (!checkPermission(PERMISSIONS.EDIT_EMPLOYEE)) {
@@ -141,7 +144,7 @@ const EmployeeEdit = () => {
     );
   }
 
-  if (loading) {
+  if (employeeLoading || clientsLoading || vendorsLoading) {
     return (
       <div className="nk-content">
         <div className="container-fluid">
@@ -203,56 +206,89 @@ const EmployeeEdit = () => {
                 <div className="col-md-6">
                   <div className="form-group">
                     <label className="form-label">End Client</label>
-                    <select
-                      name="clientId"
-                      className="form-select"
-                      value={form.clientId || ''}
-                      onChange={handleChange}
-                    >
-                      <option value="">-- Unassigned --</option>
-                      {clients.map(c => (
-                        <option key={c.id} value={c.id}>{c.clientName || c.name}</option>
-                      ))}
-                    </select>
+                    <div className="d-flex align-items-center">
+                      <select
+                        name="clientId"
+                        className="form-select"
+                        value={form.clientId || ''}
+                        onChange={handleChange}
+                      >
+                        <option value="">-- Unassigned --</option>
+                        {clientsData.map(c => (
+                          <option key={c.id} value={c.id}>{c.clientName || c.name}</option>
+                        ))}
+                      </select>
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-outline-light ml-2"
+                        onClick={() => setForm(prev => ({ ...prev, clientId: '' }))}
+                        title="Clear end client"
+                      >
+                        Clear
+                      </button>
+                    </div>
+                    <small className="text-muted">Choose "Unassigned" or click Clear to remove the end client.</small>
                   </div>
                 </div>
                 <div className="col-md-6">
                   <div className="form-group">
                     <label className="form-label">Vendor</label>
-                    <select
-                      name="vendorId"
-                      className="form-select"
-                      value={form.vendorId || ''}
-                      onChange={handleChange}
-                    >
-                      <option value="">-- Unassigned --</option>
-                      {vendors.map(v => (
-                        <option key={v.id} value={v.id}>{v.name}</option>
-                      ))}
-                    </select>
+                    <div className="d-flex align-items-center">
+                      <select
+                        name="vendorId"
+                        className="form-select"
+                        value={form.vendorId || ''}
+                        onChange={handleChange}
+                      >
+                        <option value="">-- Unassigned --</option>
+                        {vendorsData.map(v => (
+                          <option key={v.id} value={v.id}>{v.name}</option>
+                        ))}
+                      </select>
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-outline-light ml-2"
+                        onClick={() => setForm(prev => ({ ...prev, vendorId: '' }))}
+                        title="Clear vendor"
+                      >
+                        Clear
+                      </button>
+                    </div>
+                    <small className="text-muted">Choose "Unassigned" or click Clear to remove the vendor.</small>
                   </div>
                 </div>
                 <div className="col-md-6">
                   <div className="form-group">
                     <label className="form-label">Impl Partner</label>
-                    <select
-                      name="implPartnerId"
-                      className="form-select"
-                      value={form.implPartnerId || ''}
-                      onChange={handleChange}
-                    >
-                      <option value="">-- Unassigned --</option>
-                      {vendors.map(v => (
-                        <option key={v.id} value={v.id}>{v.name}</option>
-                      ))}
-                    </select>
+                    <div className="d-flex align-items-center">
+                      <select
+                        name="implPartnerId"
+                        className="form-select"
+                        value={form.implPartnerId || ''}
+                        onChange={handleChange}
+                      >
+                        <option value="">-- Unassigned --</option>
+                        {vendorsData.map(v => (
+                          <option key={v.id} value={v.id}>{v.name}</option>
+                        ))}
+                      </select>
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-outline-light ml-2"
+                        onClick={() => setForm(prev => ({ ...prev, implPartnerId: '' }))}
+                        title="Clear implementation partner"
+                      >
+                        Clear
+                      </button>
+                    </div>
+                    <small className="text-muted">Choose "Unassigned" or click Clear to remove the implementation partner.</small>
                   </div>
                 </div>
               </div>
               <div className="mt-4 d-flex justify-content-end">
-                <button className="btn btn-outline-light mr-2" onClick={() => navigate(-1)} disabled={saving}>Cancel</button>
-                <button className="btn btn-primary" onClick={handleSave} disabled={saving}>
-                  {saving ? 'Saving…' : 'Save Changes'}
+                <button className="btn btn-outline-light mr-2" onClick={() => navigate(-1)} disabled={updateEmployeeMutation.isLoading}>Cancel</button>
+                <button className="btn btn-primary" onClick={handleSave} disabled={updateEmployeeMutation.isLoading}>
+                  {updateEmployeeMutation.isLoading ? 'Saving…' : 'Save Changes'}
                 </button>
               </div>
             </div>

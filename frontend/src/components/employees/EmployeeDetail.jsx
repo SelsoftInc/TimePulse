@@ -1,123 +1,95 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { API_BASE } from '../../config/api';
 import { PERMISSIONS } from '../../utils/roles';
 import PermissionGuard from '../common/PermissionGuard';
 import './Employees.css';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 const EmployeeDetail = () => {
   const { subdomain, id } = useParams();
   const { checkPermission, isAdmin, isApprover, user } = useAuth();
   const [employee, setEmployee] = useState(null);
-  const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [clients, setClients] = useState([]);
-  const [vendors, setVendors] = useState([]);
+  const queryClient = useQueryClient();
+  // React Query: server state for clients and vendors
+  const tenantId = user?.tenantId;
+  const {
+    data: clientsData = [],
+    isLoading: clientsLoading,
+  } = useQuery(['clients', tenantId], async () => {
+    if (!tenantId) return [];
+    const resp = await fetch(`${API_BASE}/api/clients?tenantId=${tenantId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    });
+    if (!resp.ok) throw new Error(`HTTP error! status: ${resp.status}`);
+    const payload = await resp.json();
+    return payload.success && payload.clients ? payload.clients : [];
+  }, { enabled: !!tenantId });
+
+  const {
+    data: vendorsData = [],
+    isLoading: vendorsLoading,
+  } = useQuery(['vendors', tenantId], async () => {
+    if (!tenantId) return [];
+    const resp = await fetch(`${API_BASE}/api/vendors?tenantId=${tenantId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    });
+    if (!resp.ok) throw new Error(`HTTP error! status: ${resp.status}`);
+    const payload = await resp.json();
+    return payload.success && payload.vendors ? payload.vendors : [];
+  }, { enabled: !!tenantId });
   const [formValues, setFormValues] = useState({ joinDate: '', clientId: '', vendorId: '', implPartnerId: '' });
 
-  const fetchEmployeeData = useCallback(async () => {
-      try {
-        setLoading(true);
-        
-        // Use tenantId from authenticated user context
-        if (!user?.tenantId) {
-          console.error('No tenant information available');
-          setLoading(false);
-          return;
-        }
-
-        // Fetch single employee by ID from API
-        const response = await fetch(`http://localhost:5001/api/employees/${id}?tenantId=${user.tenantId}`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
-        });
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
-        
-        if (data.success && data.employee) {
-          const emp = data.employee;
-          // Normalize shape minimally for this view
-          const transformedEmployee = {
-            ...emp,
-            joinDate: emp.joinDate ? new Date(emp.joinDate).toISOString().split('T')[0] : '',
-            address: emp.address?.street || emp.address || '—',
-            city: emp.address?.city || '',
-            state: emp.address?.state || '',
-            zip: emp.address?.zip || '',
-            country: emp.address?.country || '',
-            client: emp.client || emp.clientName || emp.clientId || 'Not assigned'
-          };
-
-          setEmployee(transformedEmployee);
-          setFormValues({
-            joinDate: transformedEmployee.joinDate || '',
-            clientId: emp.clientId || '',
-            vendorId: emp.vendorId || '',
-            implPartnerId: emp.implPartnerId || ''
-          });
-        } else {
-          console.error('Failed to fetch employee data:', data.error);
-        }
-        
-        setLoading(false);
-      } catch (error) {
-        console.error('Error fetching employee data:', error);
-        setLoading(false);
+  // React Query: fetch employee
+  const {
+    data: employeeData,
+    isLoading: employeeLoading,
+  } = useQuery(['employee', tenantId, id], async () => {
+    if (!tenantId || !id) return null;
+    const response = await fetch(`${API_BASE}/api/employees/${id}?tenantId=${tenantId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
       }
-    }, [id, user?.tenantId]);
+    });
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    const data = await response.json();
+    return data.employee || data;
+  }, { enabled: !!tenantId && !!id });
 
+  // When employee query resolves, normalize and sync local state for display and form
   useEffect(() => {
-    const fetchClients = async () => {
-      try {
-        if (!user?.tenantId) return;
-        const resp = await fetch(`http://localhost:5001/api/clients?tenantId=${user.tenantId}`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
-        });
-        if (!resp.ok) throw new Error(`HTTP error! status: ${resp.status}`);
-        const payload = await resp.json();
-        if (payload.success && payload.clients) {
-          setClients(payload.clients);
-        }
-      } catch (e) {
-        console.error('Error fetching clients:', e);
-      }
+    if (!employeeData) return;
+    const emp = employeeData;
+    const transformedEmployee = {
+      ...emp,
+      joinDate: emp.joinDate ? new Date(emp.joinDate).toISOString().split('T')[0] : (emp.startDate ? new Date(emp.startDate).toISOString().split('T')[0] : ''),
+      address: emp.address?.street || emp.address || '—',
+      city: emp.address?.city || '',
+      state: emp.address?.state || '',
+      zip: emp.address?.zip || '',
+      country: emp.address?.country || '',
+      client: emp.client || emp.clientName || emp.clientId || 'Not assigned'
     };
-    const fetchVendors = async () => {
-      try {
-        if (!user?.tenantId) return;
-        const resp = await fetch(`http://localhost:5001/api/vendors?tenantId=${user.tenantId}`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
-        });
-        if (!resp.ok) throw new Error(`HTTP error! status: ${resp.status}`);
-        const payload = await resp.json();
-        if (payload.success && payload.vendors) {
-          setVendors(payload.vendors);
-        }
-      } catch (e) {
-        console.error('Error fetching vendors:', e);
-      }
-    };
-
-    fetchEmployeeData();
-    fetchClients();
-    fetchVendors();
-  }, [id, user?.tenantId, fetchEmployeeData]);
+    setEmployee(transformedEmployee);
+    setFormValues({
+      joinDate: transformedEmployee.joinDate || '',
+      clientId: emp.clientId || '',
+      vendorId: emp.vendorId || '',
+      implPartnerId: emp.implPartnerId || ''
+    });
+  }, [employeeData]);
 
   const canEditBasics = isAdmin() || isApprover();
 
@@ -142,46 +114,47 @@ const EmployeeDetail = () => {
     setFormValues(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSave = async () => {
-    try {
-      setSaving(true);
-      const tenantId = user?.tenantId;
-      if (!tenantId) throw new Error('No tenant information');
-
-      // Backend uses startDate; map from joinDate input
-      const updateBody = {
-        startDate: formValues.joinDate || null,
-        clientId: formValues.clientId || null,
-        vendorId: formValues.vendorId || null,
-        implPartnerId: formValues.implPartnerId || null,
-      };
-
-      const resp = await fetch(`http://localhost:5001/api/employees/${id}?tenantId=${tenantId}`, {
+  // React Query: mutation for updating employee
+  const updateEmployeeMutation = useMutation({
+    mutationFn: async (body) => {
+      const resp = await fetch(`${API_BASE}/api/employees/${id}?tenantId=${tenantId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
-        body: JSON.stringify(updateBody)
+        body: JSON.stringify(body)
       });
       if (!resp.ok) throw new Error(`Update failed with status ${resp.status}`);
       const payload = await resp.json();
-      if (payload.success) {
-        // Re-fetch from server to ensure DB state is reflected
-        await fetchEmployeeData();
-        setIsEditing(false);
-      } else {
-        throw new Error(payload.error || 'Unknown update error');
-      }
-    } catch (e) {
-      console.error('Error saving employee updates:', e);
+      if (!payload.success) throw new Error(payload.error || 'Unknown update error');
+      return payload;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['employee', tenantId, id]);
+      setIsEditing(false);
+    },
+    onError: (e) => {
+      // eslint-disable-next-line no-alert
       alert(`Failed to save changes: ${e.message}`);
-    } finally {
-      setSaving(false);
     }
+  });
+
+  const handleSave = () => {
+    if (!tenantId) {
+      alert('No tenant information');
+      return;
+    }
+    const updateBody = {
+      startDate: formValues.joinDate || null,
+      clientId: formValues.clientId || null,
+      vendorId: formValues.vendorId || null,
+      implPartnerId: formValues.implPartnerId || null,
+    };
+    updateEmployeeMutation.mutate(updateBody);
   };
 
-  if (loading) {
+  if (employeeLoading || clientsLoading || vendorsLoading) {
     return (
       <div className="nk-content">
         <div className="container-fluid">
@@ -227,10 +200,10 @@ const EmployeeDetail = () => {
               )}
               {isEditing && (
                 <div className="d-inline-flex ml-2">
-                  <button className="btn btn-success mr-2" onClick={handleSave} disabled={saving}>
-                    {saving ? 'Saving...' : 'Save'}
+                  <button className="btn btn-success mr-2" onClick={handleSave} disabled={updateEmployeeMutation.isLoading}>
+                    {updateEmployeeMutation.isLoading ? 'Saving...' : 'Save'}
                   </button>
-                  <button className="btn btn-outline-light" onClick={handleCancelEdit} disabled={saving}>
+                  <button className="btn btn-outline-light" onClick={handleCancelEdit} disabled={updateEmployeeMutation.isLoading}>
                     Cancel
                   </button>
                 </div>
@@ -292,17 +265,30 @@ const EmployeeDetail = () => {
                             <>{employee.client || <span className="text-muted">Not assigned</span>}</>
                           )}
                           {isEditing && (
-                            <select
-                              name="clientId"
-                              className="form-control"
-                              value={formValues.clientId || ''}
-                              onChange={handleChange}
-                            >
-                              <option value="">-- Select End Client --</option>
-                              {clients.map(c => (
-                                <option key={c.id} value={c.id}>{c.name}</option>
-                              ))}
-                            </select>
+                            <div className="d-flex align-items-center">
+                              <select
+                                name="clientId"
+                                className="form-control"
+                                value={formValues.clientId || ''}
+                                onChange={handleChange}
+                              >
+                                <option value="">-- Select End Client --</option>
+                                {clientsData.map(c => (
+                                  <option key={c.id} value={c.id}>{c.name}</option>
+                                ))}
+                              </select>
+                              <button
+                                type="button"
+                                className="btn btn-sm btn-outline-light ml-2"
+                                onClick={() => setFormValues(prev => ({ ...prev, clientId: '' }))}
+                                title="Clear end client"
+                              >
+                                Clear
+                              </button>
+                            </div>
+                          )}
+                          {isEditing && (
+                            <small className="text-muted d-block mt-1">Choose "-- Select End Client --" or click Clear to unassign.</small>
                           )}
                         </div>
                       </div>
@@ -329,17 +315,30 @@ const EmployeeDetail = () => {
                             </>
                           )}
                           {isEditing && (
-                            <select
-                              name="vendorId"
-                              className="form-control"
-                              value={formValues.vendorId || ''}
-                              onChange={handleChange}
-                            >
-                              <option value="">-- Select Vendor --</option>
-                              {vendors.map(v => (
-                                <option key={v.id} value={v.id}>{v.name}</option>
-                              ))}
-                            </select>
+                            <div className="d-flex align-items-center">
+                              <select
+                                name="vendorId"
+                                className="form-control"
+                                value={formValues.vendorId || ''}
+                                onChange={handleChange}
+                              >
+                                <option value="">-- Select Vendor --</option>
+                                {vendorsData.map(v => (
+                                  <option key={v.id} value={v.id}>{v.name}</option>
+                                ))}
+                              </select>
+                              <button
+                                type="button"
+                                className="btn btn-sm btn-outline-light ml-2"
+                                onClick={() => setFormValues(prev => ({ ...prev, vendorId: '' }))}
+                                title="Clear vendor"
+                              >
+                                Clear
+                              </button>
+                            </div>
+                          )}
+                          {isEditing && (
+                            <small className="text-muted d-block mt-1">Choose "-- Select Vendor --" or click Clear to unassign.</small>
                           )}
                         </div>
                       </div>
@@ -358,17 +357,30 @@ const EmployeeDetail = () => {
                             </>
                           )}
                           {isEditing && (
-                            <select
-                              name="implPartnerId"
-                              className="form-control"
-                              value={formValues.implPartnerId || ''}
-                              onChange={handleChange}
-                            >
-                              <option value="">-- Select Impl Partner --</option>
-                              {vendors.map(v => (
-                                <option key={v.id} value={v.id}>{v.name}</option>
-                              ))}
-                            </select>
+                            <div className="d-flex align-items-center">
+                              <select
+                                name="implPartnerId"
+                                className="form-control"
+                                value={formValues.implPartnerId || ''}
+                                onChange={handleChange}
+                              >
+                                <option value="">-- Select Impl Partner --</option>
+                                {vendorsData.map(v => (
+                                  <option key={v.id} value={v.id}>{v.name}</option>
+                                ))}
+                              </select>
+                              <button
+                                type="button"
+                                className="btn btn-sm btn-outline-light ml-2"
+                                onClick={() => setFormValues(prev => ({ ...prev, implPartnerId: '' }))}
+                                title="Clear implementation partner"
+                              >
+                                Clear
+                              </button>
+                            </div>
+                          )}
+                          {isEditing && (
+                            <small className="text-muted d-block mt-1">Choose "-- Select Impl Partner --" or click Clear to unassign.</small>
                           )}
                         </div>
                       </div>

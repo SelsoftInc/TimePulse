@@ -7,11 +7,14 @@ import PaymentInformation from './PaymentInformation';
 import EmailNotifications from './EmailNotifications';
 import SecurityPrivacy from './SecurityPrivacy';
 import TimeRegion from './TimeRegion';
+import ConfirmDialog from '../common/ConfirmDialog';
 
 const TenantSettings = () => {
   const [activeSection, setActiveSection] = useState('company');
   const navigate = useNavigate();
   
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+
   // Handle logout
   const handleLogout = () => {
     // Clear all authentication data from localStorage
@@ -93,7 +96,7 @@ const TenantSettings = () => {
             <div className="settings-logout-container">
               <button 
                 className="settings-logout-button" 
-                onClick={handleLogout}
+                onClick={() => setShowLogoutConfirm(true)}
               >
                 <i className="fa fa-sign-out-alt"></i>
                 Logout
@@ -105,6 +108,16 @@ const TenantSettings = () => {
           {renderActiveSection()}
         </div>
       </div>
+
+      <ConfirmDialog
+        open={showLogoutConfirm}
+        title="Log out"
+        message="Are you sure you want to log out?"
+        confirmLabel="Log out"
+        cancelLabel="Cancel"
+        onConfirm={handleLogout}
+        onCancel={() => setShowLogoutConfirm(false)}
+      />
     </div>
   );
 };

@@ -15,7 +15,35 @@ router.get('/', async (req, res) => {
     }
 
     const employees = await Employee.findAll({
-      where: { tenantId }
+      where: { tenantId },
+      // Only select attributes that exist in the current DB schema
+      attributes: [
+        'id',
+        'tenantId',
+        'userId',
+        'employeeId',
+        'firstName',
+        'lastName',
+        'email',
+        'department',
+        'title',
+        'managerId',
+        'clientId',
+        'startDate',
+        'endDate',
+        'hourlyRate',
+        'salaryAmount',
+        'salaryType',
+        'contactInfo',
+        'status'
+      ],
+      include: [
+        {
+          model: Client,
+          as: 'client',
+          attributes: ['id', 'clientName']
+        }
+      ]
     });
 
     // Transform the data to match frontend expectations
@@ -31,8 +59,8 @@ router.get('/', async (req, res) => {
         department: emp.department || 'N/A',
         joinDate: null, // Remove hardcoded join dates - not in Excel sheet  
         hourlyRate: null, // Remove hardcoded hourly rates - not in Excel sheet
-        client: emp.client || null, // Show actual client or null
-        clientId: emp.clientId || null,
+        client: emp.client ? emp.client.clientName : null,
+        clientId: emp.clientId || emp.client?.id || null,
         employmentType: emp.employmentType || 'W2',
         vendor: emp.vendor || null,
         vendorId: emp.vendorId || null,
@@ -76,6 +104,27 @@ router.get('/:id', async (req, res) => {
         id,
         tenantId 
       },
+      // Only select attributes that exist in the current DB schema
+      attributes: [
+        'id',
+        'tenantId',
+        'userId',
+        'employeeId',
+        'firstName',
+        'lastName',
+        'email',
+        'department',
+        'title',
+        'managerId',
+        'clientId',
+        'startDate',
+        'endDate',
+        'hourlyRate',
+        'salaryAmount',
+        'salaryType',
+        'contactInfo',
+        'status'
+      ],
       include: [
         {
           model: User,
@@ -85,7 +134,7 @@ router.get('/:id', async (req, res) => {
         {
           model: Client,
           as: 'client',
-          attributes: ['id', 'name', 'contactPerson', 'email', 'phone']
+          attributes: ['id', 'clientName']
         }
       ]
     });
@@ -97,18 +146,20 @@ router.get('/:id', async (req, res) => {
     // Transform the data
     const transformedEmployee = {
       id: employee.id,
-      name: employee.user ? `${employee.user.firstName} ${employee.user.lastName}` : 'N/A',
-      firstName: employee.user?.firstName || '',
-      lastName: employee.user?.lastName || '',
-      position: employee.user?.title || employee.position || 'N/A',
-      email: employee.user?.email || employee.email,
+      name: employee.user
+        ? `${employee.user.firstName} ${employee.user.lastName}`
+        : `${employee.firstName || ''} ${employee.lastName || ''}`.trim() || 'N/A',
+      firstName: employee.user?.firstName || employee.firstName || '',
+      lastName: employee.user?.lastName || employee.lastName || '',
+      position: employee.user?.title || employee.title || 'N/A',
+      email: employee.user?.email || employee.email || '',
       phone: employee.phone || 'N/A',
       status: employee.status || 'active',
       department: employee.user?.department || employee.department || 'N/A',
       joinDate: employee.startDate || new Date().toISOString(),
       hourlyRate: employee.hourlyRate || 0,
-      client: employee.client?.name || 'Not assigned',
-      clientId: employee.clientId,
+      client: employee.client ? employee.client.clientName : null,
+      clientId: employee.clientId || employee.client?.id || null,
       employmentType: employee.employmentType || 'W2',
       vendor: employee.vendor || null,
       vendorId: employee.vendorId || null,

@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 
 const LeaveManagement = () => {
-  const { subdomain } = useParams();
   const { user } = useAuth();
   
   // Use subdomain for navigation links and user info for personalization

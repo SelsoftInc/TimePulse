@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { PERMISSIONS } from '../../utils/roles';
@@ -7,85 +7,152 @@ import './Employees.css';
 
 const EmployeeDetail = () => {
   const { subdomain, id } = useParams();
-  const { checkPermission } = useAuth();
+  const { checkPermission, isAdmin, isApprover, user } = useAuth();
   const [employee, setEmployee] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [clients, setClients] = useState([]);
+  const [formValues, setFormValues] = useState({ joinDate: '', clientId: '' });
+
+  const fetchEmployeeData = useCallback(async () => {
+      try {
+        setLoading(true);
+        
+        // Use tenantId from authenticated user context
+        if (!user?.tenantId) {
+          console.error('No tenant information available');
+          setLoading(false);
+          return;
+        }
+
+        // Fetch single employee by ID from API
+        const response = await fetch(`http://localhost:5001/api/employees/${id}?tenantId=${user.tenantId}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        
+        if (data.success && data.employee) {
+          const emp = data.employee;
+          // Normalize shape minimally for this view
+          const transformedEmployee = {
+            ...emp,
+            joinDate: emp.joinDate ? new Date(emp.joinDate).toISOString().split('T')[0] : '',
+            address: emp.address?.street || emp.address || '—',
+            city: emp.address?.city || '',
+            state: emp.address?.state || '',
+            zip: emp.address?.zip || '',
+            country: emp.address?.country || '',
+            client: emp.client || emp.clientName || emp.clientId || 'Not assigned'
+          };
+
+          setEmployee(transformedEmployee);
+          setFormValues({
+            joinDate: transformedEmployee.joinDate || '',
+            clientId: emp.clientId || ''
+          });
+        } else {
+          console.error('Failed to fetch employee data:', data.error);
+        }
+        
+        setLoading(false);
+      } catch (error) {
+        console.error('Error fetching employee data:', error);
+        setLoading(false);
+      }
+    }, [id, user?.tenantId]);
 
   useEffect(() => {
-    // In a real app, fetch employee data from API
-    // For now, using mock data
-    setLoading(true);
-    setTimeout(() => {
-      // Mock employee data with SOW details
-      // For demo purposes, we'll show different data based on the ID
-      // In a real app, this would come from an API
-      const isSubcontractor = id === '3' || id === '4';
-      
-      const mockEmployee = {
-        id: parseInt(id),
-        firstName: 'John',
-        lastName: 'Smith',
-        name: id === '1' ? 'John Smith' : id === '2' ? 'Sarah Johnson' : id === '3' ? 'Michael Brown' : 'Emily Davis',
-        position: id === '1' ? 'Senior Developer' : id === '2' ? 'Project Manager' : id === '3' ? 'UI/UX Designer' : 'QA Engineer',
-        email: id === '1' ? 'john.smith@selsoft.com' : id === '2' ? 'sarah.johnson@selsoft.com' : id === '3' ? 'michael.brown@selsoft.com' : 'emily.davis@selsoft.com',
-        phone: id === '1' ? '(555) 123-4567' : id === '2' ? '(555) 234-5678' : id === '3' ? '(555) 345-6789' : '(555) 456-7890',
-        status: id === '4' ? 'inactive' : 'active',
-        department: id === '1' ? 'Engineering' : id === '2' ? 'Project Management' : id === '3' ? 'Design' : 'Quality Assurance',
-        joinDate: id === '1' ? '2023-01-15' : id === '2' ? '2023-01-31' : id === '3' ? '2023-03-09' : '2023-01-19',
-        address: '123 Main St',
-        city: 'San Francisco',
-        state: 'CA',
-        zip: '94105',
-        country: 'United States',
-        client: id === '1' ? 'JPMC' : id === '2' ? 'IBM' : id === '3' ? 'Accenture' : 'Cognizant',
-        employmentType: isSubcontractor ? 'Subcontractor' : 'W2',
-        vendor: isSubcontractor ? (id === '3' ? 'TechVendor Inc.' : 'QA Solutions LLC') : null,
-        vendorId: isSubcontractor ? (id === '3' ? 1 : 2) : null,
-        endClient: {
-          name: id === '1' ? 'JPMorgan Chase' : 
-                id === '2' ? 'IBM Corporation' : 
-                id === '3' ? 'Accenture PLC' : 
-                'Cognizant Technology Solutions',
-          location: id === '1' ? 'New York, NY' : 
-                   id === '2' ? 'Austin, TX' : 
-                   id === '3' ? 'Chicago, IL' : 
-                   'Teaneck, NJ',
-          hiringManager: {
-            name: id === '1' ? 'Robert Wilson' : 
-                 id === '2' ? 'Jennifer Lee' : 
-                 id === '3' ? 'Michael Chen' : 
-                 'Sarah Thompson',
-            email: id === '1' ? 'robert.wilson@jpmc.com' : 
-                  id === '2' ? 'jennifer.lee@ibm.com' : 
-                  id === '3' ? 'michael.chen@accenture.com' : 
-                  'sarah.thompson@cognizant.com',
-            phone: id === '1' ? '(212) 555-1234' : 
-                  id === '2' ? '(512) 555-6789' : 
-                  id === '3' ? '(312) 555-9012' : 
-                  '(201) 555-3456'
+    const fetchClients = async () => {
+      try {
+        if (!user?.tenantId) return;
+        const resp = await fetch(`http://localhost:5001/api/clients?tenantId=${user.tenantId}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
           }
-        },
-        hourlyRate: id === '1' ? 125 : id === '2' ? 150 : id === '3' ? 110 : 95,
-        enableOvertime: true,
-        overtimeMultiplier: 1.5,
-        overtimeRate: id === '1' ? 187.5 : id === '2' ? 225 : id === '3' ? 165 : 142.5,
-        approvalWorkflow: 'manager',
-        notes: id === '1' ? 'Experienced developer with 8+ years in React and Node.js' : 
-               id === '2' ? 'Certified PMP with experience managing large-scale IT projects' :
-               id === '3' ? 'Creative designer with expertise in UI/UX and design systems' :
-               'Detail-oriented QA engineer with automation testing skills',
-        sowDocument: {
-          name: 'John_Smith_SOW_2023.pdf',
-          size: 1024 * 1024 * 2.5, // 2.5MB
-          uploadDate: '2023-01-10',
-          url: '#'
+        });
+        if (!resp.ok) throw new Error(`HTTP error! status: ${resp.status}`);
+        const payload = await resp.json();
+        if (payload.success && payload.clients) {
+          setClients(payload.clients);
         }
+      } catch (e) {
+        console.error('Error fetching clients:', e);
+      }
+    };
+
+    fetchEmployeeData();
+    fetchClients();
+  }, [id, user?.tenantId, fetchEmployeeData]);
+
+  const canEditBasics = isAdmin() || isApprover();
+
+  const handleStartEdit = () => {
+    if (!canEditBasics) return;
+    setIsEditing(true);
+  };
+
+  const handleCancelEdit = () => {
+    // Reset form to current employee values
+    setFormValues({
+      joinDate: employee?.joinDate || '',
+      clientId: employee?.clientId || ''
+    });
+    setIsEditing(false);
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormValues(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSave = async () => {
+    try {
+      setSaving(true);
+      const tenantId = user?.tenantId;
+      if (!tenantId) throw new Error('No tenant information');
+
+      // Backend uses startDate; map from joinDate input
+      const updateBody = {
+        startDate: formValues.joinDate || null,
+        clientId: formValues.clientId || null,
       };
-      
-      setEmployee(mockEmployee);
-      setLoading(false);
-    }, 800);
-  }, [id]);
+
+      const resp = await fetch(`http://localhost:5001/api/employees/${id}?tenantId=${tenantId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify(updateBody)
+      });
+      if (!resp.ok) throw new Error(`Update failed with status ${resp.status}`);
+      const payload = await resp.json();
+      if (payload.success) {
+        // Re-fetch from server to ensure DB state is reflected
+        await fetchEmployeeData();
+        setIsEditing(false);
+      } else {
+        throw new Error(payload.error || 'Unknown update error');
+      }
+    } catch (e) {
+      console.error('Error saving employee updates:', e);
+      alert(`Failed to save changes: ${e.message}`);
+    } finally {
+      setSaving(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -126,11 +193,21 @@ const EmployeeDetail = () => {
               <Link to={`/${subdomain}/employees`} className="btn btn-outline-light">
                 <i className="fas fa-arrow-left mr-1"></i> Back to Employees
               </Link>
-              <PermissionGuard requiredPermission={PERMISSIONS.EDIT_EMPLOYEE}>
-                <button className="btn btn-primary ml-2">
-                  <i className="fas fa-edit mr-1"></i> Edit Employee
+              {canEditBasics && !isEditing && (
+                <button className="btn btn-primary ml-2" onClick={handleStartEdit}>
+                  <i className="fas fa-edit mr-1"></i> Edit
                 </button>
-              </PermissionGuard>
+              )}
+              {isEditing && (
+                <div className="d-inline-flex ml-2">
+                  <button className="btn btn-success mr-2" onClick={handleSave} disabled={saving}>
+                    {saving ? 'Saving...' : 'Save'}
+                  </button>
+                  <button className="btn btn-outline-light" onClick={handleCancelEdit} disabled={saving}>
+                    Cancel
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -184,7 +261,22 @@ const EmployeeDetail = () => {
                       <div className="profile-ud-item">
                         <div className="profile-ud-label">Client</div>
                         <div className="profile-ud-value">
-                          {employee.client || <span className="text-muted">Not assigned</span>}
+                          {!isEditing && (
+                            <>{employee.client || <span className="text-muted">Not assigned</span>}</>
+                          )}
+                          {isEditing && (
+                            <select
+                              name="clientId"
+                              className="form-control"
+                              value={formValues.clientId || ''}
+                              onChange={handleChange}
+                            >
+                              <option value="">-- Select Client --</option>
+                              {clients.map(c => (
+                                <option key={c.id} value={c.id}>{c.name}</option>
+                              ))}
+                            </select>
+                          )}
                         </div>
                       </div>
                       <div className="profile-ud-item">
@@ -211,7 +303,20 @@ const EmployeeDetail = () => {
                       )}
                       <div className="profile-ud-item">
                         <div className="profile-ud-label">Join Date</div>
-                        <div className="profile-ud-value">{new Date(employee.joinDate).toLocaleDateString()}</div>
+                        <div className="profile-ud-value">
+                          {!isEditing && (
+                            <>{employee.joinDate ? new Date(employee.joinDate).toLocaleDateString() : '—'}</>
+                          )}
+                          {isEditing && (
+                            <input
+                              type="date"
+                              name="joinDate"
+                              className="form-control"
+                              value={formValues.joinDate || ''}
+                              onChange={handleChange}
+                            />
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -293,21 +398,33 @@ const EmployeeDetail = () => {
                       <div className="nk-block-head mt-4">
                         <h6 className="title">SOW Document</h6>
                       </div>
-                      <div className="document-preview mb-4">
-                        <div className="document-preview-header">
-                          <span className="document-name">{employee.sowDocument.name}</span>
-                          <span className="document-size">{Math.round(employee.sowDocument.size / 1024)} KB</span>
-                        </div>
-                        <div className="document-preview-content">
-                          <div className="document-icon">
-                            <i className="fas fa-file-pdf"></i>
-                            <span>Uploaded on {new Date(employee.sowDocument.uploadDate).toLocaleDateString()}</span>
+                      {employee.sowDocument ? (
+                        <div className="document-preview mb-4">
+                          <div className="document-preview-header">
+                            <span className="document-name">{employee.sowDocument?.name || 'Untitled'}</span>
+                            {typeof employee.sowDocument?.size === 'number' && (
+                              <span className="document-size">{Math.round(employee.sowDocument.size / 1024)} KB</span>
+                            )}
                           </div>
-                          <a href={employee.sowDocument.url} className="btn btn-sm btn-outline-primary mt-2">
-                            <i className="fas fa-download mr-1"></i> Download
-                          </a>
+                          <div className="document-preview-content">
+                            <div className="document-icon">
+                              <i className="fas fa-file-pdf"></i>
+                              {employee.sowDocument?.uploadDate && (
+                                <span>Uploaded on {new Date(employee.sowDocument.uploadDate).toLocaleDateString()}</span>
+                              )}
+                            </div>
+                            {employee.sowDocument?.url ? (
+                              <a href={employee.sowDocument.url} className="btn btn-sm btn-outline-primary mt-2">
+                                <i className="fas fa-download mr-1"></i> Download
+                              </a>
+                            ) : (
+                              <span className="text-muted d-block mt-2">No download available</span>
+                            )}
+                          </div>
                         </div>
-                      </div>
+                      ) : (
+                        <div className="text-muted mb-4">No SOW document uploaded.</div>
+                      )}
                     </div>
                   )}
 

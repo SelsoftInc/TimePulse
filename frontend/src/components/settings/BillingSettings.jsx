@@ -3,7 +3,6 @@ import './Settings.css';
 
 const BillingSettings = () => {
   const [billingPlan, setBillingPlan] = useState('professional');
-  const [paymentMethod, setPaymentMethod] = useState('credit_card');
   const [billingCycle, setBillingCycle] = useState('monthly');
 
   // Mock billing data

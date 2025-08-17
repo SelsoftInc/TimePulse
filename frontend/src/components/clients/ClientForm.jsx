@@ -1,12 +1,21 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useRef, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { PERMISSIONS } from '../../utils/roles';
 import PermissionGuard from '../common/PermissionGuard';
+import { useAuth } from '../../contexts/AuthContext';
 import './Clients.css';
+import { US_STATES, PAYMENT_TERMS, PAYMENT_METHODS, CURRENCIES, CLIENT_TYPES } from '../../constants/lookups';
+import { formatPhoneInput, validatePhoneDigits, formatTaxIdInput, validateTaxId } from '../../utils/validation';
+import { apiFetch } from '../../config/api';
 
-const ClientForm = () => {
+const ClientForm = ({ mode = 'create', initialData = null, onSubmitOverride = null, submitLabel }) => {
   const navigate = useNavigate();
+  const { subdomain } = useParams();
+  const { user } = useAuth();
+  const addressInputRef = useRef(null);
+  const autocompleteRef = useRef(null);
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState({ phone: '', taxId: '' });
   const [formData, setFormData] = useState({
     name: '',
     contactPerson: '',
@@ -17,14 +26,13 @@ const ClientForm = () => {
     state: '',
     zip: '',
     country: 'United States',
-    employeeCount: 0,
     status: 'active',
-    clientType: 'internal',
+    clientType: 'external',
     notes: '',
     // Billing Information
     billingAddress: '',
     billingAddressSameAsMain: true,
-    paymentTerms: 'Net 30',
+    paymentTerms: 30,
     paymentMethod: 'Bank Transfer',
     bankDetails: '',
     taxId: '',
@@ -32,37 +40,206 @@ const ClientForm = () => {
     currency: 'USD'
   });
 
+  // Prefill when in edit mode
+  useEffect(() => {
+    if (initialData) {
+      setFormData(prev => ({
+        ...prev,
+        name: initialData.name || prev.name,
+        contactPerson: initialData.contactPerson || prev.contactPerson,
+        email: initialData.email || prev.email,
+        phone: initialData.phone || prev.phone,
+        address: initialData.billingAddress?.line1 || prev.address,
+        city: initialData.billingAddress?.city || prev.city,
+        state: initialData.billingAddress?.state || prev.state,
+        zip: initialData.billingAddress?.zip || prev.zip,
+        country: initialData.billingAddress?.country || prev.country,
+        status: initialData.status || prev.status,
+        clientType: initialData.clientType || prev.clientType,
+        paymentTerms: initialData.paymentTerms ?? prev.paymentTerms,
+        paymentMethod: initialData.paymentMethod || prev.paymentMethod,
+        bankDetails: initialData.bankDetails || prev.bankDetails,
+        taxId: initialData.taxId || prev.taxId,
+        vatNumber: initialData.vatNumber || prev.vatNumber,
+        currency: initialData.currency || prev.currency,
+      }));
+    }
+  }, [initialData]);
+
+  // Load Google Places script and wire Autocomplete to address field
+  useEffect(() => {
+    const apiKey = process.env.REACT_APP_GOOGLE_MAPS_API_KEY || process.env.REACT_APP_GOOGLE_PLACES_API_KEY;
+    if (!addressInputRef.current) return;
+
+    function initAutocomplete() {
+      if (!window.google || !window.google.maps || !window.google.maps.places) return;
+      if (autocompleteRef.current) return; // already initialized
+      const autocomplete = new window.google.maps.places.Autocomplete(addressInputRef.current, {
+        types: ['geocode'],
+        fields: ['address_components', 'formatted_address']
+      });
+      autocomplete.addListener('place_changed', () => {
+        const place = autocomplete.getPlace();
+        if (!place || !place.address_components) return;
+        const comps = place.address_components;
+        const get = (type) => comps.find(c => c.types.includes(type));
+        const streetNumber = get('street_number')?.long_name || '';
+        const route = get('route')?.long_name || '';
+        const city = get('locality')?.long_name || get('sublocality_level_1')?.long_name || '';
+        const state = get('administrative_area_level_1')?.short_name || '';
+        const zip = get('postal_code')?.long_name || '';
+        const country = get('country')?.long_name;
+        setFormData(prev => ({
+          ...prev,
+          address: [streetNumber, route].filter(Boolean).join(' ').trim() || place.formatted_address || prev.address,
+          city: city || prev.city,
+          state: state || prev.state,
+          zip: zip || prev.zip,
+          country: country || prev.country
+        }));
+      });
+      autocompleteRef.current = autocomplete;
+    }
+
+    if (window.google && window.google.maps && window.google.maps.places) {
+      initAutocomplete();
+      return;
+    }
+
+    if (!apiKey) return; // graceful fallback without autocomplete
+
+    const scriptId = 'google-places-script';
+    if (document.getElementById(scriptId)) {
+      // Another page loaded it already; wait a bit and init
+      const t = setTimeout(initAutocomplete, 300);
+      return () => clearTimeout(t);
+    }
+
+    const script = document.createElement('script');
+    script.id = scriptId;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
+    script.async = true;
+    script.defer = true;
+    script.onload = initAutocomplete;
+    document.body.appendChild(script);
+    return () => {
+      // No cleanup of script to allow reuse across pages
+    };
+  }, [addressInputRef]);
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData({
       ...formData,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: name === 'paymentTerms'
+        ? parseInt(value, 10)
+        : type === 'checkbox'
+        ? checked
+        : value
     });
+
+    // Clear field-specific error on change
+    if (name === 'phone' && errors.phone) {
+      setErrors(prev => ({ ...prev, phone: '' }));
+    }
+    if (name === 'taxId' && errors.taxId) {
+      setErrors(prev => ({ ...prev, taxId: '' }));
+    }
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    setLoading(true);
+  const handleBlur = (e) => {
+    const { name, value } = e.target;
+    if (name === 'phone') {
+      const msg = validatePhoneDigits(value);
+      setErrors(prev => ({ ...prev, phone: msg }));
+    } else if (name === 'taxId') {
+      const msg = validateTaxId(value);
+      setErrors(prev => ({ ...prev, taxId: msg }));
+    }
+  };
 
-    // In a real app, this would be an API call
-    setTimeout(() => {
-      console.log('Client data submitted:', formData);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      setLoading(true);
+      const tenantId = user?.tenantId;
+      if (!tenantId) throw new Error('No tenant information');
+
+      // Validate critical fields
+      const phoneErr = validatePhoneDigits(formData.phone);
+      const taxErr = validateTaxId(formData.taxId);
+      if (phoneErr || taxErr) {
+        setErrors({ phone: phoneErr, taxId: taxErr });
+        setLoading(false);
+        return;
+      }
+
+      // Build payload matching backend model fields
+      const mainAddressObj = {
+        line1: formData.address || '',
+        city: formData.city || '',
+        state: formData.state || '',
+        zip: formData.zip || '',
+        country: formData.country || 'United States'
+      };
+
+      const billingAddressObj = formData.billingAddressSameAsMain
+        ? mainAddressObj
+        : { line1: formData.billingAddress || '', city: '', state: '', zip: '', country: formData.country || 'United States' };
+
+      const shippingAddressObj = billingAddressObj; // keep same for now
+
+      const payload = {
+        tenantId,
+        clientName: formData.name,
+        legalName: formData.name,
+        contactPerson: formData.contactPerson,
+        email: formData.email,
+        phone: formData.phone,
+        billingAddress: billingAddressObj,
+        shippingAddress: shippingAddressObj,
+        taxId: formData.taxId || null,
+        paymentTerms: Number(formData.paymentTerms),
+        hourlyRate: null,
+        status: formData.status,
+        // clientType may or may not exist in schema; include if supported server-side
+        clientType: formData.clientType
+      };
+      if (onSubmitOverride) {
+        await onSubmitOverride(payload);
+      } else {
+        const resp = await apiFetch(`/api/clients`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          },
+          body: JSON.stringify(payload)
+        }, { timeoutMs: 15000 });
+
+        if (!resp.ok) {
+          const err = await resp.json().catch(() => ({}));
+          throw new Error(err.details || `Create failed with status ${resp.status}`);
+        }
+        // Navigate to clients list
+        navigate(`/${subdomain}/clients`);
+      }
+    } catch (err) {
+      console.error(`Failed to ${mode === 'edit' ? 'update' : 'create'} client:`, err);
+      alert(`Failed to ${mode === 'edit' ? 'update' : 'create'} client: ${err.message}`);
+    } finally {
       setLoading(false);
-      navigate('/clients');
-      // Show success message
-      alert('Client created successfully!');
-    }, 800);
+    }
   };
 
   return (
-    <PermissionGuard requiredPermission={PERMISSIONS.CREATE_CLIENT}>
+    <PermissionGuard requiredPermission={mode === 'edit' ? PERMISSIONS.EDIT_CLIENT : PERMISSIONS.CREATE_CLIENT}>
       <div className="nk-content">
         <div className="container-fluid">
           <div className="nk-block-head">
             <div className="nk-block-between">
               <div className="nk-block-head-content">
-                <h3 className="nk-block-title">Add New Client</h3>
-                <p className="nk-block-subtitle">Create a new client record</p>
+                <h3 className="nk-block-title">{mode === 'edit' ? 'Edit Client' : 'Add New Client'}</h3>
+                <p className="nk-block-subtitle">{mode === 'edit' ? 'Update client information' : 'Create a new client record'}</p>
               </div>
             </div>
           </div>
@@ -126,23 +303,35 @@ const ClientForm = () => {
                           id="phone"
                           name="phone"
                           value={formData.phone}
-                          onChange={handleChange}
+                          onChange={(e) => {
+                            const formatted = formatPhoneInput(e.target.value);
+                            setFormData(prev => ({ ...prev, phone: formatted }));
+                            if (errors.phone) setErrors(prev => ({ ...prev, phone: '' }));
+                          }}
+                          onBlur={handleBlur}
+                          inputMode="tel"
+                          maxLength={20}
                           placeholder="Enter phone number"
                           required
                         />
+                        {errors.phone && (
+                          <div className="mt-1"><small className="text-danger">{errors.phone}</small></div>
+                        )}
                       </div>
                     </div>
                     <div className="col-lg-12">
                       <div className="form-group">
                         <label className="form-label" htmlFor="address">Address</label>
                         <input
+                          ref={addressInputRef}
                           type="text"
                           className="form-control"
                           id="address"
                           name="address"
+                          autoComplete="street-address"
                           value={formData.address}
                           onChange={handleChange}
-                          placeholder="Enter street address"
+                          placeholder="Start typing an address"
                         />
                       </div>
                     </div>
@@ -163,15 +352,18 @@ const ClientForm = () => {
                     <div className="col-lg-4">
                       <div className="form-group">
                         <label className="form-label" htmlFor="state">State</label>
-                        <input
-                          type="text"
-                          className="form-control"
+                        <select
+                          className="form-select"
                           id="state"
                           name="state"
                           value={formData.state}
                           onChange={handleChange}
-                          placeholder="Enter state"
-                        />
+                        >
+                          <option value="" disabled>Select state</option>
+                          {US_STATES.map(s => (
+                            <option key={s.code} value={s.code}>{s.code} - {s.name}</option>
+                          ))}
+                        </select>
                       </div>
                     </div>
                     <div className="col-lg-4">
@@ -202,20 +394,7 @@ const ClientForm = () => {
                         />
                       </div>
                     </div>
-                    <div className="col-lg-6">
-                      <div className="form-group">
-                        <label className="form-label" htmlFor="employeeCount">Number of Employees</label>
-                        <input
-                          type="number"
-                          className="form-control"
-                          id="employeeCount"
-                          name="employeeCount"
-                          value={formData.employeeCount}
-                          onChange={handleChange}
-                          min="0"
-                        />
-                      </div>
-                    </div>
+                    
                     <div className="col-lg-6">
                       <div className="form-group">
                         <label className="form-label" htmlFor="status">Status</label>
@@ -243,8 +422,9 @@ const ClientForm = () => {
                           onChange={handleChange}
                           required
                         >
-                          <option value="internal">Internal Client</option>
-                          <option value="external">External Client</option>
+                          {CLIENT_TYPES.map(ct => (
+                            <option key={ct.value} value={ct.value}>{ct.label}</option>
+                          ))}
                         </select>
                         <div className="form-note mt-2">
                           <small>
@@ -277,11 +457,9 @@ const ClientForm = () => {
                           onChange={handleChange}
                           required
                         >
-                          <option value="Due upon receipt">Due upon receipt</option>
-                          <option value="Net 15">Net 15</option>
-                          <option value="Net 30">Net 30</option>
-                          <option value="Net 45">Net 45</option>
-                          <option value="Net 60">Net 60</option>
+                          {PAYMENT_TERMS.map(pt => (
+                            <option key={pt.value} value={pt.value}>{pt.label}</option>
+                          ))}
                         </select>
                       </div>
                     </div>
@@ -297,11 +475,9 @@ const ClientForm = () => {
                           onChange={handleChange}
                           required
                         >
-                          <option value="Bank Transfer">Bank Transfer</option>
-                          <option value="Credit Card">Credit Card</option>
-                          <option value="PayPal">PayPal</option>
-                          <option value="Check">Check</option>
-                          <option value="Wire Transfer">Wire Transfer</option>
+                          {PAYMENT_METHODS.map(m => (
+                            <option key={m} value={m}>{m}</option>
+                          ))}
                         </select>
                       </div>
                     </div>
@@ -317,11 +493,9 @@ const ClientForm = () => {
                           onChange={handleChange}
                           required
                         >
-                          <option value="USD">USD - US Dollar</option>
-                          <option value="EUR">EUR - Euro</option>
-                          <option value="GBP">GBP - British Pound</option>
-                          <option value="CAD">CAD - Canadian Dollar</option>
-                          <option value="AUD">AUD - Australian Dollar</option>
+                          {CURRENCIES.map(c => (
+                            <option key={c.value} value={c.value}>{c.label}</option>
+                          ))}
                         </select>
                       </div>
                     </div>
@@ -335,10 +509,20 @@ const ClientForm = () => {
                           id="taxId"
                           name="taxId"
                           value={formData.taxId}
-                          onChange={handleChange}
+                          onChange={(e) => {
+                            const formatted = formatTaxIdInput(e.target.value);
+                            setFormData(prev => ({ ...prev, taxId: formatted }));
+                            if (errors.taxId) setErrors(prev => ({ ...prev, taxId: '' }));
+                          }}
+                          onBlur={handleBlur}
+                          inputMode="numeric"
+                          maxLength={11}
                           placeholder="Enter Tax ID (e.g., 13-1234567)"
                           required
                         />
+                        {errors.taxId && (
+                          <div className="mt-1"><small className="text-danger">{errors.taxId}</small></div>
+                        )}
                       </div>
                     </div>
                     
@@ -430,16 +614,16 @@ const ClientForm = () => {
                           {loading ? (
                             <>
                               <span className="spinner-border spinner-border-sm mr-1" role="status" aria-hidden="true"></span>
-                              Creating...
+                              {mode === 'edit' ? 'Saving...' : 'Creating...'}
                             </>
                           ) : (
-                            'Create Client'
+                            submitLabel || (mode === 'edit' ? 'Save Changes' : 'Create Client')
                           )}
                         </button>
                         <button 
                           type="button" 
                           className="btn btn-outline-light ml-3"
-                          onClick={() => navigate('/clients')}
+                          onClick={() => navigate(`/${subdomain}/clients`)}
                         >
                           Cancel
                         </button>

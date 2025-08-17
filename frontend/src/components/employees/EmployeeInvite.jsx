@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
 import { PERMISSIONS } from '../../utils/roles';
 import PermissionGuard from '../common/PermissionGuard';
 
 const EmployeeInvite = () => {
   const { subdomain } = useParams();
-  const { checkPermission } = useAuth();
+  // Removed unused checkPermission from useAuth to satisfy lint
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
   const [position, setPosition] = useState('');

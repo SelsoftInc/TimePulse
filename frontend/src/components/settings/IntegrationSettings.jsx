@@ -183,9 +183,9 @@ const IntegrationSettings = () => {
             <div className="mt-4">
               <h4>API Documentation</h4>
               <p>Learn how to integrate with TimePulse using our comprehensive API documentation.</p>
-              <a href="#" className="btn btn-outline-primary">
+              <button type="button" className="btn btn-outline-primary" onClick={() => window.open('https://example.com/docs', '_blank', 'noopener') }>
                 <i className="fas fa-book mr-1"></i> View Documentation
-              </a>
+              </button>
             </div>
           </div>
         </div>

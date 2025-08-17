@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { PERMISSIONS } from '../../utils/roles';
 import PermissionGuard from '../common/PermissionGuard';
 import { useAuth } from '../../contexts/AuthContext';
@@ -7,7 +7,9 @@ import './Employees.css';
 
 const EmployeeForm = () => {
   const navigate = useNavigate();
-  const { checkPermission } = useAuth();
+  const { subdomain } = useParams();
+  const location = useLocation();
+  const { checkPermission, user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     firstName: '',
@@ -17,6 +19,7 @@ const EmployeeForm = () => {
     position: '',
     department: '',
     startDate: '',
+    clientId: '',
     client: '',
     clientType: 'internal',
     approver: '',
@@ -35,16 +38,58 @@ const EmployeeForm = () => {
   
   const [workOrder, setWorkOrder] = useState(null);
   const [workOrderPreview, setWorkOrderPreview] = useState('');
+  const [clients, setClients] = useState([]);
+  const [clientsLoading, setClientsLoading] = useState(false);
+  const [clientsError, setClientsError] = useState('');
+
+  // Fetch clients from API
+  useEffect(() => {
+    const fetchClients = async () => {
+      if (!user?.tenantId) return;
+      try {
+        setClientsLoading(true);
+        setClientsError('');
+        const resp = await fetch(`http://localhost:5001/api/clients?tenantId=${user.tenantId}`, {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        if (!resp.ok) {
+          const err = await resp.json().catch(() => ({}));
+          throw new Error(err.details || `Failed to fetch clients (${resp.status})`);
+        }
+        const data = await resp.json();
+        const list = data.clients || data || [];
+        setClients(list);
+      } catch (e) {
+        console.error('Failed to fetch clients:', e);
+        setClientsError(e.message);
+      } finally {
+        setClientsLoading(false);
+      }
+    };
+    fetchClients();
+  }, [user?.tenantId]);
+
+  // Prefill from query params (clientId, clientName)
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const qpClientId = params.get('clientId');
+    const qpClientName = params.get('clientName');
+    if (qpClientId && clients.length > 0) {
+      const found = clients.find(c => String(c.id) === String(qpClientId));
+      if (found) {
+        setFormData(prev => ({ ...prev, clientId: String(found.id), client: found.clientName || found.name || '' , clientType: found.clientType || prev.clientType }));
+        return;
+      }
+    }
+    if (qpClientName) {
+      setFormData(prev => ({ ...prev, client: qpClientName }));
+    }
+  }, [location.search, clients]);
 
   // Sample client list - in a real app, this would come from an API
-  const clients = [
-    { id: 1, name: 'JPMC', type: 'internal' },
-    { id: 2, name: 'Accenture', type: 'internal' },
-    { id: 3, name: 'Virtusa', type: 'internal' },
-    { id: 4, name: 'Cognizant', type: 'external' },
-    { id: 5, name: 'IBM', type: 'external' }
-  ];
-  
   // Sample approver list - in a real app, this would come from an API
   const approvers = [
     { id: 1, name: 'John Smith', email: 'john.smith@company.com', department: 'Engineering' },
@@ -63,14 +108,14 @@ const EmployeeForm = () => {
   };
   
   const handleClientChange = (e) => {
-    const clientId = parseInt(e.target.value);
-    const selectedClient = clients.find(client => client.id === clientId);
-    
-    setFormData({
-      ...formData,
-      client: e.target.value,
-      clientType: selectedClient ? selectedClient.type : 'internal'
-    });
+    const clientIdStr = e.target.value;
+    const selectedClient = clients.find(client => String(client.id) === String(clientIdStr));
+    setFormData(prev => ({
+      ...prev,
+      clientId: clientIdStr,
+      client: selectedClient ? (selectedClient.clientName || selectedClient.name || '') : '',
+      clientType: selectedClient ? (selectedClient.clientType || selectedClient.type || 'internal') : 'internal'
+    }));
   };
 
   const handleFileChange = (e) => {
@@ -113,9 +158,20 @@ const EmployeeForm = () => {
         }
       };
       
+      if (!formData.clientId) {
+        alert('Please select a client');
+        setLoading(false);
+        return;
+      }
       console.log('Employee data submitted:', dataToSubmit);
       setLoading(false);
-      navigate('/employees');
+      const params = new URLSearchParams(location.search);
+      const qpClientId = params.get('clientId');
+      if (qpClientId) {
+        navigate(`/${subdomain}/clients/${qpClientId}`);
+      } else {
+        navigate(`/${subdomain}/employees`);
+      }
       // Show success message
       alert('Employee created successfully!');
     }, 800);
@@ -243,20 +299,25 @@ const EmployeeForm = () => {
                     </div>
                     <div className="col-lg-6">
                       <div className="form-group">
-                        <label className="form-label" htmlFor="client">Assigned Client*</label>
+                        <label className="form-label" htmlFor="clientId">Assigned Client*</label>
                         <select
                           className="form-select"
-                          id="client"
-                          name="client"
-                          value={formData.client}
+                          id="clientId"
+                          name="clientId"
+                          value={formData.clientId}
                           onChange={handleClientChange}
                           required
                         >
                           <option value="">Select Client</option>
                           {clients.map(client => (
-                            <option key={client.id} value={client.name}>{client.name} ({client.type})</option>
+                            <option key={client.id} value={client.id}>
+                              {(client.clientName || client.name)}
+                              {client.clientType || client.type ? ` (${client.clientType || client.type})` : ''}
+                            </option>
                           ))}
                         </select>
+                        {clientsLoading && <div className="form-note mt-1"><small className="text-soft">Loading clients…</small></div>}
+                        {clientsError && <div className="form-note mt-1"><small className="text-danger">{clientsError}</small></div>}
                       </div>
                     </div>
                     
@@ -535,7 +596,15 @@ const EmployeeForm = () => {
                         <button 
                           type="button" 
                           className="btn btn-outline-light ml-3"
-                          onClick={() => navigate('/employees')}
+                          onClick={() => {
+                            const params = new URLSearchParams(location.search);
+                            const qpClientId = params.get('clientId');
+                            if (qpClientId) {
+                              navigate(`/${subdomain}/clients/${qpClientId}`);
+                            } else {
+                              navigate(`/${subdomain}/employees`);
+                            }
+                          }}
                         >
                           Cancel
                         </button>

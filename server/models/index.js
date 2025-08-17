@@ -248,6 +248,15 @@ models.Employee = sequelize.define('Employee', {
       key: 'id'
     }
   },
+  clientId: {
+    type: DataTypes.UUID,
+    allowNull: true,
+    field: 'client_id',
+    references: {
+      model: 'clients',
+      key: 'id'
+    }
+  },
   startDate: {
     type: DataTypes.DATEONLY,
     field: 'start_date'
@@ -450,12 +459,83 @@ models.Employee.belongsTo(models.Tenant, { foreignKey: 'tenantId', as: 'tenant' 
 models.Employee.belongsTo(models.User, { foreignKey: 'userId', as: 'user' });
 models.Employee.belongsTo(models.Employee, { foreignKey: 'managerId', as: 'manager' });
 models.Employee.hasMany(models.Employee, { foreignKey: 'managerId', as: 'subordinates' });
+models.Employee.belongsTo(models.Client, { foreignKey: 'clientId', as: 'client' });
 
 // Client associations
 models.Client.belongsTo(models.Tenant, { foreignKey: 'tenantId', as: 'tenant' });
 
+// =============================================
+// TIMESHEET MODEL
+// =============================================
+models.Timesheet = sequelize.define('Timesheet', {
+  id: {
+    type: DataTypes.UUID,
+    defaultValue: DataTypes.UUIDV4,
+    primaryKey: true
+  },
+  tenantId: {
+    type: DataTypes.UUID,
+    allowNull: false,
+    field: 'tenant_id',
+    references: { model: 'tenants', key: 'id' }
+  },
+  employeeId: {
+    type: DataTypes.UUID,
+    allowNull: false,
+    field: 'employee_id',
+    references: { model: 'employees', key: 'id' }
+  },
+  clientId: {
+    type: DataTypes.UUID,
+    allowNull: true,
+    field: 'client_id',
+    references: { model: 'clients', key: 'id' }
+  },
+  weekStart: {
+    type: DataTypes.DATEONLY,
+    allowNull: false,
+    field: 'week_start'
+  },
+  weekEnd: {
+    type: DataTypes.DATEONLY,
+    allowNull: false,
+    field: 'week_end'
+  },
+  dailyHours: {
+    // { mon: 0, tue: 0, wed: 0, thu: 0, fri: 0, sat: 0, sun: 0 }
+    type: DataTypes.JSONB,
+    defaultValue: { mon: 0, tue: 0, wed: 0, thu: 0, fri: 0, sat: 0, sun: 0 },
+    field: 'daily_hours'
+  },
+  totalHours: {
+    type: DataTypes.DECIMAL(5,2),
+    defaultValue: 0,
+    field: 'total_hours'
+  },
+  status: {
+    type: DataTypes.ENUM('draft','submitted','approved','rejected'),
+    defaultValue: 'draft'
+  }
+}, {
+  tableName: 'timesheets',
+  timestamps: true,
+  createdAt: 'created_at',
+  updatedAt: 'updated_at',
+  indexes: [
+    { unique: true, fields: ['tenant_id','employee_id','week_start','week_end'] }
+  ]
+});
+
 // Onboarding Log associations
 models.OnboardingLog.belongsTo(models.Tenant, { foreignKey: 'tenantId', as: 'tenant' });
+
+// Timesheet associations
+models.Tenant.hasMany(models.Timesheet, { foreignKey: 'tenantId', as: 'timesheets' });
+models.Employee.hasMany(models.Timesheet, { foreignKey: 'employeeId', as: 'timesheets' });
+models.Client.hasMany(models.Timesheet, { foreignKey: 'clientId', as: 'timesheets' });
+models.Timesheet.belongsTo(models.Tenant, { foreignKey: 'tenantId', as: 'tenant' });
+models.Timesheet.belongsTo(models.Employee, { foreignKey: 'employeeId', as: 'employee' });
+models.Timesheet.belongsTo(models.Client, { foreignKey: 'clientId', as: 'client' });
 
 // =============================================
 // DATABASE CONNECTION AND SYNC
@@ -466,11 +546,11 @@ const connectDB = async () => {
     await sequelize.authenticate();
     console.log('✅ Database connection established successfully.');
     
-    // Skip auto-sync since schema is already applied
-    // if (process.env.NODE_ENV === 'development') {
-    //   await sequelize.sync({ alter: true });
-    //   console.log('📊 Database models synchronized.');
-    // }
+    // Auto-sync in development to create/alter tables
+    if (process.env.NODE_ENV === 'development') {
+      await sequelize.sync({ alter: true });
+      console.log('📊 Database models synchronized.');
+    }
     
     return sequelize;
   } catch (error) {

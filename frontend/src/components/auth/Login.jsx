@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import './Auth.css';
+import { API_BASE } from '../../config/api';
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -60,7 +61,7 @@ const Login = () => {
         navigate('/workspaces');
       } else {
         // Try real authentication with backend
-        const response = await fetch('http://localhost:5001/api/auth/login', {
+        const response = await fetch(`${API_BASE}/api/auth/login`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

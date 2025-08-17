@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import { API_BASE } from '../../config/api';
 import { PERMISSIONS } from '../../utils/roles';
 import PermissionGuard from '../common/PermissionGuard';
 import { useAuth } from '../../contexts/AuthContext';
@@ -8,9 +9,11 @@ import './Clients.css';
 const ClientsList = () => {
   const { subdomain } = useParams();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [openMenuId, setOpenMenuId] = useState(null);
 
   // Fetch clients from backend API
   const fetchClients = async () => {
@@ -24,7 +27,7 @@ const ClientsList = () => {
         return;
       }
 
-      const response = await fetch(`http://localhost:5001/api/clients?tenantId=${user.tenantId}`, {
+      const response = await fetch(`${API_BASE}/api/clients?tenantId=${user.tenantId}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -54,6 +57,98 @@ const ClientsList = () => {
   useEffect(() => {
     fetchClients();
   }, [user?.tenantId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Close menu on outside click
+  useEffect(() => {
+    const handler = (e) => {
+      const inMenu = e.target.closest('.dropdown-menu');
+      const inTrigger = e.target.closest('.btn-trigger');
+      if (!inMenu && !inTrigger) setOpenMenuId(null);
+    };
+    document.addEventListener('click', handler);
+    return () => document.removeEventListener('click', handler);
+  }, []);
+
+  const toggleMenu = (id) => {
+    setOpenMenuId(prev => (prev === id ? null : id));
+  };
+
+  const handleEdit = (clientId) => {
+    navigate(`/${subdomain}/clients/edit/${clientId}`);
+  };
+
+  const handleDelete = async (clientId) => {
+    if (!window.confirm('Delete this client? This action cannot be undone.')) return;
+    try {
+      const resp = await fetch(`${API_BASE}/api/clients/${clientId}?tenantId=${user.tenantId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({}));
+        throw new Error(err.error || `Delete failed with status ${resp.status}`);
+      }
+      await fetchClients();
+    } catch (e) {
+      alert(`Failed to delete: ${e.message}`);
+    } finally {
+      setOpenMenuId(null);
+    }
+  };
+
+  const handleDuplicate = async (clientId) => {
+    try {
+      // Fetch full client details first
+      const getResp = await fetch(`${API_BASE}/api/clients/${clientId}?tenantId=${user.tenantId}`, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      if (!getResp.ok) throw new Error(`Fetch details failed (${getResp.status})`);
+      const data = await getResp.json();
+      const c = data.client;
+      if (!c) throw new Error('Client not found');
+
+      // Build payload similar to create
+      const payload = {
+        tenantId: user.tenantId,
+        clientName: `Copy of ${c.name}`,
+        legalName: `Copy of ${c.name}`,
+        contactPerson: c.contactPerson || '',
+        email: c.email || '',
+        phone: c.phone || '',
+        billingAddress: c.billingAddress || { line1: '', city: '', state: '', zip: '', country: c.country || 'United States' },
+        shippingAddress: c.shippingAddress || { line1: '', city: '', state: '', zip: '', country: c.country || 'United States' },
+        taxId: c.taxId || null,
+        paymentTerms: Number(c.paymentTerms) || 30,
+        hourlyRate: c.hourlyRate || null,
+        status: c.status || 'active',
+        clientType: c.clientType || 'external'
+      };
+
+      const postResp = await fetch(`${API_BASE}/api/clients`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify(payload)
+      });
+      if (!postResp.ok) {
+        const err = await postResp.json().catch(() => ({}));
+        throw new Error(err.error || `Duplicate failed with status ${postResp.status}`);
+      }
+      await fetchClients();
+    } catch (e) {
+      alert(`Failed to duplicate: ${e.message}`);
+    } finally {
+      setOpenMenuId(null);
+    }
+  };
 
   return (
     <div className="nk-content">
@@ -127,21 +222,38 @@ const ClientsList = () => {
                         <td>{client.employeeCount}</td>
                         <td>${client.totalBilled.toLocaleString()}</td>
                         <td className="text-right">
-                          <div className="dropdown">
-                            <button className="btn btn-sm btn-icon btn-trigger dropdown-toggle">
+                          <div className="btn-group">
+                            <button
+                              type="button"
+                              className="btn btn-sm btn-icon btn-trigger"
+                              onClick={() => toggleMenu(client.id)}
+                              aria-haspopup="true"
+                              aria-expanded={openMenuId === client.id}
+                            >
                               <i className="fas fa-ellipsis-h"></i>
                             </button>
-                            <div className="dropdown-menu dropdown-menu-right">
-                              <Link to={`/${subdomain}/clients/${client.id}`} className="dropdown-item">
-                                <i className="fas fa-eye mr-1"></i> View Details
-                              </Link>
-                              <button type="button" className="dropdown-item">
-                                <i className="fas fa-edit mr-1"></i> Edit
-                              </button>
-                              <button type="button" className="dropdown-item text-danger">
-                                <i className="fas fa-trash-alt mr-1"></i> Delete
-                              </button>
-                            </div>
+                            {openMenuId === client.id && (
+                              <div className="dropdown-menu dropdown-menu-right show" style={{ position: 'absolute' }}>
+                                <Link to={`/${subdomain}/clients/${client.id}`} className="dropdown-item" onClick={() => setOpenMenuId(null)}>
+                                  <i className="fas fa-eye mr-1"></i> View Details
+                                </Link>
+                                <PermissionGuard requiredPermission={PERMISSIONS.EDIT_CLIENT}>
+                                  <button type="button" className="dropdown-item" onClick={() => handleEdit(client.id)}>
+                                    <i className="fas fa-edit mr-1"></i> Edit
+                                  </button>
+                                </PermissionGuard>
+                                <PermissionGuard requiredPermission={PERMISSIONS.CREATE_CLIENT}>
+                                  <button type="button" className="dropdown-item" onClick={() => handleDuplicate(client.id)}>
+                                    <i className="fas fa-clone mr-1"></i> Duplicate
+                                  </button>
+                                </PermissionGuard>
+                                <PermissionGuard requiredPermission={PERMISSIONS.DELETE_CLIENT}>
+                                  <button type="button" className="dropdown-item text-danger" onClick={() => handleDelete(client.id)}>
+                                    <i className="fas fa-trash-alt mr-1"></i> Delete
+                                  </button>
+                                </PermissionGuard>
+                              </div>
+                            )}
                           </div>
                         </td>
                       </tr>

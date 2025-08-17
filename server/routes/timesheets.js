@@ -1,75 +1,134 @@
 /**
- * Timesheet Routes
+ * Timesheet Routes - DB backed
  */
 
 const express = require('express');
 const router = express.Router();
+const { models } = require('../models');
+const { Op } = require('sequelize');
 
-// GET /api/timesheets
-router.get('/', (req, res) => {
-  // Mock timesheet data
-  const timesheets = [
-    {
-      id: 1,
-      employee: 'John Doe',
-      week: '2025-01-20 to 2025-01-26',
-      status: 'submitted',
-      totalHours: 40,
-      createdAt: '2025-01-26T10:00:00Z'
-    },
-    {
-      id: 2,
-      employee: 'Jane Smith',
-      week: '2025-01-20 to 2025-01-26',
-      status: 'approved',
-      totalHours: 38,
-      createdAt: '2025-01-25T15:30:00Z'
-    }
-  ];
+// Helpers
+const toDateOnly = (d) => d.toISOString().slice(0, 10);
+const getWeekRangeMonToSun = (date = new Date()) => {
+  const d = new Date(date);
+  const day = d.getDay(); // 0 Sun - 6 Sat
+  const diffToMon = (day === 0 ? -6 : 1) - day; // move to Monday
+  const monday = new Date(d);
+  monday.setDate(d.getDate() + diffToMon);
+  monday.setHours(0, 0, 0, 0);
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
+  sunday.setHours(23, 59, 59, 999);
+  return { weekStart: toDateOnly(monday), weekEnd: toDateOnly(sunday) };
+};
 
-  res.json(timesheets);
-});
+// GET /api/timesheets/current?tenantId=...
+// Ensures a draft timesheet exists for each employee for the current week
+router.get('/current', async (req, res, next) => {
+  try {
+    const { tenantId } = req.query;
+    if (!tenantId) return res.status(400).json({ success: false, message: 'tenantId is required' });
 
-// POST /api/timesheets
-router.post('/', (req, res) => {
-  const { employee, week, hours, status } = req.body;
-  
-  const newTimesheet = {
-    id: Date.now(),
-    employee,
-    week,
-    totalHours: hours,
-    status: status || 'draft',
-    createdAt: new Date().toISOString()
-  };
+    const { weekStart, weekEnd } = getWeekRangeMonToSun(new Date());
 
-  res.status(201).json(newTimesheet);
+    // Get employees for tenant
+    const employees = await models.Employee.findAll({
+      where: { tenantId },
+      attributes: ['id', 'firstName', 'lastName', 'employeeId', 'clientId', 'title', 'status']
+    });
+
+    // Ensure a timesheet exists for each employee for this week
+    const ensurePromises = employees.map((emp) =>
+      models.Timesheet.findOrCreate({
+        where: { tenantId, employeeId: emp.id, weekStart, weekEnd },
+        defaults: {
+          tenantId,
+          employeeId: emp.id,
+          clientId: emp.clientId || null,
+          weekStart,
+          weekEnd,
+          dailyHours: { mon: 0, tue: 0, wed: 0, thu: 0, fri: 0, sat: 0, sun: 0 },
+          totalHours: 0,
+          status: 'draft'
+        }
+      })
+    );
+    await Promise.all(ensurePromises);
+
+    // Fetch with joins for response
+    const rows = await models.Timesheet.findAll({
+      where: { tenantId, weekStart, weekEnd },
+      include: [
+        { model: models.Employee, as: 'employee', attributes: ['id', 'firstName', 'lastName', 'title'] },
+        { model: models.Client, as: 'client', attributes: ['id', 'clientName'] }
+      ],
+      order: [[{ model: models.Employee, as: 'employee' }, 'firstName', 'ASC']]
+    });
+
+    const result = rows.map((r) => ({
+      id: r.id,
+      employee: {
+        id: r.employee?.id,
+        name: `${r.employee?.firstName || ''} ${r.employee?.lastName || ''}`.trim(),
+        role: r.employee?.title || 'Employee'
+      },
+      client: r.client?.clientName || 'No client assigned',
+      project: r.client ? `Project for ${r.client.clientName}` : 'No project assigned',
+      week: `${new Date(r.weekStart).toLocaleString('en-US', { month: 'short' })} ${new Date(r.weekStart).getDate()} - ${new Date(r.weekEnd).toLocaleString('en-US', { month: 'short' })} ${new Date(r.weekEnd).getDate()}`,
+      weekStart: r.weekStart,
+      weekEnd: r.weekEnd,
+      hours: Number(r.totalHours).toFixed(1),
+      status: { label: r.status.replace('_', ' ').toUpperCase(), color: r.status === 'approved' ? 'success' : r.status === 'submitted' ? 'warning' : 'secondary' },
+      dailyHours: r.dailyHours
+    }));
+
+    res.json({ success: true, weekStart, weekEnd, timesheets: result });
+  } catch (err) {
+    next(err);
+  }
 });
 
 // GET /api/timesheets/:id
-router.get('/:id', (req, res) => {
-  const { id } = req.params;
-  
-  // Mock timesheet details
-  const timesheet = {
-    id: parseInt(id),
-    employee: 'John Doe',
-    week: '2025-01-20 to 2025-01-26',
-    status: 'submitted',
-    totalHours: 40,
-    dailyHours: {
-      monday: 8,
-      tuesday: 8,
-      wednesday: 8,
-      thursday: 8,
-      friday: 8,
-      saturday: 0,
-      sunday: 0
-    },
-    createdAt: '2025-01-26T10:00:00Z'
-  };
+router.get('/:id', async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const row = await models.Timesheet.findByPk(id, {
+      include: [
+        { model: models.Employee, as: 'employee', attributes: ['id', 'firstName', 'lastName', 'title'] },
+        { model: models.Client, as: 'client', attributes: ['id', 'clientName'] }
+      ]
+    });
+    if (!row) return res.status(404).json({ success: false, message: 'Timesheet not found' });
+    res.json({ success: true, timesheet: row });
+  } catch (err) {
+    next(err);
+  }
+});
 
-  res.json(timesheet);
+// PUT /api/timesheets/:id - update hours/status
+router.put('/:id', async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { dailyHours, status, clientId } = req.body || {};
+
+    const row = await models.Timesheet.findByPk(id);
+    if (!row) return res.status(404).json({ success: false, message: 'Timesheet not found' });
+
+    if (dailyHours && typeof dailyHours === 'object') {
+      const total = ['mon','tue','wed','thu','fri','sat','sun']
+        .map((k) => Number(dailyHours[k] || 0))
+        .reduce((a, b) => a + b, 0);
+      row.dailyHours = { mon: 0, tue: 0, wed: 0, thu: 0, fri: 0, sat: 0, sun: 0, ...dailyHours };
+      row.totalHours = Number(total.toFixed(2));
+    }
+    if (status) row.status = status;
+    if (clientId !== undefined) row.clientId = clientId || null;
+
+    await row.save();
+    res.json({ success: true, timesheet: row });
+  } catch (err) {
+    next(err);
+  }
 });
 
 module.exports = router;

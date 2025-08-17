@@ -1,167 +1,77 @@
 // src/components/clients/ClientOverview.jsx (renamed to ClientDetails)
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
+import { useToast } from '../../contexts/ToastContext';
 import './ClientDetails.css';
 
 const ClientDetails = () => {
-  const { clientId } = useParams();
+  const { clientId, subdomain } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { toast } = useToast();
   const [client, setClient] = useState(null);
-  const [employees, setEmployees] = useState([]);
+  // Assigned employees are derived from allEmployees by matching clientId
+  const [allEmployees, setAllEmployees] = useState([]);
+  const [assignEmployeeId, setAssignEmployeeId] = useState('');
+  const [assignLoading, setAssignLoading] = useState(false);
+  const [assignError, setAssignError] = useState('');
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('all');
   const [tenantInfo, setTenantInfo] = useState(null);
   
-  // Define fetchClientData with useCallback to avoid dependency issues
+  // Fetch client by ID from backend
   const fetchClientData = useCallback(async () => {
     try {
       setLoading(true);
-      // In a real app, this would be an API call with the tenant ID included
-      // For example: `/api/${tenantInfo?.subdomain}/clients/${clientId}`
-      await new Promise(resolve => setTimeout(resolve, 800)); // Simulate API delay
-      
-      // Sample client data - in a real app, this would come from an API
-      const clientData = {
-        1: { 
-          id: 1, 
-          name: "JPMC", 
-          employeeCount: 7, 
-          industry: "Finance", 
-          contactPerson: "John Smith", 
-          email: "john.smith@jpmc.com", 
-          status: "Active",
-          clientType: "internal",
-          phone: "(212) 555-1234",
-          address: "383 Madison Avenue, New York, NY 10017",
-          billingAddress: "383 Madison Avenue, New York, NY 10017",
-          billingAddressSameAsMain: true,
-          paymentTerms: "Net 30",
-          paymentMethod: "Bank Transfer",
-          bankDetails: "Chase Bank - Account: ****1234, Routing: 021000021",
-          taxId: "13-1234567",
-          vatNumber: null,
-          currency: "USD"
-        },
-        2: { 
-          id: 2, 
-          name: "Accenture", 
-          employeeCount: 5, 
-          industry: "Consulting", 
-          contactPerson: "Sarah Johnson", 
-          email: "sarah.j@accenture.com", 
-          status: "Active",
-          clientType: "internal",
-          phone: "(312) 555-7890",
-          address: "161 N Clark St, Chicago, IL 60601",
-          billingAddress: "161 N Clark St, Chicago, IL 60601",
-          billingAddressSameAsMain: true,
-          paymentTerms: "Net 15",
-          paymentMethod: "Credit Card",
-          bankDetails: null,
-          taxId: "36-2345678",
-          vatNumber: null,
-          currency: "USD"
-        },
-        3: { 
-          id: 3, 
-          name: "Virtusa", 
-          employeeCount: 3, 
-          industry: "IT Services", 
-          contactPerson: "Mike Chen", 
-          email: "mike.chen@virtusa.com", 
-          status: "Pending",
-          clientType: "external",
-          phone: "(781) 555-4321",
-          address: "132 Turnpike Rd, Southborough, MA 01772",
-          billingAddress: "500 Corporate Center, Southborough, MA 01772",
-          billingAddressSameAsMain: false,
-          paymentTerms: "Due upon receipt",
-          paymentMethod: "Check",
-          bankDetails: null,
-          taxId: "04-3456789",
-          vatNumber: null,
-          currency: "USD"
-        },
-        4: { 
-          id: 4, 
-          name: "Cognizant", 
-          employeeCount: 5, 
-          industry: "IT Services", 
-          contactPerson: "Lisa Wong", 
-          email: "lisa.wong@cognizant.com", 
-          status: "Active",
-          clientType: "external",
-          phone: "(201) 555-8765",
-          address: "500 Frank W Burr Blvd, Teaneck, NJ 07666",
-          billingAddress: "500 Frank W Burr Blvd, Teaneck, NJ 07666",
-          billingAddressSameAsMain: true,
-          paymentTerms: "Net 30",
-          paymentMethod: "PayPal",
-          bankDetails: null,
-          taxId: "22-4567890",
-          vatNumber: null,
-          currency: "USD"
-        },
-        5: { 
-          id: 5, 
-          name: "IBM", 
-          employeeCount: 10, 
-          industry: "Technology", 
-          contactPerson: "David Miller", 
-          email: "david.miller@ibm.com", 
-          status: "Active",
-          clientType: "external",
-          phone: "(914) 555-2468",
-          address: "1 New Orchard Rd, Armonk, NY 10504",
-          billingAddress: "1 New Orchard Rd, Armonk, NY 10504",
-          billingAddressSameAsMain: true,
-          paymentTerms: "Net 45",
-          paymentMethod: "Bank Transfer",
-          bankDetails: "Wells Fargo - Account: ****5678, Routing: 121000248",
-          taxId: "13-5678901",
-          vatNumber: "US123456789",
-          currency: "USD"
+      const tenantId = user?.tenantId;
+      if (!tenantId) throw new Error('No tenant information');
+      const resp = await fetch(`http://localhost:5001/api/clients/${clientId}?tenantId=${tenantId}`, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
-      };
-
-      // Sample employee data - in a real app, this would come from an API
-      const employeeData = {
-        1: [ // JPMC
-          { id: 1, name: "John Doe", weeklyHours: 40, status: "Submitted", role: "Developer", email: "john.doe@example.com" },
-          { id: 2, name: "Jane Smith", weeklyHours: 36, status: "Draft", role: "Designer", email: "jane.smith@example.com" },
-          { id: 3, name: "Robert Johnson", weeklyHours: 42, status: "Approved", role: "Project Manager", email: "robert.j@example.com" },
-          { id: 4, name: "Emily Davis", weeklyHours: 38, status: "Submitted", role: "Developer", email: "emily.d@example.com" },
-          { id: 5, name: "Michael Brown", weeklyHours: 40, status: "Draft", role: "QA Engineer", email: "michael.b@example.com" },
-          { id: 6, name: "Sarah Wilson", weeklyHours: 35, status: "Submitted", role: "Business Analyst", email: "sarah.w@example.com" },
-          { id: 7, name: "David Miller", weeklyHours: 40, status: "Approved", role: "Developer", email: "david.m@example.com" }
-        ],
-        2: [ // Accenture
-          { id: 8, name: "Thomas Anderson", weeklyHours: 40, status: "Submitted", role: "Developer", email: "thomas.a@example.com" },
-          { id: 9, name: "Lisa Taylor", weeklyHours: 38, status: "Draft", role: "Designer", email: "lisa.t@example.com" },
-          { id: 10, name: "James Martinez", weeklyHours: 40, status: "Approved", role: "Project Manager", email: "james.m@example.com" },
-          { id: 11, name: "Jennifer Garcia", weeklyHours: 36, status: "Submitted", role: "Developer", email: "jennifer.g@example.com" },
-          { id: 12, name: "Daniel Rodriguez", weeklyHours: 40, status: "Draft", role: "QA Engineer", email: "daniel.r@example.com" }
-        ],
-        // Other clients' employees would be here
-      };
-      
-      setClient(clientData[clientId]);
-      setEmployees(employeeData[clientId] || []);
+      });
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({}));
+        throw new Error(err.details || `Fetch failed with status ${resp.status}`);
+      }
+      const data = await resp.json();
+      setClient(data.client);
     } catch (error) {
       console.error('Error fetching client data:', error);
     } finally {
       setLoading(false);
     }
-  }, [clientId]);
+  }, [clientId, user?.tenantId]);
+
+  // Fetch all employees for the tenant (reusable)
+  const fetchAllEmployees = useCallback(async () => {
+    try {
+      const tenantId = user?.tenantId;
+      if (!tenantId) return;
+      const resp = await fetch(`http://localhost:5001/api/employees?tenantId=${tenantId}`, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({}));
+        throw new Error(err.details || `Fetch employees failed (${resp.status})`);
+      }
+      const data = await resp.json();
+      const list = data.employees || [];
+      setAllEmployees(list);
+    } catch (e) {
+      console.error('Error fetching employees:', e);
+    }
+  }, [user?.tenantId]);
   
   // Get tenant information from localStorage
   useEffect(() => {
     const currentTenant = JSON.parse(localStorage.getItem('currentTenant'));
-    if (!currentTenant) {
-      navigate('/workspaces');
-      return;
-    }
-    setTenantInfo(currentTenant);
+    setTenantInfo(currentTenant || { subdomain });
     
     // Check if user is authenticated
     const token = localStorage.getItem('token');
@@ -172,7 +82,46 @@ const ClientDetails = () => {
     
     // Fetch client and employee data
     fetchClientData();
-  }, [navigate, fetchClientData]);
+    fetchAllEmployees();
+  }, [navigate, fetchClientData, fetchAllEmployees, subdomain, user?.tenantId]);
+
+  const handleAssignEmployee = async () => {
+    if (!assignEmployeeId || !client?.id) return;
+    try {
+      setAssignLoading(true);
+      setAssignError('');
+      const tenantId = user?.tenantId;
+      const employeeId = assignEmployeeId;
+      const body = {
+        clientId: client.id,
+        client: client.clientName || client.name || ''
+      };
+      const resp = await fetch(`http://localhost:5001/api/employees/${employeeId}?tenantId=${tenantId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify(body)
+      });
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({}));
+        throw new Error(err.details || `Assign failed (${resp.status})`);
+      }
+      // Optimistically update local list and then refetch for consistency
+      const updated = allEmployees.map(e => e.id === employeeId ? { ...e, clientId: client.id, client: body.client } : e);
+      setAllEmployees(updated);
+      await fetchAllEmployees();
+      setAssignEmployeeId('');
+      toast.success('Employee assigned to client');
+    } catch (e) {
+      console.error('Failed to assign employee:', e);
+      setAssignError(e.message);
+      toast.error(`Failed to assign employee: ${e.message}`);
+    } finally {
+      setAssignLoading(false);
+    }
+  };
   
   // Handle status filter change
   const handleStatusFilterChange = (e) => {
@@ -193,10 +142,17 @@ const ClientDetails = () => {
     }
   };
 
-  // Filter employees based on status
-  const filteredEmployees = statusFilter === 'all' 
-    ? employees 
-    : employees.filter(emp => emp.status.toLowerCase() === statusFilter.toLowerCase());
+  // Derive employees assigned to this client from allEmployees
+  const assignedEmployees = allEmployees.filter(
+    (emp) => String(emp.clientId || '') === String(client?.id || '')
+  );
+
+  // Filter employees based on status (if a status exists on the employee objects)
+  const filteredEmployees = statusFilter === 'all'
+    ? assignedEmployees
+    : assignedEmployees.filter((emp) =>
+        (emp.status || '').toLowerCase() === statusFilter.toLowerCase()
+      );
 
   if (loading) {
     return (
@@ -206,6 +162,35 @@ const ClientDetails = () => {
             <div className="nk-content-body">
               <div className="nk-block-head nk-block-head-sm">
                 <div className="loading-spinner">Loading client data...</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!client) {
+    return (
+      <div className="nk-content">
+        <div className="container-fluid">
+          <div className="nk-content-inner">
+            <div className="nk-content-body">
+              <div className="nk-block-head nk-block-head-sm">
+                <div className="nk-block-between">
+                  <div className="nk-block-head-content">
+                    <h3 className="nk-block-title page-title">Client Details</h3>
+                    <div className="nk-block-des text-soft">
+                      <p>Client not found.</p>
+                    </div>
+                  </div>
+                  <div className="nk-block-head-content">
+                    <Link to={`/${tenantInfo?.subdomain || subdomain}/clients`} className="btn btn-outline-light">
+                      <em className="icon ni ni-arrow-left"></em>
+                      <span>Back</span>
+                    </Link>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -232,7 +217,7 @@ const ClientDetails = () => {
                 <div className="nk-block-head-content">
                   <h3 className="nk-block-title page-title">Client Details</h3>
                   <div className="nk-block-des text-soft">
-                    <p>Details for {client.name}</p>
+                    <p>Details for {client?.name || 'Client'}</p>
                   </div>
                 </div>
                 <div className="nk-block-head-content">
@@ -240,13 +225,13 @@ const ClientDetails = () => {
                     <div className="toggle-expand-content expanded">
                       <ul className="nk-block-tools g-3">
                         <li className="nk-block-tools-opt">
-                          <Link to={`/${tenantInfo?.subdomain}/clients`} className="btn btn-outline-light">
+                          <Link to={`/${tenantInfo?.subdomain || subdomain}/clients`} className="btn btn-outline-light">
                             <em className="icon ni ni-arrow-left"></em>
                             <span>Back</span>
                           </Link>
                         </li>
                         <li className="nk-block-tools-opt">
-                          <Link to={`/${tenantInfo?.subdomain}/clients/edit/${client.id}`} className="btn btn-primary">
+                          <Link to={`/${tenantInfo?.subdomain || subdomain}/clients/edit/${client?.id}`} className="btn btn-primary">
                             <em className="icon ni ni-edit"></em>
                             <span>Edit Client</span>
                           </Link>
@@ -263,12 +248,6 @@ const ClientDetails = () => {
               <div className="card card-bordered">
                 <div className="card-inner">
                   <div className="row g-4">
-                    <div className="col-lg-6">
-                      <div className="client-detail-item">
-                        <span className="detail-label">Industry:</span>
-                        <span className="detail-value">{client?.industry}</span>
-                      </div>
-                    </div>
                     <div className="col-lg-6">
                       <div className="client-detail-item">
                         <span className="detail-label">Client Type:</span>
@@ -301,8 +280,8 @@ const ClientDetails = () => {
                       <div className="client-detail-item">
                         <span className="detail-label">Status:</span>
                         <span className="detail-value">
-                          <span className={`badge ${client?.status === 'Active' ? 'badge-success' : 'badge-warning'}`}>
-                            {client?.status}
+                          <span className={`badge ${client?.status === 'active' ? 'badge-success' : 'badge-warning'}`}>
+                            {(client?.status || '').charAt(0).toUpperCase() + (client?.status || '').slice(1)}
                           </span>
                         </span>
                       </div>
@@ -310,7 +289,13 @@ const ClientDetails = () => {
                     <div className="col-12">
                       <div className="client-detail-item">
                         <span className="detail-label">Address:</span>
-                        <span className="detail-value client-address">{client?.address}</span>
+                        <span className="detail-value client-address">
+                          {client?.billingAddress ? [
+                            client.billingAddress.line1,
+                            [client.billingAddress.city, client.billingAddress.state].filter(Boolean).join(', '),
+                            client.billingAddress.zip
+                          ].filter(Boolean).join(' '): ''}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -331,7 +316,7 @@ const ClientDetails = () => {
                       <span className="detail-label">Payment Terms:</span>
                       <span className="detail-value">
                         <span className="badge badge-dim badge-outline-info">
-                          {client?.paymentTerms}
+                          {client?.paymentTerms === 0 ? 'Due upon receipt' : `Net ${client?.paymentTerms}`}
                         </span>
                       </span>
                     </div>
@@ -341,7 +326,7 @@ const ClientDetails = () => {
                       <span className="detail-label">Payment Method:</span>
                       <span className="detail-value">
                         <span className="badge badge-dim badge-outline-success">
-                          {client?.paymentMethod}
+                          {client?.paymentMethod || '—'}
                         </span>
                       </span>
                     </div>
@@ -351,15 +336,9 @@ const ClientDetails = () => {
                       <span className="detail-label">Currency:</span>
                       <span className="detail-value">
                         <span className="badge badge-dim badge-outline-primary">
-                          {client?.currency}
+                          {client?.currency || 'USD'}
                         </span>
                       </span>
-                    </div>
-                  </div>
-                  <div className="col-lg-6">
-                    <div className="client-detail-item">
-                      <span className="detail-label">Tax ID:</span>
-                      <span className="detail-value">{client?.taxId}</span>
                     </div>
                   </div>
                   {client?.vatNumber && (
@@ -382,14 +361,11 @@ const ClientDetails = () => {
                     <div className="client-detail-item">
                       <span className="detail-label">Billing Address:</span>
                       <span className="detail-value client-address">
-                        {client?.billingAddressSameAsMain ? (
-                          <>
-                            <span className="text-muted">(Same as main address)</span><br />
-                            {client?.billingAddress}
-                          </>
-                        ) : (
-                          client?.billingAddress
-                        )}
+                        {client?.billingAddress ? [
+                          client.billingAddress.line1,
+                          [client.billingAddress.city, client.billingAddress.state].filter(Boolean).join(', '),
+                          client.billingAddress.zip
+                        ].filter(Boolean).join(' ') : '—'}
                       </span>
                     </div>
                   </div>
@@ -408,6 +384,47 @@ const ClientDetails = () => {
                       </div>
                       <div className="card-tools">
                         <div className="form-inline flex-nowrap gx-3">
+                          <div className="form-wrap mr-2">
+                            <Link
+                              to={`/${tenantInfo?.subdomain || subdomain}/employees/new?clientId=${encodeURIComponent(client?.id)}&clientName=${encodeURIComponent(client?.clientName || client?.name || '')}`}
+                              className="btn btn-sm btn-primary"
+                            >
+                              <em className="icon ni ni-plus"></em>
+                              <span className="ml-1">Add Employee</span>
+                            </Link>
+                          </div>
+                          <div className="form-wrap mr-2 w-250px">
+                            <select
+                              className="form-select form-select-sm"
+                              value={assignEmployeeId}
+                              onChange={(e) => setAssignEmployeeId(e.target.value)}
+                            >
+                              <option value="">Assign existing employee…</option>
+                              {allEmployees
+                                // Show only unassigned employees in dropdown
+                                .filter(emp => !emp.clientId)
+                                .map(emp => (
+                                  <option key={emp.id} value={emp.id}>
+                                    {`${emp.firstName || ''} ${emp.lastName || ''}`.trim() || emp.name || 'Employee'} {emp.email ? `- ${emp.email}` : ''}
+                                  </option>
+                                ))}
+                            </select>
+                          </div>
+                          <div className="form-wrap mr-2">
+                            <button
+                              type="button"
+                              className="btn btn-sm btn-outline-primary"
+                              disabled={!assignEmployeeId || assignLoading}
+                              onClick={handleAssignEmployee}
+                            >
+                              {assignLoading ? 'Assigning…' : 'Assign to Client'}
+                            </button>
+                          </div>
+                          {assignError && (
+                            <div className="form-wrap mr-2">
+                              <span className="text-danger small">{assignError}</span>
+                            </div>
+                          )}
                           <div className="form-wrap w-150px">
                             <select 
                               className="form-select form-select-sm" 
@@ -440,11 +457,16 @@ const ClientDetails = () => {
                             <div className="nk-tb-col">
                               <div className="user-card">
                                 <div className="user-avatar bg-primary">
-                                  <span>{employee.name.split(' ').map(n => n[0]).join('')}</span>
+                                  <span>{(() => {
+                                    const fn = employee.firstName || '';
+                                    const ln = employee.lastName || '';
+                                    const nm = `${fn} ${ln}`.trim() || employee.name || employee.email || '?';
+                                    return nm.split(' ').map(n => n[0]).join('').slice(0,2).toUpperCase();
+                                  })()}</span>
                                 </div>
                                 <div className="user-info">
-                                  <span className="tb-lead">{employee.name}</span>
-                                  <span>{employee.email}</span>
+                                  <span className="tb-lead">{`${employee.firstName || ''} ${employee.lastName || ''}`.trim() || employee.name || 'Employee'}</span>
+                                  <span>{employee.email || ''}</span>
                                 </div>
                               </div>
                             </div>

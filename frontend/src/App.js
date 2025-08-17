@@ -17,6 +17,7 @@ import ReportsDashboard from "./components/reports/ReportsDashboard";
 import ClientsList from "./components/clients/ClientsList";
 import ClientDetails from "./components/clients/ClientDetails";
 import ClientForm from "./components/clients/ClientForm";
+import ClientEdit from "./components/clients/ClientEdit";
 import EmployeeList from "./components/employees/EmployeeList";
 import EmployeeForm from "./components/employees/EmployeeForm";
 import EmployeeDetail from "./components/employees/EmployeeDetail";
@@ -40,6 +41,7 @@ import EmployerLayout from "./components/layout/EmployerLayout";
 // Import AuthProvider and useAuth hook
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { PERMISSIONS } from "./utils/roles";
+import { ToastProvider, ToastContainer } from "./contexts/ToastContext";
 
 // Protected route component that checks authentication and permissions
 const ProtectedRoute = ({ children, requiredPermission }) => {
@@ -68,8 +70,9 @@ const ProtectedRoute = ({ children, requiredPermission }) => {
 function App() {
   return (
     <BrowserRouter>
-      <AuthProvider>
-        <Routes>
+      <ToastProvider>
+        <AuthProvider>
+          <Routes>
         {/* Public routes */}
         <Route path="/" element={<Navigate to="/login" />} />
         <Route path="/login" element={<Login />} />
@@ -159,6 +162,11 @@ function App() {
             <EmployerLayout><ClientDetails /></EmployerLayout>
           </ProtectedRoute>
         } />
+        <Route path="/:subdomain/clients/edit/:clientId" element={
+          <ProtectedRoute requiredPermission={PERMISSIONS.EDIT_CLIENT}>
+            <EmployerLayout><ClientEdit /></EmployerLayout>
+          </ProtectedRoute>
+        } />
         <Route path="/:subdomain/employees" element={
           <ProtectedRoute requiredPermission={PERMISSIONS.VIEW_EMPLOYEE}>
             <EmployerLayout><EmployeeList /></EmployerLayout>
@@ -232,8 +240,10 @@ function App() {
         
         {/* Fallback route */}
         <Route path="*" element={<Navigate to="/login" />} />
-      </Routes>
-      </AuthProvider>
+          </Routes>
+          <ToastContainer />
+        </AuthProvider>
+      </ToastProvider>
     </BrowserRouter>
   );
 }

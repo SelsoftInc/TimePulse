@@ -306,58 +306,45 @@ const Dashboard = () => {
   const [timesheetData, setTimesheetData] = useState([]);
   
   useEffect(() => {
-    // Sample timesheet data for all employees
-    const allTimesheetData = [
-      {
-        employee: { name: "John Smith", initials: "JS", role: "Developer", id: "1" },
-        project: "Cloud Migration",
-        client: "JPMC",
-        week: "Jul 1 - Jul 7",
-        hours: "40.0",
-        status: { label: "Pending", color: "warning" }
-      },
-      {
-        employee: { name: "Sarah Johnson", initials: "SJ", role: "Designer", id: "2" },
-        project: "Website Redesign",
-        client: "Accenture",
-        week: "Jul 1 - Jul 7",
-        hours: "37.5",
-        status: { label: "Approved", color: "success" }
-      },
-      {
-        employee: { name: "Michael Chen", initials: "MC", role: "QA Engineer", id: "3" },
-        project: "Mobile App Testing",
-        client: "Virtusa",
-        week: "Jul 1 - Jul 7",
-        hours: "42.0",
-        status: { label: "Rejected", color: "danger" }
-      },
-      {
-        employee: { name: "Emily Davis", initials: "ED", role: "Project Manager", id: "4" },
-        project: "ERP Implementation",
-        client: "Cognizant",
-        week: "Jul 1 - Jul 7",
-        hours: "40.0",
-        status: { label: "Approved", color: "success" }
-      },
-      {
-        employee: { name: "Robert Wilson", initials: "RW", role: "DevOps", id: "5" },
-        project: "Infrastructure Setup",
-        client: "IBM",
-        week: "Jul 1 - Jul 7",
-        hours: "45.0",
-        status: { label: "Pending", color: "warning" }
+    const fetchEmployeesAndTimesheets = async () => {
+    try {
+      const userInfo = JSON.parse(localStorage.getItem('user') || '{}');
+      if (!userInfo.tenantId) {
+        console.error('No tenant information available');
+        return;
       }
-    ];
-    
-    // If employee role, only show current user's timesheets
-    // For demo purposes, we'll assume the current user is John Smith (id: 1)
-    if (isEmployeeRole) {
-      setTimesheetData(allTimesheetData.filter(timesheet => timesheet.employee.id === "1"));
-    } else {
-      // For admin, manager, approver roles, show all timesheets
-      setTimesheetData(allTimesheetData);
+
+      // Fetch current week's timesheets from backend (creates drafts if missing)
+      const resp = await fetch(`http://localhost:5001/api/timesheets/current?tenantId=${userInfo.tenantId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      const data = await resp.json();
+      if (data.success && Array.isArray(data.timesheets)) {
+        const allTimesheetData = data.timesheets;
+
+        if (isEmployeeRole) {
+          const fullName = `${userInfo.firstName || ''} ${userInfo.lastName || ''}`.trim();
+          const currentUserTimesheets = allTimesheetData.filter(ts => 
+            ts.employee?.name === fullName || ts.employee?.id === userInfo.employeeId || ts.employee?.id === userInfo.id
+          );
+          setTimesheetData(currentUserTimesheets);
+        } else {
+          setTimesheetData(allTimesheetData);
+        }
+      } else {
+        console.error('Failed to fetch timesheets:', data.error || data);
+      }
+    } catch (error) {
+      console.error('Error fetching timesheets:', error);
     }
+  };
+
+    fetchEmployeesAndTimesheets();
   }, [isEmployeeRole]);
 
   // Sample invoice data

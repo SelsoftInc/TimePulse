@@ -3,12 +3,15 @@ import { Link, useParams } from 'react-router-dom';
 import { PERMISSIONS } from '../../utils/roles';
 import PermissionGuard from '../common/PermissionGuard';
 import { useAuth } from '../../contexts/AuthContext';
+import { useToast } from '../../contexts/ToastContext';
 import DataGridFilter from '../common/DataGridFilter';
 import './Employees.css';
+import { apiFetch } from '../../config/api';
 
 const EmployeeList = () => {
   const { subdomain } = useParams();
   const { checkPermission, user } = useAuth();
+  const { toast } = useToast();
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -17,6 +20,28 @@ const EmployeeList = () => {
     status: 'all',
     search: ''
   });
+
+  // Modal state for assigning client
+  const [assignModalOpen, setAssignModalOpen] = useState(false);
+  const [assignTarget, setAssignTarget] = useState(null); // employee object
+  const [clients, setClients] = useState([]);
+  const [clientsLoading, setClientsLoading] = useState(false);
+  const [clientsError, setClientsError] = useState('');
+  const [selectedClientId, setSelectedClientId] = useState('');
+  // Track which row's actions menu is open
+  const [openMenuFor, setOpenMenuFor] = useState(null);
+
+  // Close actions menu when clicking outside
+  useEffect(() => {
+    const handleDocClick = (e) => {
+      if (!openMenuFor) return;
+      const menuEl = document.querySelector(`[data-actions-menu="${openMenuFor}"]`);
+      if (menuEl && menuEl.contains(e.target)) return; // click inside menu wrapper
+      setOpenMenuFor(null);
+    };
+    document.addEventListener('mousedown', handleDocClick);
+    return () => document.removeEventListener('mousedown', handleDocClick);
+  }, [openMenuFor]);
 
   // Fetch employees from backend API
   const fetchEmployees = async () => {
@@ -30,13 +55,12 @@ const EmployeeList = () => {
         return;
       }
 
-      const response = await fetch(`http://localhost:5001/api/employees?tenantId=${user.tenantId}`, {
+      const response = await apiFetch(`/api/employees?tenantId=${user.tenantId}`, {
         method: 'GET',
         headers: {
-          'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
-      });
+      }, { timeoutMs: 15000 });
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -60,6 +84,81 @@ const EmployeeList = () => {
   useEffect(() => {
     fetchEmployees();
   }, [user?.tenantId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Fetch clients when opening modal
+  const fetchClients = async () => {
+    if (!user?.tenantId) return;
+    try {
+      setClientsLoading(true);
+      setClientsError('');
+      const resp = await apiFetch(`/api/clients?tenantId=${user.tenantId}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      }, { timeoutMs: 15000 });
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({}));
+        throw new Error(err.details || `Failed to fetch clients (${resp.status})`);
+      }
+      const data = await resp.json();
+      const list = (data.clients || data || []).filter(c => (c.status || 'active') === 'active');
+      setClients(list);
+    } catch (e) {
+      console.error('Failed to fetch clients:', e);
+      setClientsError(e.message);
+    } finally {
+      setClientsLoading(false);
+    }
+  };
+
+  const openAssignModal = (employee) => {
+    setAssignTarget(employee);
+    setSelectedClientId(employee.clientId ? String(employee.clientId) : '');
+    setAssignModalOpen(true);
+    fetchClients();
+  };
+
+  const closeAssignModal = () => {
+    setAssignModalOpen(false);
+    setAssignTarget(null);
+    setSelectedClientId('');
+    setClientsError('');
+  };
+
+  const saveAssignment = async () => {
+    if (!assignTarget) return;
+    try {
+      const body = { clientId: selectedClientId || null };
+      // Show heads-up toast when unassigning instead of a blocking confirm dialog
+      if (!body.clientId && assignTarget?.clientId) {
+        toast.info(`Unassigning ${assignTarget.name || 'this employee'} from their current client...`);
+      }
+      const resp = await apiFetch(`/api/employees/${assignTarget.id}?tenantId=${user.tenantId}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify(body)
+      }, { timeoutMs: 15000 });
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({}));
+        throw new Error(err.details || `Update failed (${resp.status})`);
+      }
+      // Update local list
+      const selectedClient = clients.find(c => String(c.id) === String(selectedClientId));
+      setEmployees(prev => prev.map(e => e.id === assignTarget.id ? {
+        ...e,
+        clientId: body.clientId,
+        client: body.clientId ? (selectedClient?.clientName || selectedClient?.name || '') : null
+      } : e));
+      toast.success(body.clientId ? 'Client assigned' : 'Client unassigned');
+      closeAssignModal();
+    } catch (e) {
+      console.error('Failed to update employee client:', e);
+      toast.error(`Failed to update: ${e.message}`);
+    }
+  };
 
   // Filter employees based on all filters
   const filteredEmployees = employees.filter(employee => {
@@ -157,7 +256,6 @@ const EmployeeList = () => {
         </div>
 
         <div className="nk-block">
-          {/* Filter Section */}
           <div className="card card-bordered mb-4">
             <div className="card-inner">
               <DataGridFilter
@@ -169,15 +267,12 @@ const EmployeeList = () => {
               />
             </div>
           </div>
-          
+
           {error ? (
             <div className="alert alert-danger" role="alert">
               <i className="fas fa-exclamation-triangle mr-2"></i>
               {error}
-              <button 
-                className="btn btn-sm btn-outline-danger ml-3"
-                onClick={fetchEmployees}
-              >
+              <button className="btn btn-sm btn-outline-danger ml-3" onClick={fetchEmployees}>
                 <i className="fas fa-redo mr-1"></i> Retry
               </button>
             </div>
@@ -199,13 +294,10 @@ const EmployeeList = () => {
                       <th>Client</th>
                       <th>End Client</th>
                       <th>Employment Type</th>
-                      {checkPermission(PERMISSIONS.MANAGE_SETTINGS) && (
-                        <th>Hourly Rate</th>
-                      )}
+                      {checkPermission(PERMISSIONS.MANAGE_SETTINGS) && <th>Hourly Rate</th>}
                       <th>Email</th>
                       <th>Phone</th>
                       <th>Status</th>
-                      <th>Join Date</th>
                       <th className="text-right">Actions</th>
                     </tr>
                   </thead>
@@ -231,13 +323,7 @@ const EmployeeList = () => {
                             <span className="text-muted">N/A</span>
                           )}
                         </td>
-                        <td>
-                          {employee.client ? (
-                            employee.client
-                          ) : (
-                            <span className="text-muted">Not assigned</span>
-                          )}
-                        </td>
+                        <td>{employee.client ? employee.client : <span className="text-muted">Not assigned</span>}</td>
                         <td>
                           {employee.endClient ? (
                             <div className="d-flex flex-column">
@@ -254,48 +340,53 @@ const EmployeeList = () => {
                           </span>
                         </td>
                         {checkPermission(PERMISSIONS.MANAGE_SETTINGS) && (
-                          <td>
-                            {employee.hourlyRate ? `$${employee.hourlyRate}` : (
-                              <span className="text-muted">Not set</span>
-                            )}
-                          </td>
+                          <td>{employee.hourlyRate ? `$${employee.hourlyRate}` : <span className="text-muted">Not set</span>}</td>
                         )}
                         <td>{employee.email}</td>
-                        <td>
-                          {employee.phone ? employee.phone : (
-                            <span className="text-muted">Not provided</span>
-                          )}
-                        </td>
+                        <td>{employee.phone ? employee.phone : <span className="text-muted">Not provided</span>}</td>
                         <td>
                           <span className={`badge badge-${employee.status === 'active' ? 'success' : 'warning'}`}>
                             {employee.status === 'active' ? 'Active' : 'Inactive'}
                           </span>
                         </td>
-                        <td>
-                          {employee.joinDate ? new Date(employee.joinDate).toLocaleDateString() : (
-                            <span className="text-muted">Not set</span>
-                          )}
-                        </td>
                         <td className="text-right">
-                          <div className="dropdown">
-                            <button className="btn btn-sm btn-icon btn-trigger dropdown-toggle">
-                              <i className="fas fa-ellipsis-h"></i>
+                          <div className="btn-group" data-actions-menu={employee.id}>
+                            <button
+                              type="button"
+                              className="btn btn-sm btn-outline-secondary dropdown-toggle"
+                              onClick={() => setOpenMenuFor(openMenuFor === employee.id ? null : employee.id)}
+                            >
+                              Actions
                             </button>
-                            <div className="dropdown-menu dropdown-menu-right">
-                              <Link to={`/${subdomain}/employees/${employee.id}`} className="dropdown-item">
-                                <i className="fas fa-eye mr-1"></i> View Details
-                              </Link>
-                              <PermissionGuard requiredPermission={PERMISSIONS.EDIT_EMPLOYEE}>
-                                <button type="button" className="dropdown-item">
-                                  <i className="fas fa-edit mr-1"></i> Edit
-                                </button>
-                              </PermissionGuard>
-                              <PermissionGuard requiredPermission={PERMISSIONS.DELETE_EMPLOYEE}>
-                                <button type="button" className="dropdown-item text-danger">
-                                  <i className="fas fa-trash-alt mr-1"></i> Delete
-                                </button>
-                              </PermissionGuard>
-                            </div>
+                            {openMenuFor === employee.id && (
+                              <div className="dropdown-menu dropdown-menu-right show" style={{ position: 'absolute' }}>
+                                <Link to={`/${subdomain}/employees/${employee.id}`} className="dropdown-item" onClick={() => setOpenMenuFor(null)}>
+                                  <i className="fas fa-eye mr-1"></i> View Details
+                                </Link>
+                                <PermissionGuard requiredPermission={PERMISSIONS.EDIT_EMPLOYEE}>
+                                  <button type="button" className="dropdown-item" onClick={() => { setOpenMenuFor(null); openAssignModal(employee); }}>
+                                    <i className="fas fa-user-plus mr-1"></i> {employee.clientId ? 'Change Client' : 'Assign Client'}
+                                  </button>
+                                  {employee.clientId && (
+                                    <button
+                                      type="button"
+                                      className="dropdown-item"
+                                      onClick={() => { setOpenMenuFor(null); setAssignTarget(employee); setSelectedClientId(''); setAssignModalOpen(true); fetchClients(); }}
+                                    >
+                                      <i className="fas fa-user-times mr-1"></i> Unassign Client
+                                    </button>
+                                  )}
+                                  <Link to={`/${subdomain}/employees/${employee.id}/edit`} className="dropdown-item" onClick={() => setOpenMenuFor(null)}>
+                                    <i className="fas fa-edit mr-1"></i> Edit
+                                  </Link>
+                                </PermissionGuard>
+                                <PermissionGuard requiredPermission={PERMISSIONS.DELETE_EMPLOYEE}>
+                                  <button type="button" className="dropdown-item text-danger" onClick={() => setOpenMenuFor(null)}>
+                                    <i className="fas fa-trash-alt mr-1"></i> Delete
+                                  </button>
+                                </PermissionGuard>
+                              </div>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -307,8 +398,40 @@ const EmployeeList = () => {
           )}
         </div>
       </div>
+
+      {assignModalOpen && (
+        <div className="modal fade show d-block" tabIndex="-1" role="dialog" style={{ backgroundColor: 'rgba(0,0,0,0.4)' }}>
+          <div className="modal-dialog" role="document">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">{assignTarget?.clientId ? 'Change Client' : 'Assign Client'}</h5>
+                <button type="button" className="close" onClick={closeAssignModal}>
+                  <span>&times;</span>
+                </button>
+              </div>
+              <div className="modal-body">
+                <div className="form-group">
+                  <label className="form-label">Client</label>
+                  <select className="form-select" value={selectedClientId} onChange={(e) => setSelectedClientId(e.target.value)}>
+                    <option value="">-- Unassign --</option>
+                    {clients.map(c => (
+                      <option key={c.id} value={c.id}>{c.clientName || c.name}</option>
+                    ))}
+                  </select>
+                  {clientsLoading && <div className="form-note mt-1"><small className="text-soft">Loading clients…</small></div>}
+                  {clientsError && <div className="form-note mt-1"><small className="text-danger">{clientsError}</small></div>}
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-outline-light" onClick={closeAssignModal}>Cancel</button>
+                <button type="button" className="btn btn-primary" onClick={saveAssignment} disabled={clientsLoading}>Save</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
-};
+}
 
 export default EmployeeList;

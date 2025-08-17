@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: timepulse-backend
+    env: node
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5001
+      - key: DATABASE_URL
+        fromDatabase:
+          name: timepulse-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CORS_ORIGIN
+        value: https://your-frontend-url.onrender.com
+
+  - type: pserv
+    name: timepulse-db
+    databaseName: timepulse_db
+    databaseUser: timepulse_user

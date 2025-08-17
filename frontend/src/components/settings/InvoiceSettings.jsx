@@ -132,7 +132,7 @@ const InvoiceSettings = () => {
   const tabs = [
     { id: 'company', label: 'Company Info', icon: 'fas fa-building' },
     { id: 'invoice', label: 'Invoice Setup', icon: 'fas fa-file-invoice' },
-    { id: 'payment', label: 'Payment Terms', icon: 'fas fa-credit-card' },
+    { id: 'payment', label: 'Invoice Cycle', icon: 'fas fa-credit-card' },
     { id: 'display', label: 'Display Options', icon: 'fas fa-eye' },
     { id: 'email', label: 'Email Templates', icon: 'fas fa-envelope' },
     { id: 'automation', label: 'Automation', icon: 'fas fa-robot' }
@@ -346,12 +346,12 @@ const InvoiceSettings = () => {
 
         {activeTab === 'payment' && (
           <div className="settings-section">
-            <h3 className="section-title">Payment Terms</h3>
-            <p className="section-description">Set default payment terms and late fee policies</p>
+            <h3 className="section-title">Invoice Cycle</h3>
+            <p className="section-description">Set default invoice cycle and late fee policies</p>
             
             <div className="form-grid">
               <div className="form-group">
-                <label className="form-label" htmlFor="defaultPaymentTerms">Default Payment Terms</label>
+                <label className="form-label" htmlFor="defaultPaymentTerms">Default Invoice Cycle</label>
                 <select
                   className="form-select"
                   id="defaultPaymentTerms"

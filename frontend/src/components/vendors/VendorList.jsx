@@ -1,64 +1,99 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useLocation } from 'react-router-dom';
+import { API_BASE } from '../../config/api';
 import { PERMISSIONS } from '../../utils/roles';
 import PermissionGuard from '../common/PermissionGuard';
+import { useAuth } from '../../contexts/AuthContext';
+import { useToast } from '../../contexts/ToastContext';
+import ConfirmDialog from '../common/ConfirmDialog';
 
 const VendorList = () => {
   const { subdomain } = useParams();
+  const { user } = useAuth();
+  const location = useLocation();
+  const isImplPartnerView = new URLSearchParams(location.search).get('implPartner');
+  const { toast } = useToast();
   const [vendors, setVendors] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [openMenuId, setOpenMenuId] = useState(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [pendingDeleteId, setPendingDeleteId] = useState(null);
 
   useEffect(() => {
-    // In a real app, fetch vendors from API
-    // For now, using mock data
-    setTimeout(() => {
-      const mockVendors = [
-        {
-          id: 1,
-          name: 'Tech Solutions Inc.',
-          contactPerson: 'Robert Chen',
-          email: 'robert@techsolutions.com',
-          phone: '(555) 123-7890',
-          status: 'active',
-          category: 'Software',
-          totalSpent: 25000
-        },
-        {
-          id: 2,
-          name: 'Office Supplies Co.',
-          contactPerson: 'Lisa Wong',
-          email: 'lisa@officesupplies.com',
-          phone: '(555) 234-8901',
-          status: 'active',
-          category: 'Office Equipment',
-          totalSpent: 12500
-        },
-        {
-          id: 3,
-          name: 'Creative Design Studio',
-          contactPerson: 'David Miller',
-          email: 'david@creativedesign.com',
-          phone: '(555) 345-9012',
-          status: 'inactive',
-          category: 'Design Services',
-          totalSpent: 18750
-        },
-        {
-          id: 4,
-          name: 'Cloud Hosting Services',
-          contactPerson: 'Amanda Johnson',
-          email: 'amanda@cloudhosting.com',
-          phone: '(555) 456-0123',
-          status: 'active',
-          category: 'Infrastructure',
-          totalSpent: 32000
+    const fetchVendors = async () => {
+      try {
+        setLoading(true);
+        setError('');
+        if (!user?.tenantId) {
+          setError('No tenant information available');
+          setVendors([]);
+          return;
         }
-      ];
-      
-      setVendors(mockVendors);
-      setLoading(false);
-    }, 800);
+        const resp = await fetch(`${API_BASE}/api/vendors?tenantId=${user.tenantId}`, {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const data = await resp.json();
+        if (data.success) {
+          setVendors(data.vendors || []);
+        } else {
+          setError(data.error || 'Failed to fetch vendors');
+        }
+      } catch (e) {
+        console.error('Error fetching vendors:', e);
+        setError('Failed to load vendors. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchVendors();
+  }, [user?.tenantId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handler = (e) => {
+      const inMenu = e.target.closest('.dropdown-menu');
+      const inTrigger = e.target.closest('.btn-trigger');
+      if (!inMenu && !inTrigger) setOpenMenuId(null);
+    };
+    document.addEventListener('click', handler);
+    return () => document.removeEventListener('click', handler);
   }, []);
+
+  const toggleMenu = (id) => setOpenMenuId(prev => (prev === id ? null : id));
+
+  const handleDelete = async (vendorId) => {
+    try {
+      const resp = await fetch(`${API_BASE}/api/vendors/${vendorId}?tenantId=${user.tenantId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({}));
+        throw new Error(err.error || `Delete failed with status ${resp.status}`);
+      }
+      // Refresh list
+      const refreshed = await fetch(`${API_BASE}/api/vendors?tenantId=${user.tenantId}`, {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+      });
+      const data = await refreshed.json().catch(() => ({ vendors: [] }));
+      setVendors(data.vendors || []);
+      toast.success('Vendor deleted');
+    } catch (e) {
+      toast.error(`Failed to delete: ${e.message}`);
+    } finally {
+      setOpenMenuId(null);
+      setConfirmOpen(false);
+      setPendingDeleteId(null);
+    }
+  };
 
   return (
     <div className="nk-content">
@@ -66,13 +101,13 @@ const VendorList = () => {
         <div className="nk-block-head">
           <div className="nk-block-between">
             <div className="nk-block-head-content">
-              <h3 className="nk-block-title">Vendors</h3>
-              <p className="nk-block-subtitle">Manage your vendor relationships</p>
+              <h3 className="nk-block-title">{isImplPartnerView ? 'Impl Partners' : 'Vendors'}</h3>
+              <p className="nk-block-subtitle">Manage your {isImplPartnerView ? 'implementation partner' : 'vendor'} relationships</p>
             </div>
             <div className="nk-block-head-content">
               <PermissionGuard requiredPermission={PERMISSIONS.CREATE_VENDOR}>
                 <Link to={`/${subdomain}/vendors/new`} className="btn btn-primary">
-                  <i className="fas fa-plus mr-1"></i> Add New Vendor
+                  <i className="fas fa-plus mr-1"></i> {isImplPartnerView ? 'Add Impl Partner' : 'Add New Vendor'}
                 </Link>
               </PermissionGuard>
             </div>
@@ -80,7 +115,12 @@ const VendorList = () => {
         </div>
 
         <div className="nk-block">
-          {loading ? (
+          {error ? (
+            <div className="alert alert-danger" role="alert">
+              <i className="fas fa-exclamation-triangle mr-2"></i>
+              {error}
+            </div>
+          ) : loading ? (
             <div className="d-flex justify-content-center mt-5">
               <div className="spinner-border text-primary" role="status">
                 <span className="sr-only">Loading...</span>
@@ -89,67 +129,91 @@ const VendorList = () => {
           ) : (
             <div className="card">
               <div className="card-inner">
-                <table className="table table-vendors">
-                  <thead>
-                    <tr>
-                      <th>Vendor Name</th>
-                      <th>Contact Person</th>
-                      <th>Category</th>
-                      <th>Email</th>
-                      <th>Phone</th>
-                      <th>Status</th>
-                      <th>Total Spent</th>
-                      <th className="text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {vendors.map(vendor => (
-                      <tr key={vendor.id}>
-                        <td>
-                          <Link to={`/${subdomain}/vendors/${vendor.id}`} className="vendor-name">
-                            {vendor.name}
-                          </Link>
-                        </td>
-                        <td>{vendor.contactPerson}</td>
-                        <td>{vendor.category}</td>
-                        <td>{vendor.email}</td>
-                        <td>{vendor.phone}</td>
-                        <td>
-                          <span className={`badge badge-${vendor.status === 'active' ? 'success' : 'warning'}`}>
-                            {vendor.status === 'active' ? 'Active' : 'Inactive'}
-                          </span>
-                        </td>
-                        <td>${vendor.totalSpent.toLocaleString()}</td>
-                        <td className="text-right">
-                          <div className="dropdown">
-                            <button className="btn btn-sm btn-icon btn-trigger dropdown-toggle">
-                              <i className="fas fa-ellipsis-h"></i>
-                            </button>
-                            <div className="dropdown-menu dropdown-menu-right">
-                              <Link to={`/${subdomain}/vendors/${vendor.id}`} className="dropdown-item">
-                                <i className="fas fa-eye mr-1"></i> View Details
-                              </Link>
-                              <PermissionGuard requiredPermission={PERMISSIONS.EDIT_VENDOR}>
-                                <button type="button" className="dropdown-item">
-                                  <i className="fas fa-edit mr-1"></i> Edit
-                                </button>
-                              </PermissionGuard>
-                              <PermissionGuard requiredPermission={PERMISSIONS.DELETE_VENDOR}>
-                                <button type="button" className="dropdown-item text-danger">
-                                  <i className="fas fa-trash-alt mr-1"></i> Delete
-                                </button>
-                              </PermissionGuard>
-                            </div>
-                          </div>
-                        </td>
+                {vendors.length === 0 ? (
+                  <div className="text-center text-muted py-5">
+                    <p className="mb-2">No vendors found.</p>
+                    <PermissionGuard requiredPermission={PERMISSIONS.CREATE_VENDOR}>
+                      <Link to={`/${subdomain}/vendors/new`} className="btn btn-primary">
+                        <i className="fas fa-plus mr-1"></i> Add Your First Vendor
+                      </Link>
+                    </PermissionGuard>
+                  </div>
+                ) : (
+                  <table className="table table-vendors">
+                    <thead>
+                      <tr>
+                        <th>Vendor Name</th>
+                        <th>Contact Person</th>
+                        <th>Category</th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th>Status</th>
+                        <th>Total Spent</th>
+                        <th className="text-right">Actions</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {vendors.map(vendor => (
+                        <tr key={vendor.id}>
+                          <td>
+                            <Link to={`/${subdomain}/vendors/${vendor.id}`} className="vendor-name">
+                              {vendor.name}
+                            </Link>
+                          </td>
+                          <td>{vendor.contactPerson}</td>
+                          <td>{vendor.category}</td>
+                          <td>{vendor.email}</td>
+                          <td>{vendor.phone}</td>
+                          <td>
+                            <span className={`badge badge-${vendor.status === 'active' ? 'success' : vendor.status === 'pending' ? 'warning' : 'secondary'}`}>
+                              {vendor.status === 'active' ? 'Active' : vendor.status === 'pending' ? 'Pending' : 'Inactive'}
+                            </span>
+                          </td>
+                          <td>${Number(vendor.totalSpent || 0).toLocaleString()}</td>
+                          <td className="text-right">
+                            <div className="dropdown">
+                              <button className="btn btn-sm btn-icon btn-trigger dropdown-toggle" onClick={() => toggleMenu(vendor.id)}>
+                                <i className="fas fa-ellipsis-h"></i>
+                              </button>
+                              <div className={`dropdown-menu dropdown-menu-right ${openMenuId === vendor.id ? 'show' : ''}`} style={{ position: 'absolute' }}>
+                                <Link to={`/${subdomain}/vendors/${vendor.id}`} className="dropdown-item" onClick={() => setOpenMenuId(null)}>
+                                  <i className="fas fa-eye mr-1"></i> View Details
+                                </Link>
+                                <PermissionGuard requiredPermission={PERMISSIONS.EDIT_VENDOR}>
+                                  <Link to={`/${subdomain}/vendors/edit/${vendor.id}`} className="dropdown-item" onClick={() => setOpenMenuId(null)}>
+                                    <i className="fas fa-edit mr-1"></i> Edit
+                                  </Link>
+                                </PermissionGuard>
+                                <PermissionGuard requiredPermission={PERMISSIONS.DELETE_VENDOR}>
+                                  <button
+                                    type="button"
+                                    className="dropdown-item text-danger"
+                                    onClick={() => { setPendingDeleteId(vendor.id); setConfirmOpen(true); }}
+                                  >
+                                    <i className="fas fa-trash-alt mr-1"></i> Delete
+                                  </button>
+                                </PermissionGuard>
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
               </div>
             </div>
           )}
         </div>
+        <ConfirmDialog
+          open={confirmOpen}
+          title="Delete Vendor"
+          message="Are you sure you want to delete this vendor? This action cannot be undone."
+          confirmLabel="Delete"
+          cancelLabel="Cancel"
+          onConfirm={() => pendingDeleteId && handleDelete(pendingDeleteId)}
+          onCancel={() => { setConfirmOpen(false); setPendingDeleteId(null); }}
+        />
       </div>
     </div>
   );

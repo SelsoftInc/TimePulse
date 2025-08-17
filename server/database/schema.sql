@@ -39,6 +39,59 @@ CREATE TABLE tenants (
 );
 
 -- =============================================
+-- VENDORS TABLE (Tenant's vendors)
+-- =============================================
+CREATE TABLE IF NOT EXISTS vendors (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    
+    -- Vendor Information
+    name VARCHAR(255) NOT NULL,
+    contact_person VARCHAR(255),
+    email VARCHAR(255),
+    phone VARCHAR(50),
+    
+    -- Classification and Status
+    category VARCHAR(100),
+    status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active','inactive','pending')),
+    
+    -- Financials
+    total_spent DECIMAL(12,2) DEFAULT 0,
+    
+    -- Address
+    address VARCHAR(255),
+    city VARCHAR(100),
+    state VARCHAR(100),
+    zip VARCHAR(20),
+    country VARCHAR(100),
+    
+    -- Web and Contract
+    website VARCHAR(255),
+    payment_terms VARCHAR(50),
+    contract_start DATE,
+    contract_end DATE,
+    
+    notes TEXT,
+    
+    -- Metadata
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+DO $$ BEGIN
+  CREATE TRIGGER update_vendors_updated_at
+  BEFORE UPDATE ON vendors
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
+
+-- Indexes for vendors
+CREATE INDEX IF NOT EXISTS idx_vendors_tenant_id ON vendors(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_vendors_status ON vendors(tenant_id, status);
+CREATE INDEX IF NOT EXISTS idx_vendors_name ON vendors(tenant_id, name);
+
+-- =============================================
 -- USERS TABLE (All users across tenants)
 -- =============================================
 CREATE TABLE users (
@@ -135,6 +188,7 @@ CREATE TABLE clients (
     tax_id VARCHAR(50),
     payment_terms INTEGER DEFAULT 30, -- Days
     hourly_rate DECIMAL(10,2) DEFAULT 0,
+    client_type VARCHAR(20) DEFAULT 'external' CHECK (client_type IN ('internal','external')),
     
     -- Status and Metadata
     status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'inactive')),

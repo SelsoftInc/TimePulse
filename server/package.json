@@ -30,6 +30,9 @@
     "start": "node index.js",
     "dev": "NODE_ENV=production nodemon index.js",
     "setup-db": "node scripts/setup-db.js",
+    "migrate:add-client-type": "node scripts/migrate-add-client-type.js",
+    "migrate:create-vendors": "node scripts/migrate-create-vendors.js",
+    "migrate:add-employee-vendor-impl-partner": "node scripts/migrate-add-employee-vendor-impl-partner.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "devDependencies": {

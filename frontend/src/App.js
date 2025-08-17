@@ -21,6 +21,7 @@ import ClientEdit from "./components/clients/ClientEdit";
 import EmployeeList from "./components/employees/EmployeeList";
 import EmployeeForm from "./components/employees/EmployeeForm";
 import EmployeeDetail from "./components/employees/EmployeeDetail";
+import EmployeeEdit from "./components/employees/EmployeeEdit";
 import EmployeeSettings from "./components/employees/EmployeeSettings";
 import EmployeeInvite from "./components/employees/EmployeeInvite";
 import EmployeeRegister from "./components/auth/EmployeeRegister";
@@ -29,6 +30,7 @@ import EmployeeDocuments from "./components/documents/EmployeeDocuments";
 import VendorList from "./components/vendors/VendorList";
 import VendorForm from "./components/vendors/VendorForm";
 import VendorDetail from "./components/vendors/VendorDetail";
+import VendorEdit from "./components/vendors/VendorEdit";
 import EmployerSettings from './components/settings/EmployerSettings';
 import InvoiceSettings from './components/settings/InvoiceSettings';
 import TestLogin from "./components/auth/TestLogin";
@@ -187,6 +189,11 @@ function App() {
             <EmployerLayout><EmployeeDetail /></EmployerLayout>
           </ProtectedRoute>
         } />
+        <Route path="/:subdomain/employees/:id/edit" element={
+          <ProtectedRoute requiredPermission={PERMISSIONS.EDIT_EMPLOYEE}>
+            <EmployerLayout><EmployeeEdit /></EmployerLayout>
+          </ProtectedRoute>
+        } />
         <Route path="/:subdomain/employees/:id/settings" element={
           <ProtectedRoute requiredPermission={PERMISSIONS.EDIT_EMPLOYEE}>
             <EmployerLayout><EmployeeSettings /></EmployerLayout>
@@ -205,6 +212,11 @@ function App() {
         <Route path="/:subdomain/vendors/:id" element={
           <ProtectedRoute requiredPermission={PERMISSIONS.VIEW_VENDOR}>
             <EmployerLayout><VendorDetail /></EmployerLayout>
+          </ProtectedRoute>
+        } />
+        <Route path="/:subdomain/vendors/edit/:id" element={
+          <ProtectedRoute requiredPermission={PERMISSIONS.EDIT_VENDOR}>
+            <EmployerLayout><VendorEdit /></EmployerLayout>
           </ProtectedRoute>
         } />
         <Route path="/:subdomain/invoices" element={

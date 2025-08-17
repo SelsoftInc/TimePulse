@@ -92,21 +92,35 @@ router.get('/', async (req, res) => {
     }
 
     // Use raw query to avoid Sequelize timestamp issues
-    const clients = await sequelize.query(
-      'SELECT id, tenant_id, client_name, legal_name, contact_person, email, phone, billing_address, shipping_address, tax_id, payment_terms, hourly_rate, status FROM clients WHERE tenant_id = :tenantId',
-      {
-        replacements: { tenantId },
-        type: sequelize.QueryTypes.SELECT
-      }
-    );
+    let clients;
+    let hasClientType = true;
+    try {
+      clients = await sequelize.query(
+        'SELECT id, tenant_id, client_name, legal_name, contact_person, email, phone, billing_address, shipping_address, tax_id, payment_terms, hourly_rate, status, client_type FROM clients WHERE tenant_id = :tenantId',
+        {
+          replacements: { tenantId },
+          type: sequelize.QueryTypes.SELECT
+        }
+      );
+    } catch (err) {
+      // Fallback if client_type column does not exist yet
+      console.warn('clients: falling back without client_type column:', err.code || err.message);
+      hasClientType = false;
+      clients = await sequelize.query(
+        'SELECT id, tenant_id, client_name, legal_name, contact_person, email, phone, billing_address, shipping_address, tax_id, payment_terms, hourly_rate, status FROM clients WHERE tenant_id = :tenantId',
+        {
+          replacements: { tenantId },
+          type: sequelize.QueryTypes.SELECT
+        }
+      );
+    }
 
-    // Aggregate: distinct employees tied to timesheets per client for this tenant
+    // Aggregate: employees assigned to each client for this tenant
     const employeeCounts = await sequelize.query(
-      `SELECT p.client_id AS client_id, COUNT(DISTINCT t.employee_id) AS employee_count
-       FROM timesheets t
-       JOIN projects p ON t.project_id = p.id
-       WHERE t.tenant_id = :tenantId AND p.tenant_id = :tenantId
-       GROUP BY p.client_id`,
+      `SELECT client_id, COUNT(*) AS employee_count
+       FROM employees
+       WHERE tenant_id = :tenantId AND client_id IS NOT NULL
+       GROUP BY client_id`,
       { replacements: { tenantId }, type: sequelize.QueryTypes.SELECT }
     );
 
@@ -140,6 +154,7 @@ router.get('/', async (req, res) => {
       taxId: client.tax_id,
       paymentTerms: client.payment_terms,
       hourlyRate: client.hourly_rate,
+      clientType: hasClientType ? (client.client_type || 'external') : 'external',
       employeeCount: employeeCountMap[String(client.id)] || 0,
       totalBilled: totalBilledMap[String(client.id)] || 0
     }));
@@ -189,7 +204,8 @@ router.get('/:id', async (req, res) => {
       shippingAddress: client.shippingAddress,
       taxId: client.taxId,
       paymentTerms: client.paymentTerms,
-      hourlyRate: client.hourlyRate
+      hourlyRate: client.hourlyRate,
+      clientType: client.clientType || 'external'
     };
 
     res.json({

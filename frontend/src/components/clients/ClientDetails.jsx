@@ -1,5 +1,6 @@
 // src/components/clients/ClientOverview.jsx (renamed to ClientDetails)
 import React, { useState, useEffect, useCallback } from 'react';
+import { TAX_ID_LABELS } from '../../config/lookups';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
@@ -313,7 +314,7 @@ const ClientDetails = () => {
                 <div className="row g-4">
                   <div className="col-lg-6">
                     <div className="client-detail-item">
-                      <span className="detail-label">Payment Terms:</span>
+                      <span className="detail-label">Invoice Cycle:</span>
                       <span className="detail-value">
                         <span className="badge badge-dim badge-outline-info">
                           {client?.paymentTerms === 0 ? 'Due upon receipt' : `Net ${client?.paymentTerms}`}
@@ -341,11 +342,11 @@ const ClientDetails = () => {
                       </span>
                     </div>
                   </div>
-                  {client?.vatNumber && (
+                  {(client?.taxId || client?.vatNumber) && (
                     <div className="col-lg-6">
                       <div className="client-detail-item">
-                        <span className="detail-label">VAT Number:</span>
-                        <span className="detail-value">{client?.vatNumber}</span>
+                        <span className="detail-label">{TAX_ID_LABELS[client?.country] || 'Tax ID'}:</span>
+                        <span className="detail-value">{client?.taxId || client?.vatNumber}</span>
                       </div>
                     </div>
                   )}

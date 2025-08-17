@@ -377,7 +377,6 @@ const EmployeeList = () => {
                   <thead>
                     <tr>
                       <th>Name</th>
-                      <th>Position</th>
                       <th>Vendor</th>
                       <th>Client</th>
                       <th>End Client</th>
@@ -397,7 +396,6 @@ const EmployeeList = () => {
                             {employee.name}
                           </Link>
                         </td>
-                        <td>{employee.position}</td>
                         <td>
                           {employee.employmentType === 'Subcontractor' ? (
                             employee.vendor ? (

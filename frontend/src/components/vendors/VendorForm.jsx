@@ -1,12 +1,29 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { API_BASE } from '../../config/api';
+import {
+  COUNTRY_OPTIONS,
+  STATES_BY_COUNTRY,
+  TAX_ID_LABELS,
+  TAX_ID_PLACEHOLDERS,
+  PAYMENT_TERMS_OPTIONS,
+  getPostalLabel,
+  getPostalPlaceholder,
+  validateCountryTaxId
+} from '../../config/lookups';
 import { PERMISSIONS } from '../../utils/roles';
 import PermissionGuard from '../common/PermissionGuard';
+import { useAuth } from '../../contexts/AuthContext';
+import { useToast } from '../../contexts/ToastContext';
 import './Vendors.css';
 
-const VendorForm = () => {
+const VendorForm = ({ mode = 'create', initialData = null, onSubmitOverride = null, submitLabel = null }) => {
   const navigate = useNavigate();
+  const { subdomain } = useParams();
+  const { user } = useAuth();
+  const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const [formData, setFormData] = useState({
     name: '',
     contactPerson: '',
@@ -17,8 +34,8 @@ const VendorForm = () => {
     state: '',
     zip: '',
     country: 'United States',
-    taxId: '',
-    vendorType: 'consultant',
+    taxId: '', // not sent to backend currently
+    vendorType: 'consultant', // mapped to category
     paymentTerms: 'net30',
     status: 'active',
     notes: ''
@@ -29,6 +46,11 @@ const VendorForm = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    if (name === 'country') {
+      // Reset state when country changes
+      setFormData({ ...formData, country: value, state: '' });
+      return;
+    }
     setFormData({
       ...formData,
       [name]: value
@@ -49,23 +71,114 @@ const VendorForm = () => {
     }
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    setLoading(true);
+  // Prefill when initialData changes
+  useEffect(() => {
+    if (initialData) {
+      setFormData({
+        name: initialData.name || '',
+        contactPerson: initialData.contactPerson || '',
+        email: initialData.email || '',
+        phone: initialData.phone || '',
+        address: initialData.address || '',
+        city: initialData.city || '',
+        state: initialData.state || '',
+        zip: initialData.zip || '',
+        country: initialData.country || 'United States',
+        taxId: '',
+        vendorType: initialData.category || 'consultant',
+        paymentTerms: initialData.paymentTerms || 'net30',
+        status: initialData.status || 'active',
+        notes: initialData.notes || ''
+      });
+    }
+  }, [initialData]);
 
-    // In a real app, this would be an API call with FormData to handle file upload
-    setTimeout(() => {
-      const dataToSubmit = {
-        ...formData,
-        contractFilename: contractFile ? contractFile.name : null
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      setError('');
+      setLoading(true);
+      // Country-specific tax id validation
+      const taxErr = validateCountryTaxId(formData.country, formData.taxId);
+      if (taxErr) {
+        setError(taxErr);
+        setLoading(false);
+        return;
+      }
+      if (!user?.tenantId) {
+        setError('No tenant information available');
+        setLoading(false);
+        return;
+      }
+
+      if (onSubmitOverride) {
+        // Build payload similar to create for editor convenience
+        const payload = {
+          tenantId: user.tenantId,
+          name: formData.name.trim(),
+          contactPerson: formData.contactPerson.trim() || null,
+          email: formData.email.trim() || null,
+          phone: formData.phone.trim() || null,
+          category: formData.vendorType || null,
+          status: formData.status || 'active',
+          address: formData.address.trim() || null,
+          city: formData.city.trim() || null,
+          state: formData.state.trim() || null,
+          zip: formData.zip.trim() || null,
+          country: formData.country.trim() || null,
+          website: initialData?.website ?? null,
+          paymentTerms: formData.paymentTerms || null,
+          contractStart: initialData?.contractStart ?? null,
+          contractEnd: initialData?.contractEnd ?? null,
+          notes: formData.notes || null
+        };
+        await onSubmitOverride(payload);
+        toast.success('Vendor updated');
+        return;
+      }
+
+      // Build payload matching backend Vendor model
+      const payload = {
+        tenantId: user.tenantId,
+        name: formData.name.trim(),
+        contactPerson: formData.contactPerson.trim() || null,
+        email: formData.email.trim() || null,
+        phone: formData.phone.trim() || null,
+        category: formData.vendorType || null,
+        status: formData.status || 'active',
+        address: formData.address.trim() || null,
+        city: formData.city.trim() || null,
+        state: formData.state.trim() || null,
+        zip: formData.zip.trim() || null,
+        country: formData.country.trim() || null,
+        website: null,
+        paymentTerms: formData.paymentTerms || null,
+        contractStart: null,
+        contractEnd: null,
+        notes: formData.notes || null
       };
-      
-      console.log('Vendor data submitted:', dataToSubmit);
+
+      const resp = await fetch(`${API_BASE}/api/vendors`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+        body: JSON.stringify(payload),
+      });
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({}));
+        throw new Error(err.details ? JSON.stringify(err.details) : `Create failed with status ${resp.status}`);
+      }
+      toast.success('Vendor created');
+      navigate(`/${subdomain}/vendors`);
+    } catch (err) {
+      console.error('Create vendor failed:', err);
+      setError(err.message || 'Failed to create vendor');
+      toast.error(err.message || 'Failed to save vendor');
+    } finally {
       setLoading(false);
-      navigate('/vendors');
-      // Show success message
-      alert('Vendor created successfully!');
-    }, 800);
+    }
   };
 
   return (
@@ -84,6 +197,12 @@ const VendorForm = () => {
           <div className="nk-block">
             <div className="card card-bordered">
               <div className="card-inner">
+                {error && (
+                  <div className="alert alert-danger" role="alert">
+                    <i className="fas fa-exclamation-triangle mr-2"></i>
+                    {error}
+                  </div>
+                )}
                 <form onSubmit={handleSubmit}>
                   <div className="row g-4">
                     <div className="col-lg-6">
@@ -177,20 +296,35 @@ const VendorForm = () => {
                     <div className="col-lg-4">
                       <div className="form-group">
                         <label className="form-label" htmlFor="state">State</label>
-                        <input
-                          type="text"
-                          className="form-control"
-                          id="state"
-                          name="state"
-                          value={formData.state}
-                          onChange={handleChange}
-                          placeholder="Enter state"
-                        />
+                        {STATES_BY_COUNTRY[formData.country] && STATES_BY_COUNTRY[formData.country].length > 0 ? (
+                          <select
+                            className="form-select"
+                            id="state"
+                            name="state"
+                            value={formData.state}
+                            onChange={handleChange}
+                          >
+                            <option value="">Select state</option>
+                            {STATES_BY_COUNTRY[formData.country].map((st) => (
+                              <option key={st} value={st}>{st}</option>
+                            ))}
+                          </select>
+                        ) : (
+                          <input
+                            type="text"
+                            className="form-control"
+                            id="state"
+                            name="state"
+                            value={formData.state}
+                            onChange={handleChange}
+                            placeholder="Enter state"
+                          />
+                        )}
                       </div>
                     </div>
                     <div className="col-lg-4">
                       <div className="form-group">
-                        <label className="form-label" htmlFor="zip">ZIP Code</label>
+                        <label className="form-label" htmlFor="zip">{getPostalLabel(formData.country)}</label>
                         <input
                           type="text"
                           className="form-control"
@@ -198,27 +332,29 @@ const VendorForm = () => {
                           name="zip"
                           value={formData.zip}
                           onChange={handleChange}
-                          placeholder="Enter ZIP code"
+                          placeholder={getPostalPlaceholder(formData.country)}
                         />
                       </div>
                     </div>
                     <div className="col-lg-6">
                       <div className="form-group">
                         <label className="form-label" htmlFor="country">Country</label>
-                        <input
-                          type="text"
-                          className="form-control"
+                        <select
+                          className="form-select"
                           id="country"
                           name="country"
                           value={formData.country}
                           onChange={handleChange}
-                          placeholder="Enter country"
-                        />
+                        >
+                          {COUNTRY_OPTIONS.map((c) => (
+                            <option key={c} value={c}>{c}</option>
+                          ))}
+                        </select>
                       </div>
                     </div>
                     <div className="col-lg-6">
                       <div className="form-group">
-                        <label className="form-label" htmlFor="taxId">Tax ID / EIN</label>
+                        <label className="form-label" htmlFor="taxId">{TAX_ID_LABELS[formData.country] || 'Tax ID'}</label>
                         <input
                           type="text"
                           className="form-control"
@@ -226,8 +362,9 @@ const VendorForm = () => {
                           name="taxId"
                           value={formData.taxId}
                           onChange={handleChange}
-                          placeholder="Enter tax ID or EIN"
+                          placeholder={TAX_ID_PLACEHOLDERS[formData.country] || 'Enter tax identifier'}
                         />
+                        <small className="text-muted">This identifier varies by country (e.g., EIN in US, GSTIN in India, VAT in UK).</small>
                       </div>
                     </div>
                     <div className="col-lg-6">
@@ -251,7 +388,7 @@ const VendorForm = () => {
                     </div>
                     <div className="col-lg-6">
                       <div className="form-group">
-                        <label className="form-label" htmlFor="paymentTerms">Payment Terms*</label>
+                        <label className="form-label" htmlFor="paymentTerms">Invoice Cycle*</label>
                         <select
                           className="form-select"
                           id="paymentTerms"
@@ -260,12 +397,11 @@ const VendorForm = () => {
                           onChange={handleChange}
                           required
                         >
-                          <option value="net15">Net 15</option>
-                          <option value="net30">Net 30</option>
-                          <option value="net45">Net 45</option>
-                          <option value="net60">Net 60</option>
-                          <option value="immediate">Immediate</option>
+                          {PAYMENT_TERMS_OPTIONS.map((opt) => (
+                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                          ))}
                         </select>
+                        <small className="text-muted">Invoices are generated after timesheet approval. Invoice cycle controls when the invoice is created (e.g., Net 30).</small>
                       </div>
                     </div>
                     <div className="col-lg-6">
@@ -342,16 +478,16 @@ const VendorForm = () => {
                           {loading ? (
                             <>
                               <span className="spinner-border spinner-border-sm mr-1" role="status" aria-hidden="true"></span>
-                              Creating...
+                              {mode === 'edit' ? 'Saving...' : 'Creating...'}
                             </>
                           ) : (
-                            'Create Vendor'
+                            submitLabel || (mode === 'edit' ? 'Save Changes' : 'Create Vendor')
                           )}
                         </button>
                         <button 
                           type="button" 
                           className="btn btn-outline-light ml-3"
-                          onClick={() => navigate('/vendors')}
+                          onClick={() => navigate(`/${subdomain}/vendors`)}
                         >
                           Cancel
                         </button>

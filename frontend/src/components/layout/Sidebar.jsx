@@ -43,19 +43,6 @@ const Sidebar = ({ collapsed, toggleSidebar, className = '' }) => {
             </Link>
           </li>
           
-          <PermissionGuard requiredPermission={PERMISSIONS.VIEW_CLIENT} fallback={null}>
-            <li className="sidebar-item">
-              <Link 
-                to={`/${currentSubdomain}/clients`} 
-                className={`sidebar-link ${currentPath.includes(`/${currentSubdomain}/clients`) ? 'active' : ''}`}
-              >
-                <div className="sidebar-icon">
-                  <i className="fa fa-users"></i>
-                </div>
-                {!collapsed && <span className="sidebar-text">Clients</span>}
-              </Link>
-            </li>
-          </PermissionGuard>
           
           <PermissionGuard requiredPermission={PERMISSIONS.VIEW_TIMESHEET} fallback={null}>
             <li className="sidebar-item">
@@ -117,12 +104,40 @@ const Sidebar = ({ collapsed, toggleSidebar, className = '' }) => {
             <li className="sidebar-item">
               <Link 
                 to={`/${currentSubdomain}/vendors`} 
-                className={`sidebar-link ${currentPath.includes(`/${currentSubdomain}/vendors`) ? 'active' : ''}`}
+                className={`sidebar-link ${currentPath.includes(`/${currentSubdomain}/vendors`) && !new URLSearchParams(window.location.search).get('implPartner') ? 'active' : ''}`}
               >
                 <div className="sidebar-icon">
                   <i className="fa fa-truck"></i>
                 </div>
                 {!collapsed && <span className="sidebar-text">Vendors</span>}
+              </Link>
+            </li>
+          </PermissionGuard>
+
+          <PermissionGuard requiredPermission={PERMISSIONS.VIEW_CLIENT} fallback={null}>
+            <li className="sidebar-item">
+              <Link 
+                to={`/${currentSubdomain}/clients`} 
+                className={`sidebar-link ${currentPath.includes(`/${currentSubdomain}/clients`) ? 'active' : ''}`}
+              >
+                <div className="sidebar-icon">
+                  <i className="fa fa-users"></i>
+                </div>
+                {!collapsed && <span className="sidebar-text">End Clients</span>}
+              </Link>
+            </li>
+          </PermissionGuard>
+
+          <PermissionGuard requiredPermission={PERMISSIONS.VIEW_VENDOR} fallback={null}>
+            <li className="sidebar-item">
+              <Link 
+                to={`/${currentSubdomain}/vendors?implPartner=1`} 
+                className={`sidebar-link ${currentPath.includes(`/${currentSubdomain}/vendors`) && new URLSearchParams(window.location.search).get('implPartner') ? 'active' : ''}`}
+              >
+                <div className="sidebar-icon">
+                  <i className="fa fa-handshake"></i>
+                </div>
+                {!collapsed && <span className="sidebar-text">Impl Partners</span>}
               </Link>
             </li>
           </PermissionGuard>

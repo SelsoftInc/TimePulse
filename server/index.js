@@ -25,6 +25,7 @@ const onboardingRoutes = require('./routes/onboarding');
 const employeeRoutes = require('./routes/employees');
 const clientRoutes = require('./routes/clients');
 const tenantRoutes = require('./routes/tenants');
+const vendorRoutes = require('./routes/vendors');
 
 
 
@@ -75,7 +76,8 @@ app.get('/', (req, res) => {
       onboarding: '/api/onboarding',
       employees: '/api/employees',
       clients: '/api/clients',
-      tenants: '/api/tenants'
+      tenants: '/api/tenants',
+      vendors: '/api/vendors'
     }
   });
 });
@@ -88,6 +90,7 @@ app.use('/api/onboarding', onboardingRoutes);
 app.use('/api/employees', employeeRoutes);
 app.use('/api/clients', clientRoutes);
 app.use('/api/tenants', tenantRoutes);
+app.use('/api/vendors', vendorRoutes);
 app.use('/api/auth', require('./routes/auth'));
 
 // Error handling middleware

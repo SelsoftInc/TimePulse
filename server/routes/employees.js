@@ -3,7 +3,7 @@ const router = express.Router();
 const { models } = require('../models');
 const { Op } = require('sequelize');
 
-const { Employee, User, Client, Tenant } = models;
+const { Employee, User, Client, Tenant, Vendor } = models;
 
 // Get all employees for a tenant
 router.get('/', async (req, res) => {
@@ -42,6 +42,16 @@ router.get('/', async (req, res) => {
           model: Client,
           as: 'client',
           attributes: ['id', 'clientName']
+        },
+        {
+          model: Vendor,
+          as: 'vendor',
+          attributes: ['id', 'name']
+        },
+        {
+          model: Vendor,
+          as: 'implPartner',
+          attributes: ['id', 'name']
         }
       ]
     });
@@ -62,8 +72,10 @@ router.get('/', async (req, res) => {
         client: emp.client ? emp.client.clientName : null,
         clientId: emp.clientId || emp.client?.id || null,
         employmentType: emp.employmentType || 'W2',
-        vendor: emp.vendor || null,
-        vendorId: emp.vendorId || null,
+        vendor: emp.vendor ? emp.vendor.name : null,
+        vendorId: emp.vendor ? emp.vendor.id : null,
+        implPartner: emp.implPartner ? emp.implPartner.name : null,
+        implPartnerId: emp.implPartner ? emp.implPartner.id : null,
         endClient: emp.endClient ? {
           name: emp.endClient.name || 'N/A',
           location: emp.endClient.location || 'N/A',
@@ -135,6 +147,16 @@ router.get('/:id', async (req, res) => {
           model: Client,
           as: 'client',
           attributes: ['id', 'clientName']
+        },
+        {
+          model: Vendor,
+          as: 'vendor',
+          attributes: ['id', 'name']
+        },
+        {
+          model: Vendor,
+          as: 'implPartner',
+          attributes: ['id', 'name']
         }
       ]
     });
@@ -161,8 +183,10 @@ router.get('/:id', async (req, res) => {
       client: employee.client ? employee.client.clientName : null,
       clientId: employee.clientId || employee.client?.id || null,
       employmentType: employee.employmentType || 'W2',
-      vendor: employee.vendor || null,
-      vendorId: employee.vendorId || null,
+      vendor: employee.vendor ? employee.vendor.name : null,
+      vendorId: employee.vendor ? employee.vendor.id : null,
+      implPartner: employee.implPartner ? employee.implPartner.name : null,
+      implPartnerId: employee.implPartner ? employee.implPartner.id : null,
       endClient: employee.endClient,
       // Additional detailed fields
       employeeId: employee.employeeId,

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { PAYMENT_TERMS_OPTIONS } from '../../config/lookups';
 
 const InvoicePreferences = () => {
   const [invoicePrefs, setInvoicePrefs] = useState({
@@ -77,7 +78,7 @@ const InvoicePreferences = () => {
       
       <div className="form-row">
         <div className="form-group">
-          <label className="form-label" htmlFor="paymentTerms">Default Payment Terms</label>
+          <label className="form-label" htmlFor="paymentTerms">Default Invoice Cycle</label>
           <select
             className="form-select"
             id="paymentTerms"
@@ -85,12 +86,12 @@ const InvoicePreferences = () => {
             value={invoicePrefs.paymentTerms}
             onChange={handleInputChange}
           >
-            <option value="net15">Net 15</option>
-            <option value="net30">Net 30</option>
-            <option value="net45">Net 45</option>
-            <option value="net60">Net 60</option>
+            {PAYMENT_TERMS_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
             <option value="custom">Custom</option>
           </select>
+          <small className="text-muted">Defines when invoices are created after timesheet approval (e.g., Net 30).</small>
         </div>
         
         {invoicePrefs.paymentTerms === 'custom' && (

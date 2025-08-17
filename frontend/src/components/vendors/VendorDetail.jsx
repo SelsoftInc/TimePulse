@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { API_BASE } from '../../config/api';
+import { TAX_ID_LABELS, getPostalLabel } from '../../config/lookups';
 import { useAuth } from '../../contexts/AuthContext';
 import { PERMISSIONS } from '../../utils/roles';
 import PermissionGuard from '../common/PermissionGuard';
@@ -7,78 +9,47 @@ import './Vendors.css';
 
 const VendorDetail = () => {
   const { subdomain, id } = useParams();
-  const { checkPermission } = useAuth();
+  const { user, checkPermission } = useAuth();
   const [vendor, setVendor] = useState(null);
   const [vendorEmployees, setVendorEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    // In a real app, fetch vendor data from API
-    // For now, using mock data
-    setLoading(true);
-    setTimeout(() => {
-      // Mock vendor data
-      const mockVendor = {
-        id: parseInt(id),
-        name: id === '1' ? 'TechVendor Inc.' : id === '2' ? 'QA Solutions LLC' : 'Creative Design Studio',
-        contactPerson: id === '1' ? 'Robert Chen' : id === '2' ? 'Lisa Wong' : 'David Miller',
-        email: id === '1' ? 'robert@techvendor.com' : id === '2' ? 'lisa@qasolutions.com' : 'david@creativedesign.com',
-        phone: id === '1' ? '(555) 123-7890' : id === '2' ? '(555) 234-8901' : '(555) 345-9012',
-        status: 'active',
-        category: id === '1' ? 'Software Development' : id === '2' ? 'Quality Assurance' : 'Design Services',
-        address: '456 Business Ave',
-        city: 'San Francisco',
-        state: 'CA',
-        zip: '94107',
-        country: 'United States',
-        website: id === '1' ? 'www.techvendor.com' : id === '2' ? 'www.qasolutions.com' : 'www.creativedesign.com',
-        totalSpent: id === '1' ? 125000 : id === '2' ? 85000 : 65000,
-        contractStart: '2022-06-15',
-        contractEnd: '2023-06-14',
-        paymentTerms: 'Net 30',
-        notes: id === '1' ? 'Reliable vendor for technical resources' : 
-               id === '2' ? 'Specialized in QA automation and testing' : 
-               'Creative design services for marketing materials'
-      };
-      
-      // Mock employees from this vendor
-      const mockVendorEmployees = [];
-      
-      if (id === '1') {
-        mockVendorEmployees.push({
-          id: 3,
-          name: 'Michael Brown',
-          position: 'UI/UX Designer',
-          email: 'michael.brown@selsoft.com',
-          phone: '(555) 345-6789',
-          status: 'active',
-          department: 'Design',
-          joinDate: '2023-03-10',
-          hourlyRate: 110,
-          client: 'Accenture',
-          employmentType: 'Subcontractor'
+    const fetchVendor = async () => {
+      try {
+        setLoading(true);
+        setError('');
+        if (!user?.tenantId) {
+          setError('No tenant information available');
+          setVendor(null);
+          return;
+        }
+        const resp = await fetch(`${API_BASE}/api/vendors/${id}?tenantId=${user.tenantId}`, {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
         });
-      } else if (id === '2') {
-        mockVendorEmployees.push({
-          id: 4,
-          name: 'Emily Davis',
-          position: 'QA Engineer',
-          email: 'emily.davis@selsoft.com',
-          phone: '(555) 456-7890',
-          status: 'inactive',
-          department: 'Quality Assurance',
-          joinDate: '2023-01-20',
-          hourlyRate: 95,
-          client: 'Cognizant',
-          employmentType: 'Subcontractor'
-        });
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const data = await resp.json();
+        if (data.success) {
+          setVendor(data.vendor || null);
+        } else {
+          setError(data.error || 'Failed to fetch vendor');
+          setVendor(null);
+        }
+      } catch (e) {
+        console.error('Error fetching vendor:', e);
+        setError('Failed to load vendor. Please try again.');
+        setVendor(null);
+      } finally {
+        setVendorEmployees([]); // Not implemented yet on backend
+        setLoading(false);
       }
-      
-      setVendor(mockVendor);
-      setVendorEmployees(mockVendorEmployees);
-      setLoading(false);
-    }, 800);
-  }, [id]);
+    };
+    fetchVendor();
+  }, [id, user?.tenantId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (loading) {
     return (
@@ -94,13 +65,19 @@ const VendorDetail = () => {
     );
   }
 
-  if (!vendor) {
+  if (error || !vendor) {
     return (
       <div className="nk-content">
         <div className="container-fluid">
-          <div className="alert alert-danger">
-            Vendor not found. <Link to={`/${subdomain}/vendors`}>Return to vendor list</Link>
-          </div>
+          {error ? (
+            <div className="alert alert-danger">
+              {error} <Link to={`/${subdomain}/vendors`}>Return to vendor list</Link>
+            </div>
+          ) : (
+            <div className="alert alert-danger">
+              Vendor not found. <Link to={`/${subdomain}/vendors`}>Return to vendor list</Link>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -113,7 +90,7 @@ const VendorDetail = () => {
           <div className="nk-block-between">
             <div className="nk-block-head-content">
               <h3 className="nk-block-title">Vendor Details</h3>
-              <p className="nk-block-subtitle">Viewing details for {vendor.name}</p>
+              <p className="nk-block-subtitle">Viewing details for vendor</p>
             </div>
             <div className="nk-block-head-content">
               <Link to={`/${subdomain}/vendors`} className="btn btn-outline-light">
@@ -169,9 +146,7 @@ const VendorDetail = () => {
                       <div className="profile-ud-item">
                         <div className="profile-ud-label">Website</div>
                         <div className="profile-ud-value">
-                          <a href={`https://${vendor.website}`} target="_blank" rel="noopener noreferrer">
-                            {vendor.website}
-                          </a>
+                          {vendor.website}
                         </div>
                       </div>
                     </div>
@@ -195,13 +170,19 @@ const VendorDetail = () => {
                         <div className="profile-ud-value">{vendor.state}</div>
                       </div>
                       <div className="profile-ud-item">
-                        <div className="profile-ud-label">ZIP Code</div>
+                        <div className="profile-ud-label">{getPostalLabel(vendor.country)}</div>
                         <div className="profile-ud-value">{vendor.zip}</div>
                       </div>
                       <div className="profile-ud-item">
                         <div className="profile-ud-label">Country</div>
                         <div className="profile-ud-value">{vendor.country}</div>
                       </div>
+                      {vendor.taxId && (
+                        <div className="profile-ud-item">
+                          <div className="profile-ud-label">{TAX_ID_LABELS[vendor.country] || 'Tax ID'}</div>
+                          <div className="profile-ud-value">{vendor.taxId}</div>
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -219,12 +200,12 @@ const VendorDetail = () => {
                         <div className="profile-ud-value">{new Date(vendor.contractEnd).toLocaleDateString()}</div>
                       </div>
                       <div className="profile-ud-item">
-                        <div className="profile-ud-label">Payment Terms</div>
-                        <div className="profile-ud-value">{vendor.paymentTerms}</div>
+                        <div className="profile-ud-label">Invoice Cycle</div>
+                        <div className="profile-ud-value">{vendor.paymentTerms ? `Net ${vendor.paymentTerms}` : '—'}</div>
                       </div>
                       <div className="profile-ud-item">
                         <div className="profile-ud-label">Total Spent</div>
-                        <div className="profile-ud-value">${vendor.totalSpent.toLocaleString()}</div>
+                        <div className="profile-ud-value">{vendor.totalSpent}</div>
                       </div>
                     </div>
                   </div>

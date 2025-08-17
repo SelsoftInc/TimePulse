@@ -156,13 +156,13 @@ const ClientsList = () => {
         <div className="nk-block-head">
           <div className="nk-block-between">
             <div className="nk-block-head-content">
-              <h3 className="nk-block-title">Clients</h3>
-              <p className="nk-block-subtitle">Manage your client relationships</p>
+              <h3 className="nk-block-title">End Clients</h3>
+              <p className="nk-block-subtitle">Manage your end client relationships</p>
             </div>
             <div className="nk-block-head-content">
               <PermissionGuard requiredPermission={PERMISSIONS.CREATE_CLIENT}>
                 <Link to={`/${subdomain}/clients/new`} className="btn btn-primary">
-                  <i className="fas fa-plus mr-1"></i> Add New Client
+                  <i className="fas fa-plus mr-1"></i> Add End Client
                 </Link>
               </PermissionGuard>
             </div>
@@ -193,7 +193,7 @@ const ClientsList = () => {
                 <table className="table table-clients">
                   <thead>
                     <tr>
-                      <th>Client Name</th>
+                      <th>End Client Name</th>
                       <th>Contact Person</th>
                       <th>Email</th>
                       <th>Phone</th>

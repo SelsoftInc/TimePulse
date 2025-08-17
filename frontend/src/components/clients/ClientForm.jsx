@@ -4,9 +4,19 @@ import { PERMISSIONS } from '../../utils/roles';
 import PermissionGuard from '../common/PermissionGuard';
 import { useAuth } from '../../contexts/AuthContext';
 import './Clients.css';
-import { US_STATES, PAYMENT_TERMS, PAYMENT_METHODS, CURRENCIES, CLIENT_TYPES } from '../../constants/lookups';
-import { formatPhoneInput, validatePhoneDigits, formatTaxIdInput, validateTaxId } from '../../utils/validation';
+import { PAYMENT_METHODS, CURRENCIES, CLIENT_TYPES } from '../../constants/lookups';
+import { formatPhoneInput, validatePhoneDigits } from '../../utils/validation';
 import { apiFetch } from '../../config/api';
+import {
+  COUNTRY_OPTIONS,
+  STATES_BY_COUNTRY,
+  TAX_ID_LABELS,
+  TAX_ID_PLACEHOLDERS,
+  PAYMENT_TERMS_OPTIONS,
+  getPostalLabel,
+  getPostalPlaceholder,
+  validateCountryTaxId
+} from '../../config/lookups';
 
 const ClientForm = ({ mode = 'create', initialData = null, onSubmitOverride = null, submitLabel }) => {
   const navigate = useNavigate();
@@ -32,7 +42,7 @@ const ClientForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
     // Billing Information
     billingAddress: '',
     billingAddressSameAsMain: true,
-    paymentTerms: 30,
+    paymentTerms: 'net30',
     paymentMethod: 'Bank Transfer',
     bankDetails: '',
     taxId: '',
@@ -56,7 +66,11 @@ const ClientForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
         country: initialData.billingAddress?.country || prev.country,
         status: initialData.status || prev.status,
         clientType: initialData.clientType || prev.clientType,
-        paymentTerms: initialData.paymentTerms ?? prev.paymentTerms,
+        paymentTerms: (initialData.paymentTerms === 60
+          ? 'net60'
+          : initialData.paymentTerms === 90
+            ? 'net90'
+            : 'net30'),
         paymentMethod: initialData.paymentMethod || prev.paymentMethod,
         bankDetails: initialData.bankDetails || prev.bankDetails,
         taxId: initialData.taxId || prev.taxId,
@@ -129,13 +143,14 @@ const ClientForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
+    // Reset state when country changes to avoid stale values
+    if (name === 'country') {
+      setFormData({ ...formData, country: value, state: '' });
+      return;
+    }
     setFormData({
       ...formData,
-      [name]: name === 'paymentTerms'
-        ? parseInt(value, 10)
-        : type === 'checkbox'
-        ? checked
-        : value
+      [name]: type === 'checkbox' ? checked : value
     });
 
     // Clear field-specific error on change
@@ -153,7 +168,7 @@ const ClientForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
       const msg = validatePhoneDigits(value);
       setErrors(prev => ({ ...prev, phone: msg }));
     } else if (name === 'taxId') {
-      const msg = validateTaxId(value);
+      const msg = validateCountryTaxId(formData.country, value);
       setErrors(prev => ({ ...prev, taxId: msg }));
     }
   };
@@ -167,7 +182,7 @@ const ClientForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
 
       // Validate critical fields
       const phoneErr = validatePhoneDigits(formData.phone);
-      const taxErr = validateTaxId(formData.taxId);
+      const taxErr = validateCountryTaxId(formData.country, formData.taxId);
       if (phoneErr || taxErr) {
         setErrors({ phone: phoneErr, taxId: taxErr });
         setLoading(false);
@@ -199,7 +214,7 @@ const ClientForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
         billingAddress: billingAddressObj,
         shippingAddress: shippingAddressObj,
         taxId: formData.taxId || null,
-        paymentTerms: Number(formData.paymentTerms),
+        paymentTerms: formData.paymentTerms === 'net60' ? 60 : formData.paymentTerms === 'net90' ? 90 : 30,
         hourlyRate: null,
         status: formData.status,
         // clientType may or may not exist in schema; include if supported server-side
@@ -351,24 +366,36 @@ const ClientForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
                     </div>
                     <div className="col-lg-4">
                       <div className="form-group">
-                        <label className="form-label" htmlFor="state">State</label>
-                        <select
-                          className="form-select"
-                          id="state"
-                          name="state"
-                          value={formData.state}
-                          onChange={handleChange}
-                        >
-                          <option value="" disabled>Select state</option>
-                          {US_STATES.map(s => (
-                            <option key={s.code} value={s.code}>{s.code} - {s.name}</option>
-                          ))}
-                        </select>
+                        <label className="form-label" htmlFor="state">State/Province</label>
+                        {STATES_BY_COUNTRY[formData.country] ? (
+                          <select
+                            className="form-select"
+                            id="state"
+                            name="state"
+                            value={formData.state}
+                            onChange={handleChange}
+                          >
+                            <option value="" disabled>Select state</option>
+                            {STATES_BY_COUNTRY[formData.country].map((s) => (
+                              <option key={s} value={s}>{s}</option>
+                            ))}
+                          </select>
+                        ) : (
+                          <input
+                            type="text"
+                            className="form-control"
+                            id="state"
+                            name="state"
+                            value={formData.state}
+                            onChange={handleChange}
+                            placeholder="Enter state"
+                          />
+                        )}
                       </div>
                     </div>
                     <div className="col-lg-4">
                       <div className="form-group">
-                        <label className="form-label" htmlFor="zip">ZIP Code</label>
+                        <label className="form-label" htmlFor="zip">{getPostalLabel(formData.country)}</label>
                         <input
                           type="text"
                           className="form-control"
@@ -376,22 +403,24 @@ const ClientForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
                           name="zip"
                           value={formData.zip}
                           onChange={handleChange}
-                          placeholder="Enter ZIP code"
+                          placeholder={getPostalPlaceholder(formData.country)}
                         />
                       </div>
                     </div>
                     <div className="col-lg-6">
                       <div className="form-group">
                         <label className="form-label" htmlFor="country">Country</label>
-                        <input
-                          type="text"
-                          className="form-control"
+                        <select
+                          className="form-select"
                           id="country"
                           name="country"
                           value={formData.country}
                           onChange={handleChange}
-                          placeholder="Enter country"
-                        />
+                        >
+                          {COUNTRY_OPTIONS.map((c) => (
+                            <option key={c} value={c}>{c}</option>
+                          ))}
+                        </select>
                       </div>
                     </div>
                     
@@ -448,7 +477,7 @@ const ClientForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
                     
                     <div className="col-lg-6">
                       <div className="form-group">
-                        <label className="form-label" htmlFor="paymentTerms">Payment Terms*</label>
+                        <label className="form-label" htmlFor="paymentTerms">Invoice Cycle*</label>
                         <select
                           className="form-select"
                           id="paymentTerms"
@@ -457,10 +486,11 @@ const ClientForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
                           onChange={handleChange}
                           required
                         >
-                          {PAYMENT_TERMS.map(pt => (
+                          {PAYMENT_TERMS_OPTIONS.map(pt => (
                             <option key={pt.value} value={pt.value}>{pt.label}</option>
                           ))}
                         </select>
+                        <small className="text-muted">Invoices are generated after timesheet approval. Invoice cycle determines when an invoice is created (e.g., Net 30 = monthly after approval).</small>
                       </div>
                     </div>
                     
@@ -502,7 +532,7 @@ const ClientForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
                     
                     <div className="col-lg-6">
                       <div className="form-group">
-                        <label className="form-label" htmlFor="taxId">Tax ID*</label>
+                        <label className="form-label" htmlFor="taxId">{TAX_ID_LABELS[formData.country] || 'Tax ID'}*</label>
                         <input
                           type="text"
                           className="form-control"
@@ -510,16 +540,14 @@ const ClientForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
                           name="taxId"
                           value={formData.taxId}
                           onChange={(e) => {
-                            const formatted = formatTaxIdInput(e.target.value);
-                            setFormData(prev => ({ ...prev, taxId: formatted }));
+                            setFormData(prev => ({ ...prev, taxId: e.target.value }));
                             if (errors.taxId) setErrors(prev => ({ ...prev, taxId: '' }));
                           }}
                           onBlur={handleBlur}
-                          inputMode="numeric"
-                          maxLength={11}
-                          placeholder="Enter Tax ID (e.g., 13-1234567)"
+                          placeholder={TAX_ID_PLACEHOLDERS[formData.country] || 'Enter tax identifier'}
                           required
                         />
+                        <small className="text-muted">This identifier varies by country (e.g., EIN in US, GSTIN in India, VAT in UK).</small>
                         {errors.taxId && (
                           <div className="mt-1"><small className="text-danger">{errors.taxId}</small></div>
                         )}

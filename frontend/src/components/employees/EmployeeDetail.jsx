@@ -13,7 +13,8 @@ const EmployeeDetail = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [clients, setClients] = useState([]);
-  const [formValues, setFormValues] = useState({ joinDate: '', clientId: '' });
+  const [vendors, setVendors] = useState([]);
+  const [formValues, setFormValues] = useState({ joinDate: '', clientId: '', vendorId: '', implPartnerId: '' });
 
   const fetchEmployeeData = useCallback(async () => {
       try {
@@ -58,7 +59,9 @@ const EmployeeDetail = () => {
           setEmployee(transformedEmployee);
           setFormValues({
             joinDate: transformedEmployee.joinDate || '',
-            clientId: emp.clientId || ''
+            clientId: emp.clientId || '',
+            vendorId: emp.vendorId || '',
+            implPartnerId: emp.implPartnerId || ''
           });
         } else {
           console.error('Failed to fetch employee data:', data.error);
@@ -91,9 +94,29 @@ const EmployeeDetail = () => {
         console.error('Error fetching clients:', e);
       }
     };
+    const fetchVendors = async () => {
+      try {
+        if (!user?.tenantId) return;
+        const resp = await fetch(`http://localhost:5001/api/vendors?tenantId=${user.tenantId}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        if (!resp.ok) throw new Error(`HTTP error! status: ${resp.status}`);
+        const payload = await resp.json();
+        if (payload.success && payload.vendors) {
+          setVendors(payload.vendors);
+        }
+      } catch (e) {
+        console.error('Error fetching vendors:', e);
+      }
+    };
 
     fetchEmployeeData();
     fetchClients();
+    fetchVendors();
   }, [id, user?.tenantId, fetchEmployeeData]);
 
   const canEditBasics = isAdmin() || isApprover();
@@ -107,7 +130,9 @@ const EmployeeDetail = () => {
     // Reset form to current employee values
     setFormValues({
       joinDate: employee?.joinDate || '',
-      clientId: employee?.clientId || ''
+      clientId: employee?.clientId || '',
+      vendorId: employee?.vendorId || '',
+      implPartnerId: employee?.implPartnerId || ''
     });
     setIsEditing(false);
   };
@@ -127,6 +152,8 @@ const EmployeeDetail = () => {
       const updateBody = {
         startDate: formValues.joinDate || null,
         clientId: formValues.clientId || null,
+        vendorId: formValues.vendorId || null,
+        implPartnerId: formValues.implPartnerId || null,
       };
 
       const resp = await fetch(`http://localhost:5001/api/employees/${id}?tenantId=${tenantId}`, {
@@ -259,7 +286,7 @@ const EmployeeDetail = () => {
                         <div className="profile-ud-value">{employee.department}</div>
                       </div>
                       <div className="profile-ud-item">
-                        <div className="profile-ud-label">Client</div>
+                        <div className="profile-ud-label">End Client</div>
                         <div className="profile-ud-value">
                           {!isEditing && (
                             <>{employee.client || <span className="text-muted">Not assigned</span>}</>
@@ -271,7 +298,7 @@ const EmployeeDetail = () => {
                               value={formValues.clientId || ''}
                               onChange={handleChange}
                             >
-                              <option value="">-- Select Client --</option>
+                              <option value="">-- Select End Client --</option>
                               {clients.map(c => (
                                 <option key={c.id} value={c.id}>{c.name}</option>
                               ))}
@@ -287,20 +314,64 @@ const EmployeeDetail = () => {
                           </span>
                         </div>
                       </div>
-                      {employee.employmentType === 'Subcontractor' && (
-                        <div className="profile-ud-item">
-                          <div className="profile-ud-label">Vendor</div>
-                          <div className="profile-ud-value">
-                            {employee.vendor ? (
-                              <Link to={`/${subdomain}/vendors/${employee.vendorId}`}>
-                                {employee.vendor}
-                              </Link>
-                            ) : (
-                              <span className="text-muted">No vendor assigned</span>
-                            )}
-                          </div>
+                      <div className="profile-ud-item">
+                        <div className="profile-ud-label">Vendor</div>
+                        <div className="profile-ud-value">
+                          {!isEditing && (
+                            <>
+                              {employee.vendor ? (
+                                <Link to={`/${subdomain}/vendors/${employee.vendorId}`}>
+                                  {employee.vendor}
+                                </Link>
+                              ) : (
+                                <span className="text-muted">No vendor assigned</span>
+                              )}
+                            </>
+                          )}
+                          {isEditing && (
+                            <select
+                              name="vendorId"
+                              className="form-control"
+                              value={formValues.vendorId || ''}
+                              onChange={handleChange}
+                            >
+                              <option value="">-- Select Vendor --</option>
+                              {vendors.map(v => (
+                                <option key={v.id} value={v.id}>{v.name}</option>
+                              ))}
+                            </select>
+                          )}
                         </div>
-                      )}
+                      </div>
+                      <div className="profile-ud-item">
+                        <div className="profile-ud-label">Impl Partner</div>
+                        <div className="profile-ud-value">
+                          {!isEditing && (
+                            <>
+                              {employee.implPartner ? (
+                                <Link to={`/${subdomain}/vendors/${employee.implPartnerId}`}>
+                                  {employee.implPartner}
+                                </Link>
+                              ) : (
+                                <span className="text-muted">No impl partner assigned</span>
+                              )}
+                            </>
+                          )}
+                          {isEditing && (
+                            <select
+                              name="implPartnerId"
+                              className="form-control"
+                              value={formValues.implPartnerId || ''}
+                              onChange={handleChange}
+                            >
+                              <option value="">-- Select Impl Partner --</option>
+                              {vendors.map(v => (
+                                <option key={v.id} value={v.id}>{v.name}</option>
+                              ))}
+                            </select>
+                          )}
+                        </div>
+                      </div>
                       <div className="profile-ud-item">
                         <div className="profile-ud-label">Join Date</div>
                         <div className="profile-ud-value">

@@ -257,6 +257,24 @@ models.Employee = sequelize.define('Employee', {
       key: 'id'
     }
   },
+  vendorId: {
+    type: DataTypes.UUID,
+    allowNull: true,
+    field: 'vendor_id',
+    references: {
+      model: 'vendors',
+      key: 'id'
+    }
+  },
+  implPartnerId: {
+    type: DataTypes.UUID,
+    allowNull: true,
+    field: 'impl_partner_id',
+    references: {
+      model: 'vendors',
+      key: 'id'
+    }
+  },
   startDate: {
     type: DataTypes.DATEONLY,
     field: 'start_date'
@@ -371,6 +389,14 @@ models.Client = sequelize.define('Client', {
     defaultValue: 0,
     field: 'hourly_rate'
   },
+  clientType: {
+    type: DataTypes.STRING(20),
+    defaultValue: 'external',
+    field: 'client_type',
+    validate: {
+      isIn: [['internal', 'external']]
+    }
+  },
   status: {
     type: DataTypes.ENUM('active', 'inactive'),
     defaultValue: 'active'
@@ -463,6 +489,74 @@ models.Employee.belongsTo(models.Client, { foreignKey: 'clientId', as: 'client' 
 
 // Client associations
 models.Client.belongsTo(models.Tenant, { foreignKey: 'tenantId', as: 'tenant' });
+
+// =============================================
+// VENDOR MODEL
+// =============================================
+models.Vendor = sequelize.define('Vendor', {
+  id: {
+    type: DataTypes.UUID,
+    defaultValue: DataTypes.UUIDV4,
+    primaryKey: true
+  },
+  tenantId: {
+    type: DataTypes.UUID,
+    allowNull: false,
+    field: 'tenant_id',
+    references: { model: 'tenants', key: 'id' }
+  },
+  name: {
+    type: DataTypes.STRING(255),
+    allowNull: false
+  },
+  contactPerson: {
+    type: DataTypes.STRING(255),
+    field: 'contact_person'
+  },
+  email: {
+    type: DataTypes.STRING(255),
+    validate: { isEmail: true },
+    allowNull: true
+  },
+  phone: {
+    type: DataTypes.STRING(50),
+    allowNull: true
+  },
+  category: {
+    type: DataTypes.STRING(100),
+  },
+  status: {
+    type: DataTypes.ENUM('active','inactive','pending'),
+    defaultValue: 'active'
+  },
+  totalSpent: {
+    type: DataTypes.DECIMAL(12,2),
+    defaultValue: 0,
+    field: 'total_spent'
+  },
+  address: { type: DataTypes.STRING(255) },
+  city: { type: DataTypes.STRING(100) },
+  state: { type: DataTypes.STRING(100) },
+  zip: { type: DataTypes.STRING(20) },
+  country: { type: DataTypes.STRING(100) },
+  website: { type: DataTypes.STRING(255) },
+  paymentTerms: { type: DataTypes.STRING(50), field: 'payment_terms' },
+  contractStart: { type: DataTypes.DATEONLY, field: 'contract_start' },
+  contractEnd: { type: DataTypes.DATEONLY, field: 'contract_end' },
+  notes: { type: DataTypes.TEXT }
+}, {
+  tableName: 'vendors',
+  timestamps: true,
+  createdAt: 'created_at',
+  updatedAt: 'updated_at'
+});
+
+// Vendor associations (added after model definition)
+models.Tenant.hasMany(models.Vendor, { foreignKey: 'tenantId', as: 'vendors' });
+models.Vendor.belongsTo(models.Tenant, { foreignKey: 'tenantId', as: 'tenant' });
+// Employee associations to Vendor must come after Vendor is defined
+models.Employee.belongsTo(models.Vendor, { foreignKey: 'vendorId', as: 'vendor' });
+models.Employee.belongsTo(models.Vendor, { foreignKey: 'implPartnerId', as: 'implPartner' });
 
 // =============================================
 // TIMESHEET MODEL

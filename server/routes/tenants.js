@@ -1,9 +1,23 @@
 const express = require('express');
 const router = express.Router();
-const { models, sequelize } = require('../models');
+const { models, sequelize, Sequelize } = require('../models');
 const { Op } = require('sequelize');
 
 const { Tenant } = models;
+
+// List tenants (diagnostic/lightweight)
+router.get('/', async (req, res) => {
+  try {
+    const rows = await sequelize.query(
+      'SELECT id, tenant_name, subdomain, status FROM tenants ORDER BY tenant_name ASC LIMIT 50',
+      { type: Sequelize.QueryTypes.SELECT }
+    );
+    res.json({ success: true, tenants: rows });
+  } catch (error) {
+    console.error('Error listing tenants:', error);
+    res.status(500).json({ error: 'Failed to list tenants', details: error.message });
+  }
+});
 
 // Get tenant information
 router.get('/:id', async (req, res) => {
@@ -15,7 +29,7 @@ router.get('/:id', async (req, res) => {
       'SELECT id, tenant_name, legal_name, subdomain, contact_address, invoice_address, contact_info, tax_info, settings, logo, status FROM tenants WHERE id = :tenantId',
       {
         replacements: { tenantId: id },
-        type: sequelize.QueryTypes.SELECT
+        type: Sequelize.QueryTypes.SELECT
       }
     );
 

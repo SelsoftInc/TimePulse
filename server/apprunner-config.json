@@ -1,0 +1,46 @@
+{
+  "ServiceName": "timepulse-backend",
+  "SourceConfiguration": {
+    "CodeRepository": {
+      "RepositoryUrl": "https://github.com/your-username/TimePulse",
+      "ConnectionArn": "arn:aws:codeconnections:us-east-1:123456789012:connection/REPLACE_ME",
+      "SourceCodeVersion": {
+        "Type": "BRANCH",
+        "Value": "main"
+      },
+      "CodeConfiguration": {
+        "ConfigurationSource": "API",
+        "CodeConfigurationValues": {
+          "Runtime": "NODEJS_20",
+          "BuildCommand": "cd server && npm ci || (cd server && npm install)",
+          "StartCommand": "cd server && npm start",
+          "RuntimeEnvironmentVariables": {
+            "NODE_ENV": "production",
+            "PORT": "8080",
+            "DB_HOST": "timepulse-db.c3iq0aiq28z6.us-east-1.rds.amazonaws.com",
+            "DB_PORT": "5432",
+            "DB_NAME": "timepulse_db",
+            "DB_USER": "postgres",
+            "DB_PASSWORD": "TimePulse2024!",
+            "JWT_SECRET": "your_jwt_secret_key_here",
+            "CORS_ORIGIN": "https://your-amplify-app.amplifyapp.com"
+          },
+          "Port": "8080"
+        }
+      }
+    },
+    "AutoDeploymentsEnabled": true
+  },
+  "HealthCheckConfiguration": {
+    "Protocol": "HTTP",
+    "Path": "/health",
+    "Interval": 10,
+    "Timeout": 5,
+    "HealthyThreshold": 1,
+    "UnhealthyThreshold": 5
+  },
+  "InstanceConfiguration": {
+    "Cpu": "0.25 vCPU",
+    "Memory": "0.5 GB"
+  }
+}

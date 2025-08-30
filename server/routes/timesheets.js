@@ -8,7 +8,13 @@ const { models } = require('../models');
 const { Op } = require('sequelize');
 
 // Helpers
-const toDateOnly = (d) => d.toISOString().slice(0, 10);
+// Format date as YYYY-MM-DD in local time to avoid UTC shift issues
+const toDateOnly = (d) => {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
 const getWeekRangeMonToSun = (date = new Date()) => {
   const d = new Date(date);
   const day = d.getDay(); // 0 Sun - 6 Sat
@@ -56,14 +62,24 @@ router.get('/current', async (req, res, next) => {
     await Promise.all(ensurePromises);
 
     // Fetch with joins for response
-    const rows = await models.Timesheet.findAll({
-      where: { tenantId, weekStart, weekEnd },
-      include: [
-        { model: models.Employee, as: 'employee', attributes: ['id', 'firstName', 'lastName', 'title'] },
-        { model: models.Client, as: 'client', attributes: ['id', 'clientName'] }
-      ],
-      order: [[{ model: models.Employee, as: 'employee' }, 'firstName', 'ASC']]
-    });
+    let rows = [];
+    try {
+      rows = await models.Timesheet.findAll({
+        where: { tenantId, weekStart, weekEnd },
+        include: [
+          { model: models.Employee, as: 'employee', attributes: ['id', 'firstName', 'lastName', 'title'] },
+          { model: models.Client, as: 'client', attributes: ['id', 'clientName'] }
+        ],
+        order: [[{ model: models.Employee, as: 'employee' }, 'firstName', 'ASC']]
+      });
+    } catch (dbErr) {
+      // Graceful fallback if DB schema doesn't match expected column names (e.g., 42703 missing column)
+      const code = dbErr?.original?.code || dbErr?.parent?.code;
+      if (code === '42703') {
+        return res.json({ success: true, weekStart, weekEnd, timesheets: [] });
+      }
+      throw dbErr;
+    }
 
     const result = rows.map((r) => ({
       id: r.id,

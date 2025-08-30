@@ -4,7 +4,7 @@ build:
   commands:
     build:
       - echo "Installing dependencies in server/"
-      - cd server && npm ci || (cd server && npm install)
+      - cd server && npm ci --omit=dev --ignore-scripts || (cd server && npm install --omit=dev --ignore-scripts)
       - echo "Build completed"
 run:
   runtime-version: 20

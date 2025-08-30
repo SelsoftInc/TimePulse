@@ -16,6 +16,7 @@ const { connectDB } = require('./models');
 
 const app = express();
 const PORT = process.env.PORT || 5001;
+const SKIP_DB_CONNECT = process.env.SKIP_DB_CONNECT === 'true' || process.env.ALLOW_START_WITHOUT_DB === 'true';
 
 // Import route modules
 const timesheetRoutes = require('./routes/timesheets');
@@ -111,24 +112,34 @@ app.use('*', (req, res) => {
   });
 });
 
-// Start server with database connection
+// Start server with optional database connection
 const startServer = async () => {
-  try {
-    // Connect to database
-    await connectDB();
-    console.log('✅ Database connected successfully');
-    
-    // Start HTTP server
-    app.listen(PORT, () => {
-      console.log(`🚀 TimePulse Server running on port ${PORT}`);
-      console.log(`📖 Health check: http://localhost:${PORT}/health`);
-      console.log(`🔧 Environment: ${process.env.NODE_ENV || 'development'}`);
-      console.log(`🗄️  Database: Connected`);
-    });
-  } catch (error) {
-    console.error('❌ Failed to start server:', error);
-    process.exit(1);
+  let dbConnected = false;
+  if (SKIP_DB_CONNECT) {
+    console.warn('⚠️  SKIP_DB_CONNECT is true. Starting server without database connection.');
+  } else {
+    try {
+      await connectDB();
+      dbConnected = true;
+      console.log('✅ Database connected successfully');
+    } catch (error) {
+      console.error('❌ Unable to connect to the database at startup:', error.message);
+      if (!process.env.ALLOW_START_WITHOUT_DB) {
+        console.error('Set SKIP_DB_CONNECT=true to start without DB, or configure DB env vars. Exiting.');
+        process.exit(1);
+      } else {
+        console.warn('⚠️  ALLOW_START_WITHOUT_DB is set. Continuing without DB.');
+      }
+    }
   }
+
+  // Start HTTP server
+  app.listen(PORT, () => {
+    console.log(`🚀 TimePulse Server running on port ${PORT}`);
+    console.log(`📖 Health check: http://localhost:${PORT}/health`);
+    console.log(`🔧 Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`🗄️  Database: ${dbConnected ? 'Connected' : 'Not connected'}`);
+  });
 };
 
 startServer();

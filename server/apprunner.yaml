@@ -17,3 +17,7 @@ run:
       value: "production"
     - name: PORT
       value: "8080"
+    - name: SKIP_DB_CONNECT
+      value: "true"
+    - name: ALLOW_START_WITHOUT_DB
+      value: "true"

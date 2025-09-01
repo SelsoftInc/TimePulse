@@ -7,7 +7,7 @@ build:
       - npm ci --omit=dev --ignore-scripts || npm install --omit=dev --ignore-scripts
       - echo "Build completed"
 run:
-  runtime-version: 20
+  runtime-version: "18"
   command: npm start
   network:
     port: 8080

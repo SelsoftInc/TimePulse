@@ -16,7 +16,18 @@ run:
       value: "production"
     - name: PORT
       value: "8080"
-    - name: SKIP_DB_CONNECT
+    - name: DB_HOST
+      value: "timepulse-cluster.cluster-chb4yd9ykrnf.us-east-1.rds.amazonaws.com"
+    - name: DB_PORT
+      value: "5432"
+    - name: DB_NAME
+      value: "timepulse_db"
+    - name: DB_USER
+      value: "postgres"
+    - name: DB_SSL
       value: "true"
-    - name: ALLOW_START_WITHOUT_DB
-      value: "true"
+    - name: DB_SSL_REJECT_UNAUTHORIZED
+      value: "false"
+  secrets:
+    - name: DB_PASSWORD
+      value-from: "arn:aws:secretsmanager:us-east-1:727044518907:secret:rdscluster-9f97854d-552e-4d54-81bb-9916133d0d28-JoNKzn"

@@ -17,7 +17,7 @@ run:
     - name: PORT
       value: "8080"
     - name: DB_HOST
-      value: "timepulse-cluster.cluster-chb4yd9ykrnf.us-east-1.rds.amazonaws.com"
+      value: "timepulse-cluster-instance-1.chb4yd9ykrnf.us-east-1.rds.amazonaws.com"
     - name: DB_PORT
       value: "5432"
     - name: DB_NAME

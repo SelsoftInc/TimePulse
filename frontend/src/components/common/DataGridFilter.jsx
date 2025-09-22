@@ -1,13 +1,13 @@
-import React from 'react';
-import './DataGridFilter.css';
+import React from "react";
+import "./DataGridFilter.css";
 
-const DataGridFilter = ({ 
-  filters, 
-  onFilterChange, 
-  onClearFilters, 
-  resultCount, 
+const DataGridFilter = ({
+  filters,
+  onFilterChange,
+  onClearFilters,
+  resultCount,
   totalCount,
-  className = '' 
+  className = "",
 }) => {
   const handleFilterChange = (filterKey, value) => {
     onFilterChange(filterKey, value);
@@ -17,8 +17,11 @@ const DataGridFilter = ({
     onClearFilters();
   };
 
-  const hasActiveFilters = filters.some(filter => 
-    filter.value !== filter.defaultValue && filter.value !== '' && filter.value !== 'all'
+  const hasActiveFilters = filters.some(
+    (filter) =>
+      filter.value !== filter.defaultValue &&
+      filter.value !== "" &&
+      filter.value !== "all"
   );
 
   return (
@@ -29,7 +32,16 @@ const DataGridFilter = ({
           Filters
           {hasActiveFilters && (
             <span className="active-filters-count">
-              ({filters.filter(f => f.value !== f.defaultValue && f.value !== '' && f.value !== 'all').length})
+              (
+              {
+                filters.filter(
+                  (f) =>
+                    f.value !== f.defaultValue &&
+                    f.value !== "" &&
+                    f.value !== "all"
+                ).length
+              }
+              )
             </span>
           )}
         </div>
@@ -38,26 +50,26 @@ const DataGridFilter = ({
             {resultCount} of {totalCount} items
           </span>
           {hasActiveFilters && (
-            <button 
-              className="btn btn-sm btn-outline-secondary ml-2"
+            <button
+              className="custom-btn custom-btn-sm custom-btn-outline ml-2"
               onClick={handleClearAll}
               title="Clear all filters"
             >
-              <i className="fas fa-times mr-1"></i>
+              <i className="custom-icon fas fa-times mr-1"></i>
               Clear All
             </button>
           )}
         </div>
       </div>
-      
+
       <div className="filter-controls">
         {filters.map((filter) => (
           <div key={filter.key} className="filter-item">
             <label className="filter-label" htmlFor={filter.key}>
               {filter.label}:
             </label>
-            
-            {filter.type === 'select' && (
+
+            {filter.type === "select" && (
               <select
                 id={filter.key}
                 className="form-select filter-select"
@@ -71,8 +83,8 @@ const DataGridFilter = ({
                 ))}
               </select>
             )}
-            
-            {filter.type === 'text' && (
+
+            {filter.type === "text" && (
               <input
                 id={filter.key}
                 type="text"
@@ -82,8 +94,8 @@ const DataGridFilter = ({
                 onChange={(e) => handleFilterChange(filter.key, e.target.value)}
               />
             )}
-            
-            {filter.type === 'date' && (
+
+            {filter.type === "date" && (
               <input
                 id={filter.key}
                 type="date"
@@ -92,23 +104,33 @@ const DataGridFilter = ({
                 onChange={(e) => handleFilterChange(filter.key, e.target.value)}
               />
             )}
-            
-            {filter.type === 'dateRange' && (
+
+            {filter.type === "dateRange" && (
               <div className="date-range-filter">
                 <input
                   type="date"
                   className="form-control filter-input"
                   placeholder="From"
-                  value={filter.value.from || ''}
-                  onChange={(e) => handleFilterChange(filter.key, { ...filter.value, from: e.target.value })}
+                  value={filter.value.from || ""}
+                  onChange={(e) =>
+                    handleFilterChange(filter.key, {
+                      ...filter.value,
+                      from: e.target.value,
+                    })
+                  }
                 />
                 <span className="date-separator">to</span>
                 <input
                   type="date"
                   className="form-control filter-input"
                   placeholder="To"
-                  value={filter.value.to || ''}
-                  onChange={(e) => handleFilterChange(filter.key, { ...filter.value, to: e.target.value })}
+                  value={filter.value.to || ""}
+                  onChange={(e) =>
+                    handleFilterChange(filter.key, {
+                      ...filter.value,
+                      to: e.target.value,
+                    })
+                  }
                 />
               </div>
             )}

@@ -251,7 +251,7 @@ const ProfileSettings = () => {
   }
 
   return (
-    <div className="settings-section profile-settings">
+    <div className="profile-settings">
       <div className="profile-header">
         <h3 className="settings-section-title">Profile Information</h3>
         {!isEditing && (
@@ -266,23 +266,28 @@ const ProfileSettings = () => {
 
       {/* Account Overview */}
       <div className="account-overview">
-        <div className="profile-avatar">
-          <div className="avatar-circle">
-            <i className="fas fa-user"></i>
-          </div>
-        </div>
-        <div className="profile-info">
-          <h4 className="profile-name">{profileData.firstName} {profileData.lastName}</h4>
-          <p className="profile-email">{profileData.email}</p>
-          <div className="profile-role">
-            <span className={getRoleBadgeClass()}>
-              <i className="fas fa-shield-alt"></i>
-              {getRoleName()}
-            </span>
-            <span className="role-description">{getRoleDescription()}</span>
-          </div>
-        </div>
-      </div>
+  <div className="profile-avatar">
+    <div className="avatar-circle">
+      <i className="fas fa-user"></i>
+    </div>
+  </div>
+  <div className="profile-info">
+    <h4 className="profile-name">
+      {profileData.firstName} {profileData.lastName}
+    </h4>
+
+    <div className="email-and-badge">
+      <p className="profile-email">{profileData.email}</p>
+      <span className={getRoleBadgeClass()}>
+        <i className="fas fa-shield-alt"></i>
+        {getRoleName()}
+      </span>
+    </div>
+
+    <span className="role-description">{getRoleDescription()}</span>
+  </div>
+</div>
+
 
       {/* Personal Information */}
       <div className="form-section">

@@ -1,25 +1,28 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { PERMISSIONS } from '../../utils/roles';
-import PermissionGuard from '../common/PermissionGuard';
-import DataGridFilter from '../common/DataGridFilter';
-import { uploadAndProcessTimesheet, transformTimesheetToInvoice } from '../../services/engineService';
-import './TimesheetSummary.css';
+import React, { useState, useRef, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { PERMISSIONS } from "../../utils/roles";
+import PermissionGuard from "../common/PermissionGuard";
+import DataGridFilter from "../common/DataGridFilter";
+import {
+  uploadAndProcessTimesheet,
+  transformTimesheetToInvoice,
+} from "../../services/engineService";
+import "./TimesheetSummary.css";
 
 const TimesheetSummary = () => {
   const { subdomain } = useParams();
   const navigate = useNavigate();
   const [timesheets, setTimesheets] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [clientType, setClientType] = useState('internal'); // 'internal' or 'external'
+  const [clientType, setClientType] = useState("internal");
   const [filters, setFilters] = useState({
-    status: 'all',
-    dateRange: { from: '', to: '' },
-    search: ''
+    status: "all",
+    dateRange: { from: "", to: "" },
+    search: "",
   });
   const [generatingInvoice, setGeneratingInvoice] = useState(false);
-  const [invoiceSuccess, setInvoiceSuccess] = useState('');
-  const [invoiceError, setInvoiceError] = useState('');
+  const [invoiceSuccess, setInvoiceSuccess] = useState("");
+  const [invoiceError, setInvoiceError] = useState("");
 
   useEffect(() => {
     loadTimesheetData();
@@ -29,172 +32,196 @@ const TimesheetSummary = () => {
     setLoading(true);
     try {
       // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
+      await new Promise((resolve) => setTimeout(resolve, 800));
+
       // Mock timesheet data matching Cognizant format
       const mockTimesheets = [
         {
           id: 1,
-          weekRange: '12-JUL-2025 To 18-JUL-2025',
-          status: 'Pending',
-          billableProjectHrs: '0.00',
-          timeOffHolidayHrs: '0.00',
-          totalTimeHours: 'N/A'
+          weekRange: "12-JUL-2025 To 18-JUL-2025",
+          status: "Pending",
+          billableProjectHrs: "0.00",
+          timeOffHolidayHrs: "0.00",
+          totalTimeHours: "N/A",
         },
         {
           id: 2,
-          weekRange: '05-JUL-2025 To 11-JUL-2025',
-          status: 'Submitted for Approval',
-          billableProjectHrs: '40.00',
-          timeOffHolidayHrs: '0.00',
-          totalTimeHours: 'N/A'
+          weekRange: "05-JUL-2025 To 11-JUL-2025",
+          status: "Submitted for Approval",
+          billableProjectHrs: "40.00",
+          timeOffHolidayHrs: "0.00",
+          totalTimeHours: "N/A",
         },
         {
           id: 3,
-          weekRange: '28-JUN-2025 To 04-JUL-2025',
-          status: 'Submitted for Approval',
-          billableProjectHrs: '32.00',
-          timeOffHolidayHrs: '0.00',
-          totalTimeHours: 'N/A'
+          weekRange: "28-JUN-2025 To 04-JUL-2025",
+          status: "Submitted for Approval",
+          billableProjectHrs: "32.00",
+          timeOffHolidayHrs: "0.00",
+          totalTimeHours: "N/A",
         },
         {
           id: 4,
-          weekRange: '21-JUN-2025 To 27-JUN-2025',
-          status: 'Approved',
-          billableProjectHrs: '40.00',
-          timeOffHolidayHrs: '0.00',
-          totalTimeHours: 'N/A'
+          weekRange: "21-JUN-2025 To 27-JUN-2025",
+          status: "Approved",
+          billableProjectHrs: "40.00",
+          timeOffHolidayHrs: "0.00",
+          totalTimeHours: "N/A",
         },
         {
           id: 5,
-          weekRange: '14-JUN-2025 To 20-JUN-2025',
-          status: 'Approved',
-          billableProjectHrs: '24.00',
-          nonBillableProjectHrs: '0.00',
-          timeOffHolidayHrs: '0.00',
-          totalTimeHours: 'N/A'
+          weekRange: "14-JUN-2025 To 20-JUN-2025",
+          status: "Approved",
+          billableProjectHrs: "24.00",
+          nonBillableProjectHrs: "0.00",
+          timeOffHolidayHrs: "0.00",
+          totalTimeHours: "N/A",
         },
         {
           id: 6,
-          weekRange: '07-JUN-2025 To 13-JUN-2025',
-          status: 'Approved',
-          billableProjectHrs: '40.00',
-          timeOffHolidayHrs: '0.00',
-          totalTimeHours: 'N/A'
+          weekRange: "07-JUN-2025 To 13-JUN-2025",
+          status: "Approved",
+          billableProjectHrs: "40.00",
+          timeOffHolidayHrs: "0.00",
+          totalTimeHours: "N/A",
         },
         {
           id: 7,
-          weekRange: '31-MAY-2025 To 06-JUN-2025',
-          status: 'Approved',
-          billableProjectHrs: '40.00',
-          timeOffHolidayHrs: '0.00',
-          totalTimeHours: 'N/A'
+          weekRange: "31-MAY-2025 To 06-JUN-2025",
+          status: "Approved",
+          billableProjectHrs: "40.00",
+          timeOffHolidayHrs: "0.00",
+          totalTimeHours: "N/A",
         },
         {
           id: 8,
-          weekRange: '24-MAY-2025 To 30-MAY-2025',
-          status: 'Approved',
-          billableProjectHrs: '32.00',
-          timeOffHolidayHrs: '0.00',
-          totalTimeHours: 'N/A'
-        }
+          weekRange: "24-MAY-2025 To 30-MAY-2025",
+          status: "Approved",
+          billableProjectHrs: "32.00",
+          timeOffHolidayHrs: "0.00",
+          totalTimeHours: "N/A",
+        },
       ];
-      
+
       setTimesheets(mockTimesheets);
-      
+
       // Determine client type based on user's assigned clients or company settings
       // In a real app, this would come from user profile or API
       // For demo, we'll simulate this - you can change this logic based on your needs
-      const userClientType = localStorage.getItem('userClientType') || 'internal';
+      const userClientType =
+        localStorage.getItem("userClientType") || "internal";
       setClientType(userClientType);
-      
     } catch (error) {
-      console.error('Error loading timesheet data:', error);
+      console.error("Error loading timesheet data:", error);
     } finally {
       setLoading(false);
     }
   };
 
   // Filter timesheets based on current filters
-  const filteredTimesheets = timesheets.filter(timesheet => {
+  const filteredTimesheets = timesheets.filter((timesheet) => {
     // Status filter
-    if (filters.status !== 'all' && timesheet.status.toLowerCase() !== filters.status.toLowerCase()) {
+    if (
+      filters.status !== "all" &&
+      timesheet.status.toLowerCase() !== filters.status.toLowerCase()
+    ) {
       return false;
     }
-    
+
     // Search filter
-    if (filters.search && !timesheet.weekRange.toLowerCase().includes(filters.search.toLowerCase())) {
+    if (
+      filters.search &&
+      !timesheet.weekRange.toLowerCase().includes(filters.search.toLowerCase())
+    ) {
       return false;
     }
-    
+
     // Date range filter (basic implementation)
     if (filters.dateRange.from || filters.dateRange.to) {
       // For now, we'll skip complex date filtering since weekRange is in a specific format
       // In a real app, you'd parse the date properly
     }
-    
+
     return true;
   });
 
   // Handle filter changes
   const handleFilterChange = (filterKey, value) => {
-    setFilters(prev => ({
+    setFilters((prev) => ({
       ...prev,
-      [filterKey]: value
+      [filterKey]: value,
     }));
   };
 
   // Clear all filters
   const handleClearFilters = () => {
     setFilters({
-      status: 'all',
-      dateRange: { from: '', to: '' },
-      search: ''
+      status: "all",
+      dateRange: { from: "", to: "" },
+      search: "",
     });
   };
+
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  // Close dropdown if clicked outside
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   // Define filter configuration
   const filterConfig = [
     {
-      key: 'status',
-      label: 'Status',
-      type: 'select',
+      key: "status",
+      label: "Status",
+      type: "select",
       value: filters.status,
-      defaultValue: 'all',
+      defaultValue: "all",
       options: [
-        { value: 'all', label: 'All Statuses' },
-        { value: 'pending', label: 'Pending' },
-        { value: 'submitted for approval', label: 'Submitted for Approval' },
-        { value: 'approved', label: 'Approved' },
-        { value: 'rejected', label: 'Rejected' }
-      ]
+        { value: "all", label: "All Statuses" },
+        { value: "pending", label: "Pending" },
+        { value: "submitted for approval", label: "Submitted for Approval" },
+        { value: "approved", label: "Approved" },
+        { value: "rejected", label: "Rejected" },
+      ],
     },
     {
-      key: 'search',
-      label: 'Search Week Range',
-      type: 'text',
+      key: "search",
+      label: "Search Week Range",
+      type: "text",
       value: filters.search,
-      defaultValue: '',
-      placeholder: 'Search by week range...'
+      defaultValue: "",
+      placeholder: "Search by week range...",
     },
     {
-      key: 'dateRange',
-      label: 'Date Range',
-      type: 'dateRange',
+      key: "dateRange",
+      label: "Date Range",
+      type: "dateRange",
       value: filters.dateRange,
-      defaultValue: { from: '', to: '' }
-    }
+      defaultValue: { from: "", to: "" },
+    },
   ];
 
   const getStatusBadge = (status) => {
     switch (status.toLowerCase()) {
-      case 'pending':
+      case "pending":
         return <span className="badge badge-pending">Pending</span>;
-      case 'submitted for approval':
-        return <span className="badge badge-submitted">Submitted for Approval</span>;
-      case 'approved':
+      case "submitted for approval":
+        return (
+          <span className="badge badge-submitted">Submitted for Approval</span>
+        );
+      case "approved":
         return <span className="badge badge-approved">Approved</span>;
-      case 'rejected':
+      case "rejected":
         return <span className="badge badge-rejected">Rejected</span>;
       default:
         return <span className="badge badge-default">{status}</span>;
@@ -204,43 +231,51 @@ const TimesheetSummary = () => {
   // Generate invoice from timesheet using engine API
   const handleGenerateInvoice = async (file) => {
     setGeneratingInvoice(true);
-    setInvoiceError('');
-    setInvoiceSuccess('');
+    setInvoiceError("");
+    setInvoiceSuccess("");
 
     try {
       // Step 1: Upload and process timesheet using engine
       const timesheetData = await uploadAndProcessTimesheet(file);
-      
+
       // Step 2: Transform engine response to invoice format
       const clientInfo = {
-        name: 'Sample Client', // You can get this from timesheet data or user selection
-        email: 'client@example.com',
+        name: "Sample Client", // You can get this from timesheet data or user selection
+        email: "client@example.com",
         hourlyRate: 125, // Default rate, can be customized
-        address: '123 Business St, City, State 12345'
+        address: "123 Business St, City, State 12345",
       };
-      
-      const invoiceData = transformTimesheetToInvoice(timesheetData, clientInfo);
-      
+
+      const invoiceData = transformTimesheetToInvoice(
+        timesheetData,
+        clientInfo
+      );
+
       // Step 3: Show success and navigate to invoice creation
-      setInvoiceSuccess(`Invoice generated successfully! Total: $${invoiceData.total}`);
-      
+      setInvoiceSuccess(
+        `Invoice generated successfully! Total: $${invoiceData.total}`
+      );
+
       // Auto-navigate after 2 seconds or show confirmation
       setTimeout(() => {
-        if (window.confirm('Invoice data is ready! Would you like to create the invoice now?')) {
+        if (
+          window.confirm(
+            "Invoice data is ready! Would you like to create the invoice now?"
+          )
+        ) {
           navigate(`/${subdomain}/invoices/create`, {
             state: {
               invoiceData,
               sourceTimesheet: {
                 fileName: file.name,
-                processedData: timesheetData
-              }
-            }
+                processedData: timesheetData,
+              },
+            },
           });
         }
       }, 2000);
-      
     } catch (error) {
-      console.error('Invoice generation error:', error);
+      console.error("Invoice generation error:", error);
       setInvoiceError(`Failed to generate invoice: ${error.message}`);
     } finally {
       setGeneratingInvoice(false);
@@ -253,9 +288,9 @@ const TimesheetSummary = () => {
 
   // Helper function to toggle client type for testing
   const toggleClientType = () => {
-    const newClientType = clientType === 'internal' ? 'external' : 'internal';
+    const newClientType = clientType === "internal" ? "external" : "internal";
     setClientType(newClientType);
-    localStorage.setItem('userClientType', newClientType);
+    localStorage.setItem("userClientType", newClientType);
   };
 
   if (loading) {
@@ -267,7 +302,7 @@ const TimesheetSummary = () => {
               <div className="nk-block-head nk-block-head-sm">
                 <div className="nk-block-between">
                   <div className="nk-block-head-content">
-                    <h3 className="nk-block-title page-title">Timesheets</h3>
+                    <h1 className="nk-block-title page-title">Timesheets</h1>
                   </div>
                 </div>
               </div>
@@ -291,256 +326,340 @@ const TimesheetSummary = () => {
   }
 
   return (
-    <div className="nk-content">
+    <div className="container">
       <div className="container-fluid">
         <div className="nk-content-inner">
           <div className="nk-content-body">
             <div className="nk-block-head nk-block-head-sm">
               <div className="nk-block-between">
                 <div className="nk-block-head-content">
-                  <h3 className="nk-block-title page-title">Timesheets</h3>
+                  <h1 className="nk-block-title page-title">Timesheets</h1>
                   <div className="nk-block-des text-soft">
-                    <p>Timesheet Summary</p>
-                    <div className="mt-2">
-                      <span className={`badge badge-${clientType === 'internal' ? 'primary' : 'warning'} mr-2`}>
-                        {clientType === 'internal' ? 'Internal Client' : 'External Client'}
-                      </span>
-                      <button 
-                        className="btn btn-sm btn-outline-secondary"
-                        onClick={toggleClientType}
-                        title="Toggle between Internal and External client types"
+                    {/* <p>Timesheet Summary</p> */}
+                    <div className="mt-2 toggle-container">
+                      <label
+                        className="toggle-switch"
+                        title="Switch the Toggle between Internal and External client types"
                       >
-                        Switch to {clientType === 'internal' ? 'External' : 'Internal'}
-                      </button>
+                        <input
+                          type="checkbox"
+                          checked={clientType === "external"}
+                          onChange={toggleClientType}
+                        />
+                        <span className="slider"></span>
+                        <span className="label-text">
+                          Switch to{" "}
+                          {clientType === "internal"
+                            ? "External Client"
+                            : "Internal Client"}
+                        </span>
+                      </label>
+
+                      <span
+                        className={`badge-toggle ${
+                          clientType === "internal"
+                            ? "badge-internal"
+                            : "badge-external"
+                        } mr-2`}
+                      >
+                        {clientType === "internal"
+                          ? "Internal Client"
+                          : "External Client"}
+                      </span>
                     </div>
                   </div>
                 </div>
-                <div className="nk-block-head-content">
-                  <div className="toggle-wrap nk-block-tools-toggle">
-                    <div className="toggle-content content-active">
-                      <ul className="nk-block-tools g-3">
-                        <PermissionGuard requiredPermission={PERMISSIONS.CREATE_TIMESHEET} fallback={null}>
-                          {clientType === 'internal' ? (
-                            // For internal clients: Show Enter/Fill Timesheet option
-                            <li>
-                              <button 
-                                className="btn btn-primary"
-                                onClick={handleNewTimesheet}
-                              >
-                                <em className="icon ni ni-edit"></em>
-                                <span>Enter Timesheet</span>
-                              </button>
-                            </li>
-                          ) : (
-                            // For external clients: Show Upload Timesheet option only
-                            <li>
-                              <button 
-                                className="btn btn-primary"
-                                onClick={handleNewTimesheet}
-                              >
-                                <em className="icon ni ni-upload"></em>
-                                <span>Upload Timesheet</span>
-                              </button>
-                            </li>
-                          )}
-                        </PermissionGuard>
-                        <PermissionGuard requiredPermission={PERMISSIONS.APPROVE_TIMESHEETS} fallback={null}>
+                <div className="actions-dropdown" ref={dropdownRef}>
+                  {/* Dropdown toggle button */}
+                  <button
+                    className="dropdown-toggle-btn"
+                    onClick={() => setIsOpen(!isOpen)}
+                    aria-expanded={isOpen}
+                    aria-haspopup="true"
+                    aria-label="Toggle actions menu"
+                  >
+                    <em className="icon ni ni-menu"></em> Actions
+                  </button>
+
+                  {/* Dropdown menu */}
+                  {isOpen && (
+                    <ul className="dropdown-menu">
+                      <PermissionGuard
+                        requiredPermission={PERMISSIONS.CREATE_TIMESHEET}
+                        fallback={null}
+                      >
+                        {clientType === "internal" ? (
                           <li>
-                            <button 
-                              className="btn btn-outline-success"
-                              onClick={() => navigate(`/${subdomain}/timesheets/approval`)}
+                            <button
+                              className="dropdown-item"
+                              onClick={() => {
+                                handleNewTimesheet();
+                                setIsOpen(false);
+                              }}
                             >
-                              <em className="icon ni ni-check-circle"></em>
-                              <span>Approve Timesheets</span>
-                            </button>
-                            <button 
-                              type="button" 
-                              className="btn btn-primary"
-                              onClick={() => navigate(`/${subdomain}/timesheets/to-invoice`)}
-                            >
-                              <em className="icon ni ni-file-docs"></em>
-                              <span>Convert to Invoice</span>
-                            </button>
-                            <button 
-                              type="button" 
-                              className="btn btn-success"
-                              onClick={() => navigate(`/${subdomain}/timesheets/auto-convert`)}
-                            >
-                              <em className="icon ni ni-upload"></em>
-                              <span>🤖 Test Auto-Convert</span>
+                              <em className="icon ni ni-edit"></em> Enter
+                              Timesheet
                             </button>
                           </li>
-                        </PermissionGuard>
-                        <PermissionGuard requiredPermission={PERMISSIONS.CREATE_INVOICE} fallback={null}>
+                        ) : (
                           <li>
-                            {/* Generate Invoice with File Upload */}
-                            <div className="mb-3">
-                              <input
-                                type="file"
-                                id="invoiceFileInput"
-                                accept=".pdf,.docx,.doc,.png,.jpg,.jpeg"
-                                style={{ display: 'none' }}
-                                onChange={(e) => {
-                                  const file = e.target.files[0];
-                                  if (file) {
-                                    handleGenerateInvoice(file);
-                                  }
-                                }}
-                              />
-                              <button 
-                                className="btn btn-primary me-2"
-                                onClick={() => document.getElementById('invoiceFileInput').click()}
-                                disabled={generatingInvoice}
-                                title="Upload timesheet and generate invoice using AI"
-                              >
-                                <em className="icon ni ni-file-plus"></em>
-                                <span>{generatingInvoice ? 'Generating...' : '🚀 Generate Invoice'}</span>
-                              </button>
-                            </div>
-                            
-                            {/* Status Messages */}
-                            {generatingInvoice && (
-                              <div className="alert alert-info mb-3">
-                                <em className="icon ni ni-loader"></em>
-                                Processing timesheet and generating invoice...
-                              </div>
-                            )}
-                            
-                            {invoiceSuccess && (
-                              <div className="alert alert-success mb-3">
-                                <em className="icon ni ni-check-circle"></em>
-                                {invoiceSuccess}
-                              </div>
-                            )}
-                            
-                            {invoiceError && (
-                              <div className="alert alert-danger mb-3">
-                                <em className="icon ni ni-cross-circle"></em>
-                                {invoiceError}
-                              </div>
-                            )}
-                            
-                            <button 
-                              className="btn btn-outline-info"
-                              onClick={() => navigate(`/${subdomain}/timesheets/to-invoice`)}
-                              title="Convert timesheet documents to invoices using AI"
+                            <button
+                              className="dropdown-item"
+                              onClick={() => {
+                                handleNewTimesheet();
+                                setIsOpen(false);
+                              }}
                             >
-                              <em className="icon ni ni-file-text"></em>
-                              <span>Convert to Invoice</span>
+                              <em className="icon ni ni-upload"></em> Upload
+                              Timesheet
                             </button>
                           </li>
-                        </PermissionGuard>
-                      </ul>
-                    </div>
-                  </div>
+                        )}
+                      </PermissionGuard>
+
+                      <PermissionGuard
+                        requiredPermission={PERMISSIONS.APPROVE_TIMESHEETS}
+                        fallback={null}
+                      >
+                        <li>
+                          <button
+                            className="dropdown-item"
+                            onClick={() => {
+                              navigate(`/${subdomain}/timesheets/approval`);
+                              setIsOpen(false);
+                            }}
+                          >
+                            <em className="icon ni ni-check-circle"></em>{" "}
+                            Approve Timesheets
+                          </button>
+                        </li>
+
+                        <li>
+                          <button
+                            className="dropdown-item"
+                            onClick={() => {
+                              navigate(`/${subdomain}/timesheets/to-invoice`);
+                              setIsOpen(false);
+                            }}
+                          >
+                            <em className="icon ni ni-file-docs"></em> Convert
+                            to Invoice
+                          </button>
+                        </li>
+
+                        <li>
+                          <button
+                            className="dropdown-item"
+                            onClick={() => {
+                              navigate(`/${subdomain}/timesheets/auto-convert`);
+                              setIsOpen(false);
+                            }}
+                          >
+                            <em className="icon ni ni-upload"></em> Test
+                            Auto-Convert
+                          </button>
+                        </li>
+                      </PermissionGuard>
+
+                      <PermissionGuard
+                        requiredPermission={PERMISSIONS.CREATE_INVOICE}
+                        fallback={null}
+                      >
+                        <li>
+                          <label
+                            htmlFor="invoiceFileInput"
+                            className="dropdown-item file-upload-label"
+                            title="Upload timesheet and generate invoice using AI"
+                          >
+                            <em className="icon ni ni-file-plus"></em>
+                            <span>
+                              {generatingInvoice
+                                ? "Generating..."
+                                : "Generate Invoice"}
+                            </span>
+                          </label>
+                          <input
+                            type="file"
+                            id="invoiceFileInput"
+                            accept=".pdf,.docx,.doc,.png,.jpg,.jpeg"
+                            style={{ display: "none" }}
+                            onChange={(e) => {
+                              const file = e.target.files[0];
+                              if (file) {
+                                handleGenerateInvoice(file);
+                                setIsOpen(false);
+                              }
+                            }}
+                            disabled={generatingInvoice}
+                          />
+                        </li>
+
+                        {generatingInvoice && (
+                          <li className="dropdown-info">
+                            <em className="icon ni ni-loader"></em> Processing
+                            timesheet and generating invoice...
+                          </li>
+                        )}
+
+                        {invoiceSuccess && (
+                          <li className="dropdown-success">
+                            <em className="icon ni ni-check-circle"></em>{" "}
+                            {invoiceSuccess}
+                          </li>
+                        )}
+
+                        {invoiceError && (
+                          <li className="dropdown-error">
+                            <em className="icon ni ni-cross-circle"></em>{" "}
+                            {invoiceError}
+                          </li>
+                        )}
+
+                        <li>
+                          <button
+                            className="dropdown-item"
+                            onClick={() => {
+                              navigate(`/${subdomain}/timesheets/to-invoice`);
+                              setIsOpen(false);
+                            }}
+                            title="Convert timesheet documents to invoices using AI"
+                          >
+                            <em className="icon ni ni-file-text"></em> Convert
+                            to Invoice
+                          </button>
+                        </li>
+                      </PermissionGuard>
+                    </ul>
+                  )}
                 </div>
               </div>
             </div>
+          </div>
 
-            <div className="nk-block">
-              <div className="card card-bordered card-stretch">
-                <div className="card-inner-group">
-                  <div className="card-inner">
-                    <div className="card-title-group">
-                      <div className="card-title">
-                        <h6 className="title">
-                          <span className="mr-2">Please follow basic troubleshooting if you face any discrepancies in accessing the page.</span>
-                        </h6>
-                      </div>
+          <div className="nk-block">
+            <div className="card card-bordered card-stretch">
+              <div className="card-inner-group">
+                <div className="card-inner">
+                  <div className="card-title-group">
+                    <div className="card-title">
+                      <h6 className="title">
+                        <span className="mr-2">
+                          Please follow basic troubleshooting if you face any
+                          discrepancies in accessing the page.
+                        </span>
+                      </h6>
                     </div>
                   </div>
-                  
-                  {/* Filter Section */}
-                  <div className="card-inner border-top">
-                    <DataGridFilter
-                      filters={filterConfig}
-                      onFilterChange={handleFilterChange}
-                      onClearFilters={handleClearFilters}
-                      resultCount={filteredTimesheets.length}
-                      totalCount={timesheets.length}
-                    />
-                  </div>
+                </div>
 
-                  {/* Timesheet Table */}
-                  <div className="card-inner p-0">
-                    <div className="table-responsive">
-                      <table className="table table-hover timesheet-summary-table">
-                        <thead className="table-light">
-                          <tr>
-                            <th>Week Range</th>
-                            <th>Status</th>
-                            <th>Hours</th>
-                            <th>Time off/Holiday Hrs</th>
-                            <th>Total Time Hours</th>
-                            <th>Actions</th>
+                {/* Filter Section */}
+                <div className="card-inner border-top">
+                  <DataGridFilter
+                    filters={filterConfig}
+                    onFilterChange={handleFilterChange}
+                    onClearFilters={handleClearFilters}
+                    resultCount={filteredTimesheets.length}
+                    totalCount={timesheets.length}
+                  />
+                </div>
+
+                {/* Timesheet Table */}
+                <div className="card-inner">
+                  <div className="table-responsive">
+                    <table className="table table-hove timesheet-summary-tabl">
+                      <thead className="">
+                        <tr>
+                          <th>Week Range</th>
+                          <th>Status</th>
+                          <th>Hours</th>
+                          <th>Time off/Holiday Hrs</th>
+                          <th>Total Time Hours</th>
+                          <th>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredTimesheets.map((timesheet) => (
+                          <tr key={timesheet.id} className="timesheet-row">
+                            <td>
+                              <div className="timesheet-week">
+                                <span className="week-range">
+                                  {timesheet.weekRange}
+                                </span>
+                              </div>
+                            </td>
+                            <td>{getStatusBadge(timesheet.status)}</td>
+                            <td className="text-center">
+                              <span className="hours-value">
+                                {timesheet.billableProjectHrs}
+                              </span>
+                            </td>
+                            <td className="text-center">
+                              <span className="hours-value">
+                                {timesheet.timeOffHolidayHrs}
+                              </span>
+                            </td>
+                            <td className="text-center">
+                              <span className="hours-value">
+                                {timesheet.totalTimeHours}
+                              </span>
+                            </td>
+                            <td className="text-center">
+                              <div
+                                className="btn-group btn-group-sm"
+                                role="group"
+                              >
+                                <button
+                                  className="btn btn-outline-primary btn-sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    navigate(
+                                      `/${subdomain}/timesheets/submit/${timesheet.id}`
+                                    );
+                                  }}
+                                  title="Edit Timesheet"
+                                >
+                                  <em className="icon ni ni-edit"></em>
+                                </button>
+                                {timesheet.status ===
+                                  "Submitted for Approval" && (
+                                  <PermissionGuard
+                                    requiredPermission={
+                                      PERMISSIONS.APPROVE_TIMESHEETS
+                                    }
+                                    fallback={null}
+                                  >
+                                    <button
+                                      className="btn btn-outline-success btn-sm"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        navigate(
+                                          `/${subdomain}/timesheets/approval`
+                                        );
+                                      }}
+                                      title="Approve Timesheet"
+                                    >
+                                      <em className="icon ni ni-check"></em>
+                                    </button>
+                                  </PermissionGuard>
+                                )}
+                                <button
+                                  className="btn btn-outline-info btn-sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    navigate(
+                                      `/${subdomain}/timesheets/submit/${timesheet.id}`
+                                    );
+                                  }}
+                                  title="View Details"
+                                >
+                                  <em className="icon ni ni-eye"></em>
+                                </button>
+                              </div>
+                            </td>
                           </tr>
-                        </thead>
-                        <tbody>
-                          {filteredTimesheets.map(timesheet => (
-                            <tr 
-                              key={timesheet.id}
-                              className="timesheet-row"
-                            >
-                              <td>
-                                <div className="timesheet-week">
-                                  <span className="week-range">{timesheet.weekRange}</span>
-                                </div>
-                              </td>
-                              <td>
-                                {getStatusBadge(timesheet.status)}
-                              </td>
-                              <td className="text-center">
-                                <span className="hours-value">{timesheet.billableProjectHrs}</span>
-                              </td>
-                              <td className="text-center">
-                                <span className="hours-value">{timesheet.timeOffHolidayHrs}</span>
-                              </td>
-                              <td className="text-center">
-                                <span className="hours-value">{timesheet.totalTimeHours}</span>
-                              </td>
-                              <td className="text-center">
-                                <div className="btn-group btn-group-sm" role="group">
-                                  <button
-                                    className="btn btn-outline-primary btn-sm"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      navigate(`/${subdomain}/timesheets/submit/${timesheet.id}`);
-                                    }}
-                                    title="Edit Timesheet"
-                                  >
-                                    <em className="icon ni ni-edit"></em>
-                                  </button>
-                                  {timesheet.status === 'Submitted for Approval' && (
-                                    <PermissionGuard requiredPermission={PERMISSIONS.APPROVE_TIMESHEETS} fallback={null}>
-                                      <button
-                                        className="btn btn-outline-success btn-sm"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          navigate(`/${subdomain}/timesheets/approval`);
-                                        }}
-                                        title="Approve Timesheet"
-                                      >
-                                        <em className="icon ni ni-check"></em>
-                                      </button>
-                                    </PermissionGuard>
-                                  )}
-                                  <button
-                                    className="btn btn-outline-info btn-sm"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      navigate(`/${subdomain}/timesheets/submit/${timesheet.id}`);
-                                    }}
-                                    title="View Details"
-                                  >
-                                    <em className="icon ni ni-eye"></em>
-                                  </button>
-                                </div>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
               </div>

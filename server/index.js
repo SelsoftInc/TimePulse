@@ -16,7 +16,7 @@ const { connectDB } = require('./models');
 
 const app = express();
 const PORT = process.env.PORT || 5001;
-const SKIP_DB_CONNECT = process.env.SKIP_DB_CONNECT === 'true' || process.env.ALLOW_START_WITHOUT_DB === 'true';
+const SKIP_DB_CONNECT = process.env.SKIP_DB_CONNECT === 'false' || process.env.ALLOW_START_WITHOUT_DB === 'false';
 
 // Import route modules
 const timesheetRoutes = require('./routes/timesheets');

@@ -70,7 +70,34 @@ const BillingSettings = () => {
         {/* Current Plan */}
         <div className="card">
           <div className="card-inne">
-            <h5>Current Plan</h5>
+            <div className="current-plan">
+              <h5>Current Plan</h5>
+              <div className="billing-cycle">
+                {/* <h5>Billing Cycle </h5> */}
+                <div className="cycle-options">
+                  <button
+                    className={`btn ${
+                      billingCycle === "monthly"
+                        ? "btn-primary"
+                        : "btn-outline-primary"
+                    }`}
+                    onClick={() => handleCycleChange("monthly")}
+                  >
+                    Monthly
+                  </button>
+                  <button
+                    className={`btn ${
+                      billingCycle === "annual"
+                        ? "btn-primary"
+                        : "btn-outline-primary"
+                    }`}
+                    onClick={() => handleCycleChange("annual")}
+                  >
+                    Annual (Save 10%)
+                  </button>
+                </div>
+              </div>
+            </div>
             <div className="plan-details">
               {plans.map((plan) => (
                 <div
@@ -122,32 +149,6 @@ const BillingSettings = () => {
                   )}
                 </div>
               ))}
-            </div>
-
-            <div className="billing-cycle">
-              <h5>Billing Cycle</h5>
-              <div className="cycle-options">
-                <button
-                  className={`btn ${
-                    billingCycle === "monthly"
-                      ? "btn-primary"
-                      : "btn-outline-primary"
-                  }`}
-                  onClick={() => handleCycleChange("monthly")}
-                >
-                  Monthly
-                </button>
-                <button
-                  className={`btn ${
-                    billingCycle === "annual"
-                      ? "btn-primary"
-                      : "btn-outline-primary"
-                  }`}
-                  onClick={() => handleCycleChange("annual")}
-                >
-                  Annual (Save 10%)
-                </button>
-              </div>
             </div>
           </div>
         </div>

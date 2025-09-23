@@ -204,7 +204,7 @@ const InvoiceSettings = () => {
       </div>
 
       <div className="settings-tabs">
-        <nav className="nav nav-tabs">
+        <nav className="nav-tabs">
           {tabs.map((tab) => (
             <button
               key={tab.id}

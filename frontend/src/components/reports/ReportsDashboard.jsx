@@ -195,7 +195,7 @@ const ReportsDashboard = () => {
         <div className="nk-block mt-4">
           <div className="card card-bordered card-stretch">
             <div className="card-inner-group">
-              <div className="card-inner position-relative">
+              <div className="card-inne position-relative">
                 <div className="card-title-group">
                   <div className="card-title">
                     <h5 className="title">Client-wise Monthly Report</h5>
@@ -276,7 +276,7 @@ const ReportsDashboard = () => {
         <div className="nk-block mt-4">
           <div className="card card-bordered card-stretch">
             <div className="card-inner-group">
-              <div className="card-inner position-relative">
+              <div className="card-inne position-relative">
                 <div className="card-title-group">
                   <div className="card-title">
                     <h5 className="title">Project Distribution</h5>
@@ -284,7 +284,7 @@ const ReportsDashboard = () => {
                 </div>
               </div>
 
-              <div className="card-inner">
+              <div className="card-inne">
                 <div className="card-grid">
                   {clientReportData.map((client) => (
                     <div key={client.id} className="client-project-card">
@@ -350,7 +350,7 @@ const ReportsDashboard = () => {
         <div className="nk-block">
           <div className="card card-bordered card-stretch">
             <div className="card-inner-group">
-              <div className="card-inner position-relative">
+              <div className="card-inne position-relative">
                 <div className="card-title-group">
                   <div className="card-title">
                     <h5 className="title">Employee-wise Timesheet Report</h5>
@@ -465,10 +465,10 @@ const ReportsDashboard = () => {
           </div>
         </div>
 
-        <div className="nk-block mt-4">
-          <div className="card card-bordered card-stretch">
-            <div className="card-inner-group">
-              <div className="card-inner position-relative">
+        <div className="nk-block mt-">
+          <div className="card card-borderd card-stretc">
+            <div className="card-inner-grou">
+              <div className="card-inne position-relative">
                 <div className="card-title-group">
                   <div className="card-title">
                     <h5 className="title">Weekly Breakdown</h5>
@@ -476,7 +476,7 @@ const ReportsDashboard = () => {
                 </div>
               </div>
 
-              <div className="card-inner">
+              <div className="nk-block mt-4">
                 <div className="row g-gs">
                   {employeeReportData.map((employee) => (
                     <div key={employee.id} className="col-md-6 col-lg-4">
@@ -529,6 +529,7 @@ const ReportsDashboard = () => {
                   ))}
                 </div>
               </div>
+              {/* */}
             </div>
           </div>
         </div>

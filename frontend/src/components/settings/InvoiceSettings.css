@@ -30,7 +30,7 @@
   color: #364a63;
   /* margin-bottom: 0.5rem; */
   display: flex;
-  align-items: center;
+  align-items: space-between;
 }
 
 .settings-title i {
@@ -53,7 +53,45 @@
   border-radius: 12px;
   padding: 10px 0px 10px 0px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  display: flex;
+  align-items: space-between;
+  justify-content: space-between;
 }
+
+.settings-tabs .nav-tabs {
+  display: flex;
+  justify-content: space-between; 
+  align-items: center; 
+  width: 100%; 
+  padding: 0;
+  margin: 0;
+}
+
+.settings-tabs .nav-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 20px;
+  font-size: 14px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color 0.3s ease;
+}
+
+.settings-tabs .nav-link.active {
+  color: #007bff;
+  font-weight: bold;
+}
+
+.settings-tabs .nav-link i {
+  margin-right: 8px;
+}
+
+.settings-tabs .nav-link.active-tab-icon {
+  color: #007bff;   
+}
+
 
 .nav-tabs {
   border: none;
@@ -66,6 +104,8 @@
   justify-content: space-between;
   padding-left: 0.5rem;
   padding-right: 0.5rem;
+  align-items: space-between;
+
 }
 
 .nav-link {

@@ -26,6 +26,7 @@ const headerStyle = {
   fontSize: '18px',
   fontWeight: 600,
   marginBottom: '8px',
+  color: 'red'
 };
 
 const bodyStyle = {

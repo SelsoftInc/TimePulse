@@ -15,7 +15,7 @@ const DashCards = ({ stats }) => {
       <div className="col-xxl-3 col-sm-6">
         <div className="card">
           <div className="nk-ecwg nk-ecwg6">
-            <div className="card-inner">
+            <div className="card-inne">
               <div className="card-title-group">
                 <div className="card-title">
                   <h6 className="title">Total Hours</h6>
@@ -48,7 +48,7 @@ const DashCards = ({ stats }) => {
       <div className="col-xxl-3 col-sm-6">
         <div className="card">
           <div className="nk-ecwg nk-ecwg6">
-            <div className="card-inner">
+            <div className="card-inne">
               <div className="card-title-group">
                 <div className="card-title">
                   <h6 className="title">Pending Timesheets</h6>
@@ -81,7 +81,7 @@ const DashCards = ({ stats }) => {
       <div className="col-xxl-3 col-sm-6">
         <div className="card">
           <div className="nk-ecwg nk-ecwg6">
-            <div className="card-inner">
+            <div className="card-inne">
               <div className="card-title-group">
                 <div className="card-title">
                   <h6 className="title">Approved Timesheets</h6>
@@ -114,7 +114,7 @@ const DashCards = ({ stats }) => {
       <div className="col-xxl-3 col-sm-6">
         <div className="card">
           <div className="nk-ecwg nk-ecwg6">
-            <div className="card-inner">
+            <div className="card-inne">
               <div className="card-title-group">
                 <div className="card-title">
                   <h6 className="title">Overdue Timesheets</h6>
@@ -157,7 +157,7 @@ const TimesheetTable = ({ timesheetData, isEmployeeRole }) => {
   };
   return (
     <div className="card card-bordered card-full">
-      <div className="card-inner">
+      <div className="card-inne">
         <div className="card-title-group">
           <div className="card-title1">
             <h6 className="nk-block-title page-title">Recent Timesheets</h6>
@@ -289,7 +289,7 @@ const TimesheetTable = ({ timesheetData, isEmployeeRole }) => {
 const TimesheetProgress = ({ stats }) => {
   return (
     <div className="card card-bordered h-100">
-      <div className="card-inner">
+      <div className="card-inne">
         <div className="card-title-group align-start mb-2">
           <div className="card-title1">
             <h6 className="nk-block-head-content">Timesheet Progress</h6>
@@ -405,7 +405,7 @@ const TimesheetProgress = ({ stats }) => {
 const InvoiceWidget = ({ invoiceData }) => {
   return (
     <div className="card card-bordered h-100">
-      <div className="card-inner">
+      <div className="card-inne">
         <div className="card-title-group align-start mb-2">
           <div className="card-title1">
             <h6 className="nk-block-head-content">Recent Invoices</h6>
@@ -664,7 +664,7 @@ const Dashboard = () => {
           {/* Upcoming Deadlines */}
           <div className="nk-block nk-block-lg">
             <div className="card card-bordered card-full">
-              <div className="card-inner">
+              <div className="card-inne">
                 <div className="card-title-group">
                   <div className="card-title1">
                     <h6 className="nk-block-head-content">Upcoming Deadlines</h6>

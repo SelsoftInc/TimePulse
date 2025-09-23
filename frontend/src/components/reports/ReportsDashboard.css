@@ -5,6 +5,145 @@
   box-sizing: border-box;
 }
 
+.card-inne {
+  padding: 0px;
+}
+
+.row.g-gs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 0px;
+}
+
+.weekly-breakdown-card {
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  padding: 0px;
+  display: flex;
+  flex-direction: grid;
+  height: 100%;
+  transition: box-shadow 0.3s ease;
+}
+
+.weekly-breakdown-card:hover {
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+}
+
+.employee-name {
+  font-weight: 700;
+  font-size: 1.25rem;
+  margin-bottom: 10px;
+  color: #333;
+  text-align: center;
+}
+
+.weekly-hours {
+  display: flex;
+  flex-direction: row; /* Weeks and hours are in rows */
+  align-items: flex-start;
+  gap: 0px;
+  margin-bottom: 0px;
+}
+
+.week-labels {
+  display: flex;
+  flex-direction: column; /* Weeks are in a column */
+  gap: 12px;
+  font-weight: 600;
+  color: #666;
+  font-size: 0.9rem;
+  user-select: none;
+}
+
+.week-labels span {
+  text-align: center;
+  padding: 4px 0;
+}
+
+.hour-bars {
+  display: flex;
+  flex-direction: column; /* Align hours in column */
+  gap: 20px;
+}
+
+.hour-bar-container {
+  background: #f0f0f0;
+  border-radius: 6px;
+  height: 30px;
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 5px;
+}
+
+.hour-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  border-radius: 6px;
+  color: white;
+  font-weight: 600;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  padding: 0 8px;
+  transition: height 0.3s ease;
+}
+
+.hour-bar.full {
+  background: #28a745; /* green */
+}
+
+.hour-bar.partial {
+  background: #ffc107; /* amber */
+}
+
+.total-summary {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #444;
+  padding-top: 12px;
+  border-top: 2px solid #eee;
+}
+
+.summary-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.summary-item .label {
+  font-weight: 500;
+  color: #888;
+  margin-bottom: 4px;
+}
+
+.value {
+  font-size: 1.1rem;
+}
+
+.text-success {
+  color: #28a745 !important;
+}
+
+.text-info {
+  color: #17a2b8 !important;
+}
+
+.text-warning {
+  color: #ffc107 !important;
+}
+
+/* Responsive tweaks */
+@media (max-width: 600px) {
+  .hour-bars {
+    max-width: 100%;
+  }
+}
+
+
 body {
   font-family: 'Arial', sans-serif;
   background-color: #f8f9fa;
@@ -376,6 +515,7 @@ body {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 24px;
+  margin-top: 24px;
 }
 
 /* Fixed height cards aligned top */

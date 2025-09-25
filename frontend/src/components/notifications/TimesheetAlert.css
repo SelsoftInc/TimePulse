@@ -174,20 +174,25 @@
   background-color: var(--card-bg);
   transition: background-color 0.3s ease, border-color 0.3s ease;
 }
-.view-all-btn {
-  background-color: var(--primary-color);
-  color: white;
+.dropdown-footer .view-all-btn {
+  background-color: #0d6efd !important;
+  color: #ffffff !important;
   padding: 10px 20px;
   border-radius: 6px;
   font-weight: 600;
-  text-decoration: none;
+  text-decoration: none !important;
   display: inline-block;
   transition: background-color 0.3s ease, transform 0.2s ease;
+  border: none !important;
 }
-.view-all-btn:hover,
-.view-all-btn:focus {
-  background-color: var(--primary-hover);
+.dropdown-footer .view-all-btn:hover,
+.dropdown-footer .view-all-btn:focus,
+.dropdown-footer .view-all-btn:visited,
+.dropdown-footer .view-all-btn:active {
+  background-color: #0b5ed7 !important;
   outline: none;
-  color: white;
+  color: #ffffff !important;
+  text-decoration: none !important;
   transform: translateY(-1px);
+  border: none !important;
 }

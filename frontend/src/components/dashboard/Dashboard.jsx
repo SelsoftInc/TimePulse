@@ -160,7 +160,7 @@ const TimesheetTable = ({ timesheetData, isEmployeeRole }) => {
       <div className="card-inne">
         <div className="card-title-group">
           <div className="card-title1">
-            <h6 className="nk-block-title page-title">Recent Timesheets</h6>
+            <h6 className="nk-block-titl page-titl">Recent Timesheets</h6>
           </div>
           <div className="card-tools">
             <button
@@ -292,7 +292,7 @@ const TimesheetProgress = ({ stats }) => {
       <div className="card-inne">
         <div className="card-title-group align-start mb-2">
           <div className="card-title1">
-            <h6 className="nk-block-head-content">Timesheet Progress</h6>
+            <h6 className="nk-block-head-conten">Timesheet Progress</h6>
           </div>
         </div>
         <div className="align-end flex-sm-wrap g-4 flex-md-nowrap">
@@ -408,7 +408,7 @@ const InvoiceWidget = ({ invoiceData }) => {
       <div className="card-inne">
         <div className="card-title-group align-start mb-2">
           <div className="card-title1">
-            <h6 className="nk-block-head-content">Recent Invoices</h6>
+            <h6 className="nk-block-head-conten">Recent Invoices</h6>
           </div>
           <div className="card-tools">
             <button className="btn btn-primary btn-sm">Create Invoice</button>
@@ -564,9 +564,9 @@ const Dashboard = () => {
         <div className="nk-content-body">
           <div className="nk-block-head nk-block-head-sm">
             <div className="nk-block-between">
-              <div className="nk-block-head-content">
+              <div className="nk-block-head-conten">
                 <h1 className="nk-block-title page-title">Dashboard</h1>
-                <div className="nk-block-des text-soft">
+                <div className="nk-block-des text-soft ">
                   <p>
                     {isEmployeeRole
                       ? "Your timesheet summary"
@@ -667,7 +667,7 @@ const Dashboard = () => {
               <div className="card-inne">
                 <div className="card-title-group">
                   <div className="card-title1">
-                    <h6 className="nk-block-head-content">Upcoming Deadlines</h6>
+                    <h6 className="nk-block-head-conten">Upcoming Deadlines</h6>
                   </div>
                   <div className="card-tools">
                     <button className="btn btn-sm btn-primary">

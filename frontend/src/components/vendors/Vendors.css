@@ -71,3 +71,29 @@
   border-left: 1px solid #dbdfea;
   border-radius: 0 4px 4px 0;
 }
+
+.btn-create-vendor {
+margin-bottom: 10px; 
+}
+
+/* Ensure proper header alignment */
+.nk-block-between {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.nk-block-head-content {
+  flex: 1;
+  min-width: 200px;
+}
+
+.nk-block-head-content:last-child {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+

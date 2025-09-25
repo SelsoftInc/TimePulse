@@ -183,7 +183,7 @@ const VendorForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
 
   return (
     <PermissionGuard requiredPermission={PERMISSIONS.CREATE_VENDOR}>
-      <div className="nk-content">
+      <div className="nk-conten">
         <div className="container-fluid">
           <div className="nk-block-head">
             <div className="nk-block-between">
@@ -196,7 +196,7 @@ const VendorForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
 
           <div className="nk-block">
             <div className="card card-bordered">
-              <div className="card-inner">
+              <div className="card-inne">
                 {error && (
                   <div className="alert alert-danger" role="alert">
                     <i className="fas fa-exclamation-triangle mr-2"></i>
@@ -474,7 +474,7 @@ const VendorForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
                     </div>
                     <div className="col-12">
                       <div className="form-group">
-                        <button type="submit" className="btn btn-primary" disabled={loading}>
+                        <button type="submit" className="btn btn-primary btn-create-vendor" disabled={loading}>
                           {loading ? (
                             <>
                               <span className="spinner-border spinner-border-sm mr-1" role="status" aria-hidden="true"></span>

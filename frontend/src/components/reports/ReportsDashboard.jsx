@@ -580,7 +580,7 @@ const ReportsDashboard = () => {
                         </select>
                       </div>
                       <div className="btn-wrap">
-                        <button className="btn btn-dim btn-outline-light">
+                        <button className="btn btn-dim btn-outline-light btn-export">
                           <em className="icon ni ni-download-cloud"></em>
                           <span>Export</span>
                         </button>

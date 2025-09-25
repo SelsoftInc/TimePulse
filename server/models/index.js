@@ -8,29 +8,35 @@ const path = require('path');
 require('dotenv').config();
 
 // Database connection configuration
-const sequelize = new Sequelize({
-  dialect: 'postgres',
-  host: process.env.DB_HOST || 'localhost',
-  port: process.env.DB_PORT || 5432,
-  database: process.env.DB_NAME || 'timepulse_db',
-  username: process.env.DB_USER || 'postgres',
-  password: process.env.DB_PASSWORD || 'password',
-  logging: process.env.NODE_ENV === 'development' ? console.log : false,
-  pool: {
-    max: 10,
-    min: 0,
-    acquire: 30000,
-    idle: 10000
-  },
-  ...(process.env.DB_SSL === 'true' && {
-    dialectOptions: {
-      ssl: {
-        require: true,
-        rejectUnauthorized: process.env.DB_SSL_REJECT_UNAUTHORIZED === 'true'
-      }
-    }
-  })
-});
+const sequelize = process.env.USE_SQLITE === 'true' 
+  ? new Sequelize({
+      dialect: 'sqlite',
+      storage: './database/timepulse.db',
+      logging: process.env.NODE_ENV === 'development' ? console.log : false,
+    })
+  : new Sequelize({
+      dialect: 'postgres',
+      host: process.env.DB_HOST || 'localhost',
+      port: process.env.DB_PORT || 5432,
+      database: process.env.DB_NAME || 'timepulse_db',
+      username: process.env.DB_USER || 'postgres',
+      password: process.env.DB_PASSWORD || 'password',
+      logging: process.env.NODE_ENV === 'development' ? console.log : false,
+      pool: {
+        max: 10,
+        min: 0,
+        acquire: 30000,
+        idle: 10000
+      },
+      ...(process.env.DB_SSL === 'true' && {
+        dialectOptions: {
+          ssl: {
+            require: true,
+            rejectUnauthorized: process.env.DB_SSL_REJECT_UNAUTHORIZED === 'true'
+          }
+        }
+      })
+    });
 
 // Define Models
 const models = {};
@@ -648,12 +654,13 @@ const connectDB = async () => {
     await sequelize.authenticate();
     console.log('✅ Database connection established successfully.');
     
-    // Auto-sync disabled to prevent schema conflicts
-    // if (process.env.NODE_ENV === 'development') {
-    //   await sequelize.sync({ alter: true });
-    //   console.log('📊 Database models synchronized.');
-    // }
-    console.log('📊 Using existing database schema (sync disabled).');
+    // Auto-sync for development (enabled for SQLite)
+    if (process.env.NODE_ENV === 'development' || process.env.USE_SQLITE === 'true') {
+      await sequelize.sync({ alter: true });
+      console.log('📊 Database models synchronized.');
+    } else {
+      console.log('📊 Using existing database schema (sync disabled).');
+    }
     
     return sequelize;
   } catch (error) {

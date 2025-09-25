@@ -42,6 +42,7 @@ import EmployerLayout from "./components/layout/EmployerLayout";
 
 // Import AuthProvider and useAuth hook
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { ThemeProvider } from "./contexts/ThemeContext";
 import { PERMISSIONS } from "./utils/roles";
 import { ToastProvider, ToastContainer } from "./contexts/ToastContext";
 
@@ -72,8 +73,9 @@ const ProtectedRoute = ({ children, requiredPermission }) => {
 function App() {
   return (
     <BrowserRouter>
-      <ToastProvider>
-        <AuthProvider>
+      <ThemeProvider>
+        <ToastProvider>
+          <AuthProvider>
           <Routes>
         {/* Public routes */}
         <Route path="/" element={<Navigate to="/login" />} />
@@ -254,8 +256,9 @@ function App() {
         <Route path="*" element={<Navigate to="/login" />} />
           </Routes>
           <ToastContainer />
-        </AuthProvider>
-      </ToastProvider>
+          </AuthProvider>
+        </ToastProvider>
+      </ThemeProvider>
     </BrowserRouter>
   );
 }

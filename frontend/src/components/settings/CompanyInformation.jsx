@@ -315,7 +315,9 @@ const CompanyInformation = () => {
       {error && (
         <div className="alert alert-danger" role="alert">
           <div className="alert-content">
-            <strong>Error: </strong> {error}
+            <span>
+              <strong>Error: </strong> {error}
+            </span>
             <button
               className="btn-retry"
               onClick={fetchTenantInfo}

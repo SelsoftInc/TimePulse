@@ -192,7 +192,7 @@
 }
 
 .tranx-item:hover {
-  background-color: #f8f9fb;
+  background-color: #f8f9fb42;
 }
 
 .tranx-info {
@@ -267,6 +267,52 @@
 .nk-block .nk-block-head-content h3,
 .nk-block .nk-block-des {
   text-align: center;
+}
+
+/* Section headings alignment */
+.card-title1 h6.nk-block-head-content {
+  text-align: start;
+  margin-bottom: 0;
+  color: var(--text-color);
+  font-weight: 600;
+}
+
+/* Recent Invoices amount visibility fix for dark mode */
+.tranx-amount .number {
+  color: var(--text-color);
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.tranx-amount .number-sm {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+/* Timesheet Progress section styling */
+.nk-sale-data .amount {
+  color: var(--text-color);
+  font-weight: 600;
+}
+
+.nk-sale-data .sub-title {
+  color: var(--text-secondary);
+}
+
+/* Transaction item styling for dark mode */
+.tranx-item {
+  border-bottom: 1px solid var(--border-color);
+  padding: 12px 0;
+}
+
+.tranx-label {
+  color: var(--text-color);
+  font-weight: 500;
+}
+
+.tranx-date {
+  color: var(--text-secondary);
+  font-size: 12px;
 }
 
 .btn-primary {

@@ -179,7 +179,7 @@ const EmployeeForm = () => {
 
   return (
     <PermissionGuard requiredPermission={PERMISSIONS.CREATE_EMPLOYEE}>
-      <div className="nk-content">
+      <div className="nk-conten">
         <div className="container-fluid">
           <div className="nk-block-head">
             <div className="nk-block-between">
@@ -192,7 +192,7 @@ const EmployeeForm = () => {
 
           <div className="nk-block">
             <div className="card card-bordered">
-              <div className="card-inner">
+              <div className="card-inne">
                 <form onSubmit={handleSubmit}>
                   <div className="row g-4">
                     <div className="col-lg-6">
@@ -583,7 +583,7 @@ const EmployeeForm = () => {
                     </div>
                     <div className="col-12">
                       <div className="form-group">
-                        <button type="submit" className="btn btn-primary" disabled={loading}>
+                        <button type="submit" className="btn btn-primary btn-create-employee" disabled={loading}>
                           {loading ? (
                             <>
                               <span className="spinner-border spinner-border-sm mr-1" role="status" aria-hidden="true"></span>

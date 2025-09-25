@@ -735,7 +735,7 @@ const Invoice = () => {
                                 })()}
                               </div>
                               <div className="nk-tb-col nk-tb-col-tools">
-                                <ul className="nk-tb-actions gx-1">
+                                <ul className="">
                                   <li>
                                     <button 
                                       className="btn btn-sm btn-icon btn-trigger"

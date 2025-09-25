@@ -1,9 +1,11 @@
 .card-inner {
   padding: 20px;
-  background-color: #ffffff;
+  background-color: var(--timesheet-card-bg);
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--timesheet-card-shadow);
   margin-top: 20px;
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+  color: var(--text-color);
 }
 
 .table-responsive {
@@ -22,18 +24,21 @@
   text-align: left;
   padding: 12px;
   vertical-align: middle;
-  border-bottom: 1px solid #ddd;
+  border-bottom: 1px solid var(--timesheet-border);
+  transition: border-color 0.3s ease;
 }
 
 .table-light th {
-  background-color: #f8f9fa;
-  color: #495057;
+  background-color: var(--timesheet-header-bg);
+  color: var(--text-dark);
   font-weight: 600;
   text-transform: uppercase;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 .table-hover tbody tr:hover {
-  background-color: #f1f1f1;
+  background-color: var(--timesheet-row-hover);
+  transition: background-color 0.3s ease;
 }
 
 .timesheet-row:hover {
@@ -135,14 +140,16 @@
 .hours-value {
   font-weight: 600;
   font-size: 0.875rem;
-  color: #495057;
+  color: var(--text-color);
   margin-bottom: 2px;
+  transition: color 0.3s ease;
 }
 
 .hours-label {
   font-size: 0.75rem;
-  color: #6c757d;
+  color: var(--text-secondary);
   line-height: 1.2;
+  transition: color 0.3s ease;
 }
 
 .badge {
@@ -165,7 +172,6 @@
 
 .toggle-container {
   display: flex;
-  justify-content: space-between;
   align-items: center;
   gap: 1rem;
 }
@@ -185,7 +191,7 @@
   position: relative;
   width: 40px;
   height: 20px;
-  background-color: #ccc;
+  background-color: var(--timesheet-border);
   border-radius: 34px;
   transition: background-color 0.3s ease;
 }
@@ -295,10 +301,12 @@
 }
 
 .card-inner.border-top {
-  background-color: #f8f9fa;
+  background-color: var(--timesheet-header-bg);
+  transition: background-color 0.3s ease;
 }
 .table-hover tbody tr:hover {
-  background-color: rgba(0, 123, 255, 0.05);
+  background-color: var(--timesheet-row-hover);
+  transition: background-color 0.3s ease;
 }
 
 .timesheet-summary-table td:nth-child(2) {

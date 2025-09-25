@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
+import { useTheme } from "../../contexts/ThemeContext";
 import { PERMISSIONS } from "../../utils/roles";
 import "./EmployerSettings.css";
 import CompanyInformation from "./CompanyInformation";
@@ -67,12 +68,12 @@ const EmployerSettings = () => {
               : "Manage your employer settings for automated invoice generation"}
           </p>
         </div>
-        <button
-          onClick={handleSettingsLogout}
-          className="btn-logout"
-        >
-          <i className="fas fa-sign-out-alt mr-1"></i> Logout
-        </button>
+          <button
+            onClick={handleSettingsLogout}
+            className="btn-logout"
+          >
+            <i className="fas fa-sign-out-alt mr-1"></i> Logout
+          </button>
       </div>
 
       <ul className="settings-menu">

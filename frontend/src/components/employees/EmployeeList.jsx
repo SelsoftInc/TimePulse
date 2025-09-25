@@ -325,7 +325,7 @@ const EmployeeList = () => {
   ];
 
   return (
-    <div className="nk-content">
+    <div className="">
       <div className="container-fluid">
         <div className="nk-block-head">
           <div className="nk-block-between">
@@ -345,7 +345,7 @@ const EmployeeList = () => {
 
         <div className="nk-block">
           <div className="card card-bordered mb-4">
-            <div className="card-inner">
+            <div className="">
               <DataGridFilter
                 filters={filterConfig}
                 onFilterChange={handleFilterChange}
@@ -360,8 +360,8 @@ const EmployeeList = () => {
             <div className="alert alert-danger" role="alert">
               <i className="fas fa-exclamation-triangle mr-2"></i>
               {error}
-              <button className="btn btn-sm btn-outline-danger ml-3" onClick={fetchEmployees}>
-                <i className="fas fa-redo mr-1"></i> Retry
+              <button className="btn-retry" onClick={fetchEmployees}>
+                <i className=""></i> Retry
               </button>
             </div>
           ) : loading ? (

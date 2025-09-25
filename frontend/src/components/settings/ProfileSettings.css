@@ -3,7 +3,7 @@
   display: flex;
   gap: 2rem;
   padding: 2rem;
-  background-color: #f4f6f8;
+  background-color: var(--background-tertiary);
   min-height: 100vh;
   box-sizing: border-box;
   font-family: "Inter", sans-serif;
@@ -18,14 +18,14 @@
   list-style: none;
   padding: 0;
   margin: 0;
-  background-color: #ffffff;
+  background-color: var(--settings-menu-bg);
   border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-lg);
 }
 
 .settings-menu li {
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--border-light);
 }
 
 .settings-menu li:last-child {
@@ -41,7 +41,7 @@
   border: none;
   cursor: pointer;
   font-size: 1rem;
-  color: #444;
+  color: var(--text-color);
   font-weight: 500;
   transition: all 0.2s ease;
 }
@@ -49,32 +49,32 @@
 .settings-menu li button i {
   margin-right: 14px;
   font-size: 1.25rem;
-  color: #9ca3af;
+  color: var(--text-muted);
   transition: color 0.3s ease;
 }
 
 .settings-menu li button:hover,
 .settings-menu li.active button {
-  background-color: #f0f4ff;
-  color: #2563eb;
+  background-color: var(--hover-bg);
+  color: var(--settings-menu-border);
 }
 
 .settings-menu li button:hover i,
 .settings-menu li.active button i {
-  color: #2563eb;
+  color: var(--settings-menu-border);
 }
 
 .settings-menu li.active button {
-  border-left: 4px solid #2563eb;
+  border-left: 4px solid var(--settings-menu-border);
 }
 
 /* ----------------- Main Content ----------------- */
 .employer-settings-content {
   flex: 1;
-  background-color: #ffffff;
+  background-color: var(--settings-content-bg);
   border-radius: 12px;
   padding: 2rem;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.04);
+  box-shadow: var(--shadow-lg);
 }
 
 /* ----------------- Form Section ----------------- */
@@ -85,9 +85,9 @@
 .form-section-title {
   font-size: 1.375rem;
   font-weight: 600;
-  color: #1f2937;
+  color: var(--text-dark);
   margin-bottom: 1.25rem;
-  border-bottom: 2px solid #e5e7eb;
+  border-bottom: 2px solid var(--divider-color);
   padding-bottom: 0.5rem;
 }
 
@@ -107,52 +107,53 @@
 .form-label {
   font-size: 0.875rem;
   font-weight: 500;
-  color: #374151;
+  color: var(--text-dark);
   margin-bottom: 0.5rem;
 }
 
 .form-control {
   padding: 0.75rem 1rem;
   font-size: 1rem;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--form-border);
   border-radius: 8px;
-  background-color: #f9fafb;
+  background-color: var(--form-bg);
+  color: var(--text-color);
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .form-control:focus {
-  border-color: #2563eb;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
-  background-color: #fff;
+  border-color: var(--form-focus-border);
+  box-shadow: 0 0 0 3px var(--form-focus-shadow);
+  background-color: var(--form-bg);
   outline: none;
 }
 
 .form-control:disabled {
-  background-color: #e5e7eb;
-  color: #9ca3af;
+  background-color: var(--form-disabled-bg);
+  color: var(--form-disabled-text);
   cursor: not-allowed;
 }
 
 .form-hint {
   font-size: 0.75rem;
-  color: #6b7280;
+  color: var(--text-secondary);
   margin-top: 0.25rem;
   font-style: italic;
 }
 
 /* ----------------- Drag & Drop Area ----------------- */
 #company-logo-container {
-  border: 2px dashed #3b82f6;
+  border: 2px dashed var(--form-focus-border);
   padding: 2rem;
   border-radius: 10px;
   text-align: center;
-  background-color: #f0f4ff;
-  color: #374151;
+  background-color: var(--hover-bg);
+  color: var(--text-dark);
   transition: border-color 0.3s ease;
 }
 
 #company-logo-container:hover {
-  border-color: #2563eb;
+  border-color: var(--form-focus-border);
 }
 
 /* ----------------- Buttons ----------------- */
@@ -161,13 +162,13 @@
   justify-content: flex-end;
   gap: 1rem;
   padding-top: 2rem;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid var(--divider-color);
   margin-top: 2rem;
 }
 
 .btn-primary {
-  background-color: #2563eb;
-  color: #ffffff;
+  background-color: var(--btn-primary-bg);
+  color: var(--btn-primary-text);
   border: none;
   border-radius: 8px;
   padding: 0.75rem 1.5rem;
@@ -178,13 +179,13 @@
 }
 
 .btn-primary:hover {
-  background-color: #1d4ed8;
+  background-color: var(--btn-primary-hover);
 }
 
 .btn-outline-secondary {
   background: transparent;
-  border: 1px solid #6b7280;
-  color: #6b7280;
+  border: 1px solid var(--btn-secondary-border);
+  color: var(--btn-secondary-text);
   border-radius: 8px;
   padding: 0.75rem 1.5rem;
   font-size: 1rem;
@@ -194,8 +195,8 @@
 }
 
 .btn-outline-secondary:hover {
-  background-color: #6b7280;
-  color: white;
+  background-color: var(--btn-secondary-hover-bg);
+  color: var(--btn-secondary-hover-text);
 }
 
 /* ----------------- Profile Section ----------------- */
@@ -205,9 +206,9 @@
   gap: 1.5rem;
   margin-bottom: 2rem;
   padding: 1.5rem;
-  background: #f9fafb;
+  background: var(--background-secondary);
   border-radius: 10px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--divider-color);
   font-family: Arial, sans-serif;
 }
 
@@ -219,7 +220,7 @@
   width: 80px;
   height: 80px;
   border-radius: 50%;
-  background: linear-gradient(to right, #3b82f6, #6366f1);
+  background: linear-gradient(to right, var(--brand-primary), var(--brand-secondary));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -237,7 +238,7 @@
   font-size: 1.5rem;
   font-weight: 600;
   margin-bottom: 0.5rem;
-  color: #111827;
+  color: var(--text-dark);
 }
 
 /* NEW: Align email and badge in a single row */
@@ -249,7 +250,7 @@
 
 .profile-email {
   font-size: 1rem;
-  color: #6b7280;
+  color: var(--text-secondary);
   margin: 0;
 }
 
@@ -287,7 +288,7 @@
 
 .role-description {
   font-size: 0.9rem;
-  color: #374151;
+  color: var(--text-dark);
   margin-top: 0.5rem;
 }
 
@@ -304,25 +305,25 @@
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  color: #374151;
+  color: var(--text-dark);
 }
 
 .notification-label input[type="checkbox"] {
   width: 18px;
   height: 18px;
-  accent-color: #2563eb;
+  accent-color: var(--form-focus-border);
 }
 
 .notification-description {
   margin-left: 2rem;
   font-size: 0.875rem;
-  color: #6b7280;
+  color: var(--text-secondary);
   font-style: italic;
 }
 
 /* ----------------- Error Message ----------------- */
 .error-message {
-  color: #dc2626;
+  color: var(--danger-color);
   font-weight: 500;
   font-size: 1rem;
   margin-top: 1rem;
@@ -368,11 +369,15 @@
 .settings-section-title {
   font-size: 1.5rem;
   margin: 0;
+  color: var(--text-color);
 }
 
 .btn-outline-primary {
   display: flex;
   align-items: center;
+  background-color: var(--btn-outline-bg);
+  border: 1px solid var(--btn-outline-border);
+  color: var(--btn-outline-text);
 }
 
 .btn-outline-primary .fas.fa-edit {
@@ -381,12 +386,12 @@
 }
 
 .btn-outline-primary {
-  border: 1px solid #007bff;
-  color: #007bff;
+  border: 1px solid var(--btn-outline-border);
+  color: var(--btn-outline-text);
   padding: 5px 10px;
 }
 
 .btn-outline-primary:hover {
-  background-color: #007bff00;
-  color: red;
+  background-color: var(--btn-outline-hover);
+  color: var(--danger-color);
 }

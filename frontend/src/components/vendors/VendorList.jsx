@@ -96,7 +96,7 @@ const VendorList = () => {
   };
 
   return (
-    <div className="nk-content">
+    <div className="nk-conten">
       <div className="container-fluid">
         <div className="nk-block-head">
           <div className="nk-block-between">

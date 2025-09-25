@@ -21,10 +21,7 @@
 }
 
 .alert {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 5px;
+  padding: 15px;
   margin-top: 12px;
   margin-bottom: 20px;
   border-radius: 8px;
@@ -34,10 +31,19 @@
 }
 
 .alert-content {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  width: 100% !important;
+  flex-wrap: nowrap !important;
+  gap: 10px !important;
+}
+
+.alert-content span {
+  flex: 1 !important;
+  min-width: 0 !important;
+  display: inline !important;
 }
 
 .alert-content strong {
@@ -73,22 +79,25 @@
 .form-label {
   font-weight: 600;
   margin-bottom: 10px;
-  color: #555;
+  color: var(--text-color);
+  transition: color 0.3s ease;
 }
 
 .form-control {
   width: 100%;
   padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 5px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
   font-size: 1rem;
-  color: #333;
-  transition: border-color 0.2s;
+  color: var(--text-color);
+  background-color: var(--card-bg);
+  transition: border-color 0.3s ease, background-color 0.3s ease, color 0.3s ease;
 }
 
 .form-control:focus {
-  border-color: #007bff;
+  border-color: var(--primary-color);
   outline: none;
+  box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.1);
 }
 
 .form-row {
@@ -111,40 +120,54 @@
 .file-upload {
   width: 100%;
   padding: 40px;
-  border: 2px dashed #ddd;
-  border-radius: 5px;
+  border: 2px dashed var(--border-color);
+  border-radius: 8px;
   text-align: center;
   cursor: pointer;
-  background-color: #f7f7f7;
-  transition: background-color 0.3s;
+  background-color: var(--card-bg);
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .file-upload:hover {
-  background-color: #e9ecef;
+  background-color: var(--table-hover);
+  border-color: var(--primary-color);
 }
 
 .file-upload-icon {
-  font-size: 2rem;
-  color: #6c757d;
+  font-size: 2.5rem;
+  color: var(--text-secondary);
+  transition: color 0.3s ease;
+}
+
+.file-upload:hover .file-upload-icon {
+  color: var(--primary-color);
 }
 
 .file-upload-text {
   font-size: 1.1rem;
-  color: #555;
-  margin-top: 10px;
+  color: var(--text-color);
+  margin-top: 15px;
+  font-weight: 500;
+  transition: color 0.3s ease;
 }
 
 .file-upload-hint {
   font-size: 0.9rem;
-  color: #888;
-  margin-top: 5px;
+  color: var(--text-secondary);
+  margin-top: 8px;
+  transition: color 0.3s ease;
 }
 
-/* Logo preview */
+/* Logo preview - Theme Aware */
 .logo-preview {
   display: flex;
   align-items: center;
   gap: 15px;
+  padding: 20px;
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .logo-preview img {
@@ -152,21 +175,25 @@
   height: 100px;
   object-fit: cover;
   border-radius: 8px;
+  border: 2px solid var(--border-color);
+  transition: border-color 0.3s ease;
 }
 
 .btn-outline-light {
-  padding: 5px 10px;
+  padding: 8px 16px;
   background-color: transparent;
-  border: 1px solid #ddd;
-  color: #888;
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
   font-size: 0.9rem;
   cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.3s ease;
 }
 
 .btn-outline-light:hover {
-  background-color: #f8f9fa;
-  color: #333;
-  border-color: #ccc;
+  background-color: var(--danger-bg);
+  color: var(--danger-text);
+  border-color: var(--danger-border);
 }
 
 .button-group {
@@ -220,13 +247,16 @@ button.btn-outline-light:hover {
   padding: 6px 12px;
   font: 1em monospace;
   border: none;
-  color: darkred ;
+  color: red ;
   background-color: transparent;
   font-size: 1rem;
   text-align: center;
   cursor: pointer;
   font-weight: bold;
   text-decoration: underline;
+  flex-shrink: 0 !important;
+  white-space: nowrap !important;
+  display: inline-block !important;
 }
 
 .btn-retry:hover {

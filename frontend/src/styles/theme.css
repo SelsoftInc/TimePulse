@@ -1,70 +1,532 @@
-/* Theme styles for TimePulse */
+/* Comprehensive Theme Styles for TimePulse */
 
-/* Light mode is the default */
+/* Light mode variables (default) */
 :root {
-  --background-color: #f5f9ff;
+  /* Base colors */
+  --background-color: #ffffff;
+  --background-secondary: #f8f9fa;
+  --background-tertiary: #f4f6f8;
   --text-color: #333333;
+  --text-secondary: #6c757d;
+  --text-muted: #8094ae;
+  --text-light: #ffffff;
+  --text-dark: #364a63;
+  
+  /* Card and container colors */
   --card-bg: #ffffff;
+  --card-border: #e9ecef;
+  --modal-bg: #ffffff;
+  --modal-backdrop: rgba(0, 0, 0, 0.5);
+  
+  /* Border and divider colors */
   --border-color: #e0e0e0;
+  --border-light: #dee2e6;
+  --border-dark: #dbdfea;
+  --divider-color: #e5e7eb;
+  
+  /* Sidebar and navigation */
   --sidebar-bg: #1976d2;
   --sidebar-text: #ffffff;
+  --sidebar-hover: #1565c0;
+  
+  /* Header colors */
   --header-bg: #1976d2;
   --header-text: #ffffff;
-  --hover-bg: #f0f7ff;
-  --accent-color: #1976d2;
+  
+  /* Settings specific colors */
+  --settings-sidebar-bg: #f8f9fa;
+  --settings-content-bg: #ffffff;
+  --settings-menu-bg: #ffffff;
+  --settings-menu-hover: #e9ecef;
+  --settings-menu-active: #e9ecef;
+  --settings-menu-border: #007bff;
+  
+  /* Form elements */
+  --form-bg: #ffffff;
+  --form-border: #d1d5db;
+  --form-focus-border: #2563eb;
+  --form-focus-shadow: rgba(37, 99, 235, 0.15);
+  --form-disabled-bg: #e5e7eb;
+  --form-disabled-text: #9ca3af;
+  --form-placeholder: #8094ae;
+  
+  /* Button colors */
+  --btn-primary-bg: #2563eb;
+  --btn-primary-hover: #1d4ed8;
+  --btn-primary-text: #ffffff;
+  --btn-secondary-bg: transparent;
+  --btn-secondary-border: #6b7280;
+  --btn-secondary-text: #6b7280;
+  --btn-secondary-hover-bg: #6b7280;
+  --btn-secondary-hover-text: #ffffff;
+  --btn-outline-bg: transparent;
+  --btn-outline-border: #007bff;
+  --btn-outline-text: #007bff;
+  --btn-outline-hover: #f0f8ff;
+  
+  /* Status colors */
+  --success-color: #28a745;
+  --success-bg: rgba(40, 167, 69, 0.1);
+  --warning-color: #ffc107;
+  --danger-color: #dc3545;
+  --danger-bg: rgba(220, 53, 69, 0.1);
+  --info-color: #17a2b8;
+  --info-bg: rgba(23, 162, 184, 0.1);
+  
+  /* Progress bars */
+  --progress-bg: #374151;
+  --progress-fill: #3b82f6;
+  --progress-success: #10b981;
+  --progress-warning: #f59e0b;
+  --progress-danger: #ef4444;
+
+  /* Dashboard specific */
+  --dashboard-bg: #0f172a;
+  --dashboard-card-bg: #1e293b;
+  --dashboard-card-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+  --dashboard-card-hover-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+  --dashboard-amount-color: #f1f5f9;
+  --dashboard-info-color: #94a3b8;
+  --dashboard-title-color: #cbd5e1;
+  --dashboard-subtitle-color: #e2e8f0;
+  --dashboard-tranx-border: #334155;
+  --dashboard-tranx-hover: #334155;
+  --dashboard-chart-bg: #475569;
+  --dashboard-block-title: #f1f5f9;
+  --dashboard-block-des: #94a3b8;
+
+  /* Timesheet specific - Light Mode */
+  --timesheet-bg: #f5f7fa;
+  --timesheet-card-bg: #ffffff;
+  --timesheet-card-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  --timesheet-card-hover-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  --timesheet-border: #ddd;
+  --timesheet-header-bg: #f8f9fa;
+  --timesheet-row-hover: #f1f1f1;
+  --timesheet-stat-pending: #f59e0b;
+  --timesheet-stat-approved: #10b981;
+  --timesheet-stat-rejected: #ef4444;
+  --timesheet-modal-bg: #ffffff;
+  --timesheet-modal-overlay: rgba(0, 0, 0, 0.5);
+  --timesheet-search-bg: #fff;
+  --timesheet-search-border: #ccc;
+  --timesheet-search-focus: #4a90e2;
+  --timesheet-badge-pending-bg: #fff3cd;
+  --timesheet-badge-approved-bg: #d4edda;
+  --timesheet-badge-rejected-bg: #f8d7da;
+  --timesheet-total-bg: #f7f7f7;
+
+  /* Plan and billing colors - Light Mode */
+  --plan-border: #e9ecef;
+  --plan-hover-border: #007bff;
+  --plan-active-border: #007bff;
+  --plan-current-bg: #007bff;
+  --plan-current-text: #ffffff;
+
+  /* Badge colors - Light Mode */
+  --badge-success-bg: #28a745;
+  --badge-success-text: #ffffff;
+  --badge-warning-bg: #ffc107;
+  --badge-warning-text: #000000;
+  --badge-outline-success-bg: #ffffff;
+  --badge-outline-success-text: #28a745;
+  --badge-outline-success-border: #28a745;
+
+  /* Table colors - Light Mode */
+  --table-bg: #ffffff;
+  --table-stripe: #f8f9fa;
+  --table-hover: #f5f5f5;
+  --table-border: #dee2e6;
+  --table-header-bg: #f8f9fa;
+  --table-header-text: #495057;
+
+  /* Shadows - Light Mode */
   --shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.15);
+  --shadow-xl: 0 20px 40px rgba(0, 0, 0, 0.2);
+
+  /* Reports & Analytics specific - Light Mode */
+  --reports-bg: #ffffff;
+  --reports-content-bg: #f8f9fa;
+  --reports-card-bg: #ffffff;
+  --reports-card-border: #e9ecef;
+  --reports-card-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  --reports-card-hover-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+  --reports-title-color: #2c3e50;
+  --reports-subtitle-color: #7f8c8d;
+  --reports-amount-color: #007bff;
+  --reports-text-color: #333333;
+  --reports-text-secondary: #6c757d;
+  --reports-text-muted: #7f8c8d;
+  
+  /* Table styling - Light Mode */
+  --reports-table-bg: #ffffff;
+  --reports-table-header-bg: #f1f3f7;
+  --reports-table-header-text: #344563;
+  --reports-table-border: #e5e7eb;
+  --reports-table-row-hover: #f9fafb;
+  --reports-table-cell-border: #f0f0f0;
+  
+  /* Toggle and navigation - Light Mode */
+  --reports-toggle-bg: #007bff;
+  --reports-toggle-text: #ffffff;
+  --reports-toggle-active-text: #007bff;
+  --reports-toggle-slider-bg: #ffffff;
+  --reports-status-text: #28a745;
+  --reports-status-active: #007bff;
+  
+  /* Progress bars - Light Mode */
+  --reports-progress-bg: #e0e0e0;
+  --reports-progress-green: #4caf50;
+  --reports-progress-orange: #ff9800;
+  --reports-progress-red: #f44336;
+  
+  /* Weekly breakdown cards - Light Mode */
+  --reports-weekly-card-bg: #ffffff;
+  --reports-weekly-card-border: #ddd;
+  --reports-weekly-card-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  --reports-weekly-employee-name: #333333;
+  --reports-weekly-label-text: #666666;
+  --reports-weekly-bar-bg: #f0f0f0;
+  --reports-weekly-summary-border: #eeeeee;
+  --reports-weekly-summary-text: #444444;
+  --reports-weekly-summary-label: #888888;
+  
+  /* Form elements - Light Mode */
+  --reports-form-select-bg: #ffffff;
+  --reports-form-select-border: #d1d5db;
+  --reports-form-select-text: #374151;
+  --reports-form-select-arrow: %23333333;
+  --reports-btn-bg: #3b82f6;
+  --reports-btn-hover: #2563eb;
+  --reports-btn-text: #ffffff;
+  
+  /* Action buttons - Light Mode */
+  --reports-action-btn-color: #6b7280;
+  --reports-action-btn-hover: #2563eb;
 }
 
-/* Dark mode styles */
+/* Dark mode variables */
 body.dark-mode {
-  --background-color: #121212;
-  --text-color: #e0e0e0;
-  --card-bg: #1e1e1e;
-  --border-color: #333333;
-  --sidebar-bg: #1a1a1a;
-  --sidebar-text: #e0e0e0;
-  --header-bg: #1a1a1a;
-  --header-text: #ffffff;
-  --hover-bg: #2c2c2c;
-  --accent-color: #2196f3;
-  --shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  --danger-color: #dc3545;
+  --danger-bg: rgba(220, 53, 69, 0.1);
+  --info-color: #17a2b8;
+  --info-bg: rgba(23, 162, 184, 0.1);
+  
+  /* Progress bars */
+  --progress-bg: #e9ecef;
+  --progress-fill: #007bff;
+  --progress-success: #28a745;
+  --progress-warning: #ffc107;
+  --progress-danger: #dc3545;
+
+  /* Dashboard specific */
+  --dashboard-bg: #f5f7fa;
+  --dashboard-card-bg: #ffffff;
+  --dashboard-card-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  --dashboard-card-hover-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+  --dashboard-amount-color: #292621;
+  --dashboard-info-color: #6c757d;
+  --dashboard-title-color: #616f85;
+  --dashboard-subtitle-color: #424446;
+  --dashboard-tranx-border: #e0e0e0;
+  --dashboard-tranx-hover: #f8f9fb;
+  --dashboard-chart-bg: #d3d3d3;
+  --dashboard-block-title: #333;
+  --dashboard-block-des: #787878;
+
+  /* Timesheet specific - Dark Mode */
+  --timesheet-bg: #0f172a;
+  --timesheet-card-bg: #1e293b;
+  --timesheet-card-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --timesheet-card-hover-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --timesheet-border: #334155;
+  --timesheet-header-bg: #334155;
+  --timesheet-row-hover: #334155;
+  --timesheet-stat-pending: #f59e0b;
+  --timesheet-stat-approved: #10b981;
+  --timesheet-stat-rejected: #ef4444;
+  --timesheet-modal-bg: #1e293b;
+  --timesheet-modal-overlay: rgba(0, 0, 0, 0.7);
+  --timesheet-search-bg: #334155;
+  --timesheet-search-border: #475569;
+  --timesheet-search-focus: #3b82f6;
+  --timesheet-badge-pending-bg: rgba(245, 158, 11, 0.2);
+  --timesheet-badge-approved-bg: rgba(16, 185, 129, 0.2);
+  --timesheet-badge-rejected-bg: rgba(239, 68, 68, 0.2);
+  --timesheet-total-bg: #334155;
+  --badge-outline-success-bg: whitesmoke;
+  --badge-outline-success-text: green;
+  --badge-outline-success-border: #004905;
 }
 
-/* Apply theme variables */
+/* Dark mode variables */
+body.dark-mode {
+  /* Base colors */
+  --background-color: #121212;
+  --background-secondary: #1e1e1e;
+  --background-tertiary: #2c2c2c;
+  --text-color: #e0e0e0;
+  --text-secondary: #b0b0b0;
+  --text-muted: #888888;
+  --text-light: #ffffff;
+  --text-dark: #e0e0e0;
+  
+  /* Card and container colors */
+  --card-bg: #1e1e1e;
+  --card-border: #333333;
+  --modal-bg: #2c2c2c;
+  --modal-backdrop: rgba(0, 0, 0, 0.8);
+  
+  /* Border and divider colors */
+  --border-color: #333333;
+  --border-light: #404040;
+  --border-dark: #2e2e2e;
+  --divider-color: #404040;
+  
+  /* Sidebar and navigation */
+  --sidebar-bg: #1976d2;
+  --sidebar-text: #ffffff;
+  --sidebar-hover: #1565c0;
+  
+  /* Header colors */
+  --header-bg: #1976d2;
+  --header-text: #ffffff;
+  
+  /* Settings specific colors */
+  --settings-sidebar-bg: #2c2c2c;
+  --settings-content-bg: #1e1e1e;
+  --settings-menu-bg: #2c2c2c;
+  --settings-menu-hover: #404040;
+  --settings-menu-active: #404040;
+  --settings-menu-border: #2196f3;
+  
+  /* Form elements */
+  --form-bg: #2c2c2c;
+  --form-border: #404040;
+  --form-focus-border: #2196f3;
+  --form-focus-shadow: rgba(33, 150, 243, 0.25);
+  --form-disabled-bg: #333333;
+  --form-disabled-text: #666666;
+  --form-placeholder: #888888;
+  
+  /* Button colors */
+  --btn-primary-bg: #2196f3;
+  --btn-primary-hover: #1976d2;
+  --btn-primary-text: #ffffff;
+  --btn-secondary-bg: transparent;
+  --btn-secondary-border: #888888;
+  --btn-secondary-text: #888888;
+  --btn-secondary-hover-bg: #888888;
+  --btn-secondary-hover-text: #ffffff;
+  --btn-outline-bg: transparent;
+  --btn-outline-border: #2196f3;
+  --btn-outline-text: #2196f3;
+  --btn-outline-hover: #1e3a5f;
+  
+  /* Status colors */
+  --success-color: #4caf50;
+  --success-bg: rgba(76, 175, 80, 0.2);
+  --warning-color: #ff9800;
+  --warning-bg: rgba(255, 152, 0, 0.2);
+  --danger-color: #f44336;
+  --danger-bg: rgba(244, 67, 54, 0.2);
+  --info-color: #2196f3;
+  --info-bg: rgba(33, 150, 243, 0.2);
+  
+  /* Table colors */
+  --table-bg: #1e1e1e;
+  --table-stripe: #2c2c2c;
+  --table-hover: #333333;
+  --table-border: #404040;
+  --table-header-bg: #2c2c2c;
+  --table-header-text: #e0e0e0;
+  
+  /* Interactive elements */
+  --hover-bg: #2c2c2c;
+  --active-bg: #404040;
+  --focus-outline: rgba(33, 150, 243, 0.25);
+  
+  /* Shadows */
+  --shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.4);
+  --shadow-xl: 0 20px 40px rgba(0, 0, 0, 0.5);
+  
+  /* Accent and brand colors */
+  --accent-color: #2196f3;
+  --brand-primary: #2196f3;
+  --brand-secondary: #1976d2;
+  
+  /* Plan and billing colors */
+  --plan-border: #404040;
+  --plan-hover-border: #666666;
+  --plan-active-border: #888888;
+  --plan-current-bg: #1976d2;
+  --plan-current-text: #ffffff;
+  
+  /* Badge colors */
+  --badge-success-bg: #4caf50;
+  --badge-success-text: #ffffff;
+  --badge-warning-bg: #ff9800;
+  --badge-warning-text: #000000;
+  --badge-outline-success-bg: #2c2c2c;
+  --badge-outline-success-text: #4caf50;
+  --badge-outline-success-border: #4caf50;
+
+  /* Reports & Analytics specific - Dark Mode */
+  --reports-bg: #1e1e1e;
+  --reports-content-bg: #121212;
+  --reports-card-bg: #2c2c2c;
+  --reports-card-border: #404040;
+  --reports-card-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  --reports-card-hover-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+  --reports-title-color: #e0e0e0;
+  --reports-subtitle-color: #b0b0b0;
+  --reports-amount-color: #2196f3;
+  --reports-text-color: #e0e0e0;
+  --reports-text-secondary: #b0b0b0;
+  --reports-text-muted: #888888;
+  
+  /* Table styling - Dark Mode */
+  --reports-table-bg: #2c2c2c;
+  --reports-table-header-bg: #404040;
+  --reports-table-header-text: #e0e0e0;
+  --reports-table-border: #404040;
+  --reports-table-row-hover: #333333;
+  --reports-table-cell-border: #404040;
+  
+  /* Toggle and navigation - Dark Mode */
+  --reports-toggle-bg: #2196f3;
+  --reports-toggle-text: #ffffff;
+  --reports-toggle-active-text: #2196f3;
+  --reports-toggle-slider-bg: #ffffff;
+  --reports-status-text: #4caf50;
+  --reports-status-active: #2196f3;
+  
+  /* Progress bars - Dark Mode */
+  --reports-progress-bg: #404040;
+  --reports-progress-green: #4caf50;
+  --reports-progress-orange: #ff9800;
+  --reports-progress-red: #f44336;
+  
+  /* Weekly breakdown cards - Dark Mode */
+  --reports-weekly-card-bg: #2c2c2c;
+  --reports-weekly-card-border: #404040;
+  --reports-weekly-card-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  --reports-weekly-employee-name: #e0e0e0;
+  --reports-weekly-label-text: #b0b0b0;
+  --reports-weekly-bar-bg: #404040;
+  --reports-weekly-summary-border: #404040;
+  --reports-weekly-summary-text: #e0e0e0;
+  --reports-weekly-summary-label: #b0b0b0;
+  
+  /* Form elements - Dark Mode */
+  --reports-form-select-bg: #374151;
+  --reports-form-select-border: #4b5563;
+  --reports-form-select-text: #f9fafb;
+  --reports-form-select-arrow: %23ffffff;
+  --reports-btn-bg: #3b82f6;
+  --reports-btn-hover: #2563eb;
+  --reports-btn-text: #ffffff;
+  
+  /* Action buttons - Dark Mode */
+  --reports-action-btn-color: #b0b0b0;
+  --reports-action-btn-hover: #2196f3;
+}
+
+/* Apply basic theme variables */
 body {
   background-color: var(--background-color);
   color: var(--text-color);
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
+/* Universal component styling */
+
+/* Headers and Navigation */
 .nk-header {
   background-color: var(--header-bg) !important;
   color: var(--header-text);
   box-shadow: var(--shadow);
 }
 
+/* Card styling */
 .card, .nk-card {
   background-color: var(--card-bg);
   border-color: var(--border-color);
   box-shadow: var(--shadow);
+  color: var(--text-color);
 }
 
-.sidebar {
+/* Sidebar styling */
+.nk-sidebar {
   background-color: var(--sidebar-bg);
   color: var(--sidebar-text);
 }
 
-/* Dark mode specific overrides */
-body.dark-mode .user-avatar {
-  background-color: #333333;
-  color: #ffffff;
+.text-danger {
+  color: var(--danger-color) !important;
 }
 
-body.dark-mode .app-brand-logo {
-  filter: brightness(1.2);
+.text-info {
+  color: var(--info-color) !important;
+}
+
+.text-muted {
+  color: var(--text-muted) !important;
+}
+
+.text-secondary {
+  color: var(--text-secondary) !important;
+}
+
+/* Badges */
+.badge {
+  color: white;
+}
+
+.bg-outline-warning {
+  border-color: var(--warning-color);
+  color: var(--warning-color);
+}
+
+.bg-outline-success {
+  border-color: var(--success-color);
+  color: var(--success-color);
+}
+
+.bg-outline-danger {
+  border-color: var(--danger-color);
+  color: var(--danger-color);
+}
+
+/* Dropdowns */
+.dropdown-menu {
+  background-color: var(--card-bg);
+  border-color: var(--border-color);
+  box-shadow: var(--shadow-lg);
+}
+
+.dropdown-item {
+  color: var(--text-color);
+}
+
+.dropdown-item:hover {
+  background-color: var(--hover-bg);
+  color: var(--text-color);
+}
+
+body.dark-mode .card,
+body.dark-mode .nk-card {
+  background-color: var(--card-bg);
+  color: var(--text-color);
 }
 
 /* Smooth transitions */
-.header-action-icon, .sidebar-icon, .card, .nk-card {
+.card, .nk-card, body {
   transition: all 0.3s ease;
 }

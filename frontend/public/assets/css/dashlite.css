@@ -42977,7 +42977,7 @@ body.dark-mode.ui-shady, body.dark-mode.ui-clean, body.dark-mode.bg-lighter, .du
 }
 .dark-mode .nk-apps-sidebar .dropdown-menu .lead-text, .dark-mode .list-step li.list-step-current,
 .dark-mode .nk-tb-list .tb-lead, .dark-mode .nk-tb-list .tb-amount, .dark-mode .nk-support-content .title, .dark-mode .nk-sale-data .amount {
-  color: #fff;
+  color: grey;
 }
 .dark-mode .nk-support-content .time, .dark-mode .page-item.disabled .page-link, .dark-mode .card-hint, .dark-mode .list-step li {
   color: #526484;

@@ -149,3 +149,24 @@
   background-color: #2e3a59;
   color: #e5e9f2;
 }
+
+.btn-retry {
+  padding: 6px 12px;
+  font: 1em monospace;
+  border: none;
+  color: darkred ;
+  background-color: transparent;
+  font-size: 1rem;
+  text-align: center;
+  cursor: pointer;
+  font-weight: bold;
+  text-decoration: underline;
+}
+
+.btn-retry:hover {
+  color: green;
+}
+
+.btn-create-client {
+  margin-bottom: 1rem;
+}

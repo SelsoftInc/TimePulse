@@ -8,9 +8,10 @@
 .form-label {
   font-size: 0.875rem;
   font-weight: 500;
-  color: #526484;
+  color: var(--text-secondary);
   margin-bottom: 0.5rem;
   display: block;
+  transition: color 0.3s ease;
 }
 
 .form-control {
@@ -21,25 +22,27 @@
   font-size: 0.875rem;
   font-weight: 400;
   line-height: 1.25rem;
-  color: #3c4d62;
-  background-color: #fff;
+  color: var(--text-color);
+  background-color: var(--form-bg);
   background-clip: padding-box;
-  border: 1px solid #dbdfea;
+  border: 1px solid var(--form-border);
   border-radius: 4px;
-  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out, background-color 0.3s ease, color 0.3s ease;
 }
 
 .form-control:focus {
-  color: #3c4d62;
-  background-color: #fff;
-  border-color: #6576ff;
+  color: var(--text-color);
+  background-color: var(--form-bg);
+  border-color: var(--form-focus-border);
   outline: 0;
-  box-shadow: 0 0 0 3px rgba(101, 118, 255, 0.1);
+  box-shadow: 0 0 0 3px var(--form-focus-shadow);
 }
 
 .form-control[readonly] {
-  background-color: #f5f6fa;
+  background-color: var(--form-disabled-bg);
   opacity: 1;
+  color: var(--form-disabled-text);
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 textarea.form-control {
@@ -92,13 +95,14 @@ textarea.form-control {
 .timesheet-total {
   display: flex;
   flex-direction: column;
-  background-color: #f7f7f7;
+  background-color: var(--timesheet-total-bg);
   border-radius: 4px;
   padding: 0 15px;
   height: calc(2.125rem + 2px);
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: background-color 0.3s ease;
 }
 
 .total-hours {
@@ -317,13 +321,16 @@ textarea.form-control {
   flex-direction: column;
   min-width: 0;
   word-wrap: break-word;
-  background-color: #fff;
+  background-color: var(--timesheet-card-bg);
   background-clip: border-box;
+  transition: background-color 0.3s ease;
+  color: var(--text-color);
 }
 
 .card-bordered {
-  border: 1px solid #dbdfea;
+  border: 1px solid var(--timesheet-border);
   border-radius: 4px;
+  transition: border-color 0.3s ease;
 }
 
 .card-inner {
@@ -337,12 +344,14 @@ textarea.form-control {
   justify-content: space-between;
   margin: -0.25rem -0.75rem 1rem;
   padding: 0 0.75rem 1rem;
-  border-bottom: 1px solid #e5e9f2;
+  border-bottom: 1px solid var(--timesheet-border);
+  transition: border-color 0.3s ease;
 }
 
 .card-title {
   font-size: 1rem;
   margin-bottom: 0;
-  color: #364a63;
+  color: var(--text-dark);
   font-weight: 700;
+  transition: color 0.3s ease;
 }

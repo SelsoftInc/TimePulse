@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { PERMISSIONS } from "../../utils/roles";
 import { useAuth } from "../../contexts/AuthContext";
+import { useTheme } from "../../contexts/ThemeContext";
 import PermissionGuard from "../common/PermissionGuard";
 import TimesheetAlerts from "../notifications/TimesheetAlerts";
 
@@ -12,17 +13,10 @@ const Header = ({ toggleSidebar }) => {
   const navigate = useNavigate();
   const { subdomain } = useParams();
   const { user } = useAuth();
-  const [darkMode, setDarkMode] = useState(false);
+  const { isDarkMode, toggleTheme } = useTheme();
   const [tenantLogo, setTenantLogo] = useState(null);
 
-  // Initialize theme from localStorage on component mount
-  useEffect(() => {
-    const savedTheme = localStorage.getItem("theme");
-    if (savedTheme === "dark") {
-      setDarkMode(true);
-      document.body.classList.add("dark-mode");
-    }
-  }, []);
+  // Theme is now managed by ThemeContext, so we don't need this useEffect
 
   // Fetch tenant logo
   useEffect(() => {
@@ -70,19 +64,7 @@ const Header = ({ toggleSidebar }) => {
     fetchTenantLogo();
   }, [user]);
 
-  // Toggle theme function
-  const toggleTheme = () => {
-    const newDarkMode = !darkMode;
-    setDarkMode(newDarkMode);
-
-    if (newDarkMode) {
-      document.body.classList.add("dark-mode");
-      localStorage.setItem("theme", "dark");
-    } else {
-      document.body.classList.remove("dark-mode");
-      localStorage.setItem("theme", "light");
-    }
-  };
+  // Theme toggle is now handled by ThemeContext
 
   const goToSettings = () => {
     // Get current tenant from localStorage
@@ -167,8 +149,9 @@ const Header = ({ toggleSidebar }) => {
             >
               <i
                 className={`fas ${
-                  darkMode ? "fa-sun" : "fa-moon"
+                  isDarkMode ? "fa-sun" : "fa-moon"
                 } header-action-icon`}
+                title={`Switch to ${isDarkMode ? 'light' : 'dark'} mode`}
               ></i>
             </div>
 

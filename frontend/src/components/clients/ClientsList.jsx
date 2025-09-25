@@ -151,7 +151,7 @@ const ClientsList = () => {
   };
 
   return (
-    <div className="nk-content">
+    <div className="nk-conten">
       <div className="container-fluid">
         <div className="nk-block-head">
           <div className="nk-block-between">
@@ -175,10 +175,10 @@ const ClientsList = () => {
               <i className="fas fa-exclamation-triangle mr-2"></i>
               {error}
               <button 
-                className="btn btn-sm btn-outline-danger ml-3"
+                className="btn-retry"
                 onClick={fetchClients}
               >
-                <i className="fas fa-redo mr-1"></i> Retry
+                <i className=""></i> Retry
               </button>
             </div>
           ) : loading ? (

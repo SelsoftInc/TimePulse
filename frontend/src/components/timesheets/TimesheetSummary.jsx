@@ -295,9 +295,9 @@ const TimesheetSummary = () => {
 
   if (loading) {
     return (
-      <div className="nk-content">
+      <div className="nk-conten">
         <div className="container-fluid">
-          <div className="nk-content-inner">
+          <div className="nk-content-inne">
             <div className="nk-content-body">
               <div className="nk-block-head nk-block-head-sm">
                 <div className="nk-block-between">
@@ -306,9 +306,9 @@ const TimesheetSummary = () => {
                   </div>
                 </div>
               </div>
-              <div className="nk-block">
+              <div className="nk-bloc">
                 <div className="card card-bordered">
-                  <div className="card-inner">
+                  <div className="card-inne">
                     <div className="text-center">
                       <div className="spinner-border" role="status">
                         <span className="visually-hidden">Loading...</span>
@@ -326,9 +326,9 @@ const TimesheetSummary = () => {
   }
 
   return (
-    <div className="container">
+    <div className="containe">
       <div className="container-fluid">
-        <div className="nk-content-inner">
+        <div className="nk-content-inne">
           <div className="nk-content-body">
             <div className="nk-block-head nk-block-head-sm">
               <div className="nk-block-between">
@@ -539,7 +539,7 @@ const TimesheetSummary = () => {
           <div className="nk-block">
             <div className="card card-bordered card-stretch">
               <div className="card-inner-group">
-                <div className="card-inner">
+                <div className="card-inne">
                   <div className="card-title-group">
                     <div className="card-title">
                       <h6 className="title">

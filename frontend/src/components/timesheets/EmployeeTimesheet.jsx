@@ -1,10 +1,12 @@
 // src/components/timesheets/EmployeeTimesheet.jsx
 import React, { useState, useRef } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { useTheme } from '../../contexts/ThemeContext';
 import './EmployeeTimesheet.css';
 
 const EmployeeTimesheet = () => {
   const { employeeId } = useParams();
+  const { isDarkMode } = useTheme();
   const fileInputRef = useRef(null);
   
   // Sample employee data - in a real app, this would come from an API

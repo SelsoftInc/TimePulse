@@ -791,9 +791,9 @@ const TimesheetSubmit = () => {
   }
   
   return (
-    <div className="nk-content">
+    <div className="nk-conten">
       <div className="container-fluid">
-        <div className="nk-content-inner">
+        <div className="nk-content-inne">
           <div className="nk-content-body">
             <div className="nk-block-head nk-block-head-sm">
               <div className="nk-block-between">
@@ -822,7 +822,7 @@ const TimesheetSubmit = () => {
               )}
               
               <div className="card card-bordered">
-                <div className="card-inner">
+                <div className="card-inne">
                   <form onSubmit={handleSubmit}>
                     {/* Employee Selection for Non-Employee Roles */}
                     {!isEmployee() && (
@@ -951,7 +951,7 @@ const TimesheetSubmit = () => {
                     {clientType === 'internal' && (
                       <div className="form-group mb-4">
                         <div className="card card-bordered">
-                          <div className="card-inner">
+                          <div className="card-inne">
                             <div className="d-flex justify-content-between align-items-center mb-3">
                               <h6 className="card-title mb-0">
                                 <em className="icon ni ni-cpu text-primary me-2"></em>
@@ -1405,7 +1405,7 @@ const TimesheetSubmit = () => {
                           <>
                             <button 
                               type="button" 
-                              className="btn btn-success"
+                              className="btn btn-save-for-later"
                               onClick={handleSaveDraft}
                               disabled={submitting}
                             >
@@ -1413,7 +1413,7 @@ const TimesheetSubmit = () => {
                             </button>
                             <button 
                               type="submit" 
-                              className="btn btn-success"
+                              className="btn btn-save-for-later"
                               disabled={submitting}
                             >
                               {submitting ? (
@@ -1432,7 +1432,7 @@ const TimesheetSubmit = () => {
                         )}
                         <button 
                           type="button" 
-                          className="btn btn-success"
+                          className="btn btn-save-for-later"
                           onClick={() => navigate(`/${subdomain}/timesheets`)}
                         >
                           Return to Timesheet Summary

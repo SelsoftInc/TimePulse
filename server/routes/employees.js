@@ -25,10 +25,10 @@ router.get('/', async (req, res) => {
         'firstName',
         'lastName',
         'email',
+        'phone',
         'department',
         'title',
         'managerId',
-        'clientId',
         'startDate',
         'endDate',
         'hourlyRate',
@@ -36,58 +36,37 @@ router.get('/', async (req, res) => {
         'salaryType',
         'contactInfo',
         'status'
-      ],
-      include: [
-        {
-          model: Client,
-          as: 'client',
-          attributes: ['id', 'clientName']
-        },
-        {
-          model: Vendor,
-          as: 'vendor',
-          attributes: ['id', 'name']
-        },
-        {
-          model: Vendor,
-          as: 'implPartner',
-          attributes: ['id', 'name']
-        }
       ]
+      // Removed includes for client, vendor, implPartner as these columns don't exist in the current schema
     });
 
     // Transform the data to match frontend expectations
     const transformedEmployees = employees.map(emp => ({
         id: emp.id,
         name: `${emp.firstName} ${emp.lastName}`,
-        firstName: emp.firstName, // Include separate firstName for profile
-        lastName: emp.lastName,   // Include separate lastName for profile
-        position: emp.position || 'N/A',
+        firstName: emp.firstName,
+        lastName: emp.lastName,
+        position: emp.title || 'N/A', // Use title field instead of position
         email: emp.email,
-        phone: emp.phone || null, // Phone numbers from dedicated phone field
+        phone: emp.phone || null,
         status: emp.status || 'active',
         department: emp.department || 'N/A',
-        joinDate: null, // Remove hardcoded join dates - not in Excel sheet  
-        hourlyRate: null, // Remove hardcoded hourly rates - not in Excel sheet
-        client: emp.client ? emp.client.clientName : null,
-        clientId: emp.clientId || emp.client?.id || null,
-        employmentType: emp.employmentType || 'W2',
-        vendor: emp.vendor ? emp.vendor.name : null,
-        vendorId: emp.vendor ? emp.vendor.id : null,
-        implPartner: emp.implPartner ? emp.implPartner.name : null,
-        implPartnerId: emp.implPartner ? emp.implPartner.id : null,
-        endClient: emp.endClient ? {
-          name: emp.endClient.name || 'N/A',
-          location: emp.endClient.location || 'N/A',
-          hiringManager: emp.endClient.hiringManager || null
-        } : null,
+        joinDate: emp.startDate || null,
+        hourlyRate: emp.hourlyRate || null,
+        // Set client-related fields to null since columns don't exist
+        client: null,
+        clientId: null,
+        employmentType: emp.salaryType || 'hourly',
+        // Set vendor-related fields to null since columns don't exist
+        vendor: null,
+        vendorId: null,
+        implPartner: null,
+        implPartnerId: null,
+        endClient: null,
         // Additional fields from database
         employeeId: emp.employeeId,
-        ssn: emp.ssn,
-        address: emp.address,
-        emergencyContact: emp.emergencyContact,
-        bankDetails: emp.bankDetails,
-        documents: emp.documents
+        salaryAmount: emp.salaryAmount,
+        contactInfo: emp.contactInfo
     }));
 
     res.json({
@@ -125,10 +104,10 @@ router.get('/:id', async (req, res) => {
         'firstName',
         'lastName',
         'email',
+        'phone',
         'department',
         'title',
         'managerId',
-        'clientId',
         'startDate',
         'endDate',
         'hourlyRate',
@@ -142,22 +121,8 @@ router.get('/:id', async (req, res) => {
           model: User,
           as: 'user',
           attributes: ['id', 'firstName', 'lastName', 'email', 'role', 'department', 'title']
-        },
-        {
-          model: Client,
-          as: 'client',
-          attributes: ['id', 'clientName']
-        },
-        {
-          model: Vendor,
-          as: 'vendor',
-          attributes: ['id', 'name']
-        },
-        {
-          model: Vendor,
-          as: 'implPartner',
-          attributes: ['id', 'name']
         }
+        // Removed includes for client, vendor, implPartner as these columns don't exist in the current schema
       ]
     });
 
@@ -180,21 +145,20 @@ router.get('/:id', async (req, res) => {
       department: employee.user?.department || employee.department || 'N/A',
       joinDate: employee.startDate || new Date().toISOString(),
       hourlyRate: employee.hourlyRate || 0,
-      client: employee.client ? employee.client.clientName : null,
-      clientId: employee.clientId || employee.client?.id || null,
-      employmentType: employee.employmentType || 'W2',
-      vendor: employee.vendor ? employee.vendor.name : null,
-      vendorId: employee.vendor ? employee.vendor.id : null,
-      implPartner: employee.implPartner ? employee.implPartner.name : null,
-      implPartnerId: employee.implPartner ? employee.implPartner.id : null,
-      endClient: employee.endClient,
+      // Set client-related fields to null since columns don't exist
+      client: null,
+      clientId: null,
+      employmentType: employee.salaryType || 'hourly',
+      // Set vendor-related fields to null since columns don't exist
+      vendor: null,
+      vendorId: null,
+      implPartner: null,
+      implPartnerId: null,
+      endClient: null,
       // Additional detailed fields
       employeeId: employee.employeeId,
-      ssn: employee.ssn,
-      address: employee.address,
-      emergencyContact: employee.emergencyContact,
-      bankDetails: employee.bankDetails,
-      documents: employee.documents,
+      salaryAmount: employee.salaryAmount,
+      contactInfo: employee.contactInfo,
       user: employee.user
     };
 

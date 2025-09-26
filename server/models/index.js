@@ -251,33 +251,34 @@ models.Employee = sequelize.define('Employee', {
       key: 'id'
     }
   },
-  clientId: {
-    type: DataTypes.UUID,
-    allowNull: true,
-    field: 'client_id',
-    references: {
-      model: 'clients',
-      key: 'id'
-    }
-  },
-  vendorId: {
-    type: DataTypes.UUID,
-    allowNull: true,
-    field: 'vendor_id',
-    references: {
-      model: 'vendors',
-      key: 'id'
-    }
-  },
-  implPartnerId: {
-    type: DataTypes.UUID,
-    allowNull: true,
-    field: 'impl_partner_id',
-    references: {
-      model: 'vendors',
-      key: 'id'
-    }
-  },
+  // Removed clientId, vendorId, implPartnerId as these columns don't exist in current schema
+  // clientId: {
+  //   type: DataTypes.UUID,
+  //   allowNull: true,
+  //   field: 'client_id',
+  //   references: {
+  //     model: 'clients',
+  //     key: 'id'
+  //   }
+  // },
+  // vendorId: {
+  //   type: DataTypes.UUID,
+  //   allowNull: true,
+  //   field: 'vendor_id',
+  //   references: {
+  //     model: 'vendors',
+  //     key: 'id'
+  //   }
+  // },
+  // implPartnerId: {
+  //   type: DataTypes.UUID,
+  //   allowNull: true,
+  //   field: 'impl_partner_id',
+  //   references: {
+  //     model: 'vendors',
+  //     key: 'id'
+  //   }
+  // },
   startDate: {
     type: DataTypes.DATEONLY,
     field: 'start_date'
@@ -488,7 +489,8 @@ models.Employee.belongsTo(models.Tenant, { foreignKey: 'tenantId', as: 'tenant' 
 models.Employee.belongsTo(models.User, { foreignKey: 'userId', as: 'user' });
 models.Employee.belongsTo(models.Employee, { foreignKey: 'managerId', as: 'manager' });
 models.Employee.hasMany(models.Employee, { foreignKey: 'managerId', as: 'subordinates' });
-models.Employee.belongsTo(models.Client, { foreignKey: 'clientId', as: 'client' });
+// Removed client association as client_id column doesn't exist in current schema
+// models.Employee.belongsTo(models.Client, { foreignKey: 'clientId', as: 'client' });
 
 // Client associations
 models.Client.belongsTo(models.Tenant, { foreignKey: 'tenantId', as: 'tenant' });
@@ -557,9 +559,9 @@ models.Vendor = sequelize.define('Vendor', {
 // Vendor associations (added after model definition)
 models.Tenant.hasMany(models.Vendor, { foreignKey: 'tenantId', as: 'vendors' });
 models.Vendor.belongsTo(models.Tenant, { foreignKey: 'tenantId', as: 'tenant' });
-// Employee associations to Vendor must come after Vendor is defined
-models.Employee.belongsTo(models.Vendor, { foreignKey: 'vendorId', as: 'vendor' });
-models.Employee.belongsTo(models.Vendor, { foreignKey: 'implPartnerId', as: 'implPartner' });
+// Removed Employee-Vendor associations as vendor columns don't exist in current schema
+// models.Employee.belongsTo(models.Vendor, { foreignKey: 'vendorId', as: 'vendor' });
+// models.Employee.belongsTo(models.Vendor, { foreignKey: 'implPartnerId', as: 'implPartner' });
 
 // =============================================
 // TIMESHEET MODEL

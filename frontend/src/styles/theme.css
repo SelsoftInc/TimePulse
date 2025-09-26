@@ -206,6 +206,83 @@
   /* Action buttons - Light Mode */
   --reports-action-btn-color: #6b7280;
   --reports-action-btn-hover: #2563eb;
+
+  /* Employee Dashboard specific - Light Mode */
+  --employee-dashboard-bg: #f8f9fa;
+  --employee-dashboard-content-bg: #ffffff;
+  --employee-dashboard-border: #e9ecef;
+  --employee-dashboard-title-color: #2c3e50;
+  --employee-dashboard-subtitle-color: #6c757d;
+  --employee-dashboard-text-color: #333333;
+  --employee-dashboard-text-muted: #6c757d;
+  
+  /* Employee Dashboard Cards - Light Mode */
+  --employee-dashboard-card-bg: #ffffff;
+  --employee-dashboard-card-border: #e9ecef;
+  --employee-dashboard-card-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  --employee-dashboard-card-hover-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  --employee-dashboard-card-title-color: #2c3e50;
+  --employee-dashboard-card-subtitle-color: #7f8c8d;
+  
+  /* Employee Dashboard Buttons - Light Mode */
+  --employee-dashboard-btn-primary-bg: #007bff;
+  --employee-dashboard-btn-primary-hover: #0056b3;
+  --employee-dashboard-btn-primary-text: #ffffff;
+  --employee-dashboard-btn-shadow: 0 2px 8px rgba(0, 123, 255, 0.3);
+  --employee-dashboard-btn-hover-shadow: 0 4px 15px rgba(0, 123, 255, 0.4);
+  
+  /* Employee Dashboard Links - Light Mode */
+  --employee-dashboard-link-color: #007bff;
+  --employee-dashboard-link-hover-color: #0056b3;
+  
+  /* Employee Dashboard Timesheet Cards - Light Mode */
+  --employee-dashboard-timesheet-card-bg: #ffffff;
+  --employee-dashboard-timesheet-card-border: #e9ecef;
+  --employee-dashboard-timesheet-card-hover-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+  --employee-dashboard-timesheet-title-color: #495057;
+  --employee-dashboard-amount-color: #007bff;
+  
+  /* Employee Dashboard Badges - Light Mode */
+  --employee-dashboard-badge-success-bg: #28a745;
+  --employee-dashboard-badge-success-text: #ffffff;
+  --employee-dashboard-badge-warning-bg: #ffc107;
+  --employee-dashboard-badge-warning-text: #212529;
+  --employee-dashboard-badge-danger-bg: #dc3545;
+  --employee-dashboard-badge-danger-text: #ffffff;
+  --employee-dashboard-badge-gray-bg: #6c757d;
+  --employee-dashboard-badge-gray-text: #ffffff;
+  
+  /* Employee Dashboard Progress - Light Mode */
+  --employee-dashboard-progress-bg: #e9ecef;
+  --employee-dashboard-progress-primary: #007bff;
+  --employee-dashboard-progress-warning: #ffc107;
+  --employee-dashboard-progress-info: #17a2b8;
+  
+  /* Employee Dashboard Notifications - Light Mode */
+  --employee-dashboard-notification-title-color: #495057;
+  --employee-dashboard-notification-date-color: #6c757d;
+  
+  /* Employee Dashboard Schedule - Light Mode */
+  --employee-dashboard-schedule-border: #e9ecef;
+  --employee-dashboard-schedule-hover: #f8f9fa;
+  --employee-dashboard-schedule-title-color: #495057;
+  --employee-dashboard-schedule-date-color: #6c757d;
+  --employee-dashboard-status-success: #28a745;
+  --employee-dashboard-status-warning: #ffc107;
+  --employee-dashboard-status-danger: #dc3545;
+  
+  /* Employee Dashboard Menu - Light Mode */
+  --employee-dashboard-menu-border: #e9ecef;
+  --employee-dashboard-menu-link-color: #495057;
+  --employee-dashboard-menu-link-hover-color: #007bff;
+  --employee-dashboard-menu-icon-color: #6c757d;
+  
+  /* Employee Dashboard Scrollbar - Light Mode */
+  --employee-dashboard-scrollbar-track: #f1f1f1;
+  --employee-dashboard-scrollbar-thumb: #c1c1c1;
+  
+  /* Employee Dashboard Spinner - Light Mode */
+  --employee-dashboard-spinner-color: #007bff;
 }
 
 /* Dark mode variables */
@@ -436,6 +513,83 @@ body.dark-mode {
   /* Action buttons - Dark Mode */
   --reports-action-btn-color: #b0b0b0;
   --reports-action-btn-hover: #2196f3;
+
+  /* Employee Dashboard specific - Dark Mode */
+  --employee-dashboard-bg: #0f172a;
+  --employee-dashboard-content-bg: #1e293b;
+  --employee-dashboard-border: #334155;
+  --employee-dashboard-title-color: #f1f5f9;
+  --employee-dashboard-subtitle-color: #cbd5e1;
+  --employee-dashboard-text-color: #e2e8f0;
+  --employee-dashboard-text-muted: #94a3b8;
+  
+  /* Employee Dashboard Cards - Dark Mode */
+  --employee-dashboard-card-bg: #1e293b;
+  --employee-dashboard-card-border: #334155;
+  --employee-dashboard-card-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+  --employee-dashboard-card-hover-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+  --employee-dashboard-card-title-color: #f1f5f9;
+  --employee-dashboard-card-subtitle-color: #94a3b8;
+  
+  /* Employee Dashboard Buttons - Dark Mode */
+  --employee-dashboard-btn-primary-bg: #3b82f6;
+  --employee-dashboard-btn-primary-hover: #2563eb;
+  --employee-dashboard-btn-primary-text: #ffffff;
+  --employee-dashboard-btn-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+  --employee-dashboard-btn-hover-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+  
+  /* Employee Dashboard Links - Dark Mode */
+  --employee-dashboard-link-color: #60a5fa;
+  --employee-dashboard-link-hover-color: #3b82f6;
+  
+  /* Employee Dashboard Timesheet Cards - Dark Mode */
+  --employee-dashboard-timesheet-card-bg: #1e293b;
+  --employee-dashboard-timesheet-card-border: #334155;
+  --employee-dashboard-timesheet-card-hover-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+  --employee-dashboard-timesheet-title-color: #cbd5e1;
+  --employee-dashboard-amount-color: #60a5fa;
+  
+  /* Employee Dashboard Badges - Dark Mode */
+  --employee-dashboard-badge-success-bg: #10b981;
+  --employee-dashboard-badge-success-text: #ffffff;
+  --employee-dashboard-badge-warning-bg: #f59e0b;
+  --employee-dashboard-badge-warning-text: #1f2937;
+  --employee-dashboard-badge-danger-bg: #ef4444;
+  --employee-dashboard-badge-danger-text: #ffffff;
+  --employee-dashboard-badge-gray-bg: #6b7280;
+  --employee-dashboard-badge-gray-text: #ffffff;
+  
+  /* Employee Dashboard Progress - Dark Mode */
+  --employee-dashboard-progress-bg: #374151;
+  --employee-dashboard-progress-primary: #3b82f6;
+  --employee-dashboard-progress-warning: #f59e0b;
+  --employee-dashboard-progress-info: #06b6d4;
+  
+  /* Employee Dashboard Notifications - Dark Mode */
+  --employee-dashboard-notification-title-color: #f1f5f9;
+  --employee-dashboard-notification-date-color: #94a3b8;
+  
+  /* Employee Dashboard Schedule - Dark Mode */
+  --employee-dashboard-schedule-border: #334155;
+  --employee-dashboard-schedule-hover: #334155;
+  --employee-dashboard-schedule-title-color: #f1f5f9;
+  --employee-dashboard-schedule-date-color: #94a3b8;
+  --employee-dashboard-status-success: #10b981;
+  --employee-dashboard-status-warning: #f59e0b;
+  --employee-dashboard-status-danger: #ef4444;
+  
+  /* Employee Dashboard Menu - Dark Mode */
+  --employee-dashboard-menu-border: #334155;
+  --employee-dashboard-menu-link-color: #cbd5e1;
+  --employee-dashboard-menu-link-hover-color: #60a5fa;
+  --employee-dashboard-menu-icon-color: #94a3b8;
+  
+  /* Employee Dashboard Scrollbar - Dark Mode */
+  --employee-dashboard-scrollbar-track: #374151;
+  --employee-dashboard-scrollbar-thumb: #6b7280;
+  
+  /* Employee Dashboard Spinner - Dark Mode */
+  --employee-dashboard-spinner-color: #3b82f6;
 }
 
 /* Apply basic theme variables */

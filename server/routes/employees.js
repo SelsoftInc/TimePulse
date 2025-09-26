@@ -25,10 +25,13 @@ router.get('/', async (req, res) => {
         'firstName',
         'lastName',
         'email',
+        'phone',
         'department',
         'title',
         'managerId',
         'clientId',
+        'vendorId',
+        'implPartnerId',
         'startDate',
         'endDate',
         'hourlyRate',
@@ -41,17 +44,20 @@ router.get('/', async (req, res) => {
         {
           model: Client,
           as: 'client',
-          attributes: ['id', 'clientName']
+          attributes: ['id', 'clientName'],
+          required: false
         },
         {
           model: Vendor,
           as: 'vendor',
-          attributes: ['id', 'name']
+          attributes: ['id', 'name'],
+          required: false
         },
         {
           model: Vendor,
           as: 'implPartner',
-          attributes: ['id', 'name']
+          attributes: ['id', 'name'],
+          required: false
         }
       ]
     });
@@ -60,34 +66,26 @@ router.get('/', async (req, res) => {
     const transformedEmployees = employees.map(emp => ({
         id: emp.id,
         name: `${emp.firstName} ${emp.lastName}`,
-        firstName: emp.firstName, // Include separate firstName for profile
-        lastName: emp.lastName,   // Include separate lastName for profile
-        position: emp.position || 'N/A',
+        firstName: emp.firstName,
+        lastName: emp.lastName,
+        position: emp.title || 'N/A',
         email: emp.email,
-        phone: emp.phone || null, // Phone numbers from dedicated phone field
+        phone: emp.phone || null,
         status: emp.status || 'active',
         department: emp.department || 'N/A',
-        joinDate: null, // Remove hardcoded join dates - not in Excel sheet  
-        hourlyRate: null, // Remove hardcoded hourly rates - not in Excel sheet
+        joinDate: emp.startDate || null,
+        hourlyRate: emp.hourlyRate || 0,
         client: emp.client ? emp.client.clientName : null,
-        clientId: emp.clientId || emp.client?.id || null,
-        employmentType: emp.employmentType || 'W2',
+        clientId: emp.clientId || null,
+        employmentType: emp.salaryType || 'hourly',
         vendor: emp.vendor ? emp.vendor.name : null,
-        vendorId: emp.vendor ? emp.vendor.id : null,
+        vendorId: emp.vendorId || null,
         implPartner: emp.implPartner ? emp.implPartner.name : null,
-        implPartnerId: emp.implPartner ? emp.implPartner.id : null,
-        endClient: emp.endClient ? {
-          name: emp.endClient.name || 'N/A',
-          location: emp.endClient.location || 'N/A',
-          hiringManager: emp.endClient.hiringManager || null
-        } : null,
+        implPartnerId: emp.implPartnerId || null,
         // Additional fields from database
         employeeId: emp.employeeId,
-        ssn: emp.ssn,
-        address: emp.address,
-        emergencyContact: emp.emergencyContact,
-        bankDetails: emp.bankDetails,
-        documents: emp.documents
+        salaryAmount: emp.salaryAmount,
+        contactInfo: emp.contactInfo
     }));
 
     res.json({
@@ -125,10 +123,13 @@ router.get('/:id', async (req, res) => {
         'firstName',
         'lastName',
         'email',
+        'phone',
         'department',
         'title',
         'managerId',
         'clientId',
+        'vendorId',
+        'implPartnerId',
         'startDate',
         'endDate',
         'hourlyRate',
@@ -141,22 +142,26 @@ router.get('/:id', async (req, res) => {
         {
           model: User,
           as: 'user',
-          attributes: ['id', 'firstName', 'lastName', 'email', 'role', 'department', 'title']
+          attributes: ['id', 'firstName', 'lastName', 'email', 'role', 'department', 'title'],
+          required: false
         },
         {
           model: Client,
           as: 'client',
-          attributes: ['id', 'clientName']
+          attributes: ['id', 'clientName'],
+          required: false
         },
         {
           model: Vendor,
           as: 'vendor',
-          attributes: ['id', 'name']
+          attributes: ['id', 'name'],
+          required: false
         },
         {
           model: Vendor,
           as: 'implPartner',
-          attributes: ['id', 'name']
+          attributes: ['id', 'name'],
+          required: false
         }
       ]
     });

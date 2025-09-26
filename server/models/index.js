@@ -7,36 +7,25 @@ const { Sequelize, DataTypes } = require('sequelize');
 const path = require('path');
 require('dotenv').config();
 
-// Database connection configuration
-const sequelize = process.env.USE_SQLITE === 'true' 
-  ? new Sequelize({
-      dialect: 'sqlite',
-      storage: './database/timepulse.db',
-      logging: process.env.NODE_ENV === 'development' ? console.log : false,
-    })
-  : new Sequelize({
-      dialect: 'postgres',
-      host: process.env.DB_HOST || 'localhost',
-      port: process.env.DB_PORT || 5432,
-      database: process.env.DB_NAME || 'timepulse_db',
-      username: process.env.DB_USER || 'postgres',
-      password: process.env.DB_PASSWORD || 'password',
-      logging: process.env.NODE_ENV === 'development' ? console.log : false,
-      pool: {
-        max: 10,
-        min: 0,
-        acquire: 30000,
-        idle: 10000
-      },
-      ...(process.env.DB_SSL === 'true' && {
-        dialectOptions: {
-          ssl: {
-            require: true,
-            rejectUnauthorized: process.env.DB_SSL_REJECT_UNAUTHORIZED === 'true'
-          }
-        }
-      })
-    });
+// Load database configuration based on environment
+const getDbConfig = () => {
+  const env = process.env.NODE_ENV || 'development';
+  const isLocal = env === 'development' || process.env.USE_LOCAL_DB === 'true';
+  
+  if (isLocal) {
+    const localConfig = require('../config/database.local.js');
+    return localConfig.development;
+  } else {
+    const remoteConfig = require('../config/database.remote.js');
+    return remoteConfig[env] || remoteConfig.production;
+  }
+};
+
+const dbConfig = getDbConfig();
+console.log(`🔧 Using ${process.env.NODE_ENV === 'development' ? 'LOCAL' : 'REMOTE'} database configuration`);
+
+// Create Sequelize instance
+const sequelize = new Sequelize(dbConfig.database, dbConfig.username, dbConfig.password, dbConfig);
 
 // Define Models
 const models = {};
@@ -654,12 +643,44 @@ const connectDB = async () => {
     await sequelize.authenticate();
     console.log('✅ Database connection established successfully.');
     
-    // Auto-sync for development (enabled for SQLite)
-    if (process.env.NODE_ENV === 'development' || process.env.USE_SQLITE === 'true') {
-      await sequelize.sync({ alter: true });
+    // For development, sync database schema (disabled to use existing schema)
+    if (false && process.env.NODE_ENV === 'development') {
+      try {
+        // Drop dependent views before sync
+        await sequelize.query('DROP VIEW IF EXISTS tenant_dashboard CASCADE;');
+        console.log('🔄 Dropped dependent views for sync.');
+      } catch (viewError) {
+        console.log('ℹ️ No views to drop or already dropped.');
+      }
+      
+      // Use force: false and alter: false for safer sync
+      // This will create tables if they don't exist but won't alter existing ones
+      await sequelize.sync({ force: false, alter: false });
       console.log('📊 Database models synchronized.');
+      
+      // Recreate views after sync
+      try {
+        await sequelize.query(`
+          CREATE OR REPLACE VIEW tenant_dashboard AS
+          SELECT 
+              t.id,
+              t.tenant_name,
+              t.subdomain,
+              COUNT(DISTINCT u.id) as total_users,
+              COUNT(DISTINCT e.id) as total_employees,
+              COUNT(DISTINCT c.id) as total_clients
+          FROM tenants t
+          LEFT JOIN users u ON t.id = u.tenant_id
+          LEFT JOIN employees e ON t.id = e.tenant_id
+          LEFT JOIN clients c ON t.id = c.tenant_id
+          GROUP BY t.id, t.tenant_name, t.subdomain;
+        `);
+        console.log('🔄 Recreated tenant_dashboard view.');
+      } catch (viewError) {
+        console.log('⚠️ Could not recreate views:', viewError.message);
+      }
     } else {
-      console.log('📊 Using existing database schema (sync disabled).');
+      console.log('📊 Using existing database schema (sync disabled for production).');
     }
     
     return sequelize;

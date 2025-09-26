@@ -16,7 +16,6 @@ const { connectDB } = require('./models');
 
 const app = express();
 const PORT = process.env.PORT || 5001;
-const SKIP_DB_CONNECT = process.env.SKIP_DB_CONNECT === 'false' || process.env.ALLOW_START_WITHOUT_DB === 'false';
 
 // Import route modules
 const timesheetRoutes = require('./routes/timesheets');
@@ -112,25 +111,15 @@ app.use('*', (req, res) => {
   });
 });
 
-// Start server with optional database connection
+// Start server with database connection
 const startServer = async () => {
-  let dbConnected = false;
-  if (SKIP_DB_CONNECT) {
-    console.warn('⚠️  SKIP_DB_CONNECT is true. Starting server without database connection.');
-  } else {
-    try {
-      await connectDB();
-      dbConnected = true;
-      console.log('✅ Database connected successfully');
-    } catch (error) {
-      console.error('❌ Unable to connect to the database at startup:', error.message);
-      if (!process.env.ALLOW_START_WITHOUT_DB) {
-        console.error('Set SKIP_DB_CONNECT=true to start without DB, or configure DB env vars. Exiting.');
-        process.exit(1);
-      } else {
-        console.warn('⚠️  ALLOW_START_WITHOUT_DB is set. Continuing without DB.');
-      }
-    }
+  try {
+    await connectDB();
+    console.log('✅ Database connected successfully');
+  } catch (error) {
+    console.error('❌ Unable to connect to the database at startup:', error.message);
+    console.error('Please check your database configuration and ensure the database is running.');
+    process.exit(1);
   }
 
   // Start HTTP server
@@ -138,7 +127,7 @@ const startServer = async () => {
     console.log(`🚀 TimePulse Server running on port ${PORT}`);
     console.log(`📖 Health check: http://localhost:${PORT}/health`);
     console.log(`🔧 Environment: ${process.env.NODE_ENV || 'development'}`);
-    console.log(`🗄️  Database: ${dbConnected ? 'Connected' : 'Not connected'}`);
+    console.log(`🗄️  Database: Connected`);
   });
 };
 

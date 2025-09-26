@@ -117,23 +117,85 @@
 }
 
 /* Discrepancy Matching */
+/* Container */
 .discrepancy-matching {
-  padding: 20px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  padding: 16px;
+  margin: 20px 0;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
 }
 
-.discrepancy-header {
-  margin-bottom: 15px;
-}
-
+/* Header */
 .discrepancy-header h5 {
   font-size: 16px;
   font-weight: 600;
-  color: #364a63;
+  margin-bottom: 12px;
+  color: #2c3e50;
 }
 
-.discrepancy-section {
-  padding: 0 20px;
+/* Table */
+.discrepancy-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  border-radius: 8px;
+  overflow: hidden;
 }
+
+/* Table Head */
+.discrepancy-table thead {
+  background: #f6f9fc;
+}
+
+.discrepancy-table th {
+  text-align: left;
+  padding: 12px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #4a5568;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+/* Table Rows */
+.discrepancy-table td {
+  padding: 12px 16px;
+  font-size: 14px;
+  color: #2d3748;
+  border-bottom: 1px solid #edf2f7;
+}
+
+/* Row Hover */
+.discrepancy-table tbody tr:hover {
+  background: #f9fafb;
+}
+
+/* Special Row Highlight (Mismatch) */
+.mismatch-row {
+  background-color: #fff5f5;
+  color: #e53e3e;
+  font-weight: 600;
+}
+.mismatch-row td {
+  border-bottom: 1px solid #fed7d7;
+}
+
+/* Rounded Corners */
+.discrepancy-table tr:first-child th:first-child {
+  border-top-left-radius: 8px;
+}
+.discrepancy-table tr:first-child th:last-child {
+  border-top-right-radius: 8px;
+}
+.discrepancy-table tr:last-child td:first-child {
+  border-bottom-left-radius: 8px;
+}
+.discrepancy-table tr:last-child td:last-child {
+  border-bottom-right-radius: 8px;
+}
+
+
 
 /* Badge styles */
 .badge {

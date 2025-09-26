@@ -29,7 +29,7 @@ const InvoiceSettingsModal = ({ onClose, onCreateAnyway }) => {
         </div>
         
         <div className="modal-body">
-          <h3 className="modal-title">Invoice Settings Not Configured</h3>
+          <h3 className="modal-title">Invoice Settings Not Configured <span className="text-danger">*</span></h3>
           <p className="modal-description">
             You haven't set up your invoice settings yet.<br />
             Creating an invoice now will use default values.

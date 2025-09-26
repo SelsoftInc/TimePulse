@@ -1,7 +1,5 @@
 .workspace-selector {
   padding: 15px 10px;
-  border-bottom: 1px solid rgba(219, 223, 234, 0.2);
-  margin-bottom: 10px;
 }
 
 .workspace-current {
@@ -11,18 +9,16 @@
 }
 
 .workspace-icon {
-  width: 32px;
-  height: 32px;
-  background-color: rgba(255, 255, 255, 0.2); /* Transparent white background */
-  color: #ffffff;
-  border-radius: 4px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 700;
   margin-right: 10px;
+  margin-bottom: 20px;
   font-size: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
 .workspace-details {
@@ -30,11 +26,12 @@
 }
 
 .workspace-name {
-  font-weight: 700;
+  font-weight: 600;
+  overflow: hidden;
   font-size: 14px;
-  color: #ffffff; /* White color to match Jugl */
-  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.4);
+  color: #ffffff;
   letter-spacing: 0.3px;
+  white-space: nowrap;
 }
 
 .workspace-tagline {

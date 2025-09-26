@@ -45,7 +45,7 @@
 .invoice-settings-modal .modal-icon {
   width: 64px;
   height: 64px;
-  background: linear-gradient(135deg, #0971f1 0%, #1e88e5 100%);
+  background: linear-gradient(135deg, #0971f1 0%, red 100%);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -84,12 +84,12 @@
 }
 
 .invoice-settings-modal .modal-body {
-  padding: 0 2rem 2rem 2rem;
+  padding: 1.5rem 2rem 2rem;
   text-align: center;
 }
 
 .invoice-settings-modal .modal-title {
-  font-size: 1.5rem;
+  font-size: 1.4rem;
   font-weight: 600;
   color: #364a63;
   margin-bottom: 1rem;
@@ -98,7 +98,7 @@
 
 .invoice-settings-modal .modal-description {
   color: #8094ae;
-  font-size: 1rem;
+  font-size: 0.9rem;
   line-height: 1.6;
   margin-bottom: 2rem;
 }
@@ -114,7 +114,7 @@
   padding: 0.75rem 1.5rem;
   border-radius: 6px;
   font-weight: 500;
-  font-size: 0.9375rem;
+  font-size: 0.9rem;
   border: none;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -144,8 +144,8 @@
 
 .invoice-settings-modal .btn-outline-secondary:hover {
   background-color: #f5f6fa;
-  color: #526484;
-  border-color: #d3d9e4;
+  color: darkblue;
+  border-color: darkblue;
 }
 
 /* Responsive adjustments */

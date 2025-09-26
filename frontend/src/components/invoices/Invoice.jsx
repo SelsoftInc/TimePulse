@@ -389,10 +389,13 @@ const DiscrepancyMatching = ({ discrepancy }) => {
   return (
     <div className="discrepancy-matching">
       <div className="discrepancy-header">
-        <h5>SOW: {discrepancy.sowName} ({discrepancy.hours} hrs @ ${discrepancy.rate}/hr)</h5>
+        <h6>
+          SOW: {discrepancy.sowName} ({discrepancy.hours} hrs @ $
+          {discrepancy.rate}/hr)
+        </h6>
       </div>
-      
-      <table className="table discrepancy-table">
+
+      <table className="discrepancy-table">
         <thead>
           <tr>
             <th>Source</th>
@@ -402,7 +405,7 @@ const DiscrepancyMatching = ({ discrepancy }) => {
         </thead>
         <tbody>
           {Object.entries(discrepancy.sources).map(([source, data], index) => (
-            <tr key={index} className={source === "Mismatch" ? "mismatch-row" : ""}>
+            <tr key={index} className={source.toLowerCase() === "mismatch" ? "mismatch-row" : ""}>
               <td>{source}</td>
               <td>{data.hours}</td>
               <td>{data.notes}</td>
@@ -413,7 +416,6 @@ const DiscrepancyMatching = ({ discrepancy }) => {
     </div>
   );
 };
-
 // Main Invoice Component
 const Invoice = () => {
   const [invoices, setInvoices] = useState([]);
@@ -598,9 +600,9 @@ const Invoice = () => {
 
   
   return (
-    <div className="nk-content">
-      <div className="container-fluid">
-        <div className="nk-content-inner">
+    <div className="nk-conten">
+      <div className="container-flui">
+        <div className="nk-content-innr">
           <div className="nk-content-body">
             <div className="nk-block-head nk-block-head-sm">
               <div className="nk-block-between">
@@ -762,9 +764,9 @@ const Invoice = () => {
                       </div>
                     </div>
                   ) : (
-                    <div className="card-inner p-0">
-                      <div className="nk-tb-list">
-                        <div className="discrepancy-section">
+                    <div className="">
+                      <div className="">
+                        <div className="">
                           <DiscrepancyMatching discrepancy={discrepancyData} />
                         </div>
                       </div>

@@ -5,36 +5,46 @@ import PermissionGuard from "../common/PermissionGuard";
 import "./Sidebar.css";
 import WorkspaceSelector from "./WorkspaceSelector";
 
-const Sidebar = ({ collapsed, toggleSidebar, className = '' }) => {
+const Sidebar = ({ collapsed, toggleSidebar, className = "" }) => {
   const { subdomain } = useParams();
-  const [currentSubdomain, setCurrentSubdomain] = useState('');
+  const [currentSubdomain, setCurrentSubdomain] = useState("");
   const location = useLocation();
   const currentPath = location.pathname;
-  
+
   useEffect(() => {
     if (subdomain) {
       setCurrentSubdomain(subdomain);
     } else {
-      // Fallback to getting subdomain from localStorage if not in URL params
-      const storedTenant = localStorage.getItem('currentTenant');
+      const storedTenant = localStorage.getItem("currentTenant");
       if (storedTenant) {
         const tenant = JSON.parse(storedTenant);
         setCurrentSubdomain(tenant.subdomain);
       }
     }
   }, [subdomain]);
-  
+
   return (
-    <aside className={`app-sidebar ${collapsed ? 'collapsed' : ''} ${className}`}>
-      <div className="sidebar-content">
-        {/* Single workspace selector */}
+    <aside
+      className={`app-sidebar ${collapsed ? "collapsed" : ""} ${className}`}
+    >
+      <div className="sidebar-header">
         {!collapsed && <WorkspaceSelector />}
-        
+        <div className="sidebar-collapse-button" onClick={toggleSidebar}>
+          <i className={`fa fa-angle-${collapsed ? "right" : "left"}`}></i>
+        </div>
+      </div>
+
+      <div className="sidebar-content">
         <ul className="sidebar-menu">
           <li className="sidebar-item">
-            <Link 
-              to={`/${currentSubdomain}`} 
-              className={`sidebar-link ${currentPath === `/${currentSubdomain}` || currentPath === `/${currentSubdomain}/dashboard` ? 'active' : ''}`}
+            <Link
+              to={`/${currentSubdomain}`}
+              className={`sidebar-link ${
+                currentPath === `/${currentSubdomain}` ||
+                currentPath === `/${currentSubdomain}/dashboard`
+                  ? "active"
+                  : ""
+              }`}
             >
               <div className="sidebar-icon">
                 <i className="fa fa-tachometer-alt"></i>
@@ -42,13 +52,20 @@ const Sidebar = ({ collapsed, toggleSidebar, className = '' }) => {
               {!collapsed && <span className="sidebar-text">Dashboard</span>}
             </Link>
           </li>
-          
-          
-          <PermissionGuard requiredPermission={PERMISSIONS.VIEW_TIMESHEET} fallback={null}>
+
+          <PermissionGuard
+            requiredPermission={PERMISSIONS.VIEW_TIMESHEET}
+            fallback={null}
+          >
             <li className="sidebar-item">
-              <Link 
-                to={`/${currentSubdomain}/timesheets`} 
-                className={`sidebar-link ${currentPath.includes(`/${currentSubdomain}/timesheets`) && !currentPath.includes('/approval') ? 'active' : ''}`}
+              <Link
+                to={`/${currentSubdomain}/timesheets`}
+                className={`sidebar-link ${
+                  currentPath.includes(`/${currentSubdomain}/timesheets`) &&
+                  !currentPath.includes("/approval")
+                    ? "active"
+                    : ""
+                }`}
               >
                 <div className="sidebar-icon">
                   <i className="fa fa-clock"></i>
@@ -57,26 +74,45 @@ const Sidebar = ({ collapsed, toggleSidebar, className = '' }) => {
               </Link>
             </li>
           </PermissionGuard>
-          
-          <PermissionGuard requiredPermission={PERMISSIONS.APPROVE_TIMESHEETS} fallback={null}>
-            <li className="sidebar-item sub-item">
-              <Link 
-                to={`/${currentSubdomain}/timesheets/approval`} 
-                className={`sidebar-link ${currentPath.includes(`/${currentSubdomain}/timesheets/approval`) ? 'active' : ''}`}
-              >
-                <div className="sidebar-icon">
-                  <i className="fa fa-check-circle"></i>
-                </div>
-                {!collapsed && <span className="sidebar-text">Timesheet Approval</span>}
-              </Link>
-            </li>
-          </PermissionGuard>
-          
-          <PermissionGuard requiredPermission={PERMISSIONS.VIEW_INVOICE} fallback={null}>
+
+          {/* Submenu hidden when collapsed */}
+          {!collapsed && (
+            <PermissionGuard
+              requiredPermission={PERMISSIONS.APPROVE_TIMESHEETS}
+              fallback={null}
+            >
+              <li className="sidebar-item sub-item with-vertical-line">
+                <Link
+                  to={`/${currentSubdomain}/timesheets/approval`}
+                  className={`sidebar-link ${
+                    currentPath.includes(
+                      `/${currentSubdomain}/timesheets/approval`
+                    )
+                      ? "active"
+                      : ""
+                  }`}
+                >
+                  <div className="sidebar-icon">
+                    <i className="fa fa-check-circle"></i>
+                  </div>
+                  <span className="sidebar-text">Timesheet Approval</span>
+                </Link>
+              </li>
+            </PermissionGuard>
+          )}
+
+          <PermissionGuard
+            requiredPermission={PERMISSIONS.VIEW_INVOICE}
+            fallback={null}
+          >
             <li className="sidebar-item">
-              <Link 
-                to={`/${currentSubdomain}/invoices`} 
-                className={`sidebar-link ${currentPath.includes(`/${currentSubdomain}/invoices`) ? 'active' : ''}`}
+              <Link
+                to={`/${currentSubdomain}/invoices`}
+                className={`sidebar-link ${
+                  currentPath.includes(`/${currentSubdomain}/invoices`)
+                    ? "active"
+                    : ""
+                }`}
               >
                 <div className="sidebar-icon">
                   <i className="fa fa-file-invoice"></i>
@@ -85,12 +121,19 @@ const Sidebar = ({ collapsed, toggleSidebar, className = '' }) => {
               </Link>
             </li>
           </PermissionGuard>
-          
-          <PermissionGuard requiredPermission={PERMISSIONS.VIEW_EMPLOYEE} fallback={null}>
+
+          <PermissionGuard
+            requiredPermission={PERMISSIONS.VIEW_EMPLOYEE}
+            fallback={null}
+          >
             <li className="sidebar-item">
-              <Link 
-                to={`/${currentSubdomain}/employees`} 
-                className={`sidebar-link ${currentPath.includes(`/${currentSubdomain}/employees`) ? 'active' : ''}`}
+              <Link
+                to={`/${currentSubdomain}/employees`}
+                className={`sidebar-link ${
+                  currentPath.includes(`/${currentSubdomain}/employees`)
+                    ? "active"
+                    : ""
+                }`}
               >
                 <div className="sidebar-icon">
                   <i className="fa fa-user-tie"></i>
@@ -99,12 +142,22 @@ const Sidebar = ({ collapsed, toggleSidebar, className = '' }) => {
               </Link>
             </li>
           </PermissionGuard>
-          
-          <PermissionGuard requiredPermission={PERMISSIONS.VIEW_VENDOR} fallback={null}>
+
+          <PermissionGuard
+            requiredPermission={PERMISSIONS.VIEW_VENDOR}
+            fallback={null}
+          >
             <li className="sidebar-item">
-              <Link 
-                to={`/${currentSubdomain}/vendors`} 
-                className={`sidebar-link ${currentPath.includes(`/${currentSubdomain}/vendors`) && !new URLSearchParams(window.location.search).get('implPartner') ? 'active' : ''}`}
+              <Link
+                to={`/${currentSubdomain}/vendors`}
+                className={`sidebar-link ${
+                  currentPath.includes(`/${currentSubdomain}/vendors`) &&
+                  !new URLSearchParams(window.location.search).get(
+                    "implPartner"
+                  )
+                    ? "active"
+                    : ""
+                }`}
               >
                 <div className="sidebar-icon">
                   <i className="fa fa-truck"></i>
@@ -114,40 +167,65 @@ const Sidebar = ({ collapsed, toggleSidebar, className = '' }) => {
             </li>
           </PermissionGuard>
 
-          <PermissionGuard requiredPermission={PERMISSIONS.VIEW_CLIENT} fallback={null}>
+          <PermissionGuard
+            requiredPermission={PERMISSIONS.VIEW_CLIENT}
+            fallback={null}
+          >
             <li className="sidebar-item">
-              <Link 
-                to={`/${currentSubdomain}/clients`} 
-                className={`sidebar-link ${currentPath.includes(`/${currentSubdomain}/clients`) ? 'active' : ''}`}
+              <Link
+                to={`/${currentSubdomain}/clients`}
+                className={`sidebar-link ${
+                  currentPath.includes(`/${currentSubdomain}/clients`)
+                    ? "active"
+                    : ""
+                }`}
               >
                 <div className="sidebar-icon">
                   <i className="fa fa-users"></i>
                 </div>
-                {!collapsed && <span className="sidebar-text">End Clients</span>}
+                {!collapsed && (
+                  <span className="sidebar-text">End Clients</span>
+                )}
               </Link>
             </li>
           </PermissionGuard>
 
-          <PermissionGuard requiredPermission={PERMISSIONS.VIEW_VENDOR} fallback={null}>
+          <PermissionGuard
+            requiredPermission={PERMISSIONS.VIEW_VENDOR}
+            fallback={null}
+          >
             <li className="sidebar-item">
-              <Link 
-                to={`/${currentSubdomain}/vendors?implPartner=1`} 
-                className={`sidebar-link ${currentPath.includes(`/${currentSubdomain}/vendors`) && new URLSearchParams(window.location.search).get('implPartner') ? 'active' : ''}`}
+              <Link
+                to={`/${currentSubdomain}/vendors?implPartner=1`}
+                className={`sidebar-link ${
+                  currentPath.includes(`/${currentSubdomain}/vendors`) &&
+                  new URLSearchParams(window.location.search).get("implPartner")
+                    ? "active"
+                    : ""
+                }`}
               >
                 <div className="sidebar-icon">
                   <i className="fa fa-handshake"></i>
                 </div>
-                {!collapsed && <span className="sidebar-text">Impl Partners</span>}
+                {!collapsed && (
+                  <span className="sidebar-text">Impl Partners</span>
+                )}
               </Link>
             </li>
           </PermissionGuard>
-          
-          {/* Reports moved to second-to-last position */}
-          <PermissionGuard requiredPermission={PERMISSIONS.VIEW_REPORTS} fallback={null}>
+
+          <PermissionGuard
+            requiredPermission={PERMISSIONS.VIEW_REPORTS}
+            fallback={null}
+          >
             <li className="sidebar-item">
-              <Link 
-                to={`/${currentSubdomain}/reports`} 
-                className={`sidebar-link ${currentPath.includes(`/${currentSubdomain}/reports`) ? 'active' : ''}`}
+              <Link
+                to={`/${currentSubdomain}/reports`}
+                className={`sidebar-link ${
+                  currentPath.includes(`/${currentSubdomain}/reports`)
+                    ? "active"
+                    : ""
+                }`}
               >
                 <div className="sidebar-icon">
                   <i className="fa fa-chart-bar"></i>
@@ -156,13 +234,19 @@ const Sidebar = ({ collapsed, toggleSidebar, className = '' }) => {
               </Link>
             </li>
           </PermissionGuard>
-          
-          {/* Settings moved to last position */}
-          <PermissionGuard requiredPermission={PERMISSIONS.VIEW_SETTINGS} fallback={null}>
+
+          <PermissionGuard
+            requiredPermission={PERMISSIONS.VIEW_SETTINGS}
+            fallback={null}
+          >
             <li className="sidebar-item">
-              <Link 
-                to={`/${currentSubdomain}/settings`} 
-                className={`sidebar-link ${currentPath.includes(`/${currentSubdomain}/settings`) ? 'active' : ''}`}
+              <Link
+                to={`/${currentSubdomain}/settings`}
+                className={`sidebar-link ${
+                  currentPath.includes(`/${currentSubdomain}/settings`)
+                    ? "active"
+                    : ""
+                }`}
               >
                 <div className="sidebar-icon">
                   <i className="fa fa-cog"></i>
@@ -172,13 +256,6 @@ const Sidebar = ({ collapsed, toggleSidebar, className = '' }) => {
             </li>
           </PermissionGuard>
         </ul>
-        
-        {/* Sidebar collapse button */}
-        <div className="sidebar-footer">
-          <div className="sidebar-collapse-button" onClick={toggleSidebar}>
-            <i className={`fa fa-angle-${collapsed ? 'right' : 'left'}`}></i>
-          </div>
-        </div>
       </div>
     </aside>
   );

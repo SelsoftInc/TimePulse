@@ -1,44 +1,130 @@
-/* TimesheetSummary.css */
-
-.timesheet-summary-table {
-  margin-bottom: 0;
+.card-inner {
+  padding: 20px;
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-top: 20px;
 }
 
-.timesheet-summary-table th {
-  background-color: #f8f9fa;
-  border-bottom: 2px solid #dee2e6;
-  font-weight: 600;
-  font-size: 0.875rem;
-  color: #495057;
-  text-align: center;
-  padding: 12px 8px;
-  vertical-align: middle;
+.table-responsive {
+  overflow-x: auto;
 }
 
-.timesheet-summary-table th:first-child {
+.table {
+  width: 100%;
+  margin-bottom: 1rem;
+  background-color: transparent;
+  border-collapse: collapse;
+}
+
+.table th,
+.table td {
   text-align: left;
-  width: 200px;
-}
-
-.timesheet-summary-table td {
-  padding: 12px 8px;
+  padding: 12px;
   vertical-align: middle;
-  border-bottom: 1px solid #dee2e6;
+  border-bottom: 1px solid #ddd;
 }
 
-.timesheet-row {
-  cursor: pointer;
-  transition: background-color 0.2s ease;
+.table-light th {
+  background-color: #f8f9fa;
+  color: #495057;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.table-hover tbody tr:hover {
+  background-color: #f1f1f1;
 }
 
 .timesheet-row:hover {
-  background-color: #f8f9fa;
+  cursor: pointer;
 }
 
 .timesheet-week {
-  display: flex;
-  flex-direction: column;
+  font-weight: bold;
 }
+
+.week-range {
+  color: #007bff;
+}
+
+.hours-value {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.btn-group {
+  display: flex;
+  justify-content: center;
+}
+
+.btn-group .btn {
+  font-size: 14px;
+  margin: 0 4px;
+  padding: 6px 10px;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+}
+
+.btn-outline-primary {
+  color: #007bff;
+  border-color: #007bff;
+}
+
+.btn-outline-primary:hover {
+  background-color: #007bff;
+  color: white;
+}
+
+.btn-outline-success {
+  color: #28a745;
+  border-color: #28a745;
+}
+
+.btn-outline-success:hover {
+  background-color: #28a745;
+  color: rgb(251, 156, 4);
+}
+
+.btn-outline-info {
+  color: #17a2b8;
+  border-color: #17a2b8;
+}
+
+.btn-outline-info:hover {
+  background-color: #17a2b8;
+  color: rgb(2, 110, 18);
+}
+
+.permission-guard {
+  display: inline-block;
+  margin-left: 5px;
+}
+.text-center {
+  text-align: center;
+}
+
+.table td:last-child {
+  text-align: center;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+@media (max-width: 768px) {
+  .table {
+    font-size: 12px;
+  }
+
+  .table th, .table td {
+    padding: 8px;
+  }
+
+  .btn-group .btn {
+    padding: 4px 6px;
+    font-size: 12px;
+  }
+}
+
 
 .week-range {
   font-weight: 600;
@@ -47,7 +133,6 @@
 }
 
 .hours-value {
-  display: block;
   font-weight: 600;
   font-size: 0.875rem;
   color: #495057;
@@ -60,7 +145,6 @@
   line-height: 1.2;
 }
 
-/* Status Badges */
 .badge {
   display: inline-block;
   padding: 0.375rem 0.75rem;
@@ -73,6 +157,85 @@
   border-radius: 0.375rem;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+}
+
+.mt-2 {
+  margin-top: 0.5rem;
+}
+
+.toggle-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.toggle-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.toggle-switch input {
+  display: none;
+}
+.slider {
+  position: relative;
+  width: 40px;
+  height: 20px;
+  background-color: #ccc;
+  border-radius: 34px;
+  transition: background-color 0.3s ease;
+}
+
+.slider::before {
+  content: "";
+  position: absolute;
+  height: 16px;
+  width: 16px;
+  left: 2px;
+  bottom: 2px;
+  background-color: white;
+  border-radius: 50%;
+  transition: transform 0.3s ease;
+}
+
+.toggle-switch input:checked + .slider {
+  background-color: #0d6efd;
+}
+
+.toggle-switch input:checked + .slider::before {
+  transform: translateX(20px);
+}
+
+.label-text {
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+.badge-toggle {
+  display: inline-block;
+  padding: 0.35em 0.65em;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1;
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: baseline;
+  border: 1px solid;
+  border-radius: 0.3rem;
+  background-color: transparent;
+}
+
+.badge-internal {
+  color: #007bff;
+  border-color: #007bff;
+}
+
+.badge-external {
+  color: #28a745;
+  border-color: #28a745;
 }
 
 .badge-pending {
@@ -110,55 +273,190 @@
   .timesheet-summary-table {
     font-size: 0.8rem;
   }
-  
+
   .timesheet-summary-table th,
   .timesheet-summary-table td {
     padding: 8px 4px;
   }
-  
+
   .hours-label {
     display: none;
   }
-  
+
   .week-range {
     font-size: 0.8rem;
   }
 }
 
-/* Loading state */
 .spinner-border {
   width: 3rem;
   height: 3rem;
   border-width: 0.3em;
 }
 
-/* Search section styling */
 .card-inner.border-top {
   background-color: #f8f9fa;
 }
-
-/* Table hover effects */
 .table-hover tbody tr:hover {
   background-color: rgba(0, 123, 255, 0.05);
 }
 
-/* Status column styling */
 .timesheet-summary-table td:nth-child(2) {
   text-align: center;
 }
-
-/* Week range column styling */
 .timesheet-summary-table td:first-child {
   font-weight: 500;
 }
 
-/* Center align all hour columns */
-.timesheet-summary-table td:nth-child(n+3) {
+.timesheet-summary-table td:nth-child(n + 3) {
   text-align: center;
 }
+.timesheet-summary-table th:nth-child(2) {
+  width: 150px;
+}
+.timesheet-summary-table th:nth-child(3) {
+  width: 160px;
+}
+.timesheet-summary-table th:nth-child(4) {
+  width: 160px;
+}
+.timesheet-summary-table th:nth-child(5) {
+  width: 140px;
+}
 
-/* Ensure consistent column widths */
-.timesheet-summary-table th:nth-child(2) { width: 150px; }
-.timesheet-summary-table th:nth-child(3) { width: 160px; }
-.timesheet-summary-table th:nth-child(4) { width: 160px; }
-.timesheet-summary-table th:nth-child(5) { width: 140px; }
+.actions-dropdown {
+  position: relative;
+  display: inline-block;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  user-select: none;
+}
+
+.dropdown-toggle-btn {
+  background-color: #0d6efd;
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 16px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 4px 8px rgba(13, 110, 253, 0.3);
+  transition: background-color 0.3s ease;
+}
+
+.dropdown-toggle-btn:hover,
+.dropdown-toggle-btn:focus {
+  background-color: #0847c0;
+  outline: none;
+}
+
+.dropdown-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  background-color: white;
+  min-width: 280px;
+  max-width: 350px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+  border-radius: 12px;
+  padding: 8px 0;
+  z-index: 1000;
+  font-size: 14px;
+  color: #212529;
+  overflow: auto;
+  max-height: 400px;
+}
+
+.dropdown-menu li {
+  list-style: none;
+  width: 100%;
+}
+.dropdown-item {
+  background: none;
+  border: none;
+  padding: 12px 20px;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 600;
+  color: #212529;
+  transition: background-color 0.2s ease;
+  border-radius: 0;
+}
+
+.dropdown-item:hover,
+.dropdown-item:focus {
+  background-color: #e9f0ff;
+  outline: none;
+}
+
+.dropdown-item em.icon {
+  font-size: 20px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #0d6efd;
+}
+
+.file-upload-label {
+  cursor: pointer;
+  user-select: none;
+  width: 100%;
+}
+
+.dropdown-info,
+.dropdown-success,
+.dropdown-error {
+  padding: 10px 20px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.dropdown-info {
+  background-color: #d1ecf1;
+  color: #0c5460;
+}
+
+.dropdown-success {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.dropdown-error {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.dropdown-info em,
+.dropdown-success em,
+.dropdown-error em {
+  font-size: 18px;
+  color: inherit;
+}
+
+.dropdown-menu::-webkit-scrollbar {
+  width: 6px;
+}
+
+.dropdown-menu::-webkit-scrollbar-thumb {
+  background-color: rgba(13, 110, 253, 0.4);
+  border-radius: 3px;
+}
+
+@media (max-width: 480px) {
+  .dropdown-menu {
+    min-width: 90vw;
+    max-width: 90vw;
+    right: 5vw;
+  }
+}

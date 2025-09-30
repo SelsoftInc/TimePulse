@@ -125,7 +125,7 @@ router.get('/:id', async (req, res, next) => {
 router.put('/:id', async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { dailyHours, status, clientId } = req.body || {};
+    const { dailyHours, status, clientId, notes, attachments } = req.body || {};
 
     const row = await models.Timesheet.findByPk(id);
     if (!row) return res.status(404).json({ success: false, message: 'Timesheet not found' });
@@ -137,11 +137,94 @@ router.put('/:id', async (req, res, next) => {
       row.dailyHours = { mon: 0, tue: 0, wed: 0, thu: 0, fri: 0, sat: 0, sun: 0, ...dailyHours };
       row.totalHours = Number(total.toFixed(2));
     }
-    if (status) row.status = status;
+    if (status) {
+      row.status = status;
+      if (status === 'submitted') {
+        row.submittedAt = new Date();
+      } else if (status === 'approved') {
+        row.approvedAt = new Date();
+        // Note: approvedBy should be set from authenticated user
+      }
+    }
     if (clientId !== undefined) row.clientId = clientId || null;
+    if (notes !== undefined) row.notes = notes;
+    if (attachments !== undefined) row.attachments = attachments;
 
     await row.save();
-    res.json({ success: true, timesheet: row });
+    res.json({ success: true, timesheet: row, message: 'Timesheet updated successfully' });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /api/timesheets/employee/:employeeId/current?tenantId=...
+// Get current week's timesheet for a specific employee
+router.get('/employee/:employeeId/current', async (req, res, next) => {
+  try {
+    const { employeeId } = req.params;
+    const { tenantId } = req.query;
+    
+    if (!tenantId) return res.status(400).json({ success: false, message: 'tenantId is required' });
+
+    const { weekStart, weekEnd } = getWeekRangeMonToSun(new Date());
+
+    // Get employee details
+    const employee = await models.Employee.findOne({
+      where: { id: employeeId, tenantId },
+      include: [
+        { model: models.Client, as: 'client', attributes: ['id', 'clientName'] }
+      ]
+    });
+
+    if (!employee) {
+      return res.status(404).json({ success: false, message: 'Employee not found' });
+    }
+
+    // Find or create timesheet for current week
+    const [timesheet, created] = await models.Timesheet.findOrCreate({
+      where: { 
+        tenantId, 
+        employeeId, 
+        weekStart, 
+        weekEnd 
+      },
+      defaults: {
+        tenantId,
+        employeeId,
+        clientId: employee.clientId || null,
+        weekStart,
+        weekEnd,
+        dailyHours: { mon: 0, tue: 0, wed: 0, thu: 0, fri: 0, sat: 0, sun: 0 },
+        totalHours: 0,
+        status: 'draft'
+      }
+    });
+
+    // Format response
+    const response = {
+      id: timesheet.id,
+      employee: {
+        id: employee.id,
+        name: `${employee.firstName} ${employee.lastName}`,
+        email: employee.email
+      },
+      client: employee.client ? {
+        id: employee.client.id,
+        name: employee.client.clientName
+      } : null,
+      weekStart: timesheet.weekStart,
+      weekEnd: timesheet.weekEnd,
+      weekLabel: `${new Date(timesheet.weekStart).toLocaleString('en-US', { month: 'short', day: 'numeric' })} - ${new Date(timesheet.weekEnd).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`,
+      dailyHours: timesheet.dailyHours,
+      totalHours: Number(timesheet.totalHours),
+      status: timesheet.status,
+      notes: timesheet.notes,
+      attachments: timesheet.attachments || [],
+      submittedAt: timesheet.submittedAt,
+      created: created
+    };
+
+    res.json({ success: true, timesheet: response });
   } catch (err) {
     next(err);
   }

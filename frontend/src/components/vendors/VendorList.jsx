@@ -56,13 +56,18 @@ const VendorList = () => {
   // Close dropdown on outside click
   useEffect(() => {
     const handler = (e) => {
-      const inMenu = e.target.closest('.dropdown-menu');
-      const inTrigger = e.target.closest('.btn-trigger');
-      if (!inMenu && !inTrigger) setOpenMenuId(null);
+      // Close dropdown when clicking outside
+      if (openMenuId !== null) {
+        const dropdownEl = document.querySelector(`[data-dropdown-id="${openMenuId}"]`);
+        const isClickInside = dropdownEl?.contains(e.target);
+        if (!isClickInside) {
+          setOpenMenuId(null);
+        }
+      }
     };
-    document.addEventListener('click', handler);
-    return () => document.removeEventListener('click', handler);
-  }, []);
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [openMenuId]);
 
   const toggleMenu = (id) => setOpenMenuId(prev => (prev === id ? null : id));
 
@@ -128,7 +133,7 @@ const VendorList = () => {
             </div>
           ) : (
             <div className="card">
-              <div className="card-inner">
+              <div className="card-inne">
                 {vendors.length === 0 ? (
                   <div className="text-center text-muted py-5">
                     <p className="mb-2">No vendors found.</p>
@@ -171,16 +176,31 @@ const VendorList = () => {
                           </td>
                           <td>${Number(vendor.totalSpent || 0).toLocaleString()}</td>
                           <td className="text-right">
-                            <div className="dropdown">
-                              <button className="btn btn-sm btn-icon btn-trigger dropdown-toggle" onClick={() => toggleMenu(vendor.id)}>
+                            <div className="dropdown" data-dropdown-id={vendor.id} style={{ position: 'relative' }}>
+                              <button 
+                                className="btn btn-sm btn-icon btn-trigger" 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toggleMenu(vendor.id);
+                                }}
+                                type="button"
+                              >
                                 <i className="fas fa-ellipsis-h"></i>
                               </button>
-                              <div className={`dropdown-menu dropdown-menu-right ${openMenuId === vendor.id ? 'show' : ''}`} style={{ position: 'absolute' }}>
-                                <Link to={`/${subdomain}/vendors/${vendor.id}`} className="dropdown-item" onClick={() => setOpenMenuId(null)}>
+                              <div className={`dropdown-menu dropdown-menu-right ${openMenuId === vendor.id ? 'show' : ''}`}>
+                                <Link 
+                                  to={`/${subdomain}/vendors/${vendor.id}`} 
+                                  className="dropdown-item"
+                                  onClick={() => setOpenMenuId(null)}
+                                >
                                   <i className="fas fa-eye mr-1"></i> View Details
                                 </Link>
                                 <PermissionGuard requiredPermission={PERMISSIONS.EDIT_VENDOR}>
-                                  <Link to={`/${subdomain}/vendors/edit/${vendor.id}`} className="dropdown-item" onClick={() => setOpenMenuId(null)}>
+                                  <Link 
+                                    to={`/${subdomain}/vendors/edit/${vendor.id}`} 
+                                    className="dropdown-item"
+                                    onClick={() => setOpenMenuId(null)}
+                                  >
                                     <i className="fas fa-edit mr-1"></i> Edit
                                   </Link>
                                 </PermissionGuard>
@@ -188,7 +208,12 @@ const VendorList = () => {
                                   <button
                                     type="button"
                                     className="dropdown-item text-danger"
-                                    onClick={() => { setPendingDeleteId(vendor.id); setConfirmOpen(true); }}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setOpenMenuId(null);
+                                      setPendingDeleteId(vendor.id);
+                                      setConfirmOpen(true);
+                                    }}
                                   >
                                     <i className="fas fa-trash-alt mr-1"></i> Delete
                                   </button>

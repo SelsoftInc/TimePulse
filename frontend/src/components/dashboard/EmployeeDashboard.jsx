@@ -431,7 +431,7 @@ const EmployeeDashboard = () => {
   return (
     <div className="modern-employee-dashboard">
       {/* Header Section */}
-      <div className="dashboard-header">
+      <div className="dashboard-heade">
         <div className="header-content">
           <div className="header-info">
             <h1 className="dashboard-title">Welcome back, {user?.name || 'Employee'}! 👋</h1>

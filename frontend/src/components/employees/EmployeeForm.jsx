@@ -3,14 +3,19 @@ import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { PERMISSIONS } from '../../utils/roles';
 import PermissionGuard from '../common/PermissionGuard';
 import { useAuth } from '../../contexts/AuthContext';
+import { useToast } from '../../contexts/ToastContext';
+import { API_BASE, apiFetch } from '../../config/api';
 import './Employees.css';
 
 const EmployeeForm = () => {
   const navigate = useNavigate();
-  const { subdomain } = useParams();
+  const { subdomain, id } = useParams(); // Add id parameter for edit mode
   const location = useLocation();
   const { checkPermission, user } = useAuth();
+  const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [employeeLoading, setEmployeeLoading] = useState(false);
+  const isEditMode = !!id; // Determine if we're in edit mode
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -89,6 +94,64 @@ const EmployeeForm = () => {
     }
   }, [location.search, clients]);
 
+  // Fetch existing employee data when in edit mode
+  useEffect(() => {
+    const fetchEmployee = async () => {
+      if (!isEditMode || !id || !user?.tenantId) return;
+      
+      try {
+        setEmployeeLoading(true);
+        const response = await fetch(`${API_BASE}/api/employees/${id}?tenantId=${user.tenantId}`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch employee: ${response.status}`);
+        }
+
+        const data = await response.json();
+        const employee = data.employee || data;
+
+        // Populate form with existing employee data
+        setFormData({
+          firstName: employee.firstName || '',
+          lastName: employee.lastName || '',
+          email: employee.email || '',
+          phone: employee.phone || '',
+          position: employee.position || employee.title || '',
+          department: employee.department || '',
+          startDate: employee.startDate || employee.joinDate || '',
+          clientId: employee.clientId || '',
+          client: employee.client || '',
+          clientType: employee.clientType || 'internal',
+          approver: employee.approver || '',
+          hourlyRate: employee.hourlyRate || '',
+          overtimeRate: employee.overtimeRate || '',
+          enableOvertime: employee.enableOvertime || false,
+          overtimeMultiplier: employee.overtimeMultiplier || 1.5,
+          status: employee.status || 'active',
+          address: employee.address || '',
+          city: employee.city || '',
+          state: employee.state || '',
+          zip: employee.zip || '',
+          country: employee.country || 'United States',
+          notes: employee.notes || ''
+        });
+      } catch (error) {
+        console.error('Error fetching employee:', error);
+        // Could add toast notification here
+      } finally {
+        setEmployeeLoading(false);
+      }
+    };
+
+    fetchEmployee();
+  }, [isEditMode, id, user?.tenantId]);
+
   // Sample client list - in a real app, this would come from an API
   // Sample approver list - in a real app, this would come from an API
   const approvers = [
@@ -132,39 +195,79 @@ const EmployeeForm = () => {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validation
+    if (!formData.clientId) {
+      toast.error('Please select a client');
+      return;
+    }
+
+    if (!user?.tenantId) {
+      toast.error('No tenant information available');
+      return;
+    }
+
     setLoading(true);
 
-    // In a real app, this would be an API call with FormData to handle file upload
-    setTimeout(() => {
+    try {
       // Calculate overtime rate if overtime is enabled
       let overtimeRate = null;
       if (formData.enableOvertime && formData.hourlyRate) {
         overtimeRate = parseFloat(formData.hourlyRate) * parseFloat(formData.overtimeMultiplier);
       }
       
-      const dataToSubmit = {
-        ...formData,
-        overtimeRate,
-        workOrderFilename: workOrder ? workOrder.name : null,
-        sowDetails: {
-          hourlyRate: formData.hourlyRate,
-          enableOvertime: formData.enableOvertime,
-          overtimeMultiplier: formData.overtimeMultiplier,
-          overtimeRate,
-          approvalWorkflow: formData.approvalWorkflow || 'manual',
-          workOrderDocument: workOrder ? workOrder.name : null
-        }
+      // Prepare employee data for backend
+      const employeeData = {
+        tenantId: user.tenantId,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        phone: formData.phone || null,
+        title: formData.position,
+        department: formData.department || null,
+        startDate: formData.startDate,
+        hourlyRate: formData.hourlyRate ? parseFloat(formData.hourlyRate) : null,
+        salaryType: formData.clientType === 'Subcontractor' ? 'subcontractor' : 'hourly',
+        status: formData.status || 'active',
+        contactInfo: JSON.stringify({
+          address: formData.address,
+          city: formData.city,
+          state: formData.state,
+          zip: formData.zip,
+          country: formData.country
+        }),
+        // Additional fields
+        overtimeRate: overtimeRate,
+        enableOvertime: formData.enableOvertime || false,
+        overtimeMultiplier: formData.overtimeMultiplier || 1.5,
+        approver: formData.approver,
+        notes: formData.notes,
+        clientId: formData.clientId,
+        client: formData.client
       };
-      
-      if (!formData.clientId) {
-        alert('Please select a client');
-        setLoading(false);
-        return;
+
+      // Make API call to create employee
+      const response = await apiFetch(`/api/employees`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(employeeData)
+      }, { timeoutMs: 15000 });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.details || errorData.error || `Failed to create employee (${response.status})`);
       }
-      console.log('Employee data submitted:', dataToSubmit);
-      setLoading(false);
+
+      await response.json(); // Consume the response
+      
+      toast.success('Employee created successfully!');
+      
+      // Navigate based on where we came from
       const params = new URLSearchParams(location.search);
       const qpClientId = params.get('clientId');
       if (qpClientId) {
@@ -172,9 +275,13 @@ const EmployeeForm = () => {
       } else {
         navigate(`/${subdomain}/employees`);
       }
-      // Show success message
-      alert('Employee created successfully!');
-    }, 800);
+
+    } catch (error) {
+      console.error('Error creating employee:', error);
+      toast.error(error.message || 'Failed to create employee. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -184,8 +291,10 @@ const EmployeeForm = () => {
           <div className="nk-block-head">
             <div className="nk-block-between">
               <div className="nk-block-head-content">
-                <h3 className="nk-block-title">Add New Employee</h3>
-                <p className="nk-block-subtitle">Create a new employee record</p>
+                <h3 className="nk-block-title">{isEditMode ? 'Edit Employee' : 'Add New Employee'}</h3>
+                {/* <p className="nk-block-subtitle">
+                  {isEditMode ? 'Update employee information' : 'Create a new employee record'}
+                </p> */}
               </div>
             </div>
           </div>
@@ -193,6 +302,13 @@ const EmployeeForm = () => {
           <div className="nk-block">
             <div className="card card-bordered">
               <div className="card-inne">
+                {employeeLoading ? (
+                  <div className="d-flex justify-content-center mt-5">
+                    <div className="spinner-border text-primary" role="status">
+                      <span className="sr-only">Loading employee data...</span>
+                    </div>
+                  </div>
+                ) : (
                 <form onSubmit={handleSubmit}>
                   <div className="row g-4">
                     <div className="col-lg-6">
@@ -449,7 +565,7 @@ const EmployeeForm = () => {
                     {checkPermission(PERMISSIONS.MANAGE_SETTINGS) && (
                       <div className="col-lg-12">
                         <div className="form-group">
-                          <label className="form-label">Work Order / SOW*</label>
+                          <label className="form-label">Work Order / SOW <span className="text-muted">(Optional)</span></label>
                           <div className="form-control-wrap">
                             <div className="custom-file">
                               <input
@@ -458,7 +574,6 @@ const EmployeeForm = () => {
                                 id="workOrder"
                                 onChange={handleFileChange}
                                 accept=".pdf,.doc,.docx"
-                                required
                               />
                               <label className="custom-file-label" htmlFor="workOrder">
                                 {workOrder ? workOrder.name : 'Choose file'}
@@ -567,6 +682,22 @@ const EmployeeForm = () => {
                         />
                       </div>
                     </div>
+                    <div className="col-lg-4">
+                      <div className="form-group">
+                        <label className="form-label" htmlFor="country">Country</label>
+                        <select
+                          className="form-select"
+                          id="country"
+                          name="country"
+                          value={formData.country}
+                          onChange={handleChange}
+                        >
+                          <option value="United States">United States</option>
+                          <option value="Canada">Canada</option>
+                          <option value="India">India</option>
+                        </select>
+                      </div>
+                    </div>
                     <div className="col-lg-12">
                       <div className="form-group">
                         <label className="form-label" htmlFor="notes">Notes</label>
@@ -587,10 +718,10 @@ const EmployeeForm = () => {
                           {loading ? (
                             <>
                               <span className="spinner-border spinner-border-sm mr-1" role="status" aria-hidden="true"></span>
-                              Creating...
+                              {isEditMode ? 'Updating...' : 'Creating...'}
                             </>
                           ) : (
-                            'Create Employee'
+                            isEditMode ? 'Update Employee' : 'Create Employee'
                           )}
                         </button>
                         <button 
@@ -612,6 +743,7 @@ const EmployeeForm = () => {
                     </div>
                   </div>
                 </form>
+                )}
               </div>
             </div>
           </div>

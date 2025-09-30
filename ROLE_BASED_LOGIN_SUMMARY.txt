@@ -1,0 +1,230 @@
+═══════════════════════════════════════════════════════════════════════════════
+                  TIMEPULSE - ROLE-BASED LOGIN SYSTEM CREATED
+═══════════════════════════════════════════════════════════════════════════════
+
+🔐 DEFAULT PASSWORD: test123#
+   (All users must change password on first login)
+
+───────────────────────────────────────────────────────────────────────────────
+✅ FEATURES IMPLEMENTED
+───────────────────────────────────────────────────────────────────────────────
+
+1. ✅ Four User Roles:
+   - Admin (Full system access)
+   - Manager (Team management + approval)
+   - Approver (Timesheet approval only)
+   - Employee (Basic timesheet access)
+
+2. ✅ Two New API Endpoints:
+   - POST /api/onboarding/create-role-users (Custom users)
+   - POST /api/onboarding/create-default-users (Quick setup)
+
+3. ✅ Role-Based Permissions System:
+   - Automatic permission assignment per role
+   - Prevents unauthorized access to modules
+   - Granular control over features
+
+4. ✅ Helper Script Created:
+   - server/scripts/create-selsoft-users.js
+   - Easy command-line user creation
+
+5. ✅ Updated Existing Onboarding:
+   - Excel import now assigns proper roles
+   - Default password changed to test123#
+
+───────────────────────────────────────────────────────────────────────────────
+🚀 QUICK START
+───────────────────────────────────────────────────────────────────────────────
+
+OPTION 1: Create Default Test Users (Fastest)
+─────────────────────────────────────────────
+cd server
+node scripts/create-selsoft-users.js default
+
+Creates:
+- admin@selsfot.com (Admin)
+- manager@selsfot.com (Manager)
+- approver@selsfot.com (Approver)
+- employee@selsfot.com (Employee)
+
+All with password: test123#
+
+
+OPTION 2: Create Custom Selsoft Team Users
+───────────────────────────────────────────
+cd server
+node scripts/create-selsoft-users.js custom
+
+Creates 6 users based on your team:
+- Pushban Rajaiyan (Admin)
+- Uma Sivalingam (Manager)
+- Lalitah Prabhu (Approver)
+- Selvakumar Murugesan (Employee)
+- Suresh Palakad Krishnan (Employee)
+- Panneerselvam Arulanandam (Employee)
+
+All with password: test123#
+
+───────────────────────────────────────────────────────────────────────────────
+📋 ROLE PERMISSIONS
+───────────────────────────────────────────────────────────────────────────────
+
+ADMIN:
+  ✅ Full system access
+  ✅ Manage users, employees, clients
+  ✅ Create/approve timesheets
+  ✅ Generate invoices
+  ✅ View all reports
+  ✅ System settings
+
+MANAGER:
+  ✅ View dashboard
+  ✅ Approve timesheets
+  ✅ View/edit employees
+  ✅ View clients & invoices
+  ✅ View reports
+  ❌ Cannot manage system settings
+
+APPROVER:
+  ✅ View dashboard
+  ✅ Approve timesheets
+  ✅ View employees
+  ✅ View reports
+  ❌ Cannot create/edit records
+  ❌ Cannot manage settings
+
+EMPLOYEE:
+  ✅ View own timesheets
+  ✅ Create timesheets
+  ✅ Edit own timesheets
+  ❌ Cannot view others' data
+  ❌ Cannot approve anything
+  ❌ No dashboard access
+
+───────────────────────────────────────────────────────────────────────────────
+🔑 TEST LOGINS (After running default setup)
+───────────────────────────────────────────────────────────────────────────────
+
+TEST ADMIN:
+  Email: admin@selsfot.com
+  Password: test123#
+  Access: Everything
+
+TEST MANAGER:
+  Email: manager@selsfot.com
+  Password: test123#
+  Access: Team management + approval
+
+TEST APPROVER:
+  Email: approver@selsfot.com
+  Password: test123#
+  Access: Timesheet approval only
+
+TEST EMPLOYEE:
+  Email: employee@selsfot.com
+  Password: test123#
+  Access: Own timesheets only
+
+───────────────────────────────────────────────────────────────────────────────
+📁 FILES CREATED
+───────────────────────────────────────────────────────────────────────────────
+
+Backend Changes:
+  ✅ server/routes/onboarding.js (Enhanced with role system)
+  ✅ server/scripts/create-selsoft-users.js (Helper script)
+
+Documentation:
+  ✅ ONBOARDING_API_DOCUMENTATION.md (Complete API docs)
+  ✅ SELSOFT_ONBOARDING_GUIDE.md (Step-by-step guide)
+  ✅ ROLE_BASED_LOGIN_SUMMARY.txt (This file)
+
+Previous Files (Still valid):
+  ✅ LOGIN_CREDENTIALS_SELSOFT.md (Excel import analysis)
+  ✅ QUICK_LOGIN_LIST.txt (Quick reference)
+  ✅ selsoft_login_credentials.csv (CSV format)
+
+───────────────────────────────────────────────────────────────────────────────
+📖 USAGE EXAMPLES
+───────────────────────────────────────────────────────────────────────────────
+
+Using cURL:
+──────────
+curl -X POST http://localhost:5001/api/onboarding/create-default-users \
+  -H "Content-Type: application/json" \
+  -d '{"subdomain": "selsfot", "prefix": "Selsoft"}'
+
+
+Using JavaScript/Fetch:
+───────────────────────
+const response = await fetch(
+  'http://localhost:5001/api/onboarding/create-default-users',
+  {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      subdomain: 'selsfot',
+      prefix: 'Selsoft'
+    })
+  }
+);
+
+const result = await response.json();
+console.log('Credentials:', result.loginCredentials);
+
+
+Using Node Script (Easiest):
+────────────────────────────
+cd server
+node scripts/create-selsoft-users.js default
+
+───────────────────────────────────────────────────────────────────────────────
+✅ VERIFICATION CHECKLIST
+───────────────────────────────────────────────────────────────────────────────
+
+[  ] Backend server running on port 5001
+[  ] Run user creation script
+[  ] Try admin login - should work
+[  ] Try manager login - should work
+[  ] Try approver login - should work
+[  ] Try employee login - should work
+[  ] Admin sees all modules
+[  ] Manager can approve timesheets
+[  ] Approver can only approve
+[  ] Employee sees limited view
+[  ] Password change prompt appears
+[  ] New passwords work after change
+
+───────────────────────────────────────────────────────────────────────────────
+🎯 NEXT STEPS
+───────────────────────────────────────────────────────────────────────────────
+
+1. Start backend: cd server && npm start
+2. Create users: node scripts/create-selsoft-users.js default
+3. Test login: http://localhost:3000/selsfot/login
+4. Login as admin@selsfot.com / test123#
+5. Change password when prompted
+6. Verify dashboard access
+7. Test other roles
+
+───────────────────────────────────────────────────────────────────────────────
+📞 DOCUMENTATION
+───────────────────────────────────────────────────────────────────────────────
+
+Detailed Guides:
+  - ONBOARDING_API_DOCUMENTATION.md - Complete API reference
+  - SELSOFT_ONBOARDING_GUIDE.md - Step-by-step setup guide
+  - TIMESHEET_IMPLEMENTATION.md - Timesheet database setup
+
+Quick References:
+  - QUICK_LOGIN_LIST.txt - Quick login credentials
+  - LOGIN_CREDENTIALS_SELSOFT.md - Excel import analysis
+
+═══════════════════════════════════════════════════════════════════════════════
+                           ✨ SYSTEM READY TO USE ✨
+═══════════════════════════════════════════════════════════════════════════════
+
+Default Password: test123#
+Backend Port: 5001
+Frontend Port: 3000
+
+Generated: September 30, 2025

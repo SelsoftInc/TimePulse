@@ -48,7 +48,7 @@ const NotificationSettings = () => {
         
         {/* Email Notifications */}
         <div className="card">
-          <div className="card-inne">
+          <div className="card-inner">
             <h3>Email Notifications</h3>
             <p className="text-muted">Configure which email notifications you'd like to receive</p>
             
@@ -177,7 +177,7 @@ const NotificationSettings = () => {
         
         {/* Push Notifications */}
         <div className="card mt-4">
-          <div className="card-inne">
+          <div className="card-inner">
             <h3>Push Notifications</h3>
             <p className="text-muted">Configure which browser push notifications you'd like to receive</p>
             

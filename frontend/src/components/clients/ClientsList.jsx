@@ -189,7 +189,7 @@ const ClientsList = () => {
             </div>
           ) : (
             <div className="card">
-              <div className="card-inner">
+              <div className="card-inne">
                 <table className="table table-clients">
                   <thead>
                     <tr>

@@ -105,3 +105,25 @@
 .btn-create-employee {
   margin-bottom: 10px;
 }
+
+/* Dark mode support for custom file input */
+body.dark-mode .custom-file-label {
+  color: var(--text-color);
+  background-color: var(--form-bg);
+  border: 1px solid var(--form-border);
+}
+
+body.dark-mode .custom-file-label::after {
+  color: var(--text-color);
+  background-color: var(--background-tertiary);
+  border-left: 1px solid var(--form-border);
+}
+
+body.dark-mode .document-preview {
+  border: 1px solid var(--border-color);
+  background-color: var(--background-tertiary);
+}
+
+body.dark-mode .document-icon {
+  color: var(--accent-color);
+}

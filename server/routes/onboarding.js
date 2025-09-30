@@ -106,7 +106,63 @@ function readExcelFile(filePath) {
  * Helper function to generate default password
  */
 function generateDefaultPassword() {
-  return 'TempPass123!';
+  return 'test123#';
+}
+
+/**
+ * Helper function to get permissions by role
+ */
+function getPermissionsByRole(role) {
+  const rolePermissions = {
+    admin: [
+      'ALL_PERMISSIONS',
+      'VIEW_DASHBOARD',
+      'VIEW_TIMESHEETS',
+      'CREATE_TIMESHEETS',
+      'EDIT_TIMESHEETS',
+      'DELETE_TIMESHEETS',
+      'APPROVE_TIMESHEETS',
+      'VIEW_EMPLOYEES',
+      'CREATE_EMPLOYEE',
+      'EDIT_EMPLOYEE',
+      'DELETE_EMPLOYEE',
+      'VIEW_CLIENTS',
+      'CREATE_CLIENT',
+      'EDIT_CLIENT',
+      'DELETE_CLIENT',
+      'VIEW_INVOICES',
+      'CREATE_INVOICE',
+      'EDIT_INVOICE',
+      'DELETE_INVOICE',
+      'VIEW_REPORTS',
+      'MANAGE_SETTINGS',
+      'MANAGE_USERS'
+    ],
+    manager: [
+      'VIEW_DASHBOARD',
+      'VIEW_TIMESHEETS',
+      'APPROVE_TIMESHEETS',
+      'VIEW_EMPLOYEES',
+      'EDIT_EMPLOYEE',
+      'VIEW_CLIENTS',
+      'VIEW_INVOICES',
+      'VIEW_REPORTS'
+    ],
+    approver: [
+      'VIEW_DASHBOARD',
+      'VIEW_TIMESHEETS',
+      'APPROVE_TIMESHEETS',
+      'VIEW_EMPLOYEES',
+      'VIEW_REPORTS'
+    ],
+    employee: [
+      'VIEW_TIMESHEETS',
+      'CREATE_TIMESHEETS',
+      'EDIT_TIMESHEETS'
+    ]
+  };
+  
+  return rolePermissions[role.toLowerCase()] || rolePermissions.employee;
 }
 
 // =============================================
@@ -316,15 +372,21 @@ router.post('/tenants/:tenantName/onboard', async (req, res) => {
     const defaultPassword = generateDefaultPassword();
     const hashedPassword = await bcrypt.hash(defaultPassword, saltRounds);
     
-    // Create users
+    // Create users with role-based permissions
     const createdUsers = await Promise.all(
-      transformedData.users.map(userData => 
-        models.User.create({
+      transformedData.users.map(userData => {
+        const userRole = (userData.role || 'employee').toLowerCase();
+        const permissions = getPermissionsByRole(userRole);
+        
+        return models.User.create({
           ...userData,
           tenantId: tenant.id,
-          passwordHash: hashedPassword
-        }, { transaction })
-      )
+          passwordHash: hashedPassword,
+          role: userRole,
+          permissions: permissions,
+          mustChangePassword: true
+        }, { transaction });
+      })
     );
     
     // Create employees
@@ -444,6 +506,360 @@ router.get('/tenants/:tenantName/status', async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Failed to check onboarding status',
+      details: error.message
+    });
+  }
+});
+
+/**
+ * POST /api/onboarding/create-role-users
+ * Create users with different roles for a tenant (Admin, Manager, Approver, Employee)
+ * Body: { tenantId, subdomain, users: [{ firstName, lastName, email, role, phone }] }
+ */
+router.post('/create-role-users', async (req, res) => {
+  const transaction = await sequelize.transaction();
+  
+  try {
+    const { tenantId, subdomain, users } = req.body;
+    
+    if (!tenantId && !subdomain) {
+      return res.status(400).json({
+        success: false,
+        error: 'Either tenantId or subdomain is required'
+      });
+    }
+    
+    if (!users || !Array.isArray(users) || users.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'Users array is required and must not be empty'
+      });
+    }
+    
+    // Find tenant
+    let tenant;
+    if (tenantId) {
+      tenant = await models.Tenant.findByPk(tenantId, { transaction });
+    } else {
+      tenant = await models.Tenant.findOne({
+        where: { subdomain },
+        transaction
+      });
+    }
+    
+    if (!tenant) {
+      await transaction.rollback();
+      return res.status(404).json({
+        success: false,
+        error: 'Tenant not found'
+      });
+    }
+    
+    // Hash default password
+    const defaultPassword = generateDefaultPassword();
+    const hashedPassword = await bcrypt.hash(defaultPassword, 10);
+    
+    // Create users
+    const createdUsers = [];
+    const createdEmployees = [];
+    
+    for (const userData of users) {
+      const { firstName, lastName, email, role = 'employee', phone, department, title } = userData;
+      
+      if (!firstName || !lastName) {
+        await transaction.rollback();
+        return res.status(400).json({
+          success: false,
+          error: 'firstName and lastName are required for all users'
+        });
+      }
+      
+      // Validate role
+      const validRoles = ['admin', 'manager', 'approver', 'employee'];
+      const userRole = (role || 'employee').toLowerCase();
+      
+      if (!validRoles.includes(userRole)) {
+        await transaction.rollback();
+        return res.status(400).json({
+          success: false,
+          error: `Invalid role: ${role}. Must be one of: admin, manager, approver, employee`
+        });
+      }
+      
+      // Check if user with this email already exists
+      if (email) {
+        const existingUser = await models.User.findOne({
+          where: { 
+            tenantId: tenant.id,
+            email: email
+          },
+          transaction
+        });
+        
+        if (existingUser) {
+          await transaction.rollback();
+          return res.status(409).json({
+            success: false,
+            error: `User with email ${email} already exists for this tenant`
+          });
+        }
+      }
+      
+      // Get permissions for role
+      const permissions = getPermissionsByRole(userRole);
+      
+      // Create user
+      const user = await models.User.create({
+        id: uuidv4(),
+        tenantId: tenant.id,
+        firstName,
+        lastName,
+        email: email || `${firstName.toLowerCase()}.${lastName.toLowerCase()}@${tenant.subdomain || 'temp'}.com`,
+        password: hashedPassword,
+        role: userRole,
+        department: department || '',
+        title: title || '',
+        permissions: permissions,
+        status: 'active',
+        mustChangePassword: true
+      }, { transaction });
+      
+      createdUsers.push({
+        id: user.id,
+        name: `${firstName} ${lastName}`,
+        email: user.email,
+        role: userRole,
+        permissions: permissions
+      });
+      
+      // Create corresponding employee record
+      const employee = await models.Employee.create({
+        id: uuidv4(),
+        tenantId: tenant.id,
+        userId: user.id,
+        firstName,
+        lastName,
+        email: user.email,
+        phone: phone || '',
+        department: department || '',
+        title: title || '',
+        startDate: new Date().toISOString().split('T')[0],
+        status: 'active',
+        salaryType: 'hourly'
+      }, { transaction });
+      
+      createdEmployees.push({
+        id: employee.id,
+        name: `${firstName} ${lastName}`,
+        role: userRole
+      });
+    }
+    
+    await transaction.commit();
+    
+    res.json({
+      success: true,
+      message: `Successfully created ${createdUsers.length} users for tenant ${tenant.tenantName}`,
+      tenant: {
+        id: tenant.id,
+        tenantName: tenant.tenantName,
+        subdomain: tenant.subdomain
+      },
+      users: createdUsers,
+      employees: createdEmployees,
+      defaultPassword: defaultPassword,
+      passwordNote: 'All users must change their password on first login'
+    });
+    
+  } catch (error) {
+    await transaction.rollback();
+    console.error('Error creating role-based users:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to create users',
+      details: error.message
+    });
+  }
+});
+
+/**
+ * POST /api/onboarding/create-default-users
+ * Create default users (one of each role) for a tenant
+ * Body: { tenantId OR subdomain, prefix (optional) }
+ */
+router.post('/create-default-users', async (req, res) => {
+  const transaction = await sequelize.transaction();
+  
+  try {
+    const { tenantId, subdomain, prefix = 'Demo' } = req.body;
+    
+    if (!tenantId && !subdomain) {
+      return res.status(400).json({
+        success: false,
+        error: 'Either tenantId or subdomain is required'
+      });
+    }
+    
+    // Find tenant
+    let tenant;
+    if (tenantId) {
+      tenant = await models.Tenant.findByPk(tenantId, { transaction });
+    } else {
+      tenant = await models.Tenant.findOne({
+        where: { subdomain },
+        transaction
+      });
+    }
+    
+    if (!tenant) {
+      await transaction.rollback();
+      return res.status(404).json({
+        success: false,
+        error: 'Tenant not found'
+      });
+    }
+    
+    // Define default users for each role
+    const defaultUsers = [
+      {
+        firstName: `${prefix}`,
+        lastName: 'Admin',
+        email: `admin@${tenant.subdomain || 'demo'}.com`,
+        role: 'admin',
+        department: 'Administration',
+        title: 'System Administrator',
+        phone: '555-0001'
+      },
+      {
+        firstName: `${prefix}`,
+        lastName: 'Manager',
+        email: `manager@${tenant.subdomain || 'demo'}.com`,
+        role: 'manager',
+        department: 'Management',
+        title: 'Operations Manager',
+        phone: '555-0002'
+      },
+      {
+        firstName: `${prefix}`,
+        lastName: 'Approver',
+        email: `approver@${tenant.subdomain || 'demo'}.com`,
+        role: 'approver',
+        department: 'Operations',
+        title: 'Timesheet Approver',
+        phone: '555-0003'
+      },
+      {
+        firstName: `${prefix}`,
+        lastName: 'Employee',
+        email: `employee@${tenant.subdomain || 'demo'}.com`,
+        role: 'employee',
+        department: 'Operations',
+        title: 'Staff Member',
+        phone: '555-0004'
+      }
+    ];
+    
+    // Hash default password
+    const defaultPassword = generateDefaultPassword();
+    const hashedPassword = await bcrypt.hash(defaultPassword, 10);
+    
+    const createdUsers = [];
+    const createdEmployees = [];
+    
+    for (const userData of defaultUsers) {
+      const { firstName, lastName, email, role, phone, department, title } = userData;
+      
+      // Check if user already exists
+      const existingUser = await models.User.findOne({
+        where: { 
+          tenantId: tenant.id,
+          email: email
+        },
+        transaction
+      });
+      
+      if (existingUser) {
+        console.log(`User ${email} already exists, skipping...`);
+        continue;
+      }
+      
+      // Get permissions for role
+      const permissions = getPermissionsByRole(role);
+      
+      // Create user
+      const user = await models.User.create({
+        id: uuidv4(),
+        tenantId: tenant.id,
+        firstName,
+        lastName,
+        email,
+        password: hashedPassword,
+        role: role,
+        department: department,
+        title: title,
+        permissions: permissions,
+        status: 'active',
+        mustChangePassword: true
+      }, { transaction });
+      
+      createdUsers.push({
+        id: user.id,
+        name: `${firstName} ${lastName}`,
+        email: user.email,
+        role: role,
+        permissions: permissions
+      });
+      
+      // Create corresponding employee record
+      const employee = await models.Employee.create({
+        id: uuidv4(),
+        tenantId: tenant.id,
+        userId: user.id,
+        firstName,
+        lastName,
+        email: user.email,
+        phone: phone,
+        department: department,
+        title: title,
+        startDate: new Date().toISOString().split('T')[0],
+        status: 'active',
+        salaryType: 'hourly'
+      }, { transaction });
+      
+      createdEmployees.push({
+        id: employee.id,
+        name: `${firstName} ${lastName}`,
+        role: role
+      });
+    }
+    
+    await transaction.commit();
+    
+    res.json({
+      success: true,
+      message: `Successfully created ${createdUsers.length} default users for tenant ${tenant.tenantName}`,
+      tenant: {
+        id: tenant.id,
+        tenantName: tenant.tenantName,
+        subdomain: tenant.subdomain
+      },
+      users: createdUsers,
+      employees: createdEmployees,
+      defaultPassword: defaultPassword,
+      loginCredentials: createdUsers.map(u => ({
+        email: u.email,
+        password: defaultPassword,
+        role: u.role
+      })),
+      passwordNote: 'All users must change their password on first login'
+    });
+    
+  } catch (error) {
+    await transaction.rollback();
+    console.error('Error creating default users:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to create default users',
       details: error.message
     });
   }

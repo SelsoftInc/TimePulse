@@ -614,6 +614,36 @@ models.Timesheet = sequelize.define('Timesheet', {
   status: {
     type: DataTypes.ENUM('draft','submitted','approved','rejected'),
     defaultValue: 'draft'
+  },
+  notes: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  attachments: {
+    type: DataTypes.JSONB,
+    defaultValue: [],
+    allowNull: true
+  },
+  submittedAt: {
+    type: DataTypes.DATE,
+    allowNull: true,
+    field: 'submitted_at'
+  },
+  approvedAt: {
+    type: DataTypes.DATE,
+    allowNull: true,
+    field: 'approved_at'
+  },
+  approvedBy: {
+    type: DataTypes.UUID,
+    allowNull: true,
+    field: 'approved_by',
+    references: { model: 'users', key: 'id' }
+  },
+  rejectionReason: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+    field: 'rejection_reason'
   }
 }, {
   tableName: 'timesheets',

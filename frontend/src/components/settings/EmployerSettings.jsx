@@ -1,14 +1,14 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
-import { useTheme } from "../../contexts/ThemeContext";
+// import { useTheme } from "../../contexts/ThemeContext";
 import { PERMISSIONS } from "../../utils/roles";
 import "./EmployerSettings.css";
 import CompanyInformation from "./CompanyInformation";
 import ProfileSettings from "./ProfileSettings";
 import BillingSettings from "./BillingSettings";
 import NotificationSettings from "./NotificationSettings";
-import IntegrationSettings from "./IntegrationSettings";
+// import IntegrationSettings from "./IntegrationSettings";
 import ConfirmDialog from "../common/ConfirmDialog";
 import InvoiceSettings from "./InvoiceSettings";
 
@@ -44,8 +44,8 @@ const EmployerSettings = () => {
         return <BillingSettings />;
       case "notifications":
         return <NotificationSettings />;
-      case "integrations":
-        return <IntegrationSettings />;
+      // case "integrations":
+      //   return <IntegrationSettings />;
       default:
         return checkPermission(PERMISSIONS.MANAGE_SETTINGS) ? (
           <CompanyInformation />
@@ -91,12 +91,12 @@ const EmployerSettings = () => {
                 <span>Billing & Subscription</span>
               </button>
             </li>
-            <li className={activeTab === "integrations" ? "active" : ""}>
+            {/* <li className={activeTab === "integrations" ? "active" : ""}>
               <button onClick={() => setActiveTab("integrations")}>
                 <i className="fas fa-plug"></i>
                 <span>Integrations</span>
               </button>
-            </li>
+            </li> */}
             <li className={activeTab === "invoices" ? "active" : ""}>
               <button
                 onClick={() => setActiveTab("invoices")}

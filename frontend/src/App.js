@@ -181,6 +181,11 @@ function App() {
             <EmployerLayout><EmployeeForm /></EmployerLayout>
           </ProtectedRoute>
         } />
+        <Route path="/:subdomain/employees/:id/form" element={
+          <ProtectedRoute requiredPermission={PERMISSIONS.EDIT_EMPLOYEE}>
+            <EmployerLayout><EmployeeForm /></EmployerLayout>
+          </ProtectedRoute>
+        } />
         <Route path="/:subdomain/employees/invite" element={
           <ProtectedRoute requiredPermission={PERMISSIONS.CREATE_EMPLOYEE}>
             <EmployerLayout><EmployeeInvite /></EmployerLayout>

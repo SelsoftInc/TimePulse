@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { PERMISSIONS } from "../../utils/roles";
 import PermissionGuard from "../common/PermissionGuard";
-import { useTheme } from "../../contexts/ThemeContext";
+// import { useTheme } from "../../contexts/ThemeContext";
 import "./TimesheetSummary.css";
 import "./TimesheetApproval.css";
 
@@ -10,7 +10,7 @@ const TimesheetApproval = () => {
   // const { subdomain } = useParams();
   // const navigate = useNavigate();
   // const { checkPermission } = useAuth();
-  const { isDarkMode } = useTheme();
+  // const { isDarkMode } = useTheme();
   const [timesheets, setTimesheets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchBy, setSearchBy] = useState("");
@@ -452,9 +452,9 @@ const TimesheetApproval = () => {
         <div className="approval-header">
           <div className="header-content">
             <h2 className="page-title">Timesheet Approval</h2>
-            <p className="page-subtitle">
+            {/* <p className="page-subtitle">
               Review and manage employee timesheet submissions
-            </p>
+            </p> */}
           </div>
           <div className="header-actions">
             <div class="search-wrapper">

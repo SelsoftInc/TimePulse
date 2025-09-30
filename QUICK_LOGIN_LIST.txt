@@ -1,0 +1,84 @@
+═══════════════════════════════════════════════════════════════════
+   TIMEPULSE - SELSOFT TENANT LOGIN CREDENTIALS (QUICK REFERENCE)
+═══════════════════════════════════════════════════════════════════
+
+DEFAULT PASSWORD FOR ALL USERS: TempPass123!
+(Must change on first login)
+
+───────────────────────────────────────────────────────────────────
+EMPLOYEE LOGINS (7 Users)
+───────────────────────────────────────────────────────────────────
+
+1. PUSHBAN RAJAIYAN
+   Phone: 217-721-3186
+   Password: TempPass123!
+   Role: Employee
+
+2. UMA SIVALINGAM
+   Phone: 972-302-8849
+   Password: TempPass123!
+   Role: Employee
+   ⚠️  Note: Duplicate entry exists - may need cleanup
+
+3. LALITAH PRABHU
+   Phone: 469-328-6751
+   Password: TempPass123!
+   Role: Employee
+
+4-6. "FIRST NAME LAST NAME" (3x Placeholder Entries)
+   Password: TempPass123!
+   Role: Employee
+   ⚠️  WARNING: These are template entries - NEED TO BE UPDATED!
+
+───────────────────────────────────────────────────────────────────
+ADMIN LOGINS
+───────────────────────────────────────────────────────────────────
+
+❌ NO ADMIN USERS FOUND
+   ACTION REQUIRED: Create admin user or promote existing employee
+
+───────────────────────────────────────────────────────────────────
+EMPLOYEES WITHOUT LOGIN ACCESS (3 Employees)
+───────────────────────────────────────────────────────────────────
+
+1. SELVAKUMAR MURUGESAN - Phone: 470-208-9651
+2. SURESH PALAKAD KRISHNAN - Phone: 214-592-3937
+3. PANNEERSELVAM ARULANANDAM - Phone: 469-631-1957
+
+───────────────────────────────────────────────────────────────────
+ISSUES TO FIX
+───────────────────────────────────────────────────────────────────
+
+🚨 CRITICAL:
+   • No admin user exists - all users are employees only
+   • No email addresses in system
+   • 3 placeholder entries need real data
+
+⚠️  CLEANUP NEEDED:
+   • 1 duplicate user (Uma Sivalingam)
+   • 3 employees without user accounts
+   • 1 empty employee record
+
+───────────────────────────────────────────────────────────────────
+QUICK COMMANDS
+───────────────────────────────────────────────────────────────────
+
+To promote user to admin (PostgreSQL):
+UPDATE users SET role = 'admin' 
+WHERE id = 'd1629f91-a8c5-4cfe-90aa-ff0d97556154';
+
+To add email to user:
+UPDATE users SET email = 'user@example.com' 
+WHERE id = 'user-uuid-here';
+
+───────────────────────────────────────────────────────────────────
+DATA SOURCE
+───────────────────────────────────────────────────────────────────
+
+Excel File: Onboard/selsfot/TimePulse_Client_Onoarding_Document (2).xlsx
+Onboarded: August 7, 2025
+Tenant: selsfot
+
+═══════════════════════════════════════════════════════════════════
+For detailed information, see: LOGIN_CREDENTIALS_SELSOFT.md
+═══════════════════════════════════════════════════════════════════

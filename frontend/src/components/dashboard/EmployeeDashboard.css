@@ -1,5 +1,3 @@
-/* Modern Employee Dashboard Styles */
-
 /* Main Container */
 .modern-employee-dashboard {
   background: #f8fafc;
@@ -37,7 +35,7 @@ body.dark-mode .dashboard-header {
 }
 
 .header-info h1.dashboard-title {
-  color: white;
+  color: grey;
   font-size: 28px;
   font-weight: 700;
   margin: 0 0 8px 0;
@@ -45,7 +43,7 @@ body.dark-mode .dashboard-header {
 }
 
 .header-info .dashboard-subtitle {
-  color: rgba(255, 255, 255, 0.9);
+  color: black(255, 255, 255, 0.9);
   font-size: 16px;
   margin: 0;
   font-weight: 400;
@@ -59,7 +57,7 @@ body.dark-mode .dashboard-header {
   padding: 12px 24px;
   border-radius: 12px;
   font-weight: 600;
-  font-size: 14px;
+  font-size: 4px;
   text-decoration: none;
   transition: all 0.3s ease;
   border: none;

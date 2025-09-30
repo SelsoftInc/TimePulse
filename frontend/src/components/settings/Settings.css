@@ -223,6 +223,7 @@
   align-items: center;
   padding: 1rem 0;
   border-bottom: 1px solid var(--card-border);
+  background-color: transparent;
 }
 
 .notification-item:last-child {
@@ -231,12 +232,27 @@
 
 .notification-info h5 {
   margin-bottom: 0.25rem;
+  color: var(--text-color);
+  font-weight: 500;
 }
 
 .notification-info p {
   color: var(--text-secondary);
   margin-bottom: 0;
   font-size: 0.875rem;
+}
+
+/* Dark mode notification styling */
+body.dark-mode .notification-item {
+  background-color: transparent;
+}
+
+body.dark-mode .notification-info h5 {
+  color: var(--text-light);
+}
+
+body.dark-mode .notification-info p {
+  color: var(--text-secondary);
 }
 
 /* Integration Settings */

@@ -116,7 +116,7 @@ const Login = () => {
           // Redirect based on user role
           const subdomain = data.tenant?.subdomain || 'selsoft';
           if (data.user.role === 'employee') {
-            window.location.href = `/${subdomain}/employee-dashboard`;
+            window.location.href = `/${subdomain}/dashboard`;
           } else {
             window.location.href = `/${subdomain}/dashboard`;
           }

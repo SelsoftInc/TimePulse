@@ -38,8 +38,9 @@ const TimesheetSummary = () => {
     try {
       const tenantId = user?.tenantId;
       const userEmail = user?.email;
+      const userRole = user?.role;
 
-      console.log('🔍 Loading timesheets...', { tenantId, userEmail, user });
+      console.log('🔍 Loading timesheets...', { tenantId, userEmail, userRole, user });
 
       if (!tenantId || !userEmail) {
         console.error('❌ No tenant ID or email found', { tenantId, userEmail });
@@ -47,47 +48,112 @@ const TimesheetSummary = () => {
         return;
       }
 
-      // First, get the employee ID from email
-      console.log('📡 Fetching employee by email...');
-      const empResponse = await axios.get(`/api/timesheets/employees/by-email/${encodeURIComponent(userEmail)}?tenantId=${tenantId}`);
-      
-      if (!empResponse.data.success || !empResponse.data.employee) {
-        console.error('❌ Employee not found');
-        setLoading(false);
-        return;
-      }
+      // For admin/manager, use a different approach since they don't have employee records
+      if (userRole === 'admin' || userRole === 'manager') {
+        console.log('👑 Admin/Manager detected - using pending-approval API for all timesheets');
 
-      const employeeId = empResponse.data.employee.id;
-      console.log('✅ Got employeeId:', employeeId);
+        // Use the pending-approval endpoint but without reviewerId to get all timesheets
+        const response = await axios.get(`/api/timesheets/pending-approval`, {
+          params: { tenantId }
+        });
 
-      // Fetch all timesheets for the employee from API
-      const apiUrl = `/api/timesheets/employee/${employeeId}/all?tenantId=${tenantId}`;
-      console.log('📡 Calling API:', apiUrl);
-      
-      const response = await axios.get(apiUrl);
-      console.log('✅ API Response:', response.data);
+        console.log('✅ API Response:', response.data);
 
-      if (response.data.success) {
-        // Format timesheets to match UI expectations
-        const formattedTimesheets = response.data.timesheets.map(ts => ({
-          id: ts.id,
-          weekRange: ts.week,
-          status: ts.status.label === 'SUBMITTED' ? 'Submitted for Approval' : 
-                  ts.status.label === 'APPROVED' ? 'Approved' :
-                  ts.status.label === 'REJECTED' ? 'Rejected' : 
-                  ts.status.label === 'DRAFT' ? 'Pending' : ts.status.label,
-          billableProjectHrs: ts.hours,
-          timeOffHolidayHrs: "0.00",
-          totalTimeHours: "N/A",
-          weekStart: ts.weekStart,
-          weekEnd: ts.weekEnd,
-          dailyHours: ts.dailyHours,
-          notes: ts.notes,
-          reviewer: ts.reviewer
-        }));
+        if (response.data.success) {
+          // Also get approved and rejected timesheets separately
+          const approvedResponse = await axios.get(`/api/timesheets/employee/approved`, {
+            params: { tenantId }
+          });
 
-        console.log('📊 Formatted timesheets:', formattedTimesheets);
-        setTimesheets(formattedTimesheets);
+          const rejectedResponse = await axios.get(`/api/timesheets/employee/rejected`, {
+            params: { tenantId }
+          });
+
+          // Combine all timesheets
+          const allTimesheets = [
+            ...(response.data.timesheets || []),
+            ...(approvedResponse.data?.timesheets || []),
+            ...(rejectedResponse.data?.timesheets || [])
+          ];
+
+          // Format timesheets to match UI expectations
+          const formattedTimesheets = allTimesheets.map(ts => ({
+            id: ts.id,
+            weekRange: ts.weekRange || `${new Date(ts.weekStart).toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' })} To ${new Date(ts.weekEnd).toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' })}`,
+            employeeName: ts.employeeName || 'Unknown',
+            status: ts.status === 'submitted' ? 'Submitted for Approval' :
+                    ts.status === 'approved' ? 'Approved' :
+                    ts.status === 'rejected' ? 'Rejected' :
+                    ts.status === 'draft' ? 'Pending' : ts.status,
+            billableProjectHrs: ts.billableProjectHrs || ts.totalTimeHours || '0.00',
+            timeOffHolidayHrs: ts.timeOffHolidayHrs || '0.00',
+            totalTimeHours: ts.totalTimeHours || ts.billableProjectHrs || '0.00',
+            weekStart: ts.weekStart,
+            weekEnd: ts.weekEnd,
+            dailyHours: ts.dailyHours || {},
+            notes: ts.notes || '',
+            attachments: ts.attachments || [],
+            reviewer: ts.reviewer
+          }));
+
+          console.log('📊 Formatted timesheets:', formattedTimesheets);
+          setTimesheets(formattedTimesheets);
+        } else {
+          console.error('❌ API returned success: false');
+          setTimesheets([]);
+        }
+      } else {
+        // Regular employee - get their own timesheets
+        console.log('👤 Employee detected - loading personal timesheets');
+
+        // First, get the employee ID from email
+        console.log('📡 Fetching employee by email...');
+        const empResponse = await axios.get(`/api/timesheets/employees/by-email/${encodeURIComponent(userEmail)}?tenantId=${tenantId}`);
+
+        if (!empResponse.data.success || !empResponse.data.employee) {
+          console.error('❌ Employee not found for email:', userEmail);
+          console.error('This user may not have an employee record.');
+          setTimesheets([]);
+          setLoading(false);
+          return;
+        }
+
+        const employeeId = empResponse.data.employee.id;
+        console.log('✅ Got employeeId:', employeeId);
+
+        // Fetch all timesheets for the employee from API
+        const apiUrl = `/api/timesheets/employee/${employeeId}/all?tenantId=${tenantId}`;
+        console.log('📡 Calling API:', apiUrl);
+
+        const response = await axios.get(apiUrl);
+        console.log('✅ API Response:', response.data);
+
+        if (response.data.success) {
+          // Format timesheets to match UI expectations
+          const formattedTimesheets = response.data.timesheets.map(ts => ({
+            id: ts.id,
+            weekRange: ts.week,
+            status: ts.status.label === 'SUBMITTED' ? 'Submitted for Approval' :
+                    ts.status.label === 'APPROVED' ? 'Approved' :
+                    ts.status.label === 'REJECTED' ? 'Rejected' :
+                    ts.status.label === 'DRAFT' ? 'Pending' : ts.status.label,
+            billableProjectHrs: ts.hours,
+            timeOffHolidayHrs: "0.00",
+            totalTimeHours: ts.hours,
+            weekStart: ts.weekStart,
+            weekEnd: ts.weekEnd,
+            dailyHours: ts.dailyHours,
+            notes: ts.notes,
+            attachments: ts.attachments || [],
+            reviewer: ts.reviewer
+          }));
+
+          console.log('📊 Formatted timesheets:', formattedTimesheets);
+          setTimesheets(formattedTimesheets);
+        } else {
+          console.error('❌ API returned success: false');
+          setTimesheets([]);
+        }
       }
 
       // Determine client type

@@ -45,6 +45,9 @@ const TimesheetApproval = () => {
         userRole 
       });
 
+      // Load today's approval counts
+      await loadTodaysCounts(tenantId);
+
       // Fetch pending timesheets from API
       const response = await axios.get(`/api/timesheets/pending-approval`, {
         params: {
@@ -57,12 +60,28 @@ const TimesheetApproval = () => {
       console.log('📥 API Response:', response.data);
 
       if (response.data.success) {
-        const formattedTimesheets = response.data.timesheets.map(ts => ({
-          ...ts,
-          status: ts.status === 'submitted' ? 'Submitted for Approval' : ts.status
-        }));
-        console.log('✅ Formatted timesheets:', formattedTimesheets);
-        console.log(`✅ Total timesheets to display: ${formattedTimesheets.length}`);
+        const formattedTimesheets = response.data.timesheets.map(ts => {
+          // Ensure attachments is always an array
+          let attachments = [];
+          if (ts.attachments) {
+            if (typeof ts.attachments === 'string') {
+              try {
+                attachments = JSON.parse(ts.attachments);
+              } catch (e) {
+                console.error('Error parsing attachments:', e);
+                attachments = [];
+              }
+            } else if (Array.isArray(ts.attachments)) {
+              attachments = ts.attachments;
+            }
+          }
+
+          return {
+            ...ts,
+            attachments: attachments,
+            status: ts.status === 'submitted' ? 'Submitted for Approval' : ts.status
+          };
+        });
         setTimesheets(formattedTimesheets);
       } else {
         console.error('❌ API returned success: false');
@@ -76,6 +95,35 @@ const TimesheetApproval = () => {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadTodaysCounts = async (tenantId) => {
+    try {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const todayStr = today.toISOString().split('T')[0];
+
+      // Fetch approved timesheets for today
+      const approvedResponse = await axios.get(`/api/timesheets/approved-today`, {
+        params: { tenantId, date: todayStr }
+      });
+
+      // Fetch rejected timesheets for today
+      const rejectedResponse = await axios.get(`/api/timesheets/rejected-today`, {
+        params: { tenantId, date: todayStr }
+      });
+
+      if (approvedResponse.data.success) {
+        setApprovedToday(approvedResponse.data.count || 0);
+      }
+
+      if (rejectedResponse.data.success) {
+        setRejectedToday(rejectedResponse.data.count || 0);
+      }
+    } catch (error) {
+      console.error('Error loading today\'s counts:', error);
+      // Don't fail the whole page if counts fail to load
     }
   };
 
@@ -254,7 +302,7 @@ const TimesheetApproval = () => {
                 <div className="approval-info-section attachments-section">
                   <h6 className="section-title">Attachments</h6>
                   <div className="attachments-list">
-                    {timesheet.attachments.length > 0 ? (
+                    {Array.isArray(timesheet.attachments) && timesheet.attachments.length > 0 ? (
                       timesheet.attachments.map((attachment, index) => (
                         <div key={index} className="attachment-item">
                           <i
@@ -572,7 +620,7 @@ const TimesheetApproval = () => {
                         </div>
                       </div>
 
-                      {timesheet.attachments.length > 0 && (
+                      {Array.isArray(timesheet.attachments) && timesheet.attachments.length > 0 && (
                         <div className="attachment-indicator">
                           <i className="fa fa-paperclip"></i>
                           <span>

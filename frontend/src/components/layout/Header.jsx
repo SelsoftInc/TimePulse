@@ -7,7 +7,7 @@ import { useTheme } from "../../contexts/ThemeContext";
 import PermissionGuard from "../common/PermissionGuard";
 import TimesheetAlerts from "../notifications/TimesheetAlerts";
 // import logo2 from "../../assets/images/jsTree/logo2.png";
-import logo3 from '../../assets/images/jsTree/TimePulse2.png';
+import logo3 from '../../assets/images/jsTree/TimePulse5.png';
 
 import "./Header.css";
 
@@ -118,8 +118,8 @@ const Header = ({ toggleSidebar }) => {
               style={
                 tenantLogo
                   ? {
-                      maxHeight: "60px",
-                      maxWidth: "250px",
+                      maxHeight: "30px",
+                      maxWidth: "200px",
                       objectFit: "contain",
                     }
                   : {}

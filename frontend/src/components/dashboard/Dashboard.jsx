@@ -620,52 +620,66 @@ const Dashboard = () => {
               )}
 
               {isEmployeeRole && (
-                <div className="row">
-                  {/* Employee-specific widgets */}
-                  <div className="col-md-6">
-                    <div className="card card-bordered h-100">
-                      <div className="card-inner">
-                        <div className="card-title-group align-start mb-2">
-                          <div className="card-title">
-                            <h6 className="nk-block-head-content">Your Hours Summary</h6>
-                          </div>
-                        </div>
-                        <div className="align-end flex-sm-wrap g-4 flex-md-nowrap">
-                          <div className="nk-sale-data">
-                            <span className="amount">
-                              40.0 <span className="text-success">hrs</span>
-                            </span>
-                            <div className="sub-title">This Week</div>
-                          </div>
-                          <div className="nk-sale-data">
-                            <span className="amount">
-                              160.0 <span className="text-success">hrs</span>
-                            </span>
-                            <div className="sub-title">This Month</div>
+                <div className="row g-2">
+                  {/* Employee widgets in single row */}
+                  <div className="col-12">
+                    <div className="employee-cards-container">
+                      {/* This Week */}
+                      <div className="employee-card-wrapper">
+                        <div className="card card-bordered h-100">
+                          <div className="card-inner p-2 text-center">
+                            <div className="d-flex align-items-center justify-content-center mb-1">
+                              <em className="icon ni ni-clock text-primary fs-6 me-1"></em>
+                              <h6 className="nk-block-head-content fw-semibold mb-0 fs-7">This Week</h6>
+                            </div>
+                            <div className="amount h4 mb-0 text-success fw-bold">
+                              42.5 <span className="fs-7 fw-normal">hrs</span>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  </div>
 
-                  <div className="col-md-6">
-                    <div className="card card-bordered h-100">
-                      <div className="card-inner">
-                        <div className="card-title-group align-start mb-2">
-                          <div className="card-title">
-                            <h6 className="nk-block-head-content">Timesheet Status</h6>
+                      {/* This Month */}
+                      <div className="employee-card-wrapper">
+                        <div className="card card-bordered h-100">
+                          <div className="card-inner p-2 text-center">
+                            <div className="d-flex align-items-center justify-content-center mb-1">
+                              <em className="icon ni ni-activity text-info fs-6 me-1"></em>
+                              <h6 className="nk-block-head-content fw-semibold mb-0 fs-7">This Month</h6>
+                            </div>
+                            <div className="amount h4 mb-0 text-info fw-bold">
+                              168.0 <span className="fs-7 fw-normal">hrs</span>
+                            </div>
                           </div>
                         </div>
-                        <div className="align-end flex-sm-wrap g-4 flex-md-nowrap">
-                          <div className="nk-sale-data">
-                            <span className="amount text-warning">Pending</span>
-                            <div className="sub-title">Current Week</div>
+                      </div>
+
+                      {/* Current - Pending */}
+                      <div className="employee-card-wrapper">
+                        <div className="card card-bordered h-100">
+                          <div className="card-inner p-2 text-center">
+                            <div className="d-flex align-items-center justify-content-center mb-1">
+                              <em className="icon ni ni-clock text-warning fs-6 me-1"></em>
+                              <h6 className="nk-block-head-content fw-semibold mb-0 fs-7">Pending</h6>
+                            </div>
+                            <div className="amount h4 mb-0 text-warning fw-bold">
+                              2 <span className="fs-7 fw-normal">items</span>
+                            </div>
                           </div>
-                          <div className="nk-sale-data">
-                            <span className="amount text-success">
-                              Approved
-                            </span>
-                            <div className="sub-title">Last Week</div>
+                        </div>
+                      </div>
+
+                      {/* Last Week - Approved */}
+                      <div className="employee-card-wrapper">
+                        <div className="card card-bordered h-100">
+                          <div className="card-inner p-2 text-center">
+                            <div className="d-flex align-items-center justify-content-center mb-1">
+                              <em className="icon ni ni-check-circle text-success fs-6 me-1"></em>
+                              <h6 className="nk-block-head-content fw-semibold mb-0 fs-7">Approved</h6>
+                            </div>
+                            <div className="amount h4 mb-0 text-success fw-bold">
+                              5 <span className="fs-7 fw-normal">items</span>
+                            </div>
                           </div>
                         </div>
                       </div>

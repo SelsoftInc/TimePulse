@@ -133,7 +133,7 @@ const InvoiceDetailModal = ({ invoice, onClose, onApprove, onReject }) => {
           
           <div className="invoice-attachments">
             <h5>Attachments</h5>
-            {invoice.attachments && invoice.attachments.length > 0 ? (
+            {Array.isArray(invoice.attachments) && invoice.attachments.length > 0 ? (
               <ul className="attachment-list">
                 {invoice.attachments.map((attachment, index) => (
                   <li key={index} className="attachment-item">

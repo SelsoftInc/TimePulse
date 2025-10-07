@@ -2,12 +2,14 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { uploadAndProcessTimesheet, transformTimesheetToInvoice } from '../../services/engineService';
+import { extractTimesheetData, validateExtractedData } from '../../services/timesheetExtractor';
+import axios from 'axios';
 import './Timesheet.css';
 
 const TimesheetSubmit = () => {
   const { subdomain, weekId } = useParams();
   const navigate = useNavigate();
-  const { isAdmin, isEmployee } = useAuth();
+  const { isAdmin, isEmployee, user } = useAuth();
   const fileInputRef = useRef(null);
   const cameraInputRef = useRef(null);
   const [loading, setLoading] = useState(false);
@@ -46,22 +48,40 @@ const TimesheetSubmit = () => {
   const [selectedEmployee, setSelectedEmployee] = useState('');
   const [availableEmployees, setAvailableEmployees] = useState([]);
   
+  // Approver/Reviewer selection
+  const [selectedApprover, setSelectedApprover] = useState('');
+  const [availableApprovers, setAvailableApprovers] = useState([]);
+  
   // External timesheet file state (for external clients)
   const [externalTimesheetFile, setExternalTimesheetFile] = useState(null);
   
   // Function to determine current client type based on clients with hours
   const getCurrentClientType = () => {
+    // If no clients loaded yet, default to internal
+    if (clientHours.length === 0) {
+      return 'internal';
+    }
+    
     const clientsWithHours = clientHours.filter(client => 
       client.hours.some(hour => hour > 0)
     );
     
     if (clientsWithHours.length === 0) {
       // Default to internal if no hours entered yet
-      return 'internal';
+      // Check the first client's type
+      const firstClientType = clientHours[0]?.clientType || 'internal';
+      console.log('🔍 No hours entered yet, using first client type:', firstClientType);
+      return firstClientType;
     }
     
     // Check if any client with hours is external
     const hasExternalClient = clientsWithHours.some(client => client.clientType === 'external');
+    
+    console.log('🔍 Client type detection:', {
+      clientsWithHours: clientsWithHours.length,
+      hasExternalClient,
+      clientTypes: clientsWithHours.map(c => c.clientType)
+    });
     
     if (hasExternalClient) {
       return 'external';
@@ -71,6 +91,7 @@ const TimesheetSubmit = () => {
   };
   
   const clientType = getCurrentClientType();
+  console.log('📊 Current clientType:', clientType, 'clientHours:', clientHours.length);
   
   // Mock data removed - using clientHours state instead
   
@@ -87,38 +108,78 @@ const TimesheetSubmit = () => {
     const loadTimesheetData = async () => {
       setLoading(true);
       try {
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 800));
-        
-        // Mock client data with multiple clients and their types
-        const mockClientData = [
-          { 
-            id: '1', 
-            clientName: 'JPMC', 
-            project: 'Web Development',
-            hourlyRate: 125,
-            clientType: 'internal',
-            hours: Array(7).fill(0)
-          },
-          { 
-            id: '2', 
-            clientName: 'IBM', 
-            project: 'Mobile App',
-            hourlyRate: 150,
-            clientType: 'external',
-            hours: Array(7).fill(0)
-          },
-          { 
-            id: '3', 
-            clientName: 'Accenture', 
-            project: 'UI/UX Design',
-            hourlyRate: 110,
-            clientType: 'internal',
-            hours: Array(7).fill(0)
+        // Fetch real client data from API
+        const tenantId = user?.tenantId;
+        if (!tenantId) {
+          console.error('No tenant ID found');
+          return;
+        }
+
+        try {
+          console.log('🔍 Fetching clients for tenantId:', tenantId);
+          const response = await axios.get(`/api/clients?tenantId=${tenantId}`);
+          console.log('📥 Clients API response:', response.data);
+          
+          if (response.data.success && response.data.clients) {
+            // For Selvakumar, show only Cognizant
+            // Since clientId field doesn't exist in Employee model, we'll filter by client name
+            console.log('🔍 User email:', user.email);
+            
+            let clientData = [];
+            
+            // Check if user is Selvakumar
+            if (user.email === 'selvakumar@selsoftinc.com' || user.email.includes('selvakumar')) {
+              // Show only Cognizant
+              // Backend returns 'name' not 'clientName'
+              const cognizant = response.data.clients.find(c => c.name === 'Cognizant' || c.clientName === 'Cognizant');
+              if (cognizant) {
+                const clientName = cognizant.name || cognizant.clientName;
+                clientData = [{
+                  id: cognizant.id,
+                  clientName: clientName,
+                  project: clientName + ' Project',
+                  hourlyRate: cognizant.hourlyRate || 0,
+                  clientType: cognizant.clientType || 'internal',
+                  hours: Array(7).fill(0)
+                }];
+                console.log('✅ Showing only Cognizant for Selvakumar:', clientData);
+              } else {
+                console.error('❌ Cognizant not found in clients list');
+                console.error('Available clients:', response.data.clients);
+                // Fallback to all clients
+                clientData = response.data.clients.map(client => ({
+                  id: client.id,
+                  clientName: client.name || client.clientName,
+                  project: (client.name || client.clientName) + ' Project',
+                  hourlyRate: client.hourlyRate || 0,
+                  clientType: client.clientType || 'internal',
+                  hours: Array(7).fill(0)
+                }));
+              }
+            } else {
+              // For other users, show all clients
+              console.log('⚠️ Showing all clients for other users');
+              clientData = response.data.clients.map(client => ({
+                id: client.id,
+                clientName: client.name || client.clientName,
+                project: (client.name || client.clientName) + ' Project',
+                hourlyRate: client.hourlyRate || 0,
+                clientType: client.clientType || 'internal',
+                hours: Array(7).fill(0)
+              }));
+            }
+            
+            console.log('📊 Final clientHours to be set:', clientData);
+            setClientHours(clientData);
+          } else {
+            console.error('❌ Clients API returned no data');
           }
-        ];
-        
-        setClientHours(mockClientData);
+        } catch (error) {
+          console.error('❌ Error fetching clients:', error);
+          console.error('Error details:', error.response?.data || error.message);
+          // Fallback to empty array
+          setClientHours([]);
+        }
         
         // Load available employees for non-employee roles
         if (!isEmployee()) {
@@ -130,6 +191,20 @@ const TimesheetSubmit = () => {
             { id: '5', name: 'David Brown', email: 'david.brown@company.com', department: 'Sales' }
           ];
           setAvailableEmployees(mockEmployees);
+        }
+        
+        // Load available approvers (admins and managers)
+        try {
+          console.log('🔍 Fetching approvers...');
+          const approversResponse = await axios.get(`/api/timesheets/reviewers?tenantId=${tenantId}`);
+          console.log('📥 Approvers API response:', approversResponse.data);
+          
+          if (approversResponse.data.success && approversResponse.data.reviewers) {
+            setAvailableApprovers(approversResponse.data.reviewers);
+            console.log('✅ Loaded approvers:', approversResponse.data.reviewers.length);
+          }
+        } catch (error) {
+          console.error('❌ Error fetching approvers:', error);
         }
         
         // Generate available weeks dynamically
@@ -176,36 +251,11 @@ const TimesheetSubmit = () => {
         
         setAvailableWeeks(mockAvailableWeeks);
         
-        // If weekId is provided, load existing timesheet data
+        // If weekId is provided, load existing timesheet data from API
         if (weekId) {
-          // Mock timesheet data for the given week
-          // In a real app, fetch from API
-          const mockTimesheet = {
-            week: '07-JUL-2025 To 13-JUL-2025',
-            clientHours: [
-              { id: '1', clientName: 'JPMC', project: 'Web Development', hourlyRate: 125, hours: [8, 8, 8, 8, 8, 0, 0] },
-              { id: '2', clientName: 'IBM', project: 'Mobile App', hourlyRate: 150, hours: [0, 0, 0, 0, 0, 0, 0] },
-              { id: '3', clientName: 'Accenture', project: 'UI/UX Design', hourlyRate: 110, hours: [0, 0, 0, 0, 0, 0, 0] }
-            ],
-            holidayHours: {
-              holiday: [0, 0, 0, 0, 0, 0, 0],
-              timeOff: [0, 0, 0, 0, 0, 0, 0]
-            },
-            notes: 'Worked on feature implementation',
-            attachments: []
-          };
-          
-          setWeek(mockTimesheet.week);
-          setSelectedWeek(mockTimesheet.week);
-          setClientHours(mockTimesheet.clientHours);
-          setHolidayHours(mockTimesheet.holidayHours);
-          setNotes(mockTimesheet.notes);
-          
-          // Check if this week is read-only (completed with invoice raised)
-          const selectedWeekData = mockAvailableWeeks.find(w => w.value === mockTimesheet.week);
-          if (selectedWeekData && selectedWeekData.readonly) {
-            setIsReadOnly(true);
-          }
+          // TODO: Fetch actual timesheet data from API
+          setWeek(weekId);
+          setIsReadOnly(true);
         } else {
           // Find and set current week from available weeks
           const currentWeek = mockAvailableWeeks.find(week => {
@@ -235,12 +285,14 @@ const TimesheetSubmit = () => {
           if (currentWeek) {
             setWeek(currentWeek.value);
             setSelectedWeek(currentWeek.value);
+            setIsReadOnly(currentWeek.readonly || false);
           } else {
             // Fallback to first available week if current week not found
             const firstWeek = mockAvailableWeeks[0];
             if (firstWeek) {
               setWeek(firstWeek.value);
               setSelectedWeek(firstWeek.value);
+              setIsReadOnly(firstWeek.readonly || false);
             }
           }
         }
@@ -253,7 +305,7 @@ const TimesheetSubmit = () => {
     };
     
     loadTimesheetData();
-  }, [weekId, isEmployee]);
+  }, [weekId, isEmployee, user]);
   
   const handleWeekChange = (selectedWeekValue) => {
     setSelectedWeek(selectedWeekValue);
@@ -403,28 +455,68 @@ const TimesheetSubmit = () => {
     handleFiles(files);
   };
   
+  // Toast notification helper
+  const showToast = (message, type = 'success') => {
+    const toast = document.createElement('div');
+    toast.className = `toast-notification ${type}`;
+    toast.innerHTML = `
+      <div class="toast-icon">
+        <i class="fa fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
+      </div>
+      <div class="toast-content">
+        <h4>${type === 'success' ? 'Success' : 'Error'}</h4>
+        <p>${message}</p>
+      </div>
+      <button class="toast-close"><i class="fa fa-times"></i></button>
+    `;
+    
+    document.body.appendChild(toast);
+    
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+      toast.classList.add('hide');
+      setTimeout(() => toast.remove(), 300);
+    }, 5000);
+    
+    // Close button functionality
+    const closeButton = toast.querySelector('.toast-close');
+    if (closeButton) {
+      closeButton.addEventListener('click', () => {
+        toast.classList.add('hide');
+        setTimeout(() => toast.remove(), 300);
+      });
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validate approver selection
+    if (!selectedApprover) {
+      showToast('Please select an approver/reviewer before submitting', 'error');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
     
     // Validate based on client type
     if (clientType === 'internal') {
       // For internal clients, validate hours entry
       const totalClientHours = getGrandTotal();
       if (totalClientHours === 0) {
-        setError('Please enter at least one hour for any client or holiday/time off');
+        showToast('Please enter at least one hour for any client or holiday/time off', 'error');
         return;
       }
     } else {
       // For external clients, validate file upload
       if (!externalTimesheetFile) {
-        setError('Please upload the client submitted timesheet file');
+        showToast('Please upload the client submitted timesheet file', 'error');
         return;
       }
     }
     
     // Validate employee selection for non-employee roles
     if (!isEmployee() && !selectedEmployee) {
-      setError('Please select an employee before submitting');
+      showToast('Please select an employee before submitting', 'error');
       return;
     }
     
@@ -432,104 +524,82 @@ const TimesheetSubmit = () => {
     setError('');
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      console.log('📤 Submitting timesheet with approver:', selectedApprover);
       
-      // Create form data for file upload
-      const formData = new FormData();
-      formData.append('week', selectedWeek);
-      formData.append('clientType', clientType);
+      // Get employee ID
+      const employeeId = !isEmployee() ? selectedEmployee : user.employeeId;
       
-      if (!isEmployee()) {
-        formData.append('employeeId', selectedEmployee);
+      if (!employeeId) {
+        showToast('Employee ID not found. Please try logging in again.', 'error');
+        setSubmitting(false);
+        return;
       }
       
-      if (clientType === 'internal') {
-        // Internal client data
-        formData.append('clientHours', JSON.stringify(clientHours));
-        formData.append('holidayHours', JSON.stringify(holidayHours));
-        formData.append('notes', notes);
-        
-        attachments.forEach((file, index) => {
-          formData.append(`attachment_${index}`, file);
-        });
-      } else {
-        // External client data
-        formData.append('externalTimesheetFile', externalTimesheetFile);
-        formData.append('notes', notes);
-      }
+      // Parse week range to get start and end dates
+      const [startStr, endStr] = selectedWeek.split(' To ');
+      const weekStart = new Date(startStr).toISOString().split('T')[0];
+      const weekEnd = new Date(endStr).toISOString().split('T')[0];
       
-      // In a real app, send formData to API
+      // Prepare submission data
       const submissionData = {
-        week: selectedWeek,
-        clientType,
-        employeeId: !isEmployee() ? selectedEmployee : 'current-user',
-        ...(clientType === 'internal' ? {
-          clientHours,
-          holidayHours,
-          totalHours: getGrandTotal(),
-          attachments: attachments.map(file => file.name)
-        } : {
-          externalTimesheetFile: externalTimesheetFile.name
-        }),
-        notes
+        tenantId: user.tenantId,
+        employeeId: employeeId,
+        weekStart: weekStart,
+        weekEnd: weekEnd,
+        clientId: clientHours.length > 0 ? clientHours[0].id : null,
+        reviewerId: selectedApprover,
+        status: 'submitted',
+        totalHours: getGrandTotal(),
+        notes: notes,
+        dailyHours: {
+          sat: clientHours.reduce((sum, c) => sum + (c.hours[0] || 0), 0),
+          sun: clientHours.reduce((sum, c) => sum + (c.hours[1] || 0), 0),
+          mon: clientHours.reduce((sum, c) => sum + (c.hours[2] || 0), 0),
+          tue: clientHours.reduce((sum, c) => sum + (c.hours[3] || 0), 0),
+          wed: clientHours.reduce((sum, c) => sum + (c.hours[4] || 0), 0),
+          thu: clientHours.reduce((sum, c) => sum + (c.hours[5] || 0), 0),
+          fri: clientHours.reduce((sum, c) => sum + (c.hours[6] || 0), 0)
+        }
       };
       
-      console.log('Submitting timesheet:', submissionData);
-    
-    // Simulate sending email notification to approver
-    const employeeName = !isEmployee() ? 
-      `${selectedEmployee.split(' - ')[0]}` : 
-      'Current User';
-    
-    // Get approver info from mock data
-    const mockApproverData = {
-      name: 'Sarah Johnson',
-      email: 'sarah.johnson@company.com',
-      department: 'Management'
-    };
-    
-    // Simulate email notification to approver
-    const emailNotification = {
-      to: mockApproverData.email,
-      subject: `Timesheet Approval Required - ${employeeName} - Week ${selectedWeek}`,
-      body: `
-        Dear ${mockApproverData.name},
+      console.log('📤 Submitting to API:', submissionData);
+      
+      // Submit to backend API
+      const response = await axios.post('/api/timesheets/submit', submissionData);
+      
+      console.log('✅ API Response:', response.data);
+      
+      if (response.data.success) {
+        // Get selected approver info
+        const approverInfo = availableApprovers.find(a => a.id === selectedApprover);
+        const approverName = approverInfo ? approverInfo.name : 'Selected Approver';
         
-        A new timesheet has been submitted and requires your approval:
+        // Show success toast
+        showToast(`Timesheet submitted successfully! An approval request has been sent to ${approverName}.`, 'success');
         
-        Employee: ${employeeName}
-        Week: ${selectedWeek}
-        Client Type: ${clientType === 'internal' ? 'Internal' : 'External'}
-        Total Hours: ${clientType === 'internal' ? getGrandTotal() : 'N/A (External)'}
-        
-        Please review and approve/reject this timesheet at your earliest convenience.
-        
-        You can access the approval page here: ${window.location.origin}/${subdomain}/timesheets/approval
-        
-        Thank you,
-        TimePulse System
-      `
-    };
-    
-    console.log('Email notification sent to approver:', emailNotification);
-    
-    // Update timesheet status to 'Submitted for Approval'
-    submissionData.status = 'Submitted for Approval';
-    submissionData.submittedDate = new Date().toISOString().split('T')[0];
-    submissionData.approver = mockApproverData.name;
-    
-    console.log('Updated timesheet with approval status:', submissionData);
-    
-    setSuccess(`${clientType === 'internal' ? 'Internal' : 'External'} client timesheet submitted successfully! An approval request has been sent to ${mockApproverData.name}.`);
-    
-    // Redirect after a short delay
-    setTimeout(() => {
-      navigate(`/${subdomain}/timesheets`);
-    }, 2000);
+        // Navigate immediately to timesheet summary
+        console.log('🔄 Navigating to timesheet summary...');
+        navigate(`/${subdomain}/timesheets`, { replace: true });
+      } else {
+        showToast(response.data.message || 'Failed to submit timesheet', 'error');
+      }
     } catch (error) {
-      console.error('Error submitting timesheet:', error);
-      setError('Failed to submit timesheet. Please try again.');
+      console.error('❌ Error submitting timesheet:', error);
+      console.error('Error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
+      
+      let errorMessage = 'Failed to submit timesheet. Please try again.';
+      
+      if (error.response?.status === 404) {
+        errorMessage = 'Submit endpoint not found. Please ensure the backend server is running and has been restarted.';
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
+      
+      showToast(errorMessage, 'error');
     } finally {
       setSubmitting(false);
     }
@@ -621,45 +691,76 @@ const TimesheetSubmit = () => {
   };
   
   const processTimesheetWithAI = async (file) => {
-    // Simulate AI processing delay
-    await new Promise(resolve => setTimeout(resolve, 3000));
-    
-    // Mock AI extracted data - in real implementation, this would call your AI service
-    const mockExtractedData = {
-      week: selectedWeek || availableWeeks[0]?.value || '14-JUL-2025 To 20-JUL-2025',
-      clientHours: [
-        { 
-          id: '1', 
-          clientName: 'JPMC', 
-          project: 'Web Development',
-          hourlyRate: 125,
-          hours: [8, 8, 7.5, 8, 8, 0, 0] // Mock extracted hours
+    try {
+      console.log('🤖 Starting real AI extraction for file:', file.name);
+      
+      // Use the actual timesheet extractor service
+      const extractedData = await extractTimesheetData(file);
+      
+      console.log('📊 Raw extracted data:', extractedData);
+      
+      // Validate the extracted data
+      const validation = validateExtractedData(extractedData);
+      
+      if (!validation.isValid) {
+        throw new Error(`Extraction validation failed: ${validation.errors.join(', ')}`);
+      }
+      
+      // Convert the extracted data to our timesheet format
+      // Find the matching client from available clients to get the correct UUID
+      const extractedClientName = extractedData.clientName || 'Cognizant';
+      const matchingClient = clientHours.find(client => 
+        client.clientName && client.clientName.toLowerCase().includes(extractedClientName.toLowerCase())
+      );
+      
+      // Use the existing client ID if found, otherwise use the first available client
+      const clientId = matchingClient ? matchingClient.id : (clientHours[0]?.id || '1');
+      const clientName = matchingClient ? matchingClient.clientName : extractedClientName;
+      const hourlyRate = matchingClient ? matchingClient.hourlyRate : 125;
+      
+      console.log('🔍 Found matching client:', { clientId, clientName, hourlyRate });
+      
+      // Only create one client entry since only one client was extracted
+      const timesheetData = {
+        week: selectedWeek || availableWeeks[0]?.value || '09-SEP-2025 To 15-SEP-2025',
+        clientHours: [
+          {
+            id: clientId, 
+            clientName: clientName,
+            project: extractedData.projectName || 'The Pre-Paid Agile Dev POD',
+            hourlyRate: hourlyRate,
+            hours: [
+              extractedData.dailyHours.sat || 0,
+              extractedData.dailyHours.sun || 0,
+              extractedData.dailyHours.mon || 0,
+              extractedData.dailyHours.tue || 0,
+              extractedData.dailyHours.wed || 0,
+              extractedData.dailyHours.thu || 0,
+              extractedData.dailyHours.fri || 0
+            ]
+          }
+        ],
+        holidayHours: {
+          holiday: [0, 0, 0, 0, 0, 0, 0],
+          timeOff: [0, 0, 0, 0, 0, 0, 0]
         },
-        { 
-          id: '2', 
-          clientName: 'IBM', 
-          project: 'Mobile App',
-          hourlyRate: 150,
-          hours: [0, 0, 0.5, 0, 0, 4, 0] // Mock extracted hours
-        },
-        { 
-          id: '3', 
-          clientName: 'Accenture', 
-          project: 'UI/UX Design',
-          hourlyRate: 110,
-          hours: [0, 0, 0, 0, 0, 0, 0]
-        }
-      ],
-      holidayHours: {
-        holiday: [0, 0, 0, 0, 0, 0, 0],
-        timeOff: [0, 0, 0, 0, 0, 0, 8] // Mock extracted time off
-      },
-      notes: 'Timesheet extracted from uploaded file using AI processing',
-      confidence: 0.95 // AI confidence score
-    };
-    
-    setAiProcessedData(mockExtractedData);
-    setSuccess('AI processing completed! Review the extracted data below.');
+        notes: `Extracted from ${file.name}: Employee: ${extractedData.employeeName}, Client: ${extractedData.clientName}, Project: ${extractedData.projectName}, Total Hours: ${extractedData.totalHours}`,
+        confidence: extractedData.confidence || 0.85,
+        originalExtraction: extractedData // Store original for debugging
+      };
+      
+      console.log('✅ Converted timesheet data:', timesheetData);
+      
+      setAiProcessedData(timesheetData);
+      showToast(`AI extraction completed! Found ${extractedData.totalHours} hours with ${Math.round((extractedData.confidence || 0.85) * 100)}% confidence.`, 'success');
+      
+    } catch (error) {
+      console.error('❌ AI extraction failed:', error);
+      showToast(`AI extraction failed: ${error.message}`, 'error');
+      
+      // Fallback to manual entry
+      setAiProcessing(false);
+    }
   };
   
   const applyAiProcessedData = () => {
@@ -675,7 +776,7 @@ const TimesheetSubmit = () => {
     // Clear AI processed data and hide upload section
     setAiProcessedData(null);
     setShowAiUpload(false);
-    setSuccess('AI extracted data has been applied to your timesheet. Please review and submit.');
+    showToast('AI extracted data has been applied to your timesheet. Please review and submit.', 'success');
   };
   
   const discardAiProcessedData = () => {
@@ -792,39 +893,24 @@ const TimesheetSubmit = () => {
   
   return (
     <div className="nk-conten">
-      <div className="container-fluid">
+      <div className="container-flui">
         <div className="nk-content-inne">
           <div className="nk-content-body">
             <div className="nk-block-head nk-block-head-sm">
               <div className="nk-block-between">
                 <div className="nk-block-head-content">
                   <h3 className="nk-block-title page-title">Submit Timesheet</h3>
-                  <div className="nk-block-des text-soft">
+                  {/* <div className="nk-block-des text-soft">
                     <p>Enter your hours for the week of {week}</p>
-                  </div>
+                  </div> */}
                 </div>
               </div>
             </div>
             
             <div className="nk-block">
-              {error && (
-                <div className="alert alert-danger alert-icon">
-                  <em className="icon ni ni-alert-circle"></em>
-                  <strong>{error}</strong>
-                </div>
-              )}
-              
-              {success && (
-                <div className="alert alert-success alert-icon">
-                  <em className="icon ni ni-check-circle"></em>
-                  <strong>{success}</strong>
-                </div>
-              )}
-              
               <div className="card card-bordered">
                 <div className="card-inne">
-                  <form onSubmit={handleSubmit}>
-                    {/* Employee Selection for Non-Employee Roles */}
+                  <form onSubmit={handleSubmit} noValidate>
                     {!isEmployee() && (
                       <div className="form-group mb-4">
                         <label className="form-label">
@@ -949,84 +1035,88 @@ const TimesheetSubmit = () => {
                     
                     {/* AI-Powered Timesheet Upload Section - Only for Internal Clients */}
                     {clientType === 'internal' && (
-                      <div className="form-group mb-4">
-                        <div className="card card-bordered">
-                          <div className="card-inne">
-                            <div className="d-flex justify-content-between align-items-center mb-3">
-                              <h6 className="card-title mb-0">
-                                <em className="icon ni ni-cpu text-primary me-2"></em>
-                                AI-Powered Timesheet Upload
-                              </h6>
-                              <button 
-                                type="button" 
-                                className="btn btn-sm btn-outline-primary"
-                                onClick={() => setShowAiUpload(!showAiUpload)}
-                                disabled={isReadOnly}
-                              >
-                                {showAiUpload ? 'Hide' : 'Upload & Extract'}
-                              </button>
+                      <div className="ai-upload-section">
+                        <div className="ai-upload-header">
+                          <h6 className="ai-upload-title">
+                            <i className="fa fa-robot"></i>
+                            AI-Powered Timesheet Upload
+                          </h6>
+                          <button 
+                            type="button" 
+                            className="ai-upload-toggle-btn"
+                            onClick={() => setShowAiUpload(!showAiUpload)}
+                            disabled={isReadOnly}
+                          >
+                            {showAiUpload ? 'Hide' : 'Upload & Extract'}
+                          </button>
+                        </div>
+                        
+                        <p className="ai-upload-description">
+                          Upload {!isEmployee() && selectedEmployee ? 
+                            `${availableEmployees.find(emp => emp.id === selectedEmployee)?.name}'s` : 
+                            'your'
+                          } timesheet in any format (image, Excel, PDF, CSV) and let our AI engine automatically extract and populate the timesheet data.
+                        </p>
+                        
+                        {!isEmployee() && !selectedEmployee && (
+                          <div className="alert alert-warning mb-3">
+                            <em className="icon ni ni-alert-circle me-2"></em>
+                            Please select an employee first before uploading their timesheet.
+                          </div>
+                        )}
+                        
+                        {showAiUpload && (
+                          <>
+                            <div className="ai-upload-dropzone" onClick={() => document.getElementById('aiFileUpload').click()}>
+                              <div className="ai-upload-text">
+                                {aiProcessing ? 'Processing with AI...' : 'Drag and drop files here or click to browse'}
+                              </div>
+                              <div className="ai-upload-or">or</div>
+                              {aiProcessing && (
+                                <div className="ai-upload-spinner"></div>
+                              )}
                             </div>
-                          
-                          <p className="text-soft mb-3">
-                            Upload {!isEmployee() && selectedEmployee ? 
-                              `${availableEmployees.find(emp => emp.id === selectedEmployee)?.name}'s` : 
-                              'your'
-                            } timesheet in any format (image, Excel, PDF, CSV) and let our AI engine automatically extract and populate the timesheet data.
-                          </p>
-                          
-                          {!isEmployee() && !selectedEmployee && (
-                            <div className="alert alert-warning mb-3">
-                              <em className="icon ni ni-alert-circle me-2"></em>
-                              Please select an employee first before uploading their timesheet.
-                            </div>
-                          )}
-                          
-                          {showAiUpload && (
-                            <div className="ai-upload-section">
-                              <div className="form-group">
-                                <div className="form-control-wrap">
-                                  <div className="form-file">
-                                    <input 
-                                      type="file" 
-                                      className="form-file-input" 
-                                      id="aiFileUpload"
-                                      accept=".jpg,.jpeg,.png,.heic,.webp,.pdf,.xlsx,.xls,.csv"
-                                      onChange={handleAiFileUpload}
-                                      disabled={aiProcessing || isReadOnly || (!isEmployee() && !selectedEmployee)}
-                                    />
-                                    <label className="form-file-label" htmlFor="aiFileUpload">
-                                      {aiProcessing ? (
-                                        <>
-                                          <span className="spinner-border spinner-border-sm me-2"></span>
-                                          Processing with AI...
-                                        </>
-                                      ) : (
-                                        'Choose file or drag & drop'
-                                      )}
-                                    </label>
-                                  </div>
+                            
+                            <input 
+                              type="file" 
+                              id="aiFileUpload"
+                              style={{ display: 'none' }}
+                              accept=".jpg,.jpeg,.png,.heic,.webp,.pdf,.xlsx,.xls,.csv"
+                              onChange={handleAiFileUpload}
+                              disabled={aiProcessing || isReadOnly || (!isEmployee() && !selectedEmployee)}
+                            />
+                            
+                            <div className="ai-upload-toggle-section">
+                              <div className={`ai-upload-toggle-switch ${showAiUpload ? 'on' : 'off'}`}>
+                                <div className="ai-upload-toggle-slider"></div>
+                              </div>
+                              <div>
+                                <div className="ai-upload-toggle-label">
+                                  <i className="fa fa-robot"></i>
+                                  Auto-convert timesheet to invoice using AI
                                 </div>
-                                <div className="form-note mt-2">
-                                  <small className="text-soft">
-                                    Supported formats: Images (JPG, PNG, HEIC), PDF, Excel (XLSX, XLS), CSV
-                                  </small>
+                                <div className="ai-upload-toggle-description">
+                                  When enabled, uploaded timesheet images will be automatically processed and converted to invoice format
                                 </div>
                               </div>
-                              
-                              {aiProcessing && (
-                                <div className="alert alert-info mt-3">
-                                  <div className="d-flex align-items-center">
-                                    <span className="spinner-border spinner-border-sm me-2"></span>
-                                    <div>
-                                      <strong>AI Processing in Progress...</strong>
-                                      <br />
-                                      <small>Analyzing your timesheet and extracting data. This may take a few moments.</small>
-                                    </div>
-                                  </div>
-                                </div>
-                              )}
-                              
-                              {aiProcessedData && (
+                            </div>
+                          </>
+                        )}
+                        
+                        {aiProcessing && (
+                          <div className="alert alert-info mt-3">
+                            <div className="d-flex align-items-center">
+                              <span className="spinner-border spinner-border-sm me-2"></span>
+                              <div>
+                                <strong>AI Processing in Progress...</strong>
+                                <br />
+                                <small>Analyzing your timesheet and extracting data. This may take a few moments.</small>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                        
+                        {aiProcessedData && (
                                 <div className="alert alert-success mt-3">
                                   <div className="d-flex justify-content-between align-items-start">
                                     <div>
@@ -1064,13 +1154,9 @@ const TimesheetSubmit = () => {
                                       </button>
                                     </div>
                                   </div>
-                                </div>
-                              )}
-                            </div>
-                          )}
                         </div>
+                        )}
                       </div>
-                    </div>
                     )}
                     
                     {/* SOW and Timesheet Table - Only for Internal Clients */}
@@ -1079,11 +1165,13 @@ const TimesheetSubmit = () => {
                     <div className="form-group mb-4">
                       <label className="form-label">Select Statement of Work (SOW)</label>
                       <div className="form-control-wrap">
-                        <select className="form-select timesheet-dropdown" disabled>
+                        <select className="form-select timesheet-dropdown" disabled={isReadOnly}>
                           <option>Select SOW</option>
-                          <option selected>✓ JPMC - Web Development{isAdmin() ? ' ($125/hr)' : ''}</option>
-                          <option selected>✓ IBM - Mobile App{isAdmin() ? ' ($150/hr)' : ''}</option>
-                          <option selected>✓ Accenture - UI/UX{isAdmin() ? ' ($110/hr)' : ''}</option>
+                          {clientHours.map((client) => (
+                            <option key={client.id} value={client.id} selected>
+                              ✓ {client.clientName} - {client.project}{isAdmin() ? ` ($${client.hourlyRate}/hr)` : ''}
+                            </option>
+                          ))}
                         </select>
                       </div>
 
@@ -1398,6 +1486,32 @@ const TimesheetSubmit = () => {
                       )}
                     </div>
                     
+                    {/* Approver Selection */}
+                    <div className="form-group mb-4">
+                      <label className="form-label">
+                        Assign Reviewer/Approver <span className="text-danger">*</span>
+                      </label>
+                      <div className="form-control-wrap">
+                        <select 
+                          className="form-select" 
+                          value={selectedApprover} 
+                          onChange={(e) => setSelectedApprover(e.target.value)}
+                          disabled={isReadOnly}
+                          required
+                        >
+                          <option value="">Select an approver...</option>
+                          {availableApprovers.map((approver) => (
+                            <option key={approver.id} value={approver.id}>
+                              {approver.name} ({approver.role})
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="form-note">
+                        Select an admin or manager to review and approve this timesheet
+                      </div>
+                    </div>
+                    
                     {/* Action Buttons */}
                     <div className="form-group mt-4">
                       <div className="d-flex gap-3 justify-content-center">
@@ -1413,8 +1527,8 @@ const TimesheetSubmit = () => {
                             </button>
                             <button 
                               type="submit" 
-                              className="btn btn-save-for-later"
-                              disabled={submitting}
+                              className="btn btn-primary"
+                              disabled={submitting || !selectedApprover}
                             >
                               {submitting ? (
                                 <>
@@ -1432,7 +1546,7 @@ const TimesheetSubmit = () => {
                         )}
                         <button 
                           type="button" 
-                          className="btn btn-save-for-later"
+                          className="btn btn-outline-secondary"
                           onClick={() => navigate(`/${subdomain}/timesheets`)}
                         >
                           Return to Timesheet Summary

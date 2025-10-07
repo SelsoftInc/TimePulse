@@ -54,7 +54,7 @@ const EmployeeForm = () => {
       try {
         setClientsLoading(true);
         setClientsError('');
-        const resp = await fetch(`http://localhost:5001/api/clients?tenantId=${user.tenantId}`, {
+        const resp = await fetch(`http://localhost:5000/api/clients?tenantId=${user.tenantId}`, {
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${localStorage.getItem('token')}`

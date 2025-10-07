@@ -1,10 +1,10 @@
 // Centralized API configuration
-// Reads base URL from REACT_APP_API_BASE, falls back to localhost:5001
+// Reads base URL from REACT_APP_API_BASE, falls back to localhost:5000
 
 export const API_BASE = (() => {
   const envBase = process.env.REACT_APP_API_BASE;
   if (envBase) return envBase;
-  const fallback = 'http://localhost:5001';
+  const fallback = 'http://localhost:5000';
   // Surface a helpful hint in dev
   if (typeof window !== 'undefined' && process.env.NODE_ENV !== 'production') {
     // eslint-disable-next-line no-console

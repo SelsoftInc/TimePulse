@@ -63,8 +63,11 @@
 }
 
 .app-brand-logo {
-  max-height: 32px;
+  max-height: 70px;
+  width: auto;
+  max-width: 280px;
   margin-right: 10px;
+  object-fit: contain;
 }
 
 /* Allow tenant logos to be larger */

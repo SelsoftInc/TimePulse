@@ -30,7 +30,7 @@ const SimpleLogin = () => {
         name: 'Selsoft',
         subdomain: 'selsoft',
         status: 'active',
-        role: 'employee'
+        role: 'admin'
       };
       
       // Create mock workspaces/tenants
@@ -40,7 +40,7 @@ const SimpleLogin = () => {
           name: 'Selsoft',
           subdomain: 'selsoft',
           status: 'active',
-          role: 'employee',
+          role: 'admin',
           industry: 'Technology',
           createdAt: '2025-01-15',
           lastAccessed: '2025-07-05'
@@ -60,6 +60,7 @@ const SimpleLogin = () => {
       // Store tenant and current tenant
       localStorage.setItem('tenants', JSON.stringify(mockWorkspaces));
       localStorage.setItem('currentTenant', JSON.stringify(defaultTenant));
+      localStorage.setItem('currentEmployer', JSON.stringify(defaultTenant));
       
       console.log('Authentication data set, navigating to workspaces');
       

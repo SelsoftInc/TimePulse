@@ -30,6 +30,8 @@ const EmployeeTimesheet = () => {
   const [notes, setNotes] = useState('');
   const [files, setFiles] = useState([]);
   const [status, setStatus] = useState('draft');
+  const [reviewers, setReviewers] = useState([]);
+  const [selectedReviewer, setSelectedReviewer] = useState('');
   
   // Fetch timesheet data for current week
   useEffect(() => {
@@ -62,6 +64,26 @@ const EmployeeTimesheet = () => {
           setWeeklyHours(data.timesheet.dailyHours);
           setNotes(data.timesheet.notes || '');
           setStatus(data.timesheet.status);
+          setSelectedReviewer(data.timesheet.reviewerId || '');
+        }
+        
+        // Fetch reviewers list
+        const reviewersResponse = await apiFetch(
+          `/api/timesheets/reviewers?tenantId=${user.tenantId}`,
+          {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+          },
+          { timeoutMs: 15000 }
+        );
+        
+        if (reviewersResponse.ok) {
+          const reviewersData = await reviewersResponse.json();
+          if (reviewersData.success) {
+            setReviewers(reviewersData.reviewers);
+          }
         }
       } catch (error) {
         console.error('Error fetching timesheet:', error);
@@ -104,6 +126,12 @@ const EmployeeTimesheet = () => {
       return;
     }
 
+    // Validate reviewer selection when submitting (not for draft)
+    if (!isDraft && !selectedReviewer) {
+      toast.error('Please select a reviewer before submitting the timesheet');
+      return;
+    }
+
     try {
       setSubmitting(true);
       
@@ -111,7 +139,8 @@ const EmployeeTimesheet = () => {
         dailyHours: weeklyHours,
         status: isDraft ? 'draft' : 'submitted',
         notes: notes,
-        attachments: files.map(f => ({ name: f.name, size: f.size }))
+        attachments: files.map(f => ({ name: f.name, size: f.size })),
+        reviewerId: selectedReviewer || null
       };
 
       const response = await apiFetch(
@@ -228,6 +257,31 @@ const EmployeeTimesheet = () => {
                             value={client?.name || 'No client assigned'} 
                             readOnly 
                           />
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="col-lg-6">
+                      <div className="form-group">
+                        <label className="form-label">Assign Reviewer <span className="text-danger">*</span></label>
+                        <div className="form-control-wrap">
+                          <select 
+                            className="form-select" 
+                            value={selectedReviewer} 
+                            onChange={(e) => setSelectedReviewer(e.target.value)}
+                            disabled={isSubmitted}
+                            required
+                          >
+                            <option value="">Select a reviewer...</option>
+                            {reviewers.map(reviewer => (
+                              <option key={reviewer.id} value={reviewer.id}>
+                                {reviewer.name} ({reviewer.role})
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="form-note">
+                          Select an admin or manager to review this timesheet
                         </div>
                       </div>
                     </div>

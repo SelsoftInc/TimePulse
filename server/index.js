@@ -15,7 +15,7 @@ require('dotenv').config();
 const { connectDB } = require('./models');
 
 const app = express();
-const PORT = process.env.PORT || 5001;
+const PORT = process.env.PORT || 5000;
 
 // Import route modules
 const timesheetRoutes = require('./routes/timesheets');

@@ -220,12 +220,20 @@
   width: 80px;
   height: 80px;
   border-radius: 50%;
-  background: linear-gradient(to right, var(--brand-primary), var(--brand-secondary));
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
   font-size: 2rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Ensure icon is visible in both light and dark modes */
+.avatar-circle svg,
+.avatar-circle i {
+  color: white !important;
+  fill: white !important;
 }
 
 .profile-info {

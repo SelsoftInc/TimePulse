@@ -45,7 +45,7 @@ const CompanyInformation = () => {
       }
 
       const response = await fetch(
-        `http://localhost:5001/api/tenants/${tenantId}`,
+        `http://localhost:5000/api/tenants/${tenantId}`,
         {
           method: "GET",
           headers: {
@@ -204,11 +204,11 @@ const CompanyInformation = () => {
       }
 
       console.log(
-        `🌐 Making API call to: http://localhost:5001/api/tenants/${tenantId}`
+        `🌐 Making API call to: http://localhost:5000/api/tenants/${tenantId}`
       );
 
       const response = await fetch(
-        `http://localhost:5001/api/tenants/${tenantId}`,
+        `http://localhost:5000/api/tenants/${tenantId}`,
         {
           method: "PUT",
           headers: {

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { useToast } from '../../contexts/ToastContext';
+import { apiFetch } from '../../config/api';
 import './EmployeeDashboard.css';
 
 // Modern TimeCard component with beautiful design
@@ -296,6 +298,7 @@ const UpcomingLeave = ({ leaveRequests }) => {
 const EmployeeDashboard = () => {
   const { subdomain } = useParams();
   const { user } = useAuth();
+  const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [timesheets, setTimesheets] = useState([]);
   const [hoursData, setHoursData] = useState({ regular: 0, overtime: 0, leave: 0 });
@@ -303,107 +306,126 @@ const EmployeeDashboard = () => {
   const [leaveRequests, setLeaveRequests] = useState([]);
   
   useEffect(() => {
-    // In a real app, fetch data from API
-    // For now, using mock data
     const loadDashboardData = async () => {
+      if (!user?.tenantId || !user?.id) {
+        setLoading(false);
+        return;
+      }
+
       try {
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        setLoading(true);
         
-        // Mock timesheet data
-        const mockTimesheets = [
-          { 
-            week: 'Jul 3, 2025', 
-            status: 'Approved', 
-            hours: 40, 
-            dueDate: '2025-07-03'
-          },
-          { 
-            week: 'Jul 10, 2025', 
-            status: 'Pending', 
-            hours: 42, 
-            dueDate: '2025-07-10'
-          },
-          { 
-            week: 'Jul 17, 2025', 
-            status: 'Missing', 
-            hours: 0, 
-            dueDate: '2025-07-17'
-          },
-          { 
-            week: 'Jul 24, 2025', 
-            status: 'Draft', 
-            hours: 16, 
-            dueDate: '2025-07-24'
+        // Fetch employee data to get the employee ID linked to the user
+        const employeeResponse = await apiFetch(
+          `/api/employees?tenantId=${user.tenantId}`,
+          {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
           }
-        ];
-        
-        // Mock hours data
-        const mockHoursData = {
-          regular: 160,
-          overtime: 12,
-          leave: 8
-        };
-        
-        // Mock notifications
-        const mockNotifications = [
+        );
+
+        if (!employeeResponse.ok) {
+          throw new Error('Failed to fetch employee data');
+        }
+
+        const employeeData = await employeeResponse.json();
+        const currentEmployee = employeeData.employees?.find(emp => 
+          emp.email === user.email || emp.userId === user.id
+        );
+
+        if (!currentEmployee) {
+          console.warn('No employee record found for current user');
+          setLoading(false);
+          return;
+        }
+
+        // Fetch timesheets for the current week
+        const timesheetResponse = await apiFetch(
+          `/api/timesheets/current?tenantId=${user.tenantId}`,
           {
-            title: 'Missing Timesheet',
-            message: 'You have not submitted your timesheet for the week of Jul 17, 2025',
-            date: 'Jul 17, 2025',
-            priority: 'Critical',
-            color: '#f44336',
-            bgColor: '#ffebee'
-          },
-          {
-            title: 'Timesheet Approved',
-            message: 'Your timesheet for the week of Jul 3, 2025 has been approved',
-            date: 'Jul 5, 2025',
-            priority: 'Info',
-            color: '#4caf50',
-            bgColor: '#e8f5e9'
-          },
-          {
-            title: 'Upcoming Holiday',
-            message: 'Independence Day (July 4) is an upcoming company holiday',
-            date: 'Jul 4, 2025',
-            priority: 'Info',
-            color: '#2196f3',
-            bgColor: '#e3f2fd'
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
           }
-        ];
-        
-        // Mock leave requests
-        const mockLeaveRequests = [
-          {
-            type: 'Vacation',
-            startDate: 'Jul 20, 2025',
-            endDate: 'Jul 24, 2025',
-            status: 'Approved',
-            days: 5
-          },
-          {
-            type: 'Sick Leave',
-            startDate: 'Aug 5, 2025',
-            endDate: 'Aug 5, 2025',
-            status: 'Pending',
-            days: 1
+        );
+
+        if (timesheetResponse.ok) {
+          const timesheetData = await timesheetResponse.json();
+          
+          // Filter timesheets for current employee
+          const myTimesheets = timesheetData.timesheets?.filter(ts => 
+            ts.employee?.id === currentEmployee.id
+          ) || [];
+
+          // Transform timesheet data to match component expectations
+          const transformedTimesheets = myTimesheets.map(ts => ({
+            week: ts.week,
+            status: ts.status.label.charAt(0).toUpperCase() + ts.status.label.slice(1).toLowerCase(),
+            hours: parseFloat(ts.hours),
+            dueDate: ts.weekEnd,
+            weekStart: ts.weekStart,
+            id: ts.id
+          }));
+
+          setTimesheets(transformedTimesheets);
+
+          // Calculate hours data from timesheets
+          const totalRegular = transformedTimesheets.reduce((sum, ts) => {
+            if (ts.status === 'Approved' || ts.status === 'Submitted') {
+              return sum + ts.hours;
+            }
+            return sum;
+          }, 0);
+
+          setHoursData({
+            regular: totalRegular,
+            overtime: 0, // Can be enhanced later
+            leave: 0     // Can be enhanced later
+          });
+
+          // Generate notifications based on timesheet status
+          const generatedNotifications = [];
+          
+          const missingTimesheets = transformedTimesheets.filter(ts => ts.hours === 0);
+          if (missingTimesheets.length > 0) {
+            generatedNotifications.push({
+              title: 'Missing Timesheet',
+              message: `You have ${missingTimesheets.length} timesheet(s) that need to be submitted`,
+              date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+              priority: 'Critical'
+            });
           }
-        ];
-        
-        setTimesheets(mockTimesheets);
-        setHoursData(mockHoursData);
-        setNotifications(mockNotifications);
-        setLeaveRequests(mockLeaveRequests);
+
+          const approvedTimesheets = transformedTimesheets.filter(ts => ts.status === 'Approved');
+          if (approvedTimesheets.length > 0) {
+            const latest = approvedTimesheets[0];
+            generatedNotifications.push({
+              title: 'Timesheet Approved',
+              message: `Your timesheet for the week of ${latest.week} has been approved`,
+              date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+              priority: 'Success'
+            });
+          }
+
+          setNotifications(generatedNotifications);
+        }
+
+        // Leave requests placeholder - can be implemented later
+        setLeaveRequests([]);
+
       } catch (error) {
         console.error('Error loading dashboard data:', error);
+        toast?.error('Failed to load dashboard data');
       } finally {
         setLoading(false);
       }
     };
     
     loadDashboardData();
-  }, []);
+  }, [user?.tenantId, user?.id, user?.email]); // eslint-disable-line react-hooks/exhaustive-deps
   
   if (loading) {
     return (

@@ -19,7 +19,7 @@ const ClientEdit = () => {
         setLoading(true);
         const tenantId = user?.tenantId;
         if (!tenantId) throw new Error('No tenant information');
-        const resp = await fetch(`http://localhost:5001/api/clients/${clientId}?tenantId=${tenantId}`, {
+        const resp = await fetch(`http://localhost:5000/api/clients/${clientId}?tenantId=${tenantId}`, {
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -42,7 +42,7 @@ const ClientEdit = () => {
 
   const handleUpdate = async (payload) => {
     const tenantId = user?.tenantId;
-    const resp = await fetch(`http://localhost:5001/api/clients/${clientId}?tenantId=${tenantId}`, {
+    const resp = await fetch(`http://localhost:5000/api/clients/${clientId}?tenantId=${tenantId}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',

@@ -1,7 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
-// import { useTheme } from "../../contexts/ThemeContext";
 import { PERMISSIONS } from "../../utils/roles";
 import "./EmployerSettings.css";
 import CompanyInformation from "./CompanyInformation";
@@ -13,7 +11,6 @@ import ConfirmDialog from "../common/ConfirmDialog";
 import InvoiceSettings from "./InvoiceSettings";
 
 const EmployerSettings = () => {
-  const navigate = useNavigate();
   const { checkPermission, isEmployee } = useAuth();
   const [activeTab, setActiveTab] = useState(
     checkPermission(PERMISSIONS.MANAGE_SETTINGS) ? "company" : "security"
@@ -22,10 +19,14 @@ const EmployerSettings = () => {
   // Logout function available for use in settings components
   const handleLogout = () => {
     // In a real app, this would call an API to log the user out
-    // For now, just clear localStorage and redirect to login
-    localStorage.removeItem("user");
-    localStorage.removeItem("currentEmployer");
-    navigate("/simple-login");
+    // Clear all localStorage data including theme
+    localStorage.clear();
+    
+    // Remove dark-mode class from body to reset to light theme
+    document.body.classList.remove('dark-mode');
+    
+    // Use window.location for full page reload to reset app state
+    window.location.href = "/";
   };
 
   // Confirmation modal for logout

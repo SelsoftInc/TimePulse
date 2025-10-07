@@ -3,6 +3,8 @@ import { useParams, useNavigate } from "react-router-dom";
 import { PERMISSIONS } from "../../utils/roles";
 import PermissionGuard from "../common/PermissionGuard";
 import DataGridFilter from "../common/DataGridFilter";
+import { useAuth } from "../../contexts/AuthContext";
+import axios from "axios";
 import {
   uploadAndProcessTimesheet,
   transformTimesheetToInvoice,
@@ -12,6 +14,7 @@ import "./TimesheetSummary.css";
 const TimesheetSummary = () => {
   const { subdomain } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [timesheets, setTimesheets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [clientType, setClientType] = useState("internal");
@@ -25,94 +28,74 @@ const TimesheetSummary = () => {
   const [invoiceError, setInvoiceError] = useState("");
 
   useEffect(() => {
-    loadTimesheetData();
-  }, []);
+    if (user?.tenantId) {
+      loadTimesheetData();
+    }
+  }, [user]);
 
   const loadTimesheetData = async () => {
     setLoading(true);
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 800));
+      const tenantId = user?.tenantId;
+      const userEmail = user?.email;
 
-      // Mock timesheet data matching Cognizant format
-      const mockTimesheets = [
-        {
-          id: 1,
-          weekRange: "12-JUL-2025 To 18-JUL-2025",
-          status: "Pending",
-          billableProjectHrs: "0.00",
-          timeOffHolidayHrs: "0.00",
-          totalTimeHours: "N/A",
-        },
-        {
-          id: 2,
-          weekRange: "05-JUL-2025 To 11-JUL-2025",
-          status: "Submitted for Approval",
-          billableProjectHrs: "40.00",
-          timeOffHolidayHrs: "0.00",
-          totalTimeHours: "N/A",
-        },
-        {
-          id: 3,
-          weekRange: "28-JUN-2025 To 04-JUL-2025",
-          status: "Submitted for Approval",
-          billableProjectHrs: "32.00",
-          timeOffHolidayHrs: "0.00",
-          totalTimeHours: "N/A",
-        },
-        {
-          id: 4,
-          weekRange: "21-JUN-2025 To 27-JUN-2025",
-          status: "Approved",
-          billableProjectHrs: "40.00",
-          timeOffHolidayHrs: "0.00",
-          totalTimeHours: "N/A",
-        },
-        {
-          id: 5,
-          weekRange: "14-JUN-2025 To 20-JUN-2025",
-          status: "Approved",
-          billableProjectHrs: "24.00",
-          nonBillableProjectHrs: "0.00",
-          timeOffHolidayHrs: "0.00",
-          totalTimeHours: "N/A",
-        },
-        {
-          id: 6,
-          weekRange: "07-JUN-2025 To 13-JUN-2025",
-          status: "Approved",
-          billableProjectHrs: "40.00",
-          timeOffHolidayHrs: "0.00",
-          totalTimeHours: "N/A",
-        },
-        {
-          id: 7,
-          weekRange: "31-MAY-2025 To 06-JUN-2025",
-          status: "Approved",
-          billableProjectHrs: "40.00",
-          timeOffHolidayHrs: "0.00",
-          totalTimeHours: "N/A",
-        },
-        {
-          id: 8,
-          weekRange: "24-MAY-2025 To 30-MAY-2025",
-          status: "Approved",
-          billableProjectHrs: "32.00",
-          timeOffHolidayHrs: "0.00",
-          totalTimeHours: "N/A",
-        },
-      ];
+      console.log('🔍 Loading timesheets...', { tenantId, userEmail, user });
 
-      setTimesheets(mockTimesheets);
+      if (!tenantId || !userEmail) {
+        console.error('❌ No tenant ID or email found', { tenantId, userEmail });
+        setLoading(false);
+        return;
+      }
 
-      // Determine client type based on user's assigned clients or company settings
-      // In a real app, this would come from user profile or API
-      // For demo, we'll simulate this - you can change this logic based on your needs
-      const userClientType =
-        localStorage.getItem("userClientType") || "internal";
+      // First, get the employee ID from email
+      console.log('📡 Fetching employee by email...');
+      const empResponse = await axios.get(`/api/timesheets/employees/by-email/${encodeURIComponent(userEmail)}?tenantId=${tenantId}`);
+      
+      if (!empResponse.data.success || !empResponse.data.employee) {
+        console.error('❌ Employee not found');
+        setLoading(false);
+        return;
+      }
+
+      const employeeId = empResponse.data.employee.id;
+      console.log('✅ Got employeeId:', employeeId);
+
+      // Fetch all timesheets for the employee from API
+      const apiUrl = `/api/timesheets/employee/${employeeId}/all?tenantId=${tenantId}`;
+      console.log('📡 Calling API:', apiUrl);
+      
+      const response = await axios.get(apiUrl);
+      console.log('✅ API Response:', response.data);
+
+      if (response.data.success) {
+        // Format timesheets to match UI expectations
+        const formattedTimesheets = response.data.timesheets.map(ts => ({
+          id: ts.id,
+          weekRange: ts.week,
+          status: ts.status.label === 'SUBMITTED' ? 'Submitted for Approval' : 
+                  ts.status.label === 'APPROVED' ? 'Approved' :
+                  ts.status.label === 'REJECTED' ? 'Rejected' : 
+                  ts.status.label === 'DRAFT' ? 'Pending' : ts.status.label,
+          billableProjectHrs: ts.hours,
+          timeOffHolidayHrs: "0.00",
+          totalTimeHours: "N/A",
+          weekStart: ts.weekStart,
+          weekEnd: ts.weekEnd,
+          dailyHours: ts.dailyHours,
+          notes: ts.notes,
+          reviewer: ts.reviewer
+        }));
+
+        console.log('📊 Formatted timesheets:', formattedTimesheets);
+        setTimesheets(formattedTimesheets);
+      }
+
+      // Determine client type
+      const userClientType = localStorage.getItem("userClientType") || "internal";
       setClientType(userClientType);
     } catch (error) {
-      console.error("Error loading timesheet data:", error);
+      console.error("❌ Error loading timesheet data:", error);
+      console.error("Error details:", error.response?.data || error.message);
     } finally {
       setLoading(false);
     }

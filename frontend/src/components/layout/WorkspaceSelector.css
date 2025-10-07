@@ -1,11 +1,15 @@
 .workspace-selector {
   padding: 15px 10px;
+  flex: 1;
+  min-width: 0;
+  max-width: calc(100% - 40px);
 }
 
 .workspace-current {
   display: flex;
   align-items: center;
   cursor: pointer;
+  max-width: 100%;
 }
 
 .workspace-icon {
@@ -23,6 +27,8 @@
 
 .workspace-details {
   flex: 1;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .workspace-name {
@@ -32,6 +38,7 @@
   color: #ffffff;
   letter-spacing: 0.3px;
   white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .workspace-tagline {

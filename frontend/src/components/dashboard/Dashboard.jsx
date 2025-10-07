@@ -449,6 +449,21 @@ const InvoiceWidget = ({ invoiceData }) => {
 // Main Dashboard component
 const Dashboard = () => {
   const { currentEmployer } = useAuth();
+  // const navigate = useNavigate();
+  // const { subdomain } = useParams();
+
+  // Redirect employees to their dedicated dashboard
+  // Note: Temporarily disabled until role assignment is fixed in login flow
+  // useEffect(() => {
+  //   console.log('Dashboard - currentEmployer:', currentEmployer);
+  //   console.log('Dashboard - currentEmployer.role:', currentEmployer?.role);
+  //   
+  //   // Only redirect if user is ONLY an employee (not admin or approver)
+  //   if (currentEmployer?.role === "employee") {
+  //     console.log('Redirecting employee to employee-dashboard');
+  //     navigate(`/${subdomain}/employee-dashboard`, { replace: true });
+  //   }
+  // }, [currentEmployer, navigate, subdomain]);
 
   // Determine if user is in employee role
   const isEmployeeRole = currentEmployer?.role === "employee";
@@ -479,7 +494,7 @@ const Dashboard = () => {
 
         // Fetch current week's timesheets from backend (creates drafts if missing)
         const resp = await fetch(
-          `http://localhost:5001/api/timesheets/current?tenantId=${userInfo.tenantId}`,
+          `http://localhost:5000/api/timesheets/current?tenantId=${userInfo.tenantId}`,
           {
             method: "GET",
             headers: {

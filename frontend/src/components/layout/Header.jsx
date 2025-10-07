@@ -6,6 +6,8 @@ import { useAuth } from "../../contexts/AuthContext";
 import { useTheme } from "../../contexts/ThemeContext";
 import PermissionGuard from "../common/PermissionGuard";
 import TimesheetAlerts from "../notifications/TimesheetAlerts";
+// import logo2 from "../../assets/images/jsTree/logo2.png";
+import logo3 from '../../assets/images/jsTree/TimePulse2.png';
 
 import "./Header.css";
 
@@ -42,7 +44,7 @@ const Header = ({ toggleSidebar }) => {
         if (!tenantId) return;
 
         const response = await fetch(
-          `http://localhost:5001/api/tenants/${tenantId}`,
+          `http://localhost:5000/api/tenants/${tenantId}`,
           {
             headers: {
               Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -110,7 +112,7 @@ const Header = ({ toggleSidebar }) => {
           {/* Brand logo and name */}
           <div className="app-brand">
             <img
-              src={tenantLogo || "/assets/images/jsTree/time-pulse-logo.png"}
+              src={tenantLogo || logo3}
               alt={tenantLogo ? "Company Logo" : "TimePulse Logo"}
               className="app-brand-logo"
               style={

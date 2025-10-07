@@ -44,7 +44,7 @@ const ProfileSettings = () => {
       }
 
       // Fetch real user data from employees API
-      const response = await fetch(`http://localhost:5001/api/employees?tenantId=${user.tenantId}`, {
+      const response = await fetch(`http://localhost:5000/api/employees?tenantId=${user.tenantId}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -145,7 +145,7 @@ const ProfileSettings = () => {
       }
 
       // Find the current employee first to get the employee ID
-      const employeesResponse = await fetch(`http://localhost:5001/api/employees?tenantId=${user.tenantId}`, {
+      const employeesResponse = await fetch(`http://localhost:5000/api/employees?tenantId=${user.tenantId}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -180,7 +180,7 @@ const ProfileSettings = () => {
       console.log('💾 Saving profile data:', updatePayload);
 
       // Save profile data to backend
-      const response = await fetch(`http://localhost:5001/api/employees/${currentEmployee.id}`, {
+      const response = await fetch(`http://localhost:5000/api/employees/${currentEmployee.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

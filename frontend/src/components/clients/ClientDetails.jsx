@@ -27,7 +27,7 @@ const ClientDetails = () => {
       setLoading(true);
       const tenantId = user?.tenantId;
       if (!tenantId) throw new Error('No tenant information');
-      const resp = await fetch(`http://localhost:5001/api/clients/${clientId}?tenantId=${tenantId}`, {
+      const resp = await fetch(`http://localhost:5000/api/clients/${clientId}?tenantId=${tenantId}`, {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -51,7 +51,7 @@ const ClientDetails = () => {
     try {
       const tenantId = user?.tenantId;
       if (!tenantId) return;
-      const resp = await fetch(`http://localhost:5001/api/employees?tenantId=${tenantId}`, {
+      const resp = await fetch(`http://localhost:5000/api/employees?tenantId=${tenantId}`, {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -97,7 +97,7 @@ const ClientDetails = () => {
         clientId: client.id,
         client: client.clientName || client.name || ''
       };
-      const resp = await fetch(`http://localhost:5001/api/employees/${employeeId}?tenantId=${tenantId}`, {
+      const resp = await fetch(`http://localhost:5000/api/employees/${employeeId}?tenantId=${tenantId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

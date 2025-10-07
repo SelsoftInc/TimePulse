@@ -87,8 +87,8 @@ const Workspaces = () => {
     // Set the selected employer in localStorage
     localStorage.setItem('currentEmployer', JSON.stringify(workspace));
     
-    // Navigate to the dashboard with the employer subdomain
-    navigate(`/${workspace.subdomain}/dashboard`);
+    // Use window.location for full page reload to ensure proper role-based rendering
+    window.location.href = `/${workspace.subdomain}/dashboard`;
   };
 
   if (loading) {

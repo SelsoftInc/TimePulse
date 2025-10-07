@@ -170,6 +170,15 @@ models.User = sequelize.define('User', {
       key: 'id'
     }
   },
+  employeeId: {
+    type: DataTypes.UUID,
+    field: 'employee_id',
+    allowNull: true,
+    references: {
+      model: 'employees',
+      key: 'id'
+    }
+  },
   status: {
     type: DataTypes.ENUM('active', 'inactive', 'suspended'),
     defaultValue: 'active'
@@ -634,6 +643,12 @@ models.Timesheet = sequelize.define('Timesheet', {
     allowNull: true,
     field: 'approved_at'
   },
+  reviewerId: {
+    type: DataTypes.UUID,
+    allowNull: true,
+    field: 'reviewer_id',
+    references: { model: 'users', key: 'id' }
+  },
   approvedBy: {
     type: DataTypes.UUID,
     allowNull: true,
@@ -665,6 +680,8 @@ models.Client.hasMany(models.Timesheet, { foreignKey: 'clientId', as: 'timesheet
 models.Timesheet.belongsTo(models.Tenant, { foreignKey: 'tenantId', as: 'tenant' });
 models.Timesheet.belongsTo(models.Employee, { foreignKey: 'employeeId', as: 'employee' });
 models.Timesheet.belongsTo(models.Client, { foreignKey: 'clientId', as: 'client' });
+models.Timesheet.belongsTo(models.User, { foreignKey: 'reviewerId', as: 'reviewer' });
+models.Timesheet.belongsTo(models.User, { foreignKey: 'approvedBy', as: 'approver' });
 
 // =============================================
 // DATABASE CONNECTION AND SYNC

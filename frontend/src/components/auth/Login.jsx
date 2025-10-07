@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import './Auth.css';
 import { API_BASE } from '../../config/api';
+import logo2 from '../../assets/images/jsTree/logo2.png';
+
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -11,7 +13,14 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const navigate = useNavigate();
+
+  // Clear form fields on component mount
+  useEffect(() => {
+    setFormData({
+      email: '',
+      password: ''
+    });
+  }, []);
 
   const handleChange = (e) => {
     setFormData({
@@ -57,8 +66,8 @@ const Login = () => {
         // This will direct the user to the workspace selection screen
         localStorage.setItem('tenants', JSON.stringify([defaultTenant]));
         
-        // Redirect to workspaces page
-        navigate('/workspaces');
+        // Use window.location for full page reload to ensure proper state initialization
+        window.location.href = '/workspaces';
       } else {
         // Try real authentication with backend
         const response = await fetch(`${API_BASE}/api/auth/login`, {
@@ -84,7 +93,8 @@ const Login = () => {
             email: data.user.email,
             name: `${data.user.firstName} ${data.user.lastName}`,
             role: data.user.role,
-            tenantId: data.user.tenantId
+            tenantId: data.user.tenantId,
+            employeeId: data.user.employeeId
           };
           localStorage.setItem('user', JSON.stringify(userInfo));
           localStorage.setItem('userInfo', JSON.stringify(userInfo));
@@ -100,10 +110,16 @@ const Login = () => {
             };
             localStorage.setItem('tenants', JSON.stringify([tenantInfo]));
             localStorage.setItem('currentTenant', JSON.stringify(tenantInfo));
+            localStorage.setItem('currentEmployer', JSON.stringify(tenantInfo));
           }
           
-          // Redirect to dashboard
-          navigate('/selsoft/dashboard');
+          // Redirect based on user role
+          const subdomain = data.tenant?.subdomain || 'selsoft';
+          if (data.user.role === 'employee') {
+            window.location.href = `/${subdomain}/employee-dashboard`;
+          } else {
+            window.location.href = `/${subdomain}/dashboard`;
+          }
         } else {
           setError(data.message || 'Invalid credentials. For demo access, use username: test, password: test');
         }
@@ -120,14 +136,14 @@ const Login = () => {
     <div className="auth-container">
       <div className="auth-card">
         <div className="auth-header">
-          <img src="/assets/images/logo-text.svg" alt="TimePulse Logo" className="auth-logo" />
+          <img src={logo2} alt="TimePulse Logo" className="auth-logo" />
           <h2>Welcome to TimePulse</h2>
           <p>Sign in to your account</p>
         </div>
         
         {error && <div className="auth-error">{error}</div>}
 
-        <form onSubmit={handleSubmit} className="auth-form">
+        <form onSubmit={handleSubmit} className="auth-form" autoComplete="off">
           <div className="form-group">
             <label htmlFor="email">Username or Email</label>
             <input
@@ -139,6 +155,7 @@ const Login = () => {
               required
               placeholder="Enter username or email"
               className="form-control"
+              autoComplete="off"
             />
           </div>
 
@@ -154,6 +171,7 @@ const Login = () => {
                 required
                 placeholder="Enter your password"
                 className="form-control password-input"
+                autoComplete="new-password"
               />
               <button
                 type="button"

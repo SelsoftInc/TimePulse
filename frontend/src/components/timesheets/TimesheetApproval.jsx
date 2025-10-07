@@ -1,174 +1,147 @@
 import React, { useState, useEffect } from "react";
 import { PERMISSIONS } from "../../utils/roles";
 import PermissionGuard from "../common/PermissionGuard";
+import { useAuth } from "../../contexts/AuthContext";
+import axios from "axios";
 // import { useTheme } from "../../contexts/ThemeContext";
 import "./TimesheetSummary.css";
 import "./TimesheetApproval.css";
 
 const TimesheetApproval = () => {
-  // We'll use these in future implementations
-  // const { subdomain } = useParams();
-  // const navigate = useNavigate();
-  // const { checkPermission } = useAuth();
-  // const { isDarkMode } = useTheme();
+  const { user, currentEmployer } = useAuth();
   const [timesheets, setTimesheets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchBy, setSearchBy] = useState("");
   const [processingId, setProcessingId] = useState(null);
-
-  useEffect(() => {
-    loadPendingTimesheets();
-  }, []);
+  const [approvedToday, setApprovedToday] = useState(0);
+  const [rejectedToday, setRejectedToday] = useState(0);
 
   const loadPendingTimesheets = async () => {
     setLoading(true);
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 800));
+      console.log('🔍 User object:', user);
+      console.log('🔍 Current Employer:', currentEmployer);
+      
+      // Try multiple sources for tenantId
+      const tenantId = user?.tenantId || currentEmployer?.tenantId || currentEmployer?.id;
+      console.log('🔍 Tenant ID:', tenantId);
+      
+      if (!tenantId) {
+        console.error('❌ No tenant ID found');
+        console.error('User data:', JSON.stringify(user, null, 2));
+        console.error('Current Employer:', JSON.stringify(currentEmployer, null, 2));
+        console.error('localStorage userInfo:', localStorage.getItem('userInfo'));
+        console.error('localStorage currentEmployer:', localStorage.getItem('currentEmployer'));
+        setLoading(false);
+        return;
+      }
 
-      // Mock timesheet data for approval
-      const mockTimesheets = [
-        {
-          id: 1,
-          employeeName: "John Doe",
-          employeeEmail: "john.doe@company.com",
-          department: "Engineering",
-          weekRange: "12-JUL-2025 To 18-JUL-2025",
-          status: "Submitted for Approval",
-          billableProjectHrs: "40.00",
-          timeOffHolidayHrs: "0.00",
-          totalTimeHours: "40.00",
-          submittedDate: "2025-07-19",
-          clientName: "JPMC",
-          clientType: "internal",
-          notes: "Completed project milestone deliverables",
-          attachments: ["timesheet_proof.pdf", "work_sample.docx"],
-        },
-        {
-          id: 2,
-          employeeName: "Jane Smith",
-          employeeEmail: "jane.smith@company.com",
-          department: "Design",
-          weekRange: "12-JUL-2025 To 18-JUL-2025",
-          status: "Submitted for Approval",
-          billableProjectHrs: "38.00",
-          timeOffHolidayHrs: "2.00",
-          totalTimeHours: "40.00",
-          submittedDate: "2025-07-19",
-          clientName: "IBM",
-          clientType: "external",
-          notes: "UI design reviews and client feedback implementation",
-          attachments: ["client_timesheet.pdf"],
-        },
-        {
-          id: 3,
-          employeeName: "Mike Johnson",
-          employeeEmail: "mike.johnson@company.com",
-          department: "Engineering",
-          weekRange: "05-JUL-2025 To 11-JUL-2025",
-          status: "Submitted for Approval",
-          billableProjectHrs: "42.00",
-          timeOffHolidayHrs: "0.00",
-          totalTimeHours: "42.00",
-          submittedDate: "2025-07-12",
-          clientName: "Accenture",
-          clientType: "internal",
-          notes: "Backend API development and testing",
-          attachments: ["timesheet_proof.pdf"],
-        },
-      ];
+      const userId = user?.id;
+      const userRole = user?.role || currentEmployer?.role;
+      
+      console.log('📡 Fetching timesheets with params:', { 
+        tenantId, 
+        reviewerId: userRole === 'manager' ? userId : undefined,
+        userRole 
+      });
 
-      setTimesheets(mockTimesheets);
+      // Fetch pending timesheets from API
+      const response = await axios.get(`/api/timesheets/pending-approval`, {
+        params: {
+          tenantId,
+          // If user is a manager, only show timesheets assigned to them
+          reviewerId: userRole === 'manager' ? userId : undefined
+        }
+      });
+
+      console.log('📥 API Response:', response.data);
+
+      if (response.data.success) {
+        const formattedTimesheets = response.data.timesheets.map(ts => ({
+          ...ts,
+          status: ts.status === 'submitted' ? 'Submitted for Approval' : ts.status
+        }));
+        console.log('✅ Formatted timesheets:', formattedTimesheets);
+        console.log(`✅ Total timesheets to display: ${formattedTimesheets.length}`);
+        setTimesheets(formattedTimesheets);
+      } else {
+        console.error('❌ API returned success: false');
+      }
     } catch (error) {
-      console.error("Error loading timesheets:", error);
+      console.error("❌ Error loading timesheets:", error);
+      console.error("Error details:", error.response?.data || error.message);
+      if (error.response) {
+        console.error("Response status:", error.response.status);
+        console.error("Response data:", error.response.data);
+      }
     } finally {
       setLoading(false);
     }
   };
 
+  useEffect(() => {
+    loadPendingTimesheets();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const handleApproval = async (timesheetId, action, comments = "") => {
     setProcessingId(timesheetId);
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
       const timesheet = timesheets.find((ts) => ts.id === timesheetId);
 
-      // Simulate email notification
-      const emailNotification = {
-        to: timesheet.employeeEmail,
-        subject: `Timesheet ${
-          action === "approve" ? "Approved" : "Rejected"
-        } - Week ${timesheet.weekRange}`,
-        body: `
-          Dear ${timesheet.employeeName},
-          
-          Your timesheet for the week ${timesheet.weekRange} has been ${
-          action === "approve" ? "approved" : "rejected"
-        }.
-          
-          ${comments ? `Comments: ${comments}` : ""}
-          
-          ${
-            action === "approve"
-              ? "Your timesheet has been processed and will be included in the next payroll cycle."
-              : "Please review the comments and resubmit your timesheet with the necessary corrections."
-          }
-          
-          Best regards,
-          TimePulse System
-        `,
-      };
-
-      console.log("Email notification sent:", emailNotification);
-
-      // Update timesheet status
-      setTimesheets(
-        (prevTimesheets) =>
-          prevTimesheets
-            .map((ts) =>
-              ts.id === timesheetId
-                ? {
-                    ...ts,
-                    status: action === "approve" ? "Approved" : "Rejected",
-                    approvalComments: comments,
-                  }
-                : ts
-            )
-            .filter((ts) => ts.status === "Submitted for Approval") // Remove from pending list
-      );
-
-      // Show success message using a toast notification instead of alert
-      const successMessage = document.createElement("div");
-      successMessage.className = `toast-notification ${
-        action === "approve" ? "success" : "warning"
-      }`;
-      successMessage.innerHTML = `
-        <div class="toast-icon">
-          <i class="fa fa-${
-            action === "approve" ? "check-circle" : "exclamation-circle"
-          }"></i>
-        </div>
-        <div class="toast-content">
-          <h4>Timesheet ${action === "approve" ? "Approved" : "Rejected"}</h4>
-          <p>Email notification sent to ${timesheet.employeeName}</p>
-        </div>
-        <button class="toast-close"><i class="fa fa-times"></i></button>
-      `;
-      document.body.appendChild(successMessage);
-
-      // Auto-remove after 5 seconds
-      setTimeout(() => {
-        successMessage.classList.add("hide");
-        setTimeout(() => successMessage.remove(), 300);
-      }, 5000);
-
-      // Add close button functionality
-      const closeButton = successMessage.querySelector(".toast-close");
-      closeButton.addEventListener("click", () => {
-        successMessage.classList.add("hide");
-        setTimeout(() => successMessage.remove(), 300);
+      // Update timesheet status via API
+      const response = await axios.put(`/api/timesheets/${timesheetId}`, {
+        status: action === "approve" ? "approved" : "rejected",
+        approvedBy: action === "approve" ? user?.id : undefined,
+        rejectionReason: action === "reject" ? comments : undefined
       });
+
+      if (response.data.success) {
+        // Update local state
+        setTimesheets(
+          (prevTimesheets) =>
+            prevTimesheets.filter((ts) => ts.id !== timesheetId) // Remove from pending list
+        );
+
+        // Update today's counts
+        if (action === "approve") {
+          setApprovedToday(prev => prev + 1);
+        } else {
+          setRejectedToday(prev => prev + 1);
+        }
+
+        // Show success message using a toast notification instead of alert
+        const successMessage = document.createElement("div");
+        successMessage.className = `toast-notification ${
+          action === "approve" ? "success" : "warning"
+        }`;
+        successMessage.innerHTML = `
+          <div class="toast-icon">
+            <i class="fa fa-${
+              action === "approve" ? "check-circle" : "exclamation-circle"
+            }"></i>
+          </div>
+          <div class="toast-content">
+            <h4>Timesheet ${action === "approve" ? "Approved" : "Rejected"}</h4>
+            <p>Email notification sent to ${timesheet.employeeName}</p>
+          </div>
+          <button class="toast-close"><i class="fa fa-times"></i></button>
+        `;
+        document.body.appendChild(successMessage);
+
+        // Auto-remove after 5 seconds
+        setTimeout(() => {
+          successMessage.classList.add("hide");
+          setTimeout(() => successMessage.remove(), 300);
+        }, 5000);
+
+        // Add close button functionality
+        const closeButton = successMessage.querySelector(".toast-close");
+        closeButton.addEventListener("click", () => {
+          successMessage.classList.add("hide");
+          setTimeout(() => successMessage.remove(), 300);
+        });
+      }
     } catch (error) {
       console.error("Error processing approval:", error);
       alert("Error processing approval. Please try again.");
@@ -302,6 +275,16 @@ const TimesheetApproval = () => {
                     )}
                   </div>
                 </div>
+
+                {timesheet.reviewer && (
+                  <div className="approval-info-section reviewer-section">
+                    <h6 className="section-title">Assigned Reviewer</h6>
+                    <div className="reviewer-info">
+                      <i className="fa fa-user-check"></i>
+                      <span>{timesheet.reviewer.name} ({timesheet.reviewer.role})</span>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="approval-action-section">
@@ -492,7 +475,7 @@ const TimesheetApproval = () => {
               <i className="fa fa-check-circle"></i>
             </div>
             <div className="stat-content">
-              <h3>{0}</h3>
+              <h3>{approvedToday}</h3>
               <p>Approved Today</p>
             </div>
           </div>
@@ -502,7 +485,7 @@ const TimesheetApproval = () => {
               <i className="fa fa-times-circle"></i>
             </div>
             <div className="stat-content">
-              <h3>{0}</h3>
+              <h3>{rejectedToday}</h3>
               <p>Rejected Today</p>
             </div>
           </div>

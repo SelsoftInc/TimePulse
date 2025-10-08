@@ -248,6 +248,34 @@ const EmployeeList = () => {
     }
   };
 
+  const handleDeleteEmployee = async (employee) => {
+    if (!window.confirm(`Are you sure you want to delete ${employee.name}? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      setOpenMenuFor(null);
+      const response = await apiFetch(`/api/employees/${employee.id}?tenantId=${user.tenantId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      }, { timeoutMs: 15000 });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.message || error.details || `Failed to delete employee (${response.status})`);
+      }
+
+      // Remove from local state
+      setEmployees(prev => prev.filter(e => e.id !== employee.id));
+      toast.success(`${employee.name} has been deleted successfully`);
+    } catch (error) {
+      console.error('Error deleting employee:', error);
+      toast.error(`Failed to delete employee: ${error.message}`);
+    }
+  };
+
   // Filter employees based on all filters
   const filteredEmployees = employees.filter(employee => {
     // Employment type filter
@@ -467,7 +495,7 @@ const EmployeeList = () => {
                                   </Link>
                                 </PermissionGuard>
                                 <PermissionGuard requiredPermission={PERMISSIONS.DELETE_EMPLOYEE}>
-                                  <button type="button" className="dropdown-item text-danger" onClick={() => setOpenMenuFor(null)}>
+                                  <button type="button" className="dropdown-item text-danger" onClick={() => handleDeleteEmployee(employee)}>
                                     <i className="fas fa-trash-alt mr-1"></i> Delete
                                   </button>
                                 </PermissionGuard>

@@ -6,6 +6,7 @@ import CompanyInformation from "./CompanyInformation";
 import ProfileSettings from "./ProfileSettings";
 import BillingSettings from "./BillingSettings";
 import NotificationSettings from "./NotificationSettings";
+import UserManagement from "./UserManagement";
 // import IntegrationSettings from "./IntegrationSettings";
 import ConfirmDialog from "../common/ConfirmDialog";
 import InvoiceSettings from "./InvoiceSettings";
@@ -37,6 +38,8 @@ const EmployerSettings = () => {
     switch (activeTab) {
       case "company":
         return <CompanyInformation />;
+      case "users":
+        return <UserManagement />;
       case "security":
         return <ProfileSettings />;
       case "invoices":
@@ -104,6 +107,12 @@ const EmployerSettings = () => {
               >
                 <i className="fas fa-file-invoice"></i>
                 <span>Invoice Settings</span>
+              </button>
+            </li>
+            <li className={activeTab === "users" ? "active" : ""}>
+              <button onClick={() => setActiveTab("users")}>
+                <i className="fas fa-users"></i>
+                <span>User Management</span>
               </button>
             </li>
           </>

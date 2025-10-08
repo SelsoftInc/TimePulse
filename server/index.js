@@ -26,6 +26,7 @@ const employeeRoutes = require('./routes/employees');
 const clientRoutes = require('./routes/clients');
 const tenantRoutes = require('./routes/tenants');
 const vendorRoutes = require('./routes/vendors');
+const userRoutes = require('./routes/users');
 
 
 
@@ -91,6 +92,7 @@ app.use('/api/employees', employeeRoutes);
 app.use('/api/clients', clientRoutes);
 app.use('/api/tenants', tenantRoutes);
 app.use('/api/vendors', vendorRoutes);
+app.use('/api/users', userRoutes);
 app.use('/api/auth', require('./routes/auth'));
 
 // Error handling middleware

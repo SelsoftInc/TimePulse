@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../../contexts/AuthContext";
+import { apiFetch } from "../../config/api";
 import "./CompanyInformation.css";
 
 const CompanyInformation = () => {
@@ -44,8 +45,8 @@ const CompanyInformation = () => {
         return;
       }
 
-      const response = await fetch(
-        `http://localhost:5000/api/tenants/${tenantId}`,
+      const response = await apiFetch(
+        `/api/tenants/${tenantId}`,
         {
           method: "GET",
           headers: {

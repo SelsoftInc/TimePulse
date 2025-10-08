@@ -233,8 +233,8 @@ const TimesheetSubmit = () => {
           const weeks = [];
           const today = new Date();
           
-          // Generate weeks from 8 weeks ago to 4 weeks in the future
-          for (let i = -8; i <= 4; i++) {
+          // Generate weeks from 8 weeks ago to current week only (no future weeks)
+          for (let i = -8; i <= 0; i++) {
             const weekStart = new Date(today);
             const dayOfWeek = today.getDay();
             const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
@@ -265,7 +265,7 @@ const TimesheetSubmit = () => {
             });
           }
           
-          return weeks.reverse(); // Most recent first
+          return weeks.reverse(); // Most recent first (current week at top)
         };
         
         const mockAvailableWeeks = generateAvailableWeeks();

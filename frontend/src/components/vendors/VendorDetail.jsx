@@ -200,7 +200,7 @@ const VendorDetail = () => {
                         <div className="profile-ud-value">{new Date(vendor.contractEnd).toLocaleDateString()}</div>
                       </div>
                       <div className="profile-ud-item">
-                        <div className="profile-ud-label">Invoice Cycle</div>
+                        <div className="profile-ud-label">Payment Term</div>
                         <div className="profile-ud-value">{vendor.paymentTerms ? `Net ${vendor.paymentTerms}` : '—'}</div>
                       </div>
                       <div className="profile-ud-item">

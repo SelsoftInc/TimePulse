@@ -231,7 +231,7 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// Delete employee
+// Delete employee with cascading deletes
 router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
@@ -245,11 +245,36 @@ router.delete('/:id', async (req, res) => {
       return res.status(404).json({ error: 'Employee not found' });
     }
 
+    // Cascade delete all related data
+    const deletedRecords = {
+      timesheets: 0,
+      invoices: 0,
+      // Future: leave_requests, performance_reviews, etc.
+    };
+
+    // Delete timesheets
+    if (models.Timesheet) {
+      const timesheetsDeleted = await models.Timesheet.destroy({
+        where: { employeeId: id, tenantId }
+      });
+      deletedRecords.timesheets = timesheetsDeleted;
+    }
+
+    // Delete invoices
+    if (models.Invoice) {
+      const invoicesDeleted = await models.Invoice.destroy({
+        where: { employeeId: id, tenantId }
+      });
+      deletedRecords.invoices = invoicesDeleted;
+    }
+
+    // Delete the employee
     await employee.destroy();
 
     res.json({
       success: true,
-      message: 'Employee deleted successfully'
+      message: 'Employee and all related data deleted successfully',
+      deletedRecords
     });
 
   } catch (error) {

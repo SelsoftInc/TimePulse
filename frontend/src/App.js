@@ -146,6 +146,11 @@ function App() {
             <EmployerLayout><LeaveManagement /></EmployerLayout>
           </ProtectedRoute>
         } />
+        <Route path="/:subdomain/leave-management" element={
+          <ProtectedRoute>
+            <EmployerLayout><LeaveManagement /></EmployerLayout>
+          </ProtectedRoute>
+        } />
         <Route path="/:subdomain/documents" element={
           <ProtectedRoute>
             <EmployerLayout><EmployeeDocuments /></EmployerLayout>

@@ -28,6 +28,19 @@ const EmployeeList = () => {
   const [clientsLoading, setClientsLoading] = useState(false);
   const [clientsError, setClientsError] = useState('');
   const [selectedClientId, setSelectedClientId] = useState('');
+  
+  // Modal state for assigning vendor
+  const [vendorModalOpen, setVendorModalOpen] = useState(false);
+  const [vendors, setVendors] = useState([]);
+  const [vendorsLoading, setVendorsLoading] = useState(false);
+  const [selectedVendorId, setSelectedVendorId] = useState('');
+  
+  // Modal state for assigning impl partner
+  const [implPartnerModalOpen, setImplPartnerModalOpen] = useState(false);
+  const [implPartners, setImplPartners] = useState([]);
+  const [implPartnersLoading, setImplPartnersLoading] = useState(false);
+  const [selectedImplPartnerId, setSelectedImplPartnerId] = useState('');
+  
   // Track which row's actions menu is open
   const [openMenuFor, setOpenMenuFor] = useState(null);
 
@@ -212,6 +225,120 @@ const EmployeeList = () => {
     setAssignTarget(null);
     setSelectedClientId('');
     setClientsError('');
+  };
+
+  // Fetch vendors when opening modal
+  const fetchVendors = async () => {
+    if (!user?.tenantId) return;
+    try {
+      setVendorsLoading(true);
+      const resp = await apiFetch(`/api/vendors?tenantId=${user.tenantId}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      if (!resp.ok) throw new Error(`Failed to fetch vendors`);
+      const data = await resp.json();
+      const list = (data.vendors || data || []).filter(v => !v.isImplPartner && v.status === 'active');
+      setVendors(list);
+    } catch (e) {
+      console.error('Failed to fetch vendors:', e);
+    } finally {
+      setVendorsLoading(false);
+    }
+  };
+
+  const openVendorModal = (employee) => {
+    setAssignTarget(employee);
+    setSelectedVendorId(employee.vendorId ? String(employee.vendorId) : '');
+    setVendorModalOpen(true);
+    fetchVendors();
+  };
+
+  const closeVendorModal = () => {
+    setVendorModalOpen(false);
+    setAssignTarget(null);
+    setSelectedVendorId('');
+  };
+
+  const saveVendorAssignment = async () => {
+    if (!assignTarget) return;
+    try {
+      const body = { vendorId: selectedVendorId || null };
+      const resp = await apiFetch(`/api/employees/${assignTarget.id}?tenantId=${user.tenantId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify(body)
+      });
+      if (!resp.ok) throw new Error('Failed to assign vendor');
+      toast.success('Vendor assigned successfully');
+      closeVendorModal();
+      fetchEmployees();
+    } catch (e) {
+      console.error('Error assigning vendor:', e);
+      toast.error(e.message || 'Failed to assign vendor');
+    }
+  };
+
+  // Fetch impl partners when opening modal
+  const fetchImplPartners = async () => {
+    if (!user?.tenantId) return;
+    try {
+      setImplPartnersLoading(true);
+      const resp = await apiFetch(`/api/vendors?tenantId=${user.tenantId}&implPartner=1`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      if (!resp.ok) throw new Error(`Failed to fetch impl partners`);
+      const data = await resp.json();
+      const list = (data.vendors || data || []).filter(v => v.isImplPartner && v.status === 'active');
+      setImplPartners(list);
+    } catch (e) {
+      console.error('Failed to fetch impl partners:', e);
+    } finally {
+      setImplPartnersLoading(false);
+    }
+  };
+
+  const openImplPartnerModal = (employee) => {
+    setAssignTarget(employee);
+    setSelectedImplPartnerId(employee.implPartnerId ? String(employee.implPartnerId) : '');
+    setImplPartnerModalOpen(true);
+    fetchImplPartners();
+  };
+
+  const closeImplPartnerModal = () => {
+    setImplPartnerModalOpen(false);
+    setAssignTarget(null);
+    setSelectedImplPartnerId('');
+  };
+
+  const saveImplPartnerAssignment = async () => {
+    if (!assignTarget) return;
+    try {
+      const body = { implPartnerId: selectedImplPartnerId || null };
+      const resp = await apiFetch(`/api/employees/${assignTarget.id}?tenantId=${user.tenantId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify(body)
+      });
+      if (!resp.ok) throw new Error('Failed to assign impl partner');
+      toast.success('Implementation Partner assigned successfully');
+      closeImplPartnerModal();
+      fetchEmployees();
+    } catch (e) {
+      console.error('Error assigning impl partner:', e);
+      toast.error(e.message || 'Failed to assign impl partner');
+    }
   };
 
   const saveAssignment = async () => {
@@ -479,17 +606,15 @@ const EmployeeList = () => {
                                 </Link>
                                 <PermissionGuard requiredPermission={PERMISSIONS.EDIT_EMPLOYEE}>
                                   <button type="button" className="dropdown-item" onClick={() => { setOpenMenuFor(null); openAssignModal(employee); }}>
-                                    <i className="fas fa-user-plus mr-1"></i> {employee.clientId ? 'Change Client' : 'Assign Client'}
+                                    <i className="fas fa-users mr-1"></i> Assign End Client
                                   </button>
-                                  {employee.clientId && (
-                                    <button
-                                      type="button"
-                                      className="dropdown-item"
-                                      onClick={() => { setOpenMenuFor(null); setAssignTarget(employee); setSelectedClientId(''); setAssignModalOpen(true); fetchClients(); }}
-                                    >
-                                      <i className="fas fa-user-times mr-1"></i> Unassign Client
-                                    </button>
-                                  )}
+                                  <button type="button" className="dropdown-item" onClick={() => { setOpenMenuFor(null); openVendorModal(employee); }}>
+                                    <i className="fas fa-truck mr-1"></i> Assign Vendor
+                                  </button>
+                                  <button type="button" className="dropdown-item" onClick={() => { setOpenMenuFor(null); openImplPartnerModal(employee); }}>
+                                    <i className="fas fa-handshake mr-1"></i> Assign Impl Partner
+                                  </button>
+                                  <div className="dropdown-divider"></div>
                                   <Link to={`/${subdomain}/employees/${employee.id}/edit`} className="dropdown-item" onClick={() => setOpenMenuFor(null)}>
                                     <i className="fas fa-edit mr-1"></i> Edit
                                   </Link>
@@ -518,7 +643,7 @@ const EmployeeList = () => {
           <div className="modal-dialog" role="document">
             <div className="modal-content">
               <div className="modal-header">
-                <h5 className="modal-title">{assignTarget?.clientId ? 'Change Client' : 'Assign Client'}</h5>
+                <h5 className="modal-title">{assignTarget?.clientId ? 'Change End Client' : 'Assign End Client'}</h5>
                 <button type="button" className="close" onClick={closeAssignModal}>
                   <span>&times;</span>
                 </button>
@@ -624,6 +749,90 @@ const EmployeeList = () => {
               <div className="modal-footer">
                 <button type="button" className="btn btn-outline-light" onClick={closeAssignModal}>Cancel</button>
                 <button type="button" className="btn btn-primary" onClick={saveAssignment} disabled={clientsLoading}>Save</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Vendor Assignment Modal */}
+      {vendorModalOpen && (
+        <div className="modal fade show d-block" tabIndex="-1" role="dialog" style={{ backgroundColor: 'rgba(0,0,0,0.4)' }}>
+          <div className="modal-dialog" role="document">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Assign Vendor</h5>
+                <button type="button" className="close" onClick={closeVendorModal}>
+                  <span>&times;</span>
+                </button>
+              </div>
+              <div className="modal-body">
+                <div className="form-group">
+                  <label className="form-label">Vendor</label>
+                  <select
+                    className="form-control"
+                    value={selectedVendorId}
+                    onChange={(e) => setSelectedVendorId(e.target.value)}
+                    disabled={vendorsLoading}
+                  >
+                    <option value="">-- Select Vendor --</option>
+                    {vendors.map(vendor => (
+                      <option key={vendor.id} value={vendor.id}>
+                        {vendor.name}
+                      </option>
+                    ))}
+                  </select>
+                  {vendorsLoading && <small className="text-muted">Loading vendors...</small>}
+                </div>
+                <p className="text-muted small">
+                  Assign a vendor to this employee. The tenant will send invoices to this vendor.
+                </p>
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-outline-light" onClick={closeVendorModal}>Cancel</button>
+                <button type="button" className="btn btn-primary" onClick={saveVendorAssignment} disabled={vendorsLoading}>Save</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Impl Partner Assignment Modal */}
+      {implPartnerModalOpen && (
+        <div className="modal fade show d-block" tabIndex="-1" role="dialog" style={{ backgroundColor: 'rgba(0,0,0,0.4)' }}>
+          <div className="modal-dialog" role="document">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Assign Implementation Partner</h5>
+                <button type="button" className="close" onClick={closeImplPartnerModal}>
+                  <span>&times;</span>
+                </button>
+              </div>
+              <div className="modal-body">
+                <div className="form-group">
+                  <label className="form-label">Implementation Partner</label>
+                  <select
+                    className="form-control"
+                    value={selectedImplPartnerId}
+                    onChange={(e) => setSelectedImplPartnerId(e.target.value)}
+                    disabled={implPartnersLoading}
+                  >
+                    <option value="">-- Select Implementation Partner --</option>
+                    {implPartners.map(partner => (
+                      <option key={partner.id} value={partner.id}>
+                        {partner.name}
+                      </option>
+                    ))}
+                  </select>
+                  {implPartnersLoading && <small className="text-muted">Loading implementation partners...</small>}
+                </div>
+                <p className="text-muted small">
+                  Assign an implementation partner to this employee.
+                </p>
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-outline-light" onClick={closeImplPartnerModal}>Cancel</button>
+                <button type="button" className="btn btn-primary" onClick={saveImplPartnerAssignment} disabled={implPartnersLoading}>Save</button>
               </div>
             </div>
           </div>

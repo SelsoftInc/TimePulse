@@ -496,6 +496,27 @@ models.Employee.hasMany(models.Employee, { foreignKey: 'managerId', as: 'subordi
 models.Client.belongsTo(models.Tenant, { foreignKey: 'tenantId', as: 'tenant' });
 
 // =============================================
+// LOOKUP MODEL
+// =============================================
+const LookupModel = require('./Lookup');
+models.Lookup = LookupModel(sequelize);
+
+// =============================================
+// EMPLOYEE RELATIONSHIP MODEL
+// =============================================
+const EmployeeRelationshipModel = require('./EmployeeRelationship');
+models.EmployeeRelationship = EmployeeRelationshipModel(sequelize);
+
+// =============================================
+// LEAVE MANAGEMENT MODELS
+// =============================================
+const LeaveRequestModel = require('./LeaveRequest');
+models.LeaveRequest = LeaveRequestModel(sequelize);
+
+const LeaveBalanceModel = require('./LeaveBalance');
+models.LeaveBalance = LeaveBalanceModel(sequelize);
+
+// =============================================
 // VENDOR MODEL
 // =============================================
 models.Vendor = sequelize.define('Vendor', {
@@ -673,6 +694,26 @@ models.Timesheet.belongsTo(models.Employee, { foreignKey: 'employeeId', as: 'emp
 models.Timesheet.belongsTo(models.Client, { foreignKey: 'clientId', as: 'client' });
 models.Timesheet.belongsTo(models.User, { foreignKey: 'reviewerId', as: 'reviewer' });
 models.Timesheet.belongsTo(models.User, { foreignKey: 'approvedBy', as: 'approver' });
+
+// Leave Request associations
+models.Tenant.hasMany(models.LeaveRequest, { foreignKey: 'tenantId', as: 'leaveRequests' });
+models.Employee.hasMany(models.LeaveRequest, { foreignKey: 'employeeId', as: 'leaveRequests' });
+models.LeaveRequest.belongsTo(models.Tenant, { foreignKey: 'tenantId', as: 'tenant' });
+models.LeaveRequest.belongsTo(models.Employee, { foreignKey: 'employeeId', as: 'employee' });
+models.LeaveRequest.belongsTo(models.User, { foreignKey: 'reviewedBy', as: 'reviewer' });
+
+// Leave Balance associations
+models.Tenant.hasMany(models.LeaveBalance, { foreignKey: 'tenantId', as: 'leaveBalances' });
+models.Employee.hasMany(models.LeaveBalance, { foreignKey: 'employeeId', as: 'leaveBalances' });
+models.LeaveBalance.belongsTo(models.Tenant, { foreignKey: 'tenantId', as: 'tenant' });
+models.LeaveBalance.belongsTo(models.Employee, { foreignKey: 'employeeId', as: 'employee' });
+
+// Employee Relationship associations
+models.Employee.hasMany(models.EmployeeRelationship, { foreignKey: 'employeeId', as: 'relationships' });
+models.User.hasMany(models.EmployeeRelationship, { foreignKey: 'relatedUserId', as: 'managedRelationships' });
+models.EmployeeRelationship.belongsTo(models.Employee, { foreignKey: 'employeeId', as: 'employee' });
+models.EmployeeRelationship.belongsTo(models.User, { foreignKey: 'relatedUserId', as: 'relatedUser' });
+models.EmployeeRelationship.belongsTo(models.Tenant, { foreignKey: 'tenantId', as: 'tenant' });
 
 // =============================================
 // DATABASE CONNECTION AND SYNC

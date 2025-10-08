@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import './Auth.css';
 import { API_BASE } from '../../config/api';
-import logo2 from '../../assets/images/jsTree/logo2.png';
+import logo2 from '../../assets/images/jsTree/TimePulseLogoAuth.png';
 
 
 const Login = () => {

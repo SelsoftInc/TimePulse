@@ -210,23 +210,6 @@ const Login = () => {
             {loading ? 'Signing In...' : 'Sign In'}
           </button>
         </form>
-
-        <div className="auth-divider">
-          <span>OR</span>
-        </div>
-
-        <div className="social-login">
-          <button className="btn-social btn-google">
-            <i className="fab fa-google"></i> Sign in with Google
-          </button>
-          <button className="btn-social btn-microsoft">
-            <i className="fab fa-microsoft"></i> Sign in with Microsoft
-          </button>
-        </div>
-
-        <div className="auth-footer">
-          <p>Don't have an account? <Link to="/register" className="auth-link">Create Account</Link></p>
-        </div>
       </div>
     </div>
   );

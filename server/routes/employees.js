@@ -214,7 +214,19 @@ router.put('/:id', async (req, res) => {
       return res.status(404).json({ error: 'Employee not found' });
     }
 
+    // Update employee record
     await employee.update(updateData);
+
+    // If firstName or lastName changed, also update the linked User record
+    if ((updateData.firstName || updateData.lastName) && employee.userId) {
+      const user = await models.User.findByPk(employee.userId);
+      if (user) {
+        const userUpdate = {};
+        if (updateData.firstName) userUpdate.firstName = updateData.firstName;
+        if (updateData.lastName) userUpdate.lastName = updateData.lastName;
+        await user.update(userUpdate);
+      }
+    }
 
     res.json({
       success: true,
@@ -245,10 +257,14 @@ router.delete('/:id', async (req, res) => {
       return res.status(404).json({ error: 'Employee not found' });
     }
 
+    // Store userId before deleting employee
+    const userId = employee.userId;
+
     // Cascade delete all related data
     const deletedRecords = {
       timesheets: 0,
       invoices: 0,
+      user: false,
       // Future: leave_requests, performance_reviews, etc.
     };
 
@@ -270,6 +286,15 @@ router.delete('/:id', async (req, res) => {
 
     // Delete the employee
     await employee.destroy();
+
+    // Delete the linked user account if exists
+    if (userId) {
+      const user = await models.User.findByPk(userId);
+      if (user) {
+        await user.destroy();
+        deletedRecords.user = true;
+      }
+    }
 
     res.json({
       success: true,

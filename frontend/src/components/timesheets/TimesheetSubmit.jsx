@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import { uploadAndProcessTimesheet, transformTimesheetToInvoice } from '../../services/engineService';
 import { extractTimesheetData, validateExtractedData } from '../../services/timesheetExtractor';
+import { API_BASE } from '../../config/api';
 import axios from 'axios';
 import './Timesheet.css';
 
@@ -119,7 +120,7 @@ const TimesheetSubmit = () => {
 
         try {
           console.log('🔍 Fetching clients for tenantId:', tenantId);
-          const response = await axios.get(`/api/clients?tenantId=${tenantId}`);
+          const response = await axios.get(`${API_BASE}/api/clients?tenantId=${tenantId}`);
           console.log('📥 Clients API response:', response.data);
           
           if (response.data.success && response.data.clients) {
@@ -185,20 +186,34 @@ const TimesheetSubmit = () => {
         
         // Load available employees for non-employee roles
         if (!isEmployee()) {
-          const mockEmployees = [
-            { id: '1', name: 'John Doe', email: 'john.doe@company.com', department: 'Engineering' },
-            { id: '2', name: 'Jane Smith', email: 'jane.smith@company.com', department: 'Design' },
-            { id: '3', name: 'Mike Johnson', email: 'mike.johnson@company.com', department: 'Marketing' },
-            { id: '4', name: 'Sarah Wilson', email: 'sarah.wilson@company.com', department: 'Engineering' },
-            { id: '5', name: 'David Brown', email: 'david.brown@company.com', department: 'Sales' }
-          ];
-          setAvailableEmployees(mockEmployees);
+          try {
+            console.log('🔍 Fetching employees...');
+            const employeesResponse = await axios.get(`${API_BASE}/api/employees?tenantId=${tenantId}`);
+            console.log('📥 Employees API response:', employeesResponse.data);
+            
+            if (employeesResponse.data.success && employeesResponse.data.employees) {
+              const employees = employeesResponse.data.employees.map(emp => ({
+                id: emp.id,
+                name: `${emp.firstName} ${emp.lastName}`,
+                email: emp.email,
+                department: emp.department || 'N/A'
+              }));
+              setAvailableEmployees(employees);
+              console.log('✅ Loaded employees:', employees.length);
+            } else {
+              console.warn('⚠️ No employees found in response');
+              setAvailableEmployees([]);
+            }
+          } catch (error) {
+            console.error('❌ Error fetching employees:', error);
+            setAvailableEmployees([]);
+          }
         }
         
         // Load available approvers (admins and managers)
         try {
           console.log('🔍 Fetching approvers...');
-          const approversResponse = await axios.get(`/api/timesheets/reviewers?tenantId=${tenantId}`);
+          const approversResponse = await axios.get(`${API_BASE}/api/timesheets/reviewers?tenantId=${tenantId}`);
           console.log('📥 Approvers API response:', approversResponse.data);
           
           if (approversResponse.data.success && approversResponse.data.reviewers) {

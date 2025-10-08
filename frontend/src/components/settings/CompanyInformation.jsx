@@ -206,12 +206,13 @@ const CompanyInformation = () => {
         console.log("📏 Logo length:", companyInfo.logo.length);
       }
 
+      const apiBase = process.env.REACT_APP_API_BASE || 'http://localhost:5001';
       console.log(
-        `🌐 Making API call to: http://localhost:5000/api/tenants/${tenantId}`
+        `🌐 Making API call to: ${apiBase}/api/tenants/${tenantId}`
       );
 
       const response = await fetch(
-        `http://localhost:5000/api/tenants/${tenantId}`,
+        `${apiBase}/api/tenants/${tenantId}`,
         {
           method: "PUT",
           headers: {

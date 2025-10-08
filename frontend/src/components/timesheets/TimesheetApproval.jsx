@@ -524,7 +524,7 @@ const TimesheetApproval = () => {
             </div>
             <div className="stat-content">
               <h3>{approvedToday}</h3>
-              <p>Approved Today</p>
+              <p>Approved</p>
             </div>
           </div>
 
@@ -534,7 +534,7 @@ const TimesheetApproval = () => {
             </div>
             <div className="stat-content">
               <h3>{rejectedToday}</h3>
-              <p>Rejected Today</p>
+              <p>Rejected</p>
             </div>
           </div>
         </div>

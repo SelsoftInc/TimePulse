@@ -116,6 +116,20 @@
   --timesheet-badge-rejected-bg: #f8d7da;
   --timesheet-total-bg: #f7f7f7;
 
+  /* Approval Stats specific - Light Mode */
+  --approval-stats-bg: #f5f7fa;
+  --approval-stats-card-bg: #ffffff;
+  --approval-stats-card-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  --approval-stats-card-hover-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  --approval-stats-card-border: #e9ecef;
+  --approval-stats-card-border-hover: #dee2e6;
+  --approval-stats-text-primary: #333333;
+  --approval-stats-text-secondary: #6c757d;
+  --approval-stats-text-muted: #8094ae;
+  --approval-stats-pending: #ffa600;
+  --approval-stats-approved: #10b981;
+  --approval-stats-rejected: #ef4444;
+
   /* Plan and billing colors - Light Mode */
   --plan-border: #e9ecef;
   --plan-hover-border: #007bff;
@@ -337,6 +351,20 @@ body.dark-mode {
   --badge-outline-success-bg: whitesmoke;
   --badge-outline-success-text: green;
   --badge-outline-success-border: #004905;
+
+  /* Approval Stats specific - Dark Mode */
+  --approval-stats-bg: #0f172a;
+  --approval-stats-card-bg: #1e293b;
+  --approval-stats-card-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  --approval-stats-card-hover-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  --approval-stats-card-border: #334155;
+  --approval-stats-card-border-hover: #475569;
+  --approval-stats-text-primary: #f1f5f9;
+  --approval-stats-text-secondary: #cbd5e1;
+  --approval-stats-text-muted: #94a3b8;
+  --approval-stats-pending: #fbbf24;
+  --approval-stats-approved: #34d399;
+  --approval-stats-rejected: #f87171;
 }
 
 /* Dark mode variables */

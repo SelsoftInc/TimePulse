@@ -7,7 +7,7 @@ import { useTheme } from "../../contexts/ThemeContext";
 import PermissionGuard from "../common/PermissionGuard";
 import TimesheetAlerts from "../notifications/TimesheetAlerts";
 // import logo2 from "../../assets/images/jsTree/logo2.png";
-import logo3 from '../../assets/images/jsTree/TimePulse5.png';
+import logo3 from '../../assets/images/jsTree/TimePulse6.png';
 
 import "./Header.css";
 

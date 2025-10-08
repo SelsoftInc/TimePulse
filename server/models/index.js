@@ -170,15 +170,6 @@ models.User = sequelize.define('User', {
       key: 'id'
     }
   },
-  employeeId: {
-    type: DataTypes.UUID,
-    field: 'employee_id',
-    allowNull: true,
-    references: {
-      model: 'employees',
-      key: 'id'
-    }
-  },
   status: {
     type: DataTypes.ENUM('active', 'inactive', 'suspended'),
     defaultValue: 'active'

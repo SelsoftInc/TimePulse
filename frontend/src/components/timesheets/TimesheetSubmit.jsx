@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { useToast } from '../../contexts/ToastContext';
 import { uploadAndProcessTimesheet, transformTimesheetToInvoice } from '../../services/engineService';
 import { extractTimesheetData, validateExtractedData } from '../../services/timesheetExtractor';
 import axios from 'axios';
@@ -10,6 +11,7 @@ const TimesheetSubmit = () => {
   const { subdomain, weekId } = useParams();
   const navigate = useNavigate();
   const { isAdmin, isEmployee, user } = useAuth();
+  const { toast } = useToast();
   const fileInputRef = useRef(null);
   const cameraInputRef = useRef(null);
   const [loading, setLoading] = useState(false);
@@ -650,7 +652,9 @@ const TimesheetSubmit = () => {
     
     // Check if employee is selected for non-employee roles
     if (!isEmployee() && !selectedEmployee) {
-      alert('Please select an employee first before uploading their timesheet.');
+      toast.warning('Please select an employee first before uploading their timesheet.', {
+        title: 'Employee Required'
+      });
       e.target.value = ''; // Reset file input
       return;
     }

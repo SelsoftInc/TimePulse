@@ -1,14 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
-import { API_BASE } from '../../config/api';
+import React, { useEffect, useState } from 'react';
+import { Link, useParams, useNavigate } from 'react-router-dom';
 import { PERMISSIONS } from '../../utils/roles';
 import PermissionGuard from '../common/PermissionGuard';
 import { useAuth } from '../../contexts/AuthContext';
+import { useToast } from '../../contexts/ToastContext';
+import { API_BASE } from '../../config/api';
 import './Clients.css';
 
 const ClientsList = () => {
   const { subdomain } = useParams();
   const { user } = useAuth();
+  const { toast } = useToast();
   const navigate = useNavigate();
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -92,8 +94,13 @@ const ClientsList = () => {
         throw new Error(err.error || `Delete failed with status ${resp.status}`);
       }
       await fetchClients();
+      toast.success('Client has been deleted.', {
+        title: 'Client Deleted'
+      });
     } catch (e) {
-      alert(`Failed to delete: ${e.message}`);
+      toast.error(e.message, {
+        title: 'Failed to Delete'
+      });
     } finally {
       setOpenMenuId(null);
     }
@@ -143,8 +150,13 @@ const ClientsList = () => {
         throw new Error(err.error || `Duplicate failed with status ${postResp.status}`);
       }
       await fetchClients();
+      toast.success('Client has been duplicated.', {
+        title: 'Client Duplicated'
+      });
     } catch (e) {
-      alert(`Failed to duplicate: ${e.message}`);
+      toast.error(e.message, {
+        title: 'Failed to Duplicate'
+      });
     } finally {
       setOpenMenuId(null);
     }

@@ -23,6 +23,7 @@ const invoiceRoutes = require('./routes/invoices');
 const engineRoutes = require('./routes/engine');
 const onboardingRoutes = require('./routes/onboarding');
 const employeeRoutes = require('./routes/employees');
+const employeeDashboardRoutes = require('./routes/employeeDashboard');
 const clientRoutes = require('./routes/clients');
 const tenantRoutes = require('./routes/tenants');
 const vendorRoutes = require('./routes/vendors');
@@ -76,6 +77,7 @@ app.get('/', (req, res) => {
       engine: '/api/engine',
       onboarding: '/api/onboarding',
       employees: '/api/employees',
+      employeeDashboard: '/api/employee-dashboard',
       clients: '/api/clients',
       tenants: '/api/tenants',
       vendors: '/api/vendors'
@@ -89,6 +91,7 @@ app.use('/api/invoices', invoiceRoutes);
 app.use('/api/engine', engineRoutes);
 app.use('/api/onboarding', onboardingRoutes);
 app.use('/api/employees', employeeRoutes);
+app.use('/api/employee-dashboard', employeeDashboardRoutes);
 app.use('/api/clients', clientRoutes);
 app.use('/api/tenants', tenantRoutes);
 app.use('/api/vendors', vendorRoutes);

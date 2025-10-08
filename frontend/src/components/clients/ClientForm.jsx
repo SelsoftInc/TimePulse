@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { PERMISSIONS } from '../../utils/roles';
 import PermissionGuard from '../common/PermissionGuard';
 import { useAuth } from '../../contexts/AuthContext';
+import { useToast } from '../../contexts/ToastContext';
 import './Clients.css';
 import { PAYMENT_METHODS, CURRENCIES, CLIENT_TYPES } from '../../constants/lookups';
 import { formatPhoneInput, validatePhoneDigits } from '../../utils/validation';
@@ -22,6 +23,7 @@ const ClientForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
   const navigate = useNavigate();
   const { subdomain } = useParams();
   const { user } = useAuth();
+  const { toast } = useToast();
   const addressInputRef = useRef(null);
   const autocompleteRef = useRef(null);
   const [loading, setLoading] = useState(false);
@@ -240,7 +242,9 @@ const ClientForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
       }
     } catch (err) {
       console.error(`Failed to ${mode === 'edit' ? 'update' : 'create'} client:`, err);
-      alert(`Failed to ${mode === 'edit' ? 'update' : 'create'} client: ${err.message}`);
+      toast.error(err.message, {
+        title: `Failed to ${mode === 'edit' ? 'Update' : 'Create'} Client`
+      });
     } finally {
       setLoading(false);
     }

@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../../contexts/AuthContext";
+import { useToast } from "../../contexts/ToastContext";
 import { apiFetch } from "../../config/api";
 import "./CompanyInformation.css";
 
 const CompanyInformation = () => {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [companyInfo, setCompanyInfo] = useState({
     tenantName: "",
     address: "",
@@ -231,10 +233,15 @@ const CompanyInformation = () => {
 
       if (data.success) {
         console.log("🎉 Save successful!");
-        alert("Company information saved successfully!");
+        toast.success("Your company information has been saved.", {
+          title: "Company Information Saved"
+        });
       } else {
         console.log("❌ Save failed:", data.error);
         setError(data.error || "Failed to save company information");
+        toast.error(data.error || "Failed to save company information", {
+          title: "Save Failed"
+        });
       }
     } catch (error) {
       console.error("Error saving company info:", error);

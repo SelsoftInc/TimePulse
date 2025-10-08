@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { PERMISSIONS } from "../../utils/roles";
 import PermissionGuard from "../common/PermissionGuard";
 import { useAuth } from "../../contexts/AuthContext";
+import { useToast } from "../../contexts/ToastContext";
 import axios from "axios";
 // import { useTheme } from "../../contexts/ThemeContext";
 import "./TimesheetSummary.css";
@@ -9,6 +10,7 @@ import "./TimesheetApproval.css";
 
 const TimesheetApproval = () => {
   const { user, currentEmployer } = useAuth();
+  const { toast } = useToast();
   const [timesheets, setTimesheets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchBy, setSearchBy] = useState("");
@@ -192,7 +194,9 @@ const TimesheetApproval = () => {
       }
     } catch (error) {
       console.error("Error processing approval:", error);
-      alert("Error processing approval. Please try again.");
+      toast.error("Please try again.", {
+        title: "Error Processing Approval"
+      });
     } finally {
       setProcessingId(null);
     }

@@ -192,14 +192,18 @@ const TimesheetSubmit = () => {
             console.log('📥 Employees API response:', employeesResponse.data);
             
             if (employeesResponse.data.success && employeesResponse.data.employees) {
-              const employees = employeesResponse.data.employees.map(emp => ({
-                id: emp.id,
-                name: `${emp.firstName} ${emp.lastName}`,
-                email: emp.email,
-                department: emp.department || 'N/A'
-              }));
+              // Filter out admin users - they don't submit timesheets
+              const employees = employeesResponse.data.employees
+                .filter(emp => emp.role !== 'admin')
+                .map(emp => ({
+                  id: emp.id,
+                  name: `${emp.firstName} ${emp.lastName}`,
+                  email: emp.email,
+                  department: emp.department || 'N/A',
+                  role: emp.role
+                }));
               setAvailableEmployees(employees);
-              console.log('✅ Loaded employees:', employees.length);
+              console.log('✅ Loaded employees (excluding admins):', employees.length);
             } else {
               console.warn('⚠️ No employees found in response');
               setAvailableEmployees([]);

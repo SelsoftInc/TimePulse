@@ -36,8 +36,14 @@ router.get('/', async (req, res) => {
         'salaryType',
         'contactInfo',
         'status'
-      ]
-      // Removed includes for client, vendor, implPartner as these columns don't exist in the current schema
+      ],
+      // Include user to get role
+      include: [{
+        model: User,
+        as: 'user',
+        attributes: ['role'],
+        required: false
+      }]
     });
 
     // Transform the data to match frontend expectations
@@ -53,6 +59,8 @@ router.get('/', async (req, res) => {
         department: emp.department || 'N/A',
         joinDate: emp.startDate || null,
         hourlyRate: emp.hourlyRate || null,
+        // Include role from linked user
+        role: emp.user?.role || null,
         // Set client-related fields to null since columns don't exist
         client: null,
         clientId: null,

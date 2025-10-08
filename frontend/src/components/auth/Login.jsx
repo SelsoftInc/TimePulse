@@ -121,12 +121,12 @@ const Login = () => {
             window.location.href = `/${subdomain}/dashboard`;
           }
         } else {
-          setError(data.message || 'Invalid credentials. For demo access, use username: test, password: test');
+          setError(data.message || 'Invalid credentials. Please check your username and password.');
         }
       }
     } catch (err) {
       console.error('Login error:', err);
-      setError('Login failed. For demo access, use username: test, password: test');
+      setError('Login failed. Please check your connection and try again.');
     } finally {
       setLoading(false);
     }

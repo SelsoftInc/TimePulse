@@ -36,10 +36,17 @@ const EmployeeTimesheet = () => {
   // Fetch timesheet data for current week
   useEffect(() => {
     const fetchTimesheet = async () => {
-      if (!employeeId || !user?.tenantId) return;
-      
+      if (!employeeId || !user?.tenantId) {
+        console.warn('⚠️ Missing employeeId or tenantId');
+        return;
+      }
+
+      console.log('🔍 Starting timesheet fetch for:', { employeeId, tenantId: user.tenantId });
+
       try {
         setLoading(true);
+        console.log('📡 Making API request...');
+
         const response = await apiFetch(
           `/api/timesheets/employee/${employeeId}/current?tenantId=${user.tenantId}`,
           {
@@ -51,23 +58,56 @@ const EmployeeTimesheet = () => {
           { timeoutMs: 15000 }
         );
 
+        console.log('📡 API Response status:', response.status);
+
         if (!response.ok) {
-          throw new Error('Failed to fetch timesheet');
+          console.error('❌ API request failed:', response.status, response.statusText);
+          throw new Error(`Failed to fetch timesheet: ${response.status}`);
         }
 
         const data = await response.json();
+        console.log('📥 Raw API Response:', data);
+
         if (data.success && data.timesheet) {
+          console.log('✅ Timesheet data received:', data.timesheet);
+
+          // Ensure dailyHours exists and is properly structured
+          let dailyHours = data.timesheet.dailyHours;
+          if (!dailyHours) {
+            console.warn('⚠️ No dailyHours in response, using defaults');
+            dailyHours = {
+              mon: 0, tue: 0, wed: 0, thu: 0, fri: 0, sat: 0, sun: 0
+            };
+          } else if (typeof dailyHours === 'string') {
+            console.warn('⚠️ dailyHours is a string, attempting to parse:', dailyHours);
+            try {
+              dailyHours = JSON.parse(dailyHours);
+            } catch (e) {
+              console.error('❌ Failed to parse dailyHours string:', e);
+              dailyHours = { mon: 0, tue: 0, wed: 0, thu: 0, fri: 0, sat: 0, sun: 0 };
+            }
+          }
+
+          console.log('⏰ Final daily hours data:', dailyHours);
+
           setTimesheetId(data.timesheet.id);
           setEmployee(data.timesheet.employee);
           setClient(data.timesheet.client);
           setCurrentWeek(data.timesheet.weekLabel);
-          setWeeklyHours(data.timesheet.dailyHours);
+          setWeeklyHours(dailyHours);
           setNotes(data.timesheet.notes || '');
           setStatus(data.timesheet.status);
           setSelectedReviewer(data.timesheet.reviewerId || '');
+
+          console.log('✅ State updated successfully');
+        } else {
+          console.warn('⚠️ API returned success=false or no timesheet data');
+          // Set default values when no data is available
+          setWeeklyHours({ mon: 0, tue: 0, wed: 0, thu: 0, fri: 0, sat: 0, sun: 0 });
         }
-        
+
         // Fetch reviewers list
+        console.log('👥 Fetching reviewers...');
         const reviewersResponse = await apiFetch(
           `/api/timesheets/reviewers?tenantId=${user.tenantId}`,
           {
@@ -78,26 +118,36 @@ const EmployeeTimesheet = () => {
           },
           { timeoutMs: 15000 }
         );
-        
+
         if (reviewersResponse.ok) {
           const reviewersData = await reviewersResponse.json();
           if (reviewersData.success) {
+            console.log('👥 Reviewers loaded:', reviewersData.reviewers.length);
             setReviewers(reviewersData.reviewers);
+          } else {
+            console.warn('⚠️ Failed to load reviewers');
           }
+        } else {
+          console.warn('⚠️ Reviewers API failed');
         }
       } catch (error) {
-        console.error('Error fetching timesheet:', error);
-        toast.error('Failed to load timesheet data');
+        console.error('❌ Error fetching timesheet:', error);
+        toast.error('Failed to load timesheet data. Please check your connection and try again.');
+
+        // Set default values on error
+        setWeeklyHours({ mon: 0, tue: 0, wed: 0, thu: 0, fri: 0, sat: 0, sun: 0 });
       } finally {
-        setLoading(false);
+        console.log('🔄 Loading state set to false');
       }
     };
 
     fetchTimesheet();
-  }, [employeeId, user?.tenantId]); // eslint-disable-line react-hooks/exhaustive-deps
-  
-  // Calculate total hours
-  const totalHours = Object.values(weeklyHours).reduce((sum, hours) => sum + hours, 0);
+  }, [employeeId, user?.tenantId, toast]); // eslint-disable-line react-hooks/exhaustive-deps
+  const totalHours = Object.values(weeklyHours).reduce((sum, hours) => sum + (parseFloat(hours) || 0), 0);
+
+  // Debug logging for troubleshooting
+  console.log('Weekly Hours:', weeklyHours);
+  console.log('Total Hours:', totalHours);
   
   // Handle hour changes
   const handleHourChange = (day, value) => {
@@ -108,10 +158,66 @@ const EmployeeTimesheet = () => {
     }));
   };
   
-  // Handle file upload
+  // Handle drag and drop for file upload
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDragEnter = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const droppedFiles = Array.from(e.dataTransfer.files);
+    const validFiles = droppedFiles.filter(file =>
+      ['application/pdf', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'].includes(file.type) ||
+      file.name.toLowerCase().endsWith('.pdf') ||
+      file.name.toLowerCase().endsWith('.xlsx') ||
+      file.name.toLowerCase().endsWith('.xls') ||
+      file.name.toLowerCase().endsWith('.docx') ||
+      file.name.toLowerCase().endsWith('.doc')
+    );
+
+    if (validFiles.length !== droppedFiles.length) {
+      toast.error('Some files were rejected. Only PDF, Excel, and Word files are allowed.');
+    }
+
+    if (validFiles.length > 0) {
+      setFiles(prev => [...prev, ...validFiles]);
+      toast.success(`${validFiles.length} file(s) uploaded successfully`);
+    }
+  };
+  
+  // Handle file upload (fallback for file input)
   const handleFileUpload = (e) => {
     const uploadedFiles = Array.from(e.target.files);
-    setFiles(prev => [...prev, ...uploadedFiles]);
+    const validFiles = uploadedFiles.filter(file =>
+      ['application/pdf', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'].includes(file.type) ||
+      file.name.toLowerCase().endsWith('.pdf') ||
+      file.name.toLowerCase().endsWith('.xlsx') ||
+      file.name.toLowerCase().endsWith('.xls') ||
+      file.name.toLowerCase().endsWith('.docx') ||
+      file.name.toLowerCase().endsWith('.doc')
+    );
+
+    if (validFiles.length !== uploadedFiles.length) {
+      toast.error('Some files were rejected. Only PDF, Excel, and Word files are allowed.');
+    }
+
+    if (validFiles.length > 0) {
+      setFiles(prev => [...prev, ...validFiles]);
+      toast.success(`${validFiles.length} file(s) uploaded successfully`);
+    }
   };
   
   // Remove file
@@ -130,6 +236,14 @@ const EmployeeTimesheet = () => {
     if (!isDraft && !selectedReviewer) {
       toast.error('Please select a reviewer before submitting the timesheet');
       return;
+    }
+
+    // Warn if no hours are entered but allow submission
+    if (!isDraft && totalHours === 0) {
+      const confirmSubmit = window.confirm('You have not entered any hours for this week. Are you sure you want to submit an empty timesheet?');
+      if (!confirmSubmit) {
+        return;
+      }
     }
 
     try {
@@ -217,6 +331,10 @@ const EmployeeTimesheet = () => {
                         {status.toUpperCase()}
                       </span>
                     )}
+                    {/* Debug info - remove in production */}
+                    <small className="d-block mt-1 text-muted">
+                      Debug: Total: {totalHours}h | State: {JSON.stringify(weeklyHours)}
+                    </small>
                   </div>
                 </div>
                 <div className="nk-block-head-content">
@@ -318,6 +436,9 @@ const EmployeeTimesheet = () => {
                         <span className={totalHours === 40 ? 'text-success' : totalHours < 40 ? 'text-warning' : 'text-danger'}>
                           {totalHours} hrs {totalHours === 40 ? '✅' : ''}
                         </span>
+                        {totalHours === 0 && (
+                          <small className="text-muted d-block">No hours entered yet</small>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -354,20 +475,32 @@ const EmployeeTimesheet = () => {
                           <span className="text-soft d-block">Allowed formats: PDF, Excel, Word (.pdf, .xlsx, .docx)</span>
                         </label>
                         <div className="form-control-wrap">
-                          <div className="custom-file">
-                            <input
-                              type="file"
-                              className="custom-file-input"
-                              id="customFile"
-                              multiple
-                              accept=".pdf,.xlsx,.docx"
-                              ref={fileInputRef}
-                              onChange={handleFileUpload}
-                              disabled={isSubmitted}
-                            />
-                            <label className="custom-file-label" htmlFor="customFile">
-                              Choose files
-                            </label>
+                          <div
+                            className={`file-drop-area ${files.length > 0 ? 'has-files' : ''}`}
+                            onDragOver={handleDragOver}
+                            onDragEnter={handleDragEnter}
+                            onDragLeave={handleDragLeave}
+                            onDrop={handleDrop}
+                          >
+                            <div className="file-drop-content">
+                              <div className="file-drop-icon">
+                                <i className="fa fa-cloud-upload-alt"></i>
+                              </div>
+                              <div className="file-drop-text">
+                                <h4>Drag & Drop Files Here</h4>
+                                <p>Or click to browse files</p>
+                                <span className="file-types">Supported: PDF, Excel, Word</span>
+                              </div>
+                              <input
+                                type="file"
+                                className="file-input-hidden"
+                                multiple
+                                accept=".pdf,.xlsx,.docx"
+                                ref={fileInputRef}
+                                onChange={handleFileUpload}
+                                disabled={isSubmitted}
+                              />
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -406,7 +539,7 @@ const EmployeeTimesheet = () => {
                             <button 
                               className="btn btn-primary mr-3" 
                               onClick={() => handleSubmit(false)}
-                              disabled={submitting || totalHours === 0}
+                              disabled={submitting}
                             >
                               <em className="icon ni ni-send mr-1"></em>
                               <span>{submitting ? 'Submitting...' : 'Submit for Approval'}</span>

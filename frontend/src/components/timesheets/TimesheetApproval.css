@@ -3,9 +3,9 @@
 /* Main container styles */
 .approval-container {
   padding: 20px;
-  background-color: var(--timesheet-bg);
+  background-color: var(--timesheet-bg, #f5f7fa);
   min-height: 100vh;
-  transition: background-color 0.3s ease;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* Ensure the main content area is themed */
@@ -60,19 +60,19 @@
 }
 
 .stat-card {
-  background-color: var(--approval-stats-card-bg);
+  background-color: var(--timesheet-card-bg, #ffffff);
   border-radius: 12px;
   padding: 16px;
   margin-bottom: 0;
-  box-shadow: var(--approval-stats-card-shadow);
+  box-shadow: var(--timesheet-card-shadow, 0 2px 10px rgba(0, 0, 0, 0.1));
   flex: 1;
   min-width: 300px;
   max-width: 450px;
   transition: all 0.3s ease;
-  color: var(--approval-stats-text-primary);
+  color: var(--text-color, #333333);
   position: relative;
   overflow: hidden;
-  border: 1px solid var(--approval-stats-card-border);
+  border: 1px solid var(--timesheet-border, #e9ecef);
 }
 
 .stat-card::before {
@@ -193,13 +193,13 @@ body.dark-mode .approval-stats {
 }
 
 body.dark-mode .stat-card {
-  background-color: var(--approval-stats-card-bg);
-  box-shadow: var(--approval-stats-card-shadow);
-  border: 1px solid var(--approval-stats-card-border);
+  background-color: var(--timesheet-card-bg, #1e293b);
+  box-shadow: var(--timesheet-card-shadow, 0 4px 10px rgba(0, 0, 0, 0.3));
+  border: 1px solid var(--timesheet-border, #334155);
 }
 
 body.dark-mode .stat-card:hover {
-  background-color: var(--approval-stats-card-bg);
+  background-color: var(--timesheet-card-bg, #1e293b);
   box-shadow: var(--approval-stats-card-hover-shadow), 0 8px 25px rgba(0, 0, 0, 0.3);
   border-color: var(--approval-stats-card-border-hover);
 }
@@ -879,18 +879,12 @@ h6.section-title {
   margin-bottom: 20px;
 }
 
-.approval-option {
-  border: 2px solid var(--timesheet-border);
-  border-radius: 8px;
-  padding: 16px;
-  cursor: pointer;
-  transition: all 0.3s ease;
+.approval-op.timesheet-card {
   background-color: var(--timesheet-card-bg);
-}
-
-.approval-option:hover {
-  border-color: #3b82f6;
-  transform: translateY(-2px);
+  border-radius: 8px;
+  box-shadow: var(--timesheet-card-shadow);
+  margin-bottom: 20px;
+  overflow: hidden;
   box-shadow: var(--timesheet-card-hover-shadow);
 }
 

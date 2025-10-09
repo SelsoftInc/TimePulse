@@ -9,61 +9,102 @@
 
 import * as XLSX from 'xlsx';
 import Tesseract from 'tesseract.js';
+import { extractTextFromPdf } from './pdfUtils';
 
 /**
  * Main function to extract timesheet data from uploaded file
  * @param {File} file - The uploaded file
+ * @param {Function} [onProgress] - Callback for progress updates
  * @returns {Promise<Object>} Extracted timesheet data
  */
-export const extractTimesheetData = async (file) => {
+export const extractTimesheetData = async (file, onProgress) => {
   console.log('📄 Extracting data from file:', file.name, 'Type:', file.type);
   
   const fileExtension = file.name.split('.').pop().toLowerCase();
   const fileType = file.type.toLowerCase();
   
+  onProgress?.({ status: 'started', message: 'Starting extraction...', progress: 0 });
+  
   try {
+    let result;
+    
     // Determine file type and use appropriate extractor
-    if (fileType.includes('image') || ['jpg', 'jpeg', 'png', 'heic', 'bmp'].includes(fileExtension)) {
-      return await extractFromImage(file);
-    } else if (fileType.includes('spreadsheet') || fileType.includes('excel') || ['xlsx', 'xls'].includes(fileExtension)) {
-      return await extractFromExcel(file);
+    if (fileType.includes('image') || ['jpg', 'jpeg', 'png', 'heic', 'bmp', 'webp'].includes(fileExtension)) {
+      result = await extractFromImage(file, onProgress);
+    } else if (fileType.includes('spreadsheet') || fileType.includes('excel') || ['xlsx', 'xls', 'xlsm'].includes(fileExtension)) {
+      result = await extractFromExcel(file, onProgress);
     } else if (fileType.includes('pdf') || fileExtension === 'pdf') {
-      return await extractFromPDF(file);
+      result = await extractFromPDF(file, onProgress);
     } else if (fileType.includes('csv') || fileExtension === 'csv') {
-      return await extractFromCSV(file);
+      result = await extractFromCSV(file, onProgress);
+    } else if (fileType.includes('word') || ['doc', 'docx'].includes(fileExtension)) {
+      // For Word documents, we'll convert to text and process
+      result = await extractFromWord(file, onProgress);
     } else {
-      throw new Error(`Unsupported file type: ${fileExtension}`);
+      throw new Error(`Unsupported file type: ${fileExtension}. Please upload an image, PDF, Excel, or CSV file.`);
     }
+    
+    // Validate the extracted data
+    const validation = validateExtractedData(result);
+    if (!validation.isValid) {
+      console.warn('Validation warnings:', validation.warnings);
+      // We'll still return the data but with warnings
+      result.validationWarnings = validation.warnings;
+    }
+    
+    onProgress?.({ status: 'completed', message: 'Extraction completed', progress: 100 });
+    return result;
+
   } catch (error) {
     console.error('❌ Error extracting timesheet data:', error);
+    onProgress?.({
+      status: 'error',
+      message: `Extraction failed: ${error.message}`,
+      progress: 100
+    });
     throw error;
   }
 };
 
 /**
- * Extract data from image using OCR (Tesseract.js)
+ * Enhanced image extraction with better OCR preprocessing
  */
-const extractFromImage = async (file) => {
-  console.log('🖼️ Extracting from image using OCR...');
+const extractFromImage = async (file, onProgress) => {
+  console.log('🖼️ Extracting from image using enhanced OCR...');
   
   try {
-    // Convert file to image URL
+    onProgress?.({ status: 'processing', message: 'Preparing image for OCR...', progress: 10 });
+    
+    // Convert file to image and preprocess
     const imageUrl = URL.createObjectURL(file);
     
-    // Perform OCR
+    // Enhanced OCR with better configuration
+    onProgress?.({ status: 'processing', message: 'Extracting text from image...', progress: 30 });
+    
     const { data: { text } } = await Tesseract.recognize(
       imageUrl,
       'eng',
       {
         logger: (m) => {
           if (m.status === 'recognizing text') {
-            console.log(`OCR Progress: ${Math.round(m.progress * 100)}%`);
+            const progress = 30 + Math.round(m.progress * 60);
+            onProgress?.({
+              status: 'processing',
+              message: `Extracting text... (${progress}%)`,
+              progress
+            });
           }
-        }
+        },
+        tessedit_char_whitelist: '0123456789.\n\r\t /-ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz',
+        preserve_interword_spaces: '1',
+        tessedit_pageseg_mode: '6', // Assume a single uniform block of text
+        tessedit_ocr_engine_mode: '3' // Default + LSTM
       }
     );
     
     console.log('📝 OCR Text extracted:', text);
+    
+    onProgress?.({ status: 'processing', message: 'Processing extracted data...', progress: 95 });
     
     // Parse the OCR text to extract timesheet data
     const parsedData = parseTimesheetText(text);
@@ -74,7 +115,32 @@ const extractFromImage = async (file) => {
     return parsedData;
   } catch (error) {
     console.error('❌ OCR extraction failed:', error);
-    throw new Error('Failed to extract text from image. Please ensure the image is clear and readable.');
+    throw new Error(`Failed to extract text from image: ${error.message}`);
+  }
+};
+
+/**
+ * Extract data from Word document
+ */
+const extractFromWord = async (file, onProgress) => {
+  console.log('📝 Extracting from Word document...');
+
+  onProgress?.({ status: 'processing', message: 'Converting Word document to text...', progress: 20 });
+
+  try {
+    const mammoth = await import('mammoth');
+    const arrayBuffer = await file.arrayBuffer();
+    const { value: rawText } = await mammoth.extractRawText({ arrayBuffer });
+
+    onProgress?.({ status: 'processing', message: 'Parsing extracted text...', progress: 60 });
+
+    const parsedData = parseTimesheetText(rawText || '');
+    parsedData.source = 'word';
+    parsedData.fileName = file.name;
+    return parsedData;
+  } catch (error) {
+    console.error('📝 Word extraction failed:', error);
+    throw new Error(`Failed to extract text from Word document: ${error.message}`);
   }
 };
 
@@ -121,51 +187,34 @@ const extractFromExcel = async (file) => {
 
 /**
  * Extract data from PDF file
+ * @param {File} file - The PDF file to extract data from
+ * @param {Function} onProgress - Callback for progress updates
+ * @returns {Promise<Object>} Extracted timesheet data
  */
-const extractFromPDF = async (file) => {
-  console.log('📄 Extracting from PDF file...');
+const extractFromPDF = async (file, onProgress) => {
+  console.log('📄 Extracting from PDF...');
   
-  // For PDF extraction, we'll use pdf.js or similar library
-  // For now, return a placeholder that indicates PDF support
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
+  try {
+    onProgress?.({ status: 'processing', message: 'Extracting text from PDF...', progress: 30 });
     
-    reader.onload = async (e) => {
-      try {
-        // Import pdf.js dynamically
-        const pdfjsLib = await import('pdfjs-dist/webpack');
-        
-        const typedarray = new Uint8Array(e.target.result);
-        const pdf = await pdfjsLib.getDocument(typedarray).promise;
-        
-        let fullText = '';
-        
-        // Extract text from all pages
-        for (let i = 1; i <= pdf.numPages; i++) {
-          const page = await pdf.getPage(i);
-          const textContent = await page.getTextContent();
-          const pageText = textContent.items.map(item => item.str).join(' ');
-          fullText += pageText + '\n';
-        }
-        
-        console.log('📄 PDF text extracted:', fullText);
-        
-        // Parse the PDF text
-        const parsedData = parseTimesheetText(fullText);
-        
-        resolve(parsedData);
-      } catch (error) {
-        console.error('❌ PDF extraction failed:', error);
-        reject(new Error('Failed to extract data from PDF. Please ensure the PDF contains readable text.'));
-      }
-    };
+    // Use the extractTextFromPdf utility function
+    const text = await extractTextFromPdf(file);
+    console.log('Extracted PDF text:', text);
     
-    reader.onerror = () => {
-      reject(new Error('Failed to read PDF file'));
-    };
+    onProgress?.({ status: 'processing', message: 'Processing extracted text...', progress: 70 });
     
-    reader.readAsArrayBuffer(file);
-  });
+    // Parse the extracted text
+    const parsedData = parseTimesheetText(text);
+    
+    // Add metadata
+    parsedData.source = 'pdf';
+    parsedData.fileName = file.name;
+    
+    return parsedData;
+  } catch (error) {
+    console.error('PDF extraction failed:', error);
+    throw new Error(`Failed to extract text from PDF: ${error.message}`);
+  }
 };
 
 /**
@@ -228,128 +277,244 @@ const extractFromCSV = async (file) => {
  * Parse timesheet text (from OCR or PDF)
  * Enhanced for Cognizant timesheet format
  */
-const parseTimesheetText = (text) => {
-  console.log('🔍 Parsing timesheet text:', text);
-  
-  const dailyHours = {
-    sat: 0,
-    sun: 0,
-    mon: 0,
-    tue: 0,
-    wed: 0,
-    thu: 0,
-    fri: 0
+const parseTimesheetText = (text = '') => {
+  console.log('🔍 Parsing timesheet text', text?.slice(0, 200));
+
+  const normalizedText = (text || '').replace(/\r\n?/g, '\n');
+  const lines = normalizedText.split('\n').map(line => line.trim()).filter(Boolean);
+
+  const dayKeys = ['sat', 'sun', 'mon', 'tue', 'wed', 'thu', 'fri'];
+  const dailyHours = dayKeys.reduce((acc, key) => ({ ...acc, [key]: null }), {});
+
+  const parseHoursValue = (raw, { allowLarge = false } = {}) => {
+    if (raw === null || raw === undefined) return null;
+    const cleaned = String(raw).trim();
+    if (!cleaned) return null;
+
+    const timeMatch = cleaned.match(/(\d{1,2})[:h](\d{1,2})/i);
+    if (timeMatch) {
+      const hours = parseInt(timeMatch[1], 10) || 0;
+      const minutes = parseInt(timeMatch[2], 10) || 0;
+      const value = parseFloat((hours + minutes / 60).toFixed(2));
+      if (!allowLarge && value > 24) return null;
+      return value;
+    }
+
+    const trimmed = cleaned.replace(/(hrs?|hours?|mins?|minutes?)/gi, '').trim();
+    if (/[a-z]/i.test(trimmed)) {
+      return null;
+    }
+
+    const numericMatch = trimmed.match(/-?\d+(?:[.,]\d+)?/);
+    if (!numericMatch) {
+      return null;
+    }
+
+    const value = parseFloat(numericMatch[0].replace(',', '.'));
+    if (Number.isNaN(value)) {
+      return null;
+    }
+
+    if (!allowLarge && (value < 0 || value > 24)) {
+      return null;
+    }
+
+    if (allowLarge && (value < 0 || value > 240)) {
+      return null;
+    }
+
+    return value;
   };
-  
-  const lines = text.split('\n').map(line => line.trim()).filter(line => line);
+
+  const setDayHour = (key, value) => {
+    if (!dayKeys.includes(key)) return;
+    if (value === null) return;
+    if (dailyHours[key] === null) {
+      dailyHours[key] = value;
+    }
+  };
+
   let totalHours = 0;
   let employeeName = '';
   let clientName = '';
   let projectName = '';
   let weekStart = '';
   let weekEnd = '';
-  
-  console.log('📝 Processing lines:', lines);
-  
-  // Extract employee name - look for patterns like "Selvakumar Murugesan"
-  const employeeMatch = text.match(/(?:employee|emp|name)[\s:]*([A-Za-z]+\s+[A-Za-z]+)/i) ||
-                       text.match(/([A-Z][a-z]+\s+[A-Z][a-z]+)/);
-  if (employeeMatch) {
-    employeeName = employeeMatch[1].trim();
-    console.log('👤 Found employee:', employeeName);
-  }
-  
-  // Extract client name - look for "Cognizant" or similar
-  const clientMatch = text.match(/cognizant|jpmc|ibm|accenture|microsoft|google|amazon/i);
-  if (clientMatch) {
-    clientName = clientMatch[0];
-    console.log('🏢 Found client:', clientName);
-  }
-  
-  // Extract project name - look for "Pre-Paid Agile Dev POD" or similar
-  const projectMatch = text.match(/(?:project|proj)[\s:]*([A-Za-z\s-]+(?:POD|Dev|Development|App|Application))/i) ||
-                      text.match(/(Pre-Paid\s+Agile\s+Dev\s+POD|[A-Z][a-z]+\s+[A-Z][a-z]+\s+[A-Z][a-z]+)/i);
-  if (projectMatch) {
-    projectName = projectMatch[1].trim();
-    console.log('📋 Found project:', projectName);
-  }
-  
-  // Extract dates - look for date ranges like "09/12/2025"
-  const dateMatch = text.match(/(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/g);
-  if (dateMatch && dateMatch.length >= 2) {
-    weekStart = dateMatch[0];
-    weekEnd = dateMatch[dateMatch.length - 1];
-    console.log('📅 Found dates:', weekStart, 'to', weekEnd);
-  }
-  
-  // Look for Cognizant timesheet table format
-  // Pattern: SAT SUN MON TUE WED THU FRI with hours below
-  const tableMatch = text.match(/SAT\s+SUN\s+MON\s+TUE\s+WED\s+THU\s+FRI/i);
-  if (tableMatch) {
-    console.log('📊 Found timesheet table format');
-    
-    // Find the line with hours after the header
-    const tableIndex = lines.findIndex(line => /SAT\s+SUN\s+MON\s+TUE\s+WED\s+THU\s+FRI/i.test(line));
-    if (tableIndex >= 0 && tableIndex + 1 < lines.length) {
-      const hoursLine = lines[tableIndex + 1];
-      console.log('⏰ Hours line:', hoursLine);
-      
-      // Extract hours - look for pattern like "0.00 8.00 8.00 8.00 8.00 40.00"
-      const hourMatches = hoursLine.match(/(\d+\.?\d*)/g);
-      if (hourMatches && hourMatches.length >= 7) {
-        dailyHours.sat = parseFloat(hourMatches[0]) || 0;
-        dailyHours.sun = parseFloat(hourMatches[1]) || 0;
-        dailyHours.mon = parseFloat(hourMatches[2]) || 0;
-        dailyHours.tue = parseFloat(hourMatches[3]) || 0;
-        dailyHours.wed = parseFloat(hourMatches[4]) || 0;
-        dailyHours.thu = parseFloat(hourMatches[5]) || 0;
-        dailyHours.fri = parseFloat(hourMatches[6]) || 0;
-        
-        totalHours = Object.values(dailyHours).reduce((sum, hours) => sum + hours, 0);
-        console.log('✅ Extracted daily hours:', dailyHours, 'Total:', totalHours);
-      }
+
+  // Extract employee name
+  const employeeLine = lines.find(line => /employee\s*name|emp\.?\s*name|employee:/i.test(line));
+  if (employeeLine) {
+    const match = employeeLine.match(/(?:employee\s*name|emp\.?\s*name|name)[^A-Za-z]*([A-Za-z]+\s+[A-Za-z]+)/i);
+    if (match) {
+      employeeName = match[1].trim();
     }
   }
-  
-  // Fallback: Look for "40.00" total hours pattern
+  if (!employeeName) {
+    const fallbackEmployee = normalizedText.match(/([A-Z][a-z]+\s+[A-Z][a-z]+)/);
+    if (fallbackEmployee) {
+      employeeName = fallbackEmployee[1].trim();
+    }
+  }
+
+  // Extract client name
+  const clientLine = lines.find(line => /client\s*name|client:/i.test(line));
+  if (clientLine) {
+    const match = clientLine.match(/(?:client\s*name|client)[:\-\s]+(.+)/i);
+    if (match) {
+      clientName = match[1].trim();
+    }
+  }
+  if (!clientName) {
+    const knownClient = normalizedText.match(/cognizant|jpmc|ibm|accenture|microsoft|google|amazon|tcs|infosys/i);
+    if (knownClient) {
+      clientName = knownClient[0];
+    }
+  }
+
+  // Extract project name
+  const projectLine = lines.find(line => /project\s*(name)?/i.test(line));
+  if (projectLine) {
+    const match = projectLine.match(/project[^A-Za-z]*([A-Za-z][A-Za-z\s-]+)/i);
+    if (match) {
+      projectName = match[1].trim();
+    }
+  }
+  if (!projectName) {
+    const fallbackProject = normalizedText.match(/(?:project|proj)[\s:]+([A-Za-z][A-Za-z\s-]+)/i);
+    if (fallbackProject) {
+      projectName = fallbackProject[1].trim();
+    }
+  }
+
+  // Extract dates
+  const dateMatches = normalizedText.match(/\b\d{1,2}[-/]\d{1,2}[-/]\d{2,4}\b/g);
+  if (dateMatches && dateMatches.length >= 2) {
+    weekStart = dateMatches[0];
+    weekEnd = dateMatches[dateMatches.length - 1];
+  }
+
+  // Helper to assign hours array to dailyHours
+  const assignHours = (values) => {
+    if (!values || values.length === 0) return;
+    const parsedValues = [];
+    values.forEach((value) => {
+      const parsed = parseHoursValue(value);
+      if (parsed !== null) {
+        parsedValues.push(parsed);
+      }
+    });
+    if (parsedValues.length === 0) return;
+
+    dayKeys.forEach((key, index) => {
+      const parsed = parsedValues[index];
+      if (parsed === undefined) return;
+      setDayHour(key, parsed);
+    });
+  };
+
+  // Attempt to read tabular format where hours follow day header row
+  const headerRegex = /sat\b.*sun\b.*mon\b.*tue\b.*wed\b.*thu\b.*fri\b/i;
+  const headerIndex = lines.findIndex(line => headerRegex.test(line.toLowerCase()));
+  if (headerIndex !== -1) {
+    const collected = [];
+    let i = headerIndex + 1;
+    while (i < lines.length && collected.length < 7) {
+      const fragments = lines[i].split(/\s+/).filter(Boolean);
+      collected.push(...fragments);
+      i += 1;
+    }
+    if (collected.length >= 7) {
+      assignHours(collected);
+    }
+  }
+
+  // Fallback: look for patterns like "Mon: 8" or "Monday - 8"
+  const dayHourRegex = /(mon|monday|tue|tuesday|wed|wednesday|thu|thursday|fri|friday|sat|saturday|sun|sunday)[\s.:\-=]+(-?\d+(?:\.\d+)?)/gi;
+  let dayMatch;
+  while ((dayMatch = dayHourRegex.exec(normalizedText)) !== null) {
+    const key = dayMatch[1].slice(0, 3).toLowerCase();
+    const hours = parseHoursValue(dayMatch[2]);
+    setDayHour(key, hours);
+  }
+
+  // Fallback: parse delimited lines (CSV-like)
+  lines.forEach(line => {
+    const tokens = line.split(/[\s,|\t]+/).filter(Boolean);
+    if (tokens.length < 2) return;
+    const potentialDay = tokens[0].slice(0, 3).toLowerCase();
+    const potentialHours = parseHoursValue(tokens[tokens.length - 1]);
+    if (dayKeys.includes(potentialDay)) {
+      setDayHour(potentialDay, potentialHours);
+    }
+  });
+
+  // Fallback: scan token stream for day followed by value(s)
+  const rawTokens = normalizedText.split(/\s+/).filter(Boolean);
+  for (let i = 0; i < rawTokens.length; i++) {
+    const token = rawTokens[i];
+    const key = token.slice(0, 3).toLowerCase();
+    if (!dayKeys.includes(key)) continue;
+
+    if (dailyHours[key] !== null) continue;
+
+    let value;
+    for (let lookahead = 1; lookahead <= 3; lookahead += 1) {
+      const candidate = rawTokens[i + lookahead];
+      const parsed = parseHoursValue(candidate);
+      if (parsed !== null) {
+        value = parsed;
+        break;
+      }
+    }
+
+    if (value) {
+      setDayHour(key, value);
+    }
+  }
+
+  totalHours = dayKeys.reduce((sum, key) => sum + (dailyHours[key] ?? 0), 0);
+
   if (totalHours === 0) {
-    const totalMatch = text.match(/(?:total|grand\s+total)[\s:]*(\d+\.?\d*)/i) ||
-                      text.match(/(\d+\.00)\s*$/m); // Look for patterns like "40.00" at end of line
+    const totalMatch = normalizedText.match(/(?:total\s*hours?|grand\s*total)[^\d]*(\d+(?:\.\d+)?)/i) ||
+                       normalizedText.match(/\b(\d+[.,]\d{2})\b(?!.+\d)/i);
     if (totalMatch) {
-      totalHours = parseFloat(totalMatch[1]);
-      console.log('📊 Found total hours:', totalHours);
-      
-      // If we found 40 hours, distribute as 8 hours Mon-Fri
-      if (totalHours === 40) {
-        dailyHours.mon = 8;
-        dailyHours.tue = 8;
-        dailyHours.wed = 8;
-        dailyHours.thu = 8;
-        dailyHours.fri = 8;
-        console.log('📅 Distributed 40 hours across weekdays');
+      const parsedTotal = parseHoursValue(totalMatch[1], { allowLarge: true });
+      if (parsedTotal !== null) {
+        totalHours = parsedTotal;
       }
     }
   }
-  
-  // Calculate confidence based on data found
-  let confidence = 0.5; // Base confidence
-  if (totalHours > 0) confidence += 0.3;
+
+  if (totalHours > 0 && Object.values(dailyHours).every(hours => hours === 0)) {
+    const workDays = ['mon', 'tue', 'wed', 'thu', 'fri'];
+    const perDay = parseFloat((totalHours / workDays.length).toFixed(2));
+    workDays.forEach(key => {
+      setDayHour(key, perDay);
+    });
+  }
+
+  const resolvedDailyHours = dayKeys.reduce((acc, key) => ({ ...acc, [key]: dailyHours[key] ?? 0 }), {});
+
+  const nonZeroDays = Object.values(resolvedDailyHours).filter(hours => hours > 0).length;
+  let confidence = 0.2;
+  if (totalHours > 0) confidence += 0.4;
+  if (nonZeroDays >= 3) confidence += 0.2;
   if (employeeName) confidence += 0.1;
-  if (clientName) confidence += 0.1;
-  
+  if (weekStart && weekEnd) confidence += 0.1;
+
   const result = {
-    success: true,
-    dailyHours,
+    success: totalHours > 0 || nonZeroDays > 0,
+    dailyHours: resolvedDailyHours,
     totalHours,
-    employeeName: employeeName || 'Selvakumar Murugesan', // Default from image
-    clientName: clientName || 'Cognizant', // Default from image
-    projectName: projectName || 'The Pre-Paid Agile Dev POD', // Default from image
+    employeeName,
+    clientName,
+    projectName,
     weekStart,
     weekEnd,
     extractedText: text,
-    confidence: Math.min(confidence, 1.0)
+    confidence: Math.min(confidence, 1)
   };
-  
+
   console.log('🎯 Final parsed result:', result);
   return result;
 };
@@ -386,7 +551,6 @@ const parseExcelData = (data) => {
   // Find column indices
   const dayCol = headers.findIndex(h => h.includes('day'));
   const hoursCol = headers.findIndex(h => h.includes('hour'));
-  const dateCol = headers.findIndex(h => h.includes('date'));
   
   // Map day names to keys
   const dayMap = {
@@ -459,7 +623,7 @@ const parseExcelData = (data) => {
 /**
  * Validate extracted data
  */
-export const validateExtractedData = (data) => {
+const validateExtractedData = (data) => {
   const errors = [];
   
   if (!data.success) {
@@ -490,7 +654,29 @@ export const validateExtractedData = (data) => {
   };
 };
 
-export default {
+// Named exports for individual functions
+export {
+  extractFromImage,
+  extractFromExcel,
+  extractFromPDF,
+  extractFromCSV,
+  extractFromWord,
+  parseTimesheetText,
+  validateExtractedData,
+  parseExcelData
+};
+
+// Default export for backwards compatibility
+const timesheetExtractor = {
   extractTimesheetData,
+  extractFromImage,
+  extractFromExcel,
+  extractFromPDF,
+  extractFromCSV,
+  extractFromWord,
+  parseTimesheetText,
+  parseExcelData,
   validateExtractedData
 };
+
+export default timesheetExtractor;

@@ -7,6 +7,7 @@ import {
   TAX_ID_LABELS,
   TAX_ID_PLACEHOLDERS,
   PAYMENT_TERMS_OPTIONS,
+  fetchPaymentTerms,
   getPostalLabel,
   getPostalPlaceholder,
   validateCountryTaxId
@@ -24,6 +25,7 @@ const VendorForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [paymentTermsOptions, setPaymentTermsOptions] = useState(PAYMENT_TERMS_OPTIONS);
   const [formData, setFormData] = useState({
     name: '',
     contactPerson: '',
@@ -70,6 +72,15 @@ const VendorForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
       fileReader.readAsDataURL(file);
     }
   };
+
+  // Load payment terms from API
+  useEffect(() => {
+    const loadPaymentTerms = async () => {
+      const terms = await fetchPaymentTerms();
+      setPaymentTermsOptions(terms);
+    };
+    loadPaymentTerms();
+  }, []);
 
   // Prefill when initialData changes
   useEffect(() => {
@@ -388,7 +399,7 @@ const VendorForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
                     </div>
                     <div className="col-lg-6">
                       <div className="form-group">
-                        <label className="form-label" htmlFor="paymentTerms">Invoice Cycle*</label>
+                        <label className="form-label" htmlFor="paymentTerms">Payment Term*</label>
                         <select
                           className="form-select"
                           id="paymentTerms"
@@ -397,7 +408,7 @@ const VendorForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
                           onChange={handleChange}
                           required
                         >
-                          {PAYMENT_TERMS_OPTIONS.map((opt) => (
+                          {paymentTermsOptions.map((opt) => (
                             <option key={opt.value} value={opt.value}>{opt.label}</option>
                           ))}
                         </select>

@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { PERMISSIONS } from '../../utils/roles';
 import PermissionGuard from '../common/PermissionGuard';
 import { useAuth } from '../../contexts/AuthContext';
+import { useToast } from '../../contexts/ToastContext';
 import './Clients.css';
 import { PAYMENT_METHODS, CURRENCIES, CLIENT_TYPES } from '../../constants/lookups';
 import { formatPhoneInput, validatePhoneDigits } from '../../utils/validation';
@@ -13,6 +14,7 @@ import {
   TAX_ID_LABELS,
   TAX_ID_PLACEHOLDERS,
   PAYMENT_TERMS_OPTIONS,
+  fetchPaymentTerms,
   getPostalLabel,
   getPostalPlaceholder,
   validateCountryTaxId
@@ -22,10 +24,12 @@ const ClientForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
   const navigate = useNavigate();
   const { subdomain } = useParams();
   const { user } = useAuth();
+  const { toast } = useToast();
   const addressInputRef = useRef(null);
   const autocompleteRef = useRef(null);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({ phone: '', taxId: '' });
+  const [paymentTermsOptions, setPaymentTermsOptions] = useState(PAYMENT_TERMS_OPTIONS);
   const [formData, setFormData] = useState({
     name: '',
     contactPerson: '',
@@ -79,6 +83,15 @@ const ClientForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
       }));
     }
   }, [initialData]);
+
+  // Load payment terms from API
+  useEffect(() => {
+    const loadPaymentTerms = async () => {
+      const terms = await fetchPaymentTerms();
+      setPaymentTermsOptions(terms);
+    };
+    loadPaymentTerms();
+  }, []);
 
   // Load Google Places script and wire Autocomplete to address field
   useEffect(() => {
@@ -240,7 +253,9 @@ const ClientForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
       }
     } catch (err) {
       console.error(`Failed to ${mode === 'edit' ? 'update' : 'create'} client:`, err);
-      alert(`Failed to ${mode === 'edit' ? 'update' : 'create'} client: ${err.message}`);
+      toast.error(err.message, {
+        title: `Failed to ${mode === 'edit' ? 'Update' : 'Create'} Client`
+      });
     } finally {
       setLoading(false);
     }
@@ -477,7 +492,7 @@ const ClientForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
                     
                     <div className="col-lg-6">
                       <div className="form-group">
-                        <label className="form-label" htmlFor="paymentTerms">Invoice Cycle*</label>
+                        <label className="form-label" htmlFor="paymentTerms">Payment Term*</label>
                         <select
                           className="form-select"
                           id="paymentTerms"
@@ -486,7 +501,7 @@ const ClientForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
                           onChange={handleChange}
                           required
                         >
-                          {PAYMENT_TERMS_OPTIONS.map(pt => (
+                          {paymentTermsOptions.map(pt => (
                             <option key={pt.value} value={pt.value}>{pt.label}</option>
                           ))}
                         </select>

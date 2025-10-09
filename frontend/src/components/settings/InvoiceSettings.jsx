@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from "react";
+import { useAuth } from "../../contexts/AuthContext";
+import { useToast } from "../../contexts/ToastContext";
 import "./InvoiceSettings.css";
 
 const InvoiceSettings = () => {
+  const { toast } = useToast();
   const [invoiceSettings, setInvoiceSettings] = useState({
     // Company Information
     companyName: "",
@@ -121,10 +124,14 @@ const InvoiceSettings = () => {
       localStorage.setItem("invoiceSettings", JSON.stringify(updatedSettings));
       setInvoiceSettings(updatedSettings);
 
-      alert("Invoice settings saved successfully!");
+      toast.success("Your invoice settings have been saved.", {
+        title: "Invoice Settings Saved"
+      });
     } catch (error) {
       console.error("Error saving invoice settings:", error);
-      alert("Error saving settings. Please try again.");
+      toast.error("Please try again.", {
+        title: "Error Saving Settings"
+      });
     } finally {
       setLoading(false);
     }

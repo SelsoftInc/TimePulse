@@ -1,21 +1,18 @@
-import React, { useState, useRef, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import { useAuth } from "../../contexts/AuthContext";
-import {
-  uploadAndProcessTimesheet,
-  transformTimesheetToInvoice,
-} from "../../services/engineService";
-import {
-  extractTimesheetData,
-  validateExtractedData,
-} from "../../services/timesheetExtractor";
-import axios from "axios";
-import "./Timesheet.css";
+import React, { useState, useRef, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
+import { useToast } from '../../contexts/ToastContext';
+import { uploadAndProcessTimesheet, transformTimesheetToInvoice } from '../../services/engineService';
+import { extractTimesheetData, validateExtractedData } from '../../services/timesheetExtractor';
+import { API_BASE } from '../../config/api';
+import axios from 'axios';
+import './Timesheet.css';
 
 const TimesheetSubmit = () => {
   const { subdomain, weekId } = useParams();
   const navigate = useNavigate();
   const { isAdmin, isEmployee, user } = useAuth();
+  const { toast } = useToast();
   const fileInputRef = useRef(null);
   const cameraInputRef = useRef(null);
   const [loading, setLoading] = useState(false);
@@ -136,10 +133,10 @@ const TimesheetSubmit = () => {
         }
 
         try {
-          console.log("🔍 Fetching clients for tenantId:", tenantId);
-          const response = await axios.get(`/api/clients?tenantId=${tenantId}`);
-          console.log("📥 Clients API response:", response.data);
-
+          console.log('🔍 Fetching clients for tenantId:', tenantId);
+          const response = await axios.get(`${API_BASE}/api/clients?tenantId=${tenantId}`);
+          console.log('📥 Clients API response:', response.data);
+          
           if (response.data.success && response.data.clients) {
             // For Selvakumar, show only Cognizant
             // Since clientId field doesn't exist in Employee model, we'll filter by client name
@@ -216,53 +213,41 @@ const TimesheetSubmit = () => {
 
         // Load available employees for non-employee roles
         if (!isEmployee()) {
-          const mockEmployees = [
-            {
-              id: "1",
-              name: "John Doe",
-              email: "john.doe@company.com",
-              department: "Engineering",
-            },
-            {
-              id: "2",
-              name: "Jane Smith",
-              email: "jane.smith@company.com",
-              department: "Design",
-            },
-            {
-              id: "3",
-              name: "Mike Johnson",
-              email: "mike.johnson@company.com",
-              department: "Marketing",
-            },
-            {
-              id: "4",
-              name: "Sarah Wilson",
-              email: "sarah.wilson@company.com",
-              department: "Engineering",
-            },
-            {
-              id: "5",
-              name: "David Brown",
-              email: "david.brown@company.com",
-              department: "Sales",
-            },
-          ];
-          setAvailableEmployees(mockEmployees);
+          try {
+            console.log('🔍 Fetching employees...');
+            const employeesResponse = await axios.get(`${API_BASE}/api/employees?tenantId=${tenantId}`);
+            console.log('📥 Employees API response:', employeesResponse.data);
+            
+            if (employeesResponse.data.success && employeesResponse.data.employees) {
+              // Filter out admin users - they don't submit timesheets
+              const employees = employeesResponse.data.employees
+                .filter(emp => emp.role !== 'admin')
+                .map(emp => ({
+                  id: emp.id,
+                  name: `${emp.firstName} ${emp.lastName}`,
+                  email: emp.email,
+                  department: emp.department || 'N/A',
+                  role: emp.role
+                }));
+              setAvailableEmployees(employees);
+              console.log('✅ Loaded employees (excluding admins):', employees.length);
+            } else {
+              console.warn('⚠️ No employees found in response');
+              setAvailableEmployees([]);
+            }
+          } catch (error) {
+            console.error('❌ Error fetching employees:', error);
+            setAvailableEmployees([]);
+          }
         }
 
         // Load available approvers (admins and managers)
         try {
-          console.log("🔍 Fetching approvers...");
-          const approversResponse = await axios.get(
-            `/api/timesheets/reviewers?tenantId=${tenantId}`
-          );
-          console.log("📥 Approvers API response:", approversResponse.data);
-
-          if (
-            approversResponse.data.success &&
-            approversResponse.data.reviewers
-          ) {
+          console.log('🔍 Fetching approvers...');
+          const approversResponse = await axios.get(`${API_BASE}/api/timesheets/reviewers?tenantId=${tenantId}`);
+          console.log('📥 Approvers API response:', approversResponse.data);
+          
+          if (approversResponse.data.success && approversResponse.data.reviewers) {
             setAvailableApprovers(approversResponse.data.reviewers);
             console.log(
               "✅ Loaded approvers:",
@@ -277,10 +262,11 @@ const TimesheetSubmit = () => {
         const generateAvailableWeeks = () => {
           const weeks = [];
           const today = new Date();
-
-          const getWeekStart = (date) => {
-            const weekStart = new Date(date);
-            const dayOfWeek = weekStart.getDay();
+          
+          // Generate weeks from 8 weeks ago to current week only (no future weeks)
+          for (let i = -8; i <= 0; i++) {
+            const weekStart = new Date(today);
+            const dayOfWeek = today.getDay();
             const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
             weekStart.setDate(weekStart.getDate() + mondayOffset);
             weekStart.setHours(0, 0, 0, 0);
@@ -325,8 +311,8 @@ const TimesheetSubmit = () => {
 
             cursor.setDate(cursor.getDate() - 7);
           }
-
-          return weeks;
+          
+          return weeks.reverse(); // Most recent first (current week at top)
         };
 
         const mockAvailableWeeks = generateAvailableWeeks();
@@ -789,10 +775,10 @@ const TimesheetSubmit = () => {
 
     // Check if employee is selected for non-employee roles
     if (!isEmployee() && !selectedEmployee) {
-      alert(
-        "Please select an employee first before uploading their timesheet."
-      );
-      e.target.value = ""; // Reset file input
+      toast.warning('Please select an employee first before uploading their timesheet.', {
+        title: 'Employee Required'
+      });
+      e.target.value = ''; // Reset file input
       return;
     }
 

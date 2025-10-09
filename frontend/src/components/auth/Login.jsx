@@ -13,13 +13,23 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
 
-  // Clear form fields on component mount
+  // Load saved email on component mount
   useEffect(() => {
-    setFormData({
-      email: '',
-      password: ''
-    });
+    const savedEmail = localStorage.getItem('rememberedEmail');
+    if (savedEmail) {
+      setFormData({
+        email: savedEmail,
+        password: ''
+      });
+      setRememberMe(true);
+    } else {
+      setFormData({
+        email: '',
+        password: ''
+      });
+    }
   }, []);
 
   const handleChange = (e) => {
@@ -33,6 +43,13 @@ const Login = () => {
     e.preventDefault();
     setLoading(true);
     setError('');
+
+    // Handle remember me functionality
+    if (rememberMe) {
+      localStorage.setItem('rememberedEmail', formData.email);
+    } else {
+      localStorage.removeItem('rememberedEmail');
+    }
 
     try {
       // Check for demo credentials first
@@ -196,7 +213,12 @@ const Login = () => {
 
           <div className="form-footer">
             <div className="remember-me">
-              <input type="checkbox" id="remember" />
+              <input 
+                type="checkbox" 
+                id="remember" 
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+              />
               <label htmlFor="remember">Remember Me</label>
             </div>
             <Link to="/forgot-password" className="forgot-link">Forgot Password?</Link>
@@ -210,23 +232,6 @@ const Login = () => {
             {loading ? 'Signing In...' : 'Sign In'}
           </button>
         </form>
-
-        <div className="auth-divider">
-          <span>OR</span>
-        </div>
-
-        <div className="social-login">
-          <button className="btn-social btn-google">
-            <i className="fab fa-google"></i> Sign in with Google
-          </button>
-          <button className="btn-social btn-microsoft">
-            <i className="fab fa-microsoft"></i> Sign in with Microsoft
-          </button>
-        </div>
-
-        <div className="auth-footer">
-          <p>Don't have an account? <Link to="/register" className="auth-link">Create Account</Link></p>
-        </div>
       </div>
     </div>
   );

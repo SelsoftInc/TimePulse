@@ -36,8 +36,14 @@ router.get('/', async (req, res) => {
         'salaryType',
         'contactInfo',
         'status'
-      ]
-      // Removed includes for client, vendor, implPartner as these columns don't exist in the current schema
+      ],
+      // Include user to get role
+      include: [{
+        model: User,
+        as: 'user',
+        attributes: ['role'],
+        required: false
+      }]
     });
 
     // Transform the data to match frontend expectations
@@ -53,6 +59,8 @@ router.get('/', async (req, res) => {
         department: emp.department || 'N/A',
         joinDate: emp.startDate || null,
         hourlyRate: emp.hourlyRate || null,
+        // Include role from linked user
+        role: emp.user?.role || null,
         // Set client-related fields to null since columns don't exist
         client: null,
         clientId: null,
@@ -214,7 +222,19 @@ router.put('/:id', async (req, res) => {
       return res.status(404).json({ error: 'Employee not found' });
     }
 
+    // Update employee record
     await employee.update(updateData);
+
+    // If firstName or lastName changed, also update the linked User record
+    if ((updateData.firstName || updateData.lastName) && employee.userId) {
+      const user = await models.User.findByPk(employee.userId);
+      if (user) {
+        const userUpdate = {};
+        if (updateData.firstName) userUpdate.firstName = updateData.firstName;
+        if (updateData.lastName) userUpdate.lastName = updateData.lastName;
+        await user.update(userUpdate);
+      }
+    }
 
     res.json({
       success: true,
@@ -231,7 +251,7 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// Delete employee
+// Delete employee with cascading deletes
 router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
@@ -245,11 +265,49 @@ router.delete('/:id', async (req, res) => {
       return res.status(404).json({ error: 'Employee not found' });
     }
 
+    // Store userId before deleting employee
+    const userId = employee.userId;
+
+    // Cascade delete all related data
+    const deletedRecords = {
+      timesheets: 0,
+      invoices: 0,
+      user: false,
+      // Future: leave_requests, performance_reviews, etc.
+    };
+
+    // Delete timesheets
+    if (models.Timesheet) {
+      const timesheetsDeleted = await models.Timesheet.destroy({
+        where: { employeeId: id, tenantId }
+      });
+      deletedRecords.timesheets = timesheetsDeleted;
+    }
+
+    // Delete invoices
+    if (models.Invoice) {
+      const invoicesDeleted = await models.Invoice.destroy({
+        where: { employeeId: id, tenantId }
+      });
+      deletedRecords.invoices = invoicesDeleted;
+    }
+
+    // Delete the employee
     await employee.destroy();
+
+    // Delete the linked user account if exists
+    if (userId) {
+      const user = await models.User.findByPk(userId);
+      if (user) {
+        await user.destroy();
+        deletedRecords.user = true;
+      }
+    }
 
     res.json({
       success: true,
-      message: 'Employee deleted successfully'
+      message: 'Employee and all related data deleted successfully',
+      deletedRecords
     });
 
   } catch (error) {

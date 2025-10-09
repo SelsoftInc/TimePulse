@@ -146,6 +146,11 @@ function App() {
             <EmployerLayout><LeaveManagement /></EmployerLayout>
           </ProtectedRoute>
         } />
+        <Route path="/:subdomain/leave-management" element={
+          <ProtectedRoute>
+            <EmployerLayout><LeaveManagement /></EmployerLayout>
+          </ProtectedRoute>
+        } />
         <Route path="/:subdomain/documents" element={
           <ProtectedRoute>
             <EmployerLayout><EmployeeDocuments /></EmployerLayout>
@@ -259,9 +264,9 @@ function App() {
         
         {/* Fallback route */}
         <Route path="*" element={<Navigate to="/login" />} />
-          </Routes>
-          <ToastContainer />
-          </AuthProvider>
+        </Routes>
+        <ToastContainer />
+        </AuthProvider>
         </ToastProvider>
       </ThemeProvider>
     </BrowserRouter>

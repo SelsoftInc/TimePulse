@@ -314,7 +314,7 @@ const ClientDetails = () => {
                 <div className="row g-4">
                   <div className="col-lg-6">
                     <div className="client-detail-item">
-                      <span className="detail-label">Invoice Cycle:</span>
+                      <span className="detail-label">Payment Term:</span>
                       <span className="detail-value">
                         <span className="badge badge-dim badge-outline-info">
                           {client?.paymentTerms === 0 ? 'Due upon receipt' : `Net ${client?.paymentTerms}`}

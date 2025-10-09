@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import LeaveApprovals from './LeaveApprovals';
 
 const LeaveManagement = () => {
   const { user } = useAuth();
@@ -7,6 +8,9 @@ const LeaveManagement = () => {
   // Use subdomain for navigation links and user info for personalization
   const userFullName = user?.name || 'Employee';
   const userRole = user?.role || 'employee';
+  const isApprover = userRole === 'approver' || userRole === 'admin';
+  const isAdmin = userRole === 'admin';
+  const isOwner = isAdmin; // Owners are admins who don't need personal leave balance
   const [loading, setLoading] = useState(true);
   const [leaveData, setLeaveData] = useState({
     balance: {},
@@ -257,7 +261,7 @@ const LeaveManagement = () => {
                 <div className="nk-block-head-content">
                   <h3 className="nk-block-title page-title">Leave Management</h3>
                   <div className="nk-block-des text-soft">
-                    <p>Welcome {userFullName}, {userRole === 'admin' ? 'manage all leave requests' : 'request and manage your leave and absences'}</p>
+                    <p>Welcome {userFullName}, {isOwner ? 'review and approve leave requests from your team' : 'request and manage your leave and absences'}</p>
                   </div>
                 </div>
               </div>
@@ -279,8 +283,11 @@ const LeaveManagement = () => {
             
             <div className="nk-block">
               <div className="row g-gs">
+                {/* Employee Sections - Only show for non-owners */}
+                {!isOwner && (
+                  <>
                 {/* Leave Balance */}
-                <div className="col-lg-5">
+                <div className="col-md-5">
                   <div className="card card-bordered h-100">
                     <div className="card-inner">
                       <div className="card-title-group align-start mb-3">
@@ -329,7 +336,7 @@ const LeaveManagement = () => {
                 </div>
                 
                 {/* Request Leave Form */}
-                <div className="col-lg-7">
+                <div className="col-md-7">
                   <div className="card card-bordered h-100">
                     <div className="card-inner">
                       <div className="card-title-group align-start mb-3">
@@ -428,8 +435,19 @@ const LeaveManagement = () => {
                     </div>
                   </div>
                 </div>
+                  </>
+                )}
                 
-                {/* Pending Requests */}
+                {/* Leave Approvals Section (for Approvers and Admins) */}
+                {isApprover && (
+                  <div className="col-12">
+                    <LeaveApprovals />
+                  </div>
+                )}
+                
+                {/* Pending Requests - Only show for non-owners */}
+                {!isOwner && (
+                  <>
                 <div className="col-12">
                   <div className="card card-bordered">
                     <div className="card-inner">
@@ -488,7 +506,7 @@ const LeaveManagement = () => {
                   </div>
                 </div>
                 
-                {/* Leave History */}
+                {/* Leave History - Only show for non-owners */}
                 <div className="col-12">
                   <div className="card card-bordered">
                     <div className="card-inner">
@@ -539,6 +557,8 @@ const LeaveManagement = () => {
                     </div>
                   </div>
                 </div>
+                  </>
+                )}
               </div>
             </div>
           </div>

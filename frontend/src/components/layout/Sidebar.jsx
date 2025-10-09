@@ -214,6 +214,22 @@ const Sidebar = ({ collapsed, toggleSidebar, className = "" }) => {
             </li>
           </PermissionGuard>
 
+          <li className="sidebar-item">
+            <Link
+              to={`/${currentSubdomain}/leave-management`}
+              className={`sidebar-link ${
+                currentPath.includes(`/${currentSubdomain}/leave-management`)
+                  ? "active"
+                  : ""
+              }`}
+            >
+              <div className="sidebar-icon">
+                <i className="fa fa-calendar-alt"></i>
+              </div>
+              {!collapsed && <span className="sidebar-text">Leave Management</span>}
+            </Link>
+          </li>
+
           <PermissionGuard
             requiredPermission={PERMISSIONS.VIEW_REPORTS}
             fallback={null}

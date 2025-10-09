@@ -110,7 +110,7 @@ const Header = ({ toggleSidebar }) => {
       <div className="container-fluid">
         <div className="nk-header-wrap">
           {/* Brand logo and name */}
-          <div className="app-brand">
+          <div className="app-brand" onClick={() => navigate(`/${subdomain}/employee-dashboard`)} style={{ cursor: 'pointer' }}>
             <img
               src={tenantLogo || logo3}
               alt={tenantLogo ? "Company Logo" : "TimePulse Logo"}
@@ -124,9 +124,9 @@ const Header = ({ toggleSidebar }) => {
                     }
                   : {}
               }
+              title="Go to Employee Dashboard"
             />
           </div>
-
           {/* Mobile menu toggle */}
           <div className="d-xl-none mr-3">
             <button

@@ -307,7 +307,8 @@ const EmployeeDashboard = () => {
   
   useEffect(() => {
     const loadDashboardData = async () => {
-      if (!user?.tenantId || !user?.id) {
+      if (!user?.tenantId || !user?.employeeId) {
+        console.warn('Missing tenant ID or employee ID');
         setLoading(false);
         return;
       }
@@ -315,9 +316,9 @@ const EmployeeDashboard = () => {
       try {
         setLoading(true);
         
-        // Fetch employee data to get the employee ID linked to the user
-        const employeeResponse = await apiFetch(
-          `/api/employees?tenantId=${user.tenantId}`,
+        // Fetch dashboard data from new API endpoint
+        const dashboardResponse = await apiFetch(
+          `/api/employee-dashboard?employeeId=${user.employeeId}&tenantId=${user.tenantId}`,
           {
             method: 'GET',
             headers: {
@@ -326,92 +327,77 @@ const EmployeeDashboard = () => {
           }
         );
 
-        if (!employeeResponse.ok) {
-          throw new Error('Failed to fetch employee data');
+        if (!dashboardResponse.ok) {
+          throw new Error('Failed to fetch dashboard data');
         }
 
-        const employeeData = await employeeResponse.json();
-        const currentEmployee = employeeData.employees?.find(emp => 
-          emp.email === user.email || emp.userId === user.id
-        );
-
-        if (!currentEmployee) {
-          console.warn('No employee record found for current user');
-          setLoading(false);
-          return;
+        const dashboardData = await dashboardResponse.json();
+        
+        if (!dashboardData.success) {
+          throw new Error(dashboardData.error || 'Failed to load dashboard');
         }
 
-        // Fetch timesheets for the current week
-        const timesheetResponse = await apiFetch(
-          `/api/timesheets/current?tenantId=${user.tenantId}`,
-          {
-            method: 'GET',
-            headers: {
-              'Authorization': `Bearer ${localStorage.getItem('token')}`
-            }
-          }
-        );
+        const { data } = dashboardData;
 
-        if (timesheetResponse.ok) {
-          const timesheetData = await timesheetResponse.json();
-          
-          // Filter timesheets for current employee
-          const myTimesheets = timesheetData.timesheets?.filter(ts => 
-            ts.employee?.id === currentEmployee.id
-          ) || [];
+        // Transform timesheet data to match component expectations
+        const transformedTimesheets = data.timesheets.recent.map(ts => ({
+          week: new Date(ts.weekStartDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+          status: ts.status.charAt(0).toUpperCase() + ts.status.slice(1),
+          hours: parseFloat(ts.totalHours) || 0,
+          dueDate: new Date(ts.weekEndDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+          weekStart: ts.weekStartDate,
+          id: ts.id
+        }));
 
-          // Transform timesheet data to match component expectations
-          const transformedTimesheets = myTimesheets.map(ts => ({
-            week: ts.week,
-            status: ts.status.label.charAt(0).toUpperCase() + ts.status.label.slice(1).toLowerCase(),
-            hours: parseFloat(ts.hours),
-            dueDate: ts.weekEnd,
-            weekStart: ts.weekStart,
-            id: ts.id
-          }));
+        setTimesheets(transformedTimesheets);
 
-          setTimesheets(transformedTimesheets);
+        // Set hours data from dashboard
+        setHoursData({
+          regular: data.summary.hoursThisMonth || 0,
+          overtime: 0, // Can be enhanced later
+          leave: 0     // Can be enhanced later
+        });
 
-          // Calculate hours data from timesheets
-          const totalRegular = transformedTimesheets.reduce((sum, ts) => {
-            if (ts.status === 'Approved' || ts.status === 'Submitted') {
-              return sum + ts.hours;
-            }
-            return sum;
-          }, 0);
-
-          setHoursData({
-            regular: totalRegular,
-            overtime: 0, // Can be enhanced later
-            leave: 0     // Can be enhanced later
+        // Generate notifications based on timesheet and invoice status
+        const generatedNotifications = [];
+        
+        if (data.timesheets.pending > 0) {
+          generatedNotifications.push({
+            title: 'Pending Timesheets',
+            message: `You have ${data.timesheets.pending} timesheet(s) pending approval`,
+            date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+            priority: 'High'
           });
-
-          // Generate notifications based on timesheet status
-          const generatedNotifications = [];
-          
-          const missingTimesheets = transformedTimesheets.filter(ts => ts.hours === 0);
-          if (missingTimesheets.length > 0) {
-            generatedNotifications.push({
-              title: 'Missing Timesheet',
-              message: `You have ${missingTimesheets.length} timesheet(s) that need to be submitted`,
-              date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-              priority: 'Critical'
-            });
-          }
-
-          const approvedTimesheets = transformedTimesheets.filter(ts => ts.status === 'Approved');
-          if (approvedTimesheets.length > 0) {
-            const latest = approvedTimesheets[0];
-            generatedNotifications.push({
-              title: 'Timesheet Approved',
-              message: `Your timesheet for the week of ${latest.week} has been approved`,
-              date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-              priority: 'Success'
-            });
-          }
-
-          setNotifications(generatedNotifications);
         }
+
+        if (data.timesheets.approved > 0) {
+          generatedNotifications.push({
+            title: 'Timesheets Approved',
+            message: `${data.timesheets.approved} timesheet(s) have been approved this month`,
+            date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+            priority: 'Success'
+          });
+        }
+
+        if (data.invoices.overdue > 0) {
+          generatedNotifications.push({
+            title: 'Overdue Invoices',
+            message: `You have ${data.invoices.overdue} overdue invoice(s)`,
+            date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+            priority: 'Critical'
+          });
+        }
+
+        if (data.invoices.paid > 0) {
+          generatedNotifications.push({
+            title: 'Invoices Paid',
+            message: `${data.invoices.paid} invoice(s) paid this month - $${data.invoices.totalEarningsThisMonth.toFixed(2)}`,
+            date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+            priority: 'Success'
+          });
+        }
+
+        setNotifications(generatedNotifications);
 
         // Leave requests placeholder - can be implemented later
         setLeaveRequests([]);
@@ -425,7 +411,7 @@ const EmployeeDashboard = () => {
     };
     
     loadDashboardData();
-  }, [user?.tenantId, user?.id, user?.email]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [user?.tenantId, user?.employeeId]); // eslint-disable-line react-hooks/exhaustive-deps
   
   if (loading) {
     return (

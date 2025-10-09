@@ -175,11 +175,11 @@ const LeaveApprovals = () => {
   return (
     <div className="leave-approvals-section">
       <div className="card card-bordered">
-        <div className="card-inner">
+        <div className="card-inne">
           <div className="card-title-group align-start mb-3">
             <div className="card-title">
               <h6 className="title">
-                <i className="fas fa-clipboard-check mr-2"></i>
+                <i className="fas fa-clipboard-check mr-3"></i>
                 Leave Approvals
               </h6>
               <p className="text-soft">Review and approve leave requests from your team</p>

@@ -318,6 +318,34 @@ body.dark-mode .stat-icon-rejected {
   margin-top: 20px;
 }
 
+/* Individual Timesheet Card Styling */
+.timesheet-card {
+  background-color: var(--timesheet-card-bg, #ffffff);
+  border: 1px solid var(--timesheet-border, #d0d0d0);
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.timesheet-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  border-color: #3b82f6;
+}
+
+/* Dark mode for timesheet cards */
+body.dark-mode .timesheet-card {
+  background-color: var(--timesheet-card-bg, #1e293b);
+  border-color: var(--timesheet-border, #475569);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+body.dark-mode .timesheet-card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  border-color: #3b82f6;
+}
+
 /* Empty state styling */
 .empty-state {
   display: flex;
@@ -872,20 +900,40 @@ h6.section-title {
   transition: background-color 0.3s ease;
 }
 
-.approval-options {
+.approval-options { 
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 16px;
   margin-bottom: 20px;
+  border-radius: 8px;
 }
 
 .approval-op.timesheet-card {
   background-color: var(--timesheet-card-bg);
-  border-radius: 8px;
-  box-shadow: var(--timesheet-card-shadow);
+  border-radius: 12px;
+  border: 1px solid var(--timesheet-border, #656565);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   margin-bottom: 20px;
   overflow: hidden;
-  box-shadow: var(--timesheet-card-hover-shadow);
+  transition: all 0.3s ease;
+}
+
+.approval-op.timesheet-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  border-color: #3b82f6;
+}
+
+/* Dark mode for timesheet cards */
+body.dark-mode .approval-op.timesheet-card {
+  background-color: var(--timesheet-card-bg, #1e293b);
+  border-color: var(--timesheet-border, #334155);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+body.dark-mode .approval-op.timesheet-card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  border-color: #3b82f6;
 }
 
 .approval-option.selected {

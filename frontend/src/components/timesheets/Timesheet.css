@@ -1,5 +1,655 @@
 /* Timesheet component styles */
 
+/* AI Processing Card with Linear Progress */
+.ai-processing-card {
+  background: var(--card-bg, #ffffff);
+  border: 1px solid #bfbfbf;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+}
+
+.ai-processing-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ai-processing-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ai-processing-icon-wrapper {
+  flex-shrink: 0;
+}
+
+.ai-processing-icon-spin {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: spin 1s linear infinite;
+}
+
+.ai-processing-icon-spin em {
+  font-size: 20px;
+  color: white;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.ai-processing-text {
+  flex: 1;
+}
+
+.ai-processing-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary, #1a1a1a);
+}
+
+.ai-processing-subtitle {
+  margin: 4px 0 0 0;
+  font-size: 13px;
+  color: var(--text-secondary, #666);
+}
+
+.ai-processing-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.progress-bar-wrapper {
+  height: 6px;
+  background: var(--bg-secondary, #e9ecef);
+  border-radius: 10px;
+  overflow: hidden;
+  position: relative;
+}
+
+.progress-bar-animated {
+  height: 100%;
+  background: linear-gradient(90deg, #667eea 0%, #764ba2 50%, #667eea 100%);
+  background-size: 200% 100%;
+  animation: progressAnimation 1.5s ease-in-out infinite;
+  border-radius: 10px;
+}
+
+@keyframes progressAnimation {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.progress-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.progress-text {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary, #666);
+}
+
+.progress-formats {
+  display: flex;
+  gap: 6px;
+}
+
+.progress-formats em {
+  font-size: 14px;
+  color: #667eea;
+  opacity: 0.7;
+}
+
+/* Dark Theme for Processing Card */
+body.dark-mode .ai-processing-card {
+  background: var(--timesheet-card-bg, #1e293b);
+  border-color: #667eea;
+}
+
+body.dark-mode .ai-processing-title {
+  color: var(--text-primary, #f1f5f9);
+}
+
+body.dark-mode .ai-processing-subtitle {
+  color: var(--text-secondary, #94a3b8);
+}
+
+body.dark-mode .progress-bar-wrapper {
+  background: var(--bg-secondary, #0f172a);
+}
+
+body.dark-mode .progress-text {
+  color: var(--text-secondary, #94a3b8);
+}
+
+/* AI Extraction Result Card - Compact Design */
+.ai-extraction-result-card-compact {
+  background: var(--card-bg, #ffffff);
+  border: 1px solid rgb(205, 205, 205);
+  border-radius: 12px;
+  padding: 16px;
+  /* box-shadow: 0 4px 12px rgba(40, 167, 69, 0.15); */
+  transition: all 0.3s ease;
+}
+
+.ai-extraction-result-card-compact:hover {
+  box-shadow: 0 6px 16px rgba(40, 167, 69, 0.2);
+}
+
+.ai-result-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-color, #e0e0e0);
+}
+
+.ai-result-icon {
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, #285da7 0%, #3977e1 100%);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: white;
+  flex-shrink: 0;
+}
+
+.ai-result-info {
+  flex: 1;
+}
+
+.ai-result-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary, #1a1a1a);
+}
+
+.ai-result-subtitle {
+  margin: 2px 0 0 0;
+  font-size: 12px;
+  color: var(--text-secondary, #666);
+}
+
+.ai-result-stats {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.ai-stat-compact {
+  flex: 1;
+  background: var(--bg-secondary, #f8f9fa);
+  border-radius: 8px;
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--border-color, #e0e0e0);
+  transition: all 0.2s ease;
+}
+
+.ai-stat-compact:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.ai-stat-compact em {
+  font-size: 18px;
+  color: #667eea;
+  flex-shrink: 0;
+}
+
+.ai-stat-data {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.stat-label {
+  font-size: 10px;
+  color: var(--text-secondary, #666);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.stat-value {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary, #1a1a1a);
+  line-height: 1;
+}
+
+.ai-result-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: end;
+}
+
+.btn-apply-data,
+.btn-discard-data {
+  padding: 8px 20px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+  border: none;
+  cursor: pointer;
+  min-width: 120px;
+  max-width: 140px;
+}
+
+.btn-apply-data {
+  background: linear-gradient(135deg, #2861a7 0%, #2074c9 100%);
+  color: white;
+  box-shadow: 0 2px 6px rgba(40, 97, 167, 0.25);
+}
+
+.btn-apply-data:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px rgba(40, 97, 167, 0.35);
+}
+
+.btn-apply-data em {
+  font-size: 14px;
+}
+
+.btn-discard-data {
+  background: var(--card-bg, #ffffff);
+  color: #dc3545;
+  border: 1.5px solid #dc3545;
+}
+
+.btn-discard-data:hover {
+  background: #dc3545;
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(220, 53, 69, 0.25);
+}
+
+.btn-discard-data em {
+  font-size: 14px;
+}
+
+/* Dark Theme for Compact Card */
+body.dark-mode .ai-extraction-result-card-compact {
+  background: var(--timesheet-card-bg, #1e293b);
+  border-color: #9c9c9c;
+}
+
+body.dark-mode .ai-result-header {
+  border-bottom-color: var(--border-color, #334155);
+}
+
+body.dark-mode .ai-result-title {
+  color: var(--text-primary, #f1f5f9);
+}
+
+body.dark-mode .ai-result-subtitle {
+  color: var(--text-secondary, #94a3b8);
+}
+
+body.dark-mode .ai-stat-compact {
+  background: var(--bg-secondary, #0f172a);
+  border-color: var(--border-color, #334155);
+}
+
+body.dark-mode .stat-label {
+  color: var(--text-secondary, #94a3b8);
+}
+
+body.dark-mode .stat-value {
+  color: var(--text-primary, #f1f5f9);
+}
+
+body.dark-mode .btn-discard-data {
+  background: var(--timesheet-card-bg, #1e293b);
+  color: #dc3545;
+  border-color: #dc3545;
+}
+
+body.dark-mode .btn-discard-data:hover {
+  background: #dc3545;
+  color: white;
+}
+
+/* Responsive Design for Compact Card */
+@media (max-width: 768px) {
+  .ai-result-stats {
+    flex-direction: column;
+  }
+  
+  .ai-result-actions {
+    flex-direction: column;
+  }
+}
+
+/* Timesheet Action Buttons - Bottom of Form */
+.timesheet-action-buttons {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  align-items: center;
+  padding: 20px 0;
+}
+
+.btn-timesheet-save,
+.btn-timesheet-submit {
+  padding: 12px 32px;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+  border: none;
+  cursor: pointer;
+  min-width: 180px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.btn-timesheet-save {
+  background: var(--card-bg, #ffffff);
+  color: #6576ff;
+  border: 1px solid #6576ff;
+}
+
+.btn-timesheet-save:hover:not(:disabled) {
+  background: #6576ff;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(101, 118, 255, 0.3);
+}
+
+.btn-timesheet-save:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-timesheet-save em {
+  font-size: 18px;
+}
+
+.btn-timesheet-submit {
+  background: linear-gradient(135deg, #243091 0%, #17246d 100%);
+  color: white;
+  /* box-shadow: 0 4px 12px rgba(101, 118, 255, 0.3); */
+}
+
+.btn-timesheet-submit:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(101, 118, 255, 0.4);
+}
+
+.btn-timesheet-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-timesheet-submit em {
+  font-size: 18px;
+}
+
+/* Dark Theme for Action Buttons */
+body.dark-mode .btn-timesheet-save {
+  background: var(--timesheet-card-bg, #1e293b);
+  color: #6576ff;
+  border-color: #6576ff;
+}
+
+body.dark-mode .btn-timesheet-save:hover:not(:disabled) {
+  background: #6576ff;
+  color: white;
+}
+
+/* Responsive for Action Buttons */
+@media (max-width: 768px) {
+  .timesheet-action-buttons {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .btn-timesheet-save,
+  .btn-timesheet-submit {
+    width: 100%;
+    max-width: 300px;
+  }
+}
+
+.ai-extraction-header {
+  background: var(--card-bg, #ffffff);
+  border-radius: 14px 14px 0 0;
+  padding: 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.ai-extraction-icon {
+  width: 56px;
+  height: 56px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  color: white;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.ai-extraction-title h5 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary, #1a1a1a);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.ai-extraction-subtitle {
+  margin: 4px 0 0 0;
+  font-size: 14px;
+  color: var(--text-secondary, #666);
+}
+
+.ai-extraction-body {
+  background: var(--card-bg, #ffffff);
+  border-radius: 0 0 14px 14px;
+  padding: 24px;
+}
+
+.ai-extraction-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.ai-stat-item {
+  background: var(--bg-secondary, #f8f9fa);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: all 0.3s ease;
+  border: 1px solid var(--border-color, #e0e0e0);
+}
+
+.ai-stat-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border-color: #667eea;
+}
+
+.ai-stat-icon {
+  width: 44px;
+  height: 44px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  color: white;
+  flex-shrink: 0;
+}
+
+.ai-stat-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ai-stat-label {
+  font-size: 12px;
+  color: var(--text-secondary, #666);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.ai-stat-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary, #1a1a1a);
+  line-height: 1;
+}
+
+.ai-extraction-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.btn-ai-apply,
+.btn-ai-discard {
+  flex: 1;
+  max-width: 200px;
+  padding: 14px 24px;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-ai-apply {
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+}
+
+.btn-ai-apply:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+  background: linear-gradient(135deg, #20c997 0%, #28a745 100%);
+}
+
+.btn-ai-discard {
+  background: var(--card-bg, #ffffff);
+  color: var(--text-primary, #666);
+  border: 2px solid var(--border-color, #e0e0e0);
+}
+
+.btn-ai-discard:hover {
+  transform: translateY(-2px);
+  background: var(--bg-secondary, #f8f9fa);
+  border-color: #dc3545;
+  color: #dc3545;
+  box-shadow: 0 4px 12px rgba(220, 53, 69, 0.2);
+}
+
+/* Dark Theme Support for AI Extraction Card */
+body.dark-mode .ai-extraction-header,
+body.dark-mode .ai-extraction-body {
+  background: var(--timesheet-card-bg, #1e293b);
+}
+
+body.dark-mode .ai-extraction-title h5 {
+  color: var(--text-primary, #f1f5f9);
+}
+
+body.dark-mode .ai-extraction-subtitle {
+  color: var(--text-secondary, #94a3b8);
+}
+
+body.dark-mode .ai-stat-item {
+  background: var(--bg-secondary, #0f172a);
+  border-color: var(--border-color, #334155);
+}
+
+body.dark-mode .ai-stat-label {
+  color: var(--text-secondary, #94a3b8);
+}
+
+body.dark-mode .ai-stat-value {
+  color: var(--text-primary, #f1f5f9);
+}
+
+body.dark-mode .btn-ai-discard {
+  background: var(--timesheet-card-bg, #1e293b);
+  color: var(--text-primary, #f1f5f9);
+  border-color: var(--border-color, #334155);
+}
+
+body.dark-mode .btn-ai-discard:hover {
+  background: var(--bg-secondary, #0f172a);
+  border-color: #dc3545;
+}
+
+/* Responsive Design for AI Card */
+@media (max-width: 768px) {
+  .ai-extraction-stats {
+    grid-template-columns: 1fr;
+  }
+  
+  .ai-extraction-actions {
+    flex-direction: column;
+  }
+  
+  .btn-ai-apply,
+  .btn-ai-discard {
+    max-width: 100%;
+  }
+  
+  .ai-extraction-header {
+    flex-direction: column;
+    text-align: center;
+  }
+}
+
 /* AI-Powered Upload Section */
 .ai-upload-section {
   margin-bottom: 24px;

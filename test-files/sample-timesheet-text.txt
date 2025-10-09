@@ -1,0 +1,35 @@
+TIMESHEET SUBMISSION
+====================
+
+Employee Name: John Doe
+Employee ID: EMP12345
+Client: Cognizant Technology Solutions
+Project: Web Application Development
+Week Period: 06-JAN-2025 To 12-JAN-2025
+
+DAILY HOURS BREAKDOWN
+---------------------
+
+Day         Hours Worked
+Monday      8.0
+Tuesday     8.0
+Wednesday   7.5
+Thursday    8.0
+Friday      8.0
+Saturday    0.0
+Sunday      0.0
+
+SUMMARY
+-------
+Total Regular Hours: 39.5
+Overtime Hours: 0.0
+Holiday Hours: 0.0
+Time Off: 0.0
+
+NOTES
+-----
+Completed all assigned tasks for the week.
+Attended team meeting on Wednesday afternoon.
+
+Submitted By: John Doe
+Date: 12-JAN-2025

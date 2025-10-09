@@ -128,57 +128,90 @@ const extractFromWord = async (file, onProgress) => {
   onProgress?.({ status: 'processing', message: 'Converting Word document to text...', progress: 20 });
 
   try {
-    const mammoth = await import('mammoth');
-    const arrayBuffer = await file.arrayBuffer();
-    const { value: rawText } = await mammoth.extractRawText({ arrayBuffer });
+    // Try to use mammoth if available, otherwise fall back to basic text extraction
+    try {
+      const mammoth = await import('mammoth');
+      const arrayBuffer = await file.arrayBuffer();
+      const { value: rawText } = await mammoth.extractRawText({ arrayBuffer });
 
-    onProgress?.({ status: 'processing', message: 'Parsing extracted text...', progress: 60 });
+      onProgress?.({ status: 'processing', message: 'Parsing extracted text...', progress: 60 });
 
-    const parsedData = parseTimesheetText(rawText || '');
-    parsedData.source = 'word';
-    parsedData.fileName = file.name;
-    return parsedData;
+      const parsedData = parseTimesheetText(rawText || '');
+      parsedData.source = 'word';
+      parsedData.fileName = file.name;
+      return parsedData;
+    } catch (mammothError) {
+      console.warn('📝 Mammoth not available, using fallback method:', mammothError);
+      
+      // Fallback: Try to read as text (works for .doc sometimes)
+      const text = await file.text();
+      
+      onProgress?.({ status: 'processing', message: 'Parsing extracted text...', progress: 60 });
+      
+      const parsedData = parseTimesheetText(text || '');
+      parsedData.source = 'word';
+      parsedData.fileName = file.name;
+      parsedData.extractionMethod = 'fallback';
+      return parsedData;
+    }
   } catch (error) {
     console.error('📝 Word extraction failed:', error);
-    throw new Error(`Failed to extract text from Word document: ${error.message}`);
+    throw new Error(`Failed to extract text from Word document: ${error.message}. Please try converting to PDF or Excel format.`);
   }
 };
 
 /**
- * Extract data from Excel file
+ * Extract data from Excel file with enhanced error handling
  */
-const extractFromExcel = async (file) => {
+const extractFromExcel = async (file, onProgress) => {
   console.log('📊 Extracting from Excel file...');
+  
+  onProgress?.({ status: 'processing', message: 'Reading Excel file...', progress: 20 });
   
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     
     reader.onload = (e) => {
       try {
+        onProgress?.({ status: 'processing', message: 'Parsing Excel data...', progress: 50 });
+        
         const data = new Uint8Array(e.target.result);
-        const workbook = XLSX.read(data, { type: 'array' });
+        const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+        
+        if (!workbook || !workbook.SheetNames || workbook.SheetNames.length === 0) {
+          throw new Error('Excel file is empty or corrupted');
+        }
         
         // Get first sheet
         const firstSheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[firstSheetName];
         
-        // Convert to JSON
-        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+        // Convert to JSON with defval to handle empty cells
+        const jsonData = XLSX.utils.sheet_to_json(worksheet, { 
+          header: 1,
+          defval: '',
+          raw: false
+        });
         
-        console.log('📊 Excel data extracted:', jsonData);
+        console.log('📊 Excel data extracted, rows:', jsonData.length);
+        
+        onProgress?.({ status: 'processing', message: 'Extracting timesheet data...', progress: 70 });
         
         // Parse the Excel data
         const parsedData = parseExcelData(jsonData);
+        parsedData.fileName = file.name;
+        
+        onProgress?.({ status: 'processing', message: 'Finalizing extraction...', progress: 90 });
         
         resolve(parsedData);
       } catch (error) {
         console.error('❌ Excel parsing failed:', error);
-        reject(new Error('Failed to parse Excel file. Please ensure it follows the timesheet format.'));
+        reject(new Error(`Failed to parse Excel file: ${error.message}. Please ensure it follows the timesheet format.`));
       }
     };
     
     reader.onerror = () => {
-      reject(new Error('Failed to read Excel file'));
+      reject(new Error('Failed to read Excel file. The file may be corrupted.'));
     };
     
     reader.readAsArrayBuffer(file);
@@ -220,14 +253,18 @@ const extractFromPDF = async (file, onProgress) => {
 /**
  * Extract data from CSV file
  */
-const extractFromCSV = async (file) => {
+const extractFromCSV = async (file, onProgress) => {
   console.log('📋 Extracting from CSV file...');
+  
+  onProgress?.({ status: 'processing', message: 'Reading CSV file...', progress: 30 });
   
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     
     reader.onload = (e) => {
       try {
+        onProgress?.({ status: 'processing', message: 'Parsing CSV data...', progress: 60 });
+        
         const text = e.target.result;
         const lines = text.split('\n').filter(line => line.trim());
         
@@ -253,10 +290,14 @@ const extractFromCSV = async (file) => {
           return fields;
         });
         
-        console.log('📋 CSV data extracted:', data);
+        console.log('📋 CSV data extracted, rows:', data.length);
+        
+        onProgress?.({ status: 'processing', message: 'Extracting timesheet data...', progress: 80 });
         
         // Parse the CSV data
         const parsedData = parseExcelData(data); // Same parser as Excel
+        parsedData.fileName = file.name;
+        parsedData.source = 'csv';
         
         resolve(parsedData);
       } catch (error) {
@@ -356,20 +397,33 @@ const parseTimesheetText = (text = '') => {
     }
   }
 
-  // Extract client name
-  const clientLine = lines.find(line => /client\s*name|client:/i.test(line));
+  // Extract client name with enhanced patterns
+  const clientLine = lines.find(line => /client\s*name|client:|vendor\s*name|vendor:|company:/i.test(line));
   if (clientLine) {
-    const match = clientLine.match(/(?:client\s*name|client)[:\-\s]+(.+)/i);
+    const match = clientLine.match(/(?:client\s*name|client|vendor\s*name|vendor|company)[:\-\s]+(.+)/i);
     if (match) {
-      clientName = match[1].trim();
+      clientName = match[1].trim().replace(/[^\w\s-]/g, ''); // Remove special chars
     }
   }
+  
+  // Try to find client in common formats
   if (!clientName) {
-    const knownClient = normalizedText.match(/cognizant|jpmc|ibm|accenture|microsoft|google|amazon|tcs|infosys/i);
+    // Look for "For: ClientName" or "To: ClientName" patterns
+    const forMatch = normalizedText.match(/(?:for|to)[:\s]+([A-Z][A-Za-z\s&]+?)(?:\n|$|,)/i);
+    if (forMatch) {
+      clientName = forMatch[1].trim();
+    }
+  }
+  
+  // Fallback to known client names
+  if (!clientName) {
+    const knownClient = normalizedText.match(/cognizant|jpmc|ibm|accenture|microsoft|google|amazon|tcs|infosys|wipro|hcl/i);
     if (knownClient) {
       clientName = knownClient[0];
     }
   }
+  
+  console.log('📊 Extracted client name:', clientName);
 
   // Extract project name
   const projectLine = lines.find(line => /project\s*(name)?/i.test(line));
@@ -416,15 +470,33 @@ const parseTimesheetText = (text = '') => {
   const headerRegex = /sat\b.*sun\b.*mon\b.*tue\b.*wed\b.*thu\b.*fri\b/i;
   const headerIndex = lines.findIndex(line => headerRegex.test(line.toLowerCase()));
   if (headerIndex !== -1) {
+    console.log('📊 Found day header row at line:', headerIndex);
     const collected = [];
     let i = headerIndex + 1;
     while (i < lines.length && collected.length < 7) {
       const fragments = lines[i].split(/\s+/).filter(Boolean);
       collected.push(...fragments);
       i += 1;
+      if (i - headerIndex > 5) break; // Don't search too far
     }
+    console.log('📊 Collected values after header:', collected);
     if (collected.length >= 7) {
       assignHours(collected);
+    }
+  }
+  
+  // Try to find hours in a single line after days
+  if (Object.values(dailyHours).every(h => h === null)) {
+    const daysLine = lines.findIndex(line => 
+      /sat.*sun.*mon.*tue.*wed.*thu.*fri/i.test(line.toLowerCase())
+    );
+    if (daysLine !== -1 && daysLine + 1 < lines.length) {
+      const nextLine = lines[daysLine + 1];
+      const numbers = nextLine.match(/\d+(?:\.\d+)?/g);
+      if (numbers && numbers.length >= 7) {
+        console.log('📊 Found hours in single line:', numbers);
+        assignHours(numbers);
+      }
     }
   }
 
@@ -472,28 +544,42 @@ const parseTimesheetText = (text = '') => {
     }
   }
 
+  // Calculate total from daily hours
   totalHours = dayKeys.reduce((sum, key) => sum + (dailyHours[key] ?? 0), 0);
+  
+  console.log('📊 Daily hours before total check:', dailyHours);
+  console.log('📊 Calculated total hours:', totalHours);
 
+  // If no total calculated, try to find it in text
   if (totalHours === 0) {
     const totalMatch = normalizedText.match(/(?:total\s*hours?|grand\s*total)[^\d]*(\d+(?:\.\d+)?)/i) ||
                        normalizedText.match(/\b(\d+[.,]\d{2})\b(?!.+\d)/i);
     if (totalMatch) {
       const parsedTotal = parseHoursValue(totalMatch[1], { allowLarge: true });
       if (parsedTotal !== null) {
+        console.log('📊 Found total hours in text:', parsedTotal);
         totalHours = parsedTotal;
       }
     }
   }
 
-  if (totalHours > 0 && Object.values(dailyHours).every(hours => hours === 0)) {
+  // If we have a total but no daily breakdown, distribute evenly
+  if (totalHours > 0 && Object.values(dailyHours).every(hours => hours === null || hours === 0)) {
+    console.log('📊 Distributing total hours across work days');
     const workDays = ['mon', 'tue', 'wed', 'thu', 'fri'];
     const perDay = parseFloat((totalHours / workDays.length).toFixed(2));
     workDays.forEach(key => {
-      setDayHour(key, perDay);
+      dailyHours[key] = perDay;
     });
   }
 
   const resolvedDailyHours = dayKeys.reduce((acc, key) => ({ ...acc, [key]: dailyHours[key] ?? 0 }), {});
+  
+  // Recalculate total after resolution
+  totalHours = Object.values(resolvedDailyHours).reduce((sum, hours) => sum + hours, 0);
+  
+  console.log('📊 Final resolved daily hours:', resolvedDailyHours);
+  console.log('📊 Final total hours:', totalHours);
 
   const nonZeroDays = Object.values(resolvedDailyHours).filter(hours => hours > 0).length;
   let confidence = 0.2;
@@ -520,10 +606,8 @@ const parseTimesheetText = (text = '') => {
 };
 
 /**
- * Parse Excel/CSV data
- * Expected format:
- * Row 1: Headers (Day, Hours, etc.)
- * Subsequent rows: Data
+ * Parse Excel/CSV data with enhanced format detection
+ * Handles multiple timesheet formats
  */
 const parseExcelData = (data) => {
   const dailyHours = {
@@ -538,85 +622,161 @@ const parseExcelData = (data) => {
   
   let totalHours = 0;
   let employeeName = '';
+  let clientName = '';
+  let projectName = '';
   let weekStart = '';
   let weekEnd = '';
   
-  if (data.length === 0) {
-    throw new Error('Empty file');
+  if (!data || data.length === 0) {
+    throw new Error('Empty or invalid Excel file');
   }
   
-  // Find header row (usually first row)
-  const headers = data[0].map(h => String(h).toLowerCase().trim());
+  console.log('📊 Parsing Excel data, rows:', data.length);
   
-  // Find column indices
-  const dayCol = headers.findIndex(h => h.includes('day'));
-  const hoursCol = headers.findIndex(h => h.includes('hour'));
-  
-  // Map day names to keys
+  // Map day names to keys (more comprehensive)
   const dayMap = {
-    'monday': 'mon',
-    'mon': 'mon',
-    'tuesday': 'tue',
-    'tue': 'tue',
-    'wednesday': 'wed',
-    'wed': 'wed',
-    'thursday': 'thu',
-    'thu': 'thu',
-    'friday': 'fri',
-    'fri': 'fri',
-    'saturday': 'sat',
-    'sat': 'sat',
-    'sunday': 'sun',
-    'sun': 'sun'
+    'monday': 'mon', 'mon': 'mon', 'm': 'mon',
+    'tuesday': 'tue', 'tue': 'tue', 't': 'tue', 'tues': 'tue',
+    'wednesday': 'wed', 'wed': 'wed', 'w': 'wed',
+    'thursday': 'thu', 'thu': 'thu', 'th': 'thu', 'thur': 'thu', 'thurs': 'thu',
+    'friday': 'fri', 'fri': 'fri', 'f': 'fri',
+    'saturday': 'sat', 'sat': 'sat', 's': 'sat',
+    'sunday': 'sun', 'sun': 'sun', 'su': 'sun'
   };
   
-  // Process data rows
-  for (let i = 1; i < data.length; i++) {
+  // Search for employee name, client, project in entire sheet
+  for (let i = 0; i < Math.min(data.length, 20); i++) {
     const row = data[i];
+    if (!row || row.length === 0) continue;
     
-    if (row.length === 0) continue;
-    
-    // Extract day and hours
-    if (dayCol >= 0 && hoursCol >= 0) {
-      const dayName = String(row[dayCol]).toLowerCase().trim();
-      const hours = parseFloat(row[hoursCol]) || 0;
+    for (let j = 0; j < Math.min(row.length, 5); j++) {
+      const cell = String(row[j] || '').toLowerCase().trim();
+      const nextCell = row[j + 1] ? String(row[j + 1]).trim() : '';
       
-      const dayKey = dayMap[dayName];
-      if (dayKey) {
-        dailyHours[dayKey] = hours;
-        totalHours += hours;
+      if ((cell.includes('employee') || cell.includes('emp name')) && nextCell && !employeeName) {
+        employeeName = nextCell;
       }
-    } else {
-      // Try to parse without headers
-      // Assume format: Day, Hours
-      const dayName = String(row[0]).toLowerCase().trim();
-      const hours = parseFloat(row[1]) || 0;
-      
-      const dayKey = dayMap[dayName];
-      if (dayKey) {
-        dailyHours[dayKey] = hours;
-        totalHours += hours;
+      if ((cell.includes('client') || cell.includes('vendor')) && nextCell && !clientName) {
+        clientName = nextCell;
+      }
+      if (cell.includes('project') && nextCell && !projectName) {
+        projectName = nextCell;
+      }
+      if ((cell.includes('week') || cell.includes('period')) && nextCell) {
+        const dateMatch = nextCell.match(/(\d{1,2}[-/]\d{1,2}[-/]\d{2,4})/g);
+        if (dateMatch && dateMatch.length >= 2) {
+          weekStart = dateMatch[0];
+          weekEnd = dateMatch[1];
+        }
       }
     }
   }
   
-  // Look for employee name in first column
-  if (data.length > 0 && data[0][0]) {
-    const firstCell = String(data[0][0]).toLowerCase();
-    if (firstCell.includes('employee') || firstCell.includes('name')) {
-      employeeName = data[1] ? String(data[1][0]) : '';
+  // Find the row with day headers
+  let headerRowIndex = -1;
+  let dayColIndex = -1;
+  let hoursColIndex = -1;
+  
+  for (let i = 0; i < Math.min(data.length, 20); i++) {
+    const row = data[i];
+    if (!row || row.length === 0) continue;
+    
+    for (let j = 0; j < row.length; j++) {
+      const cell = String(row[j] || '').toLowerCase().trim();
+      
+      // Check if this row contains day headers
+      if (cell.includes('day') || cell === 'mon' || cell === 'monday') {
+        headerRowIndex = i;
+        dayColIndex = j;
+        
+        // Find hours column
+        for (let k = j + 1; k < row.length; k++) {
+          const headerCell = String(row[k] || '').toLowerCase().trim();
+          if (headerCell.includes('hour') || headerCell.includes('hrs')) {
+            hoursColIndex = k;
+            break;
+          }
+        }
+        
+        // If no hours column found, assume next column
+        if (hoursColIndex === -1 && j + 1 < row.length) {
+          hoursColIndex = j + 1;
+        }
+        break;
+      }
+    }
+    
+    if (headerRowIndex !== -1) break;
+  }
+  
+  console.log('📊 Found header row:', headerRowIndex, 'Day col:', dayColIndex, 'Hours col:', hoursColIndex);
+  
+  // Extract hours data
+  if (headerRowIndex !== -1 && dayColIndex !== -1 && hoursColIndex !== -1) {
+    // Process rows after header
+    for (let i = headerRowIndex + 1; i < data.length; i++) {
+      const row = data[i];
+      if (!row || row.length === 0) continue;
+      
+      const dayCell = String(row[dayColIndex] || '').toLowerCase().trim();
+      const hoursCell = row[hoursColIndex];
+      
+      // Skip empty or non-day rows
+      if (!dayCell) continue;
+      
+      const dayKey = dayMap[dayCell];
+      if (dayKey) {
+        const hours = parseFloat(hoursCell) || 0;
+        dailyHours[dayKey] = hours;
+        totalHours += hours;
+        console.log(`📊 Extracted ${dayKey}: ${hours} hours`);
+      }
+    }
+  } else {
+    // Fallback: Try to find days and hours in any format
+    console.log('📊 Using fallback parsing method');
+    
+    for (let i = 0; i < data.length; i++) {
+      const row = data[i];
+      if (!row || row.length < 2) continue;
+      
+      for (let j = 0; j < row.length - 1; j++) {
+        const cell = String(row[j] || '').toLowerCase().trim();
+        const dayKey = dayMap[cell];
+        
+        if (dayKey) {
+          const hours = parseFloat(row[j + 1]) || 0;
+          if (hours > 0 && hours <= 24) {
+            dailyHours[dayKey] = hours;
+            totalHours += hours;
+            console.log(`📊 Fallback extracted ${dayKey}: ${hours} hours`);
+          }
+        }
+      }
     }
   }
+  
+  // Calculate confidence
+  const nonZeroDays = Object.values(dailyHours).filter(h => h > 0).length;
+  let confidence = 0.5;
+  if (totalHours > 0) confidence += 0.3;
+  if (nonZeroDays >= 3) confidence += 0.1;
+  if (employeeName) confidence += 0.1;
+  
+  console.log('📊 Final extraction:', { totalHours, nonZeroDays, employeeName, confidence });
   
   return {
-    success: true,
+    success: totalHours > 0,
     dailyHours,
     totalHours,
     employeeName,
+    clientName,
+    projectName,
     weekStart,
     weekEnd,
     rawData: data,
-    confidence: totalHours > 0 ? 'high' : 'medium'
+    confidence: Math.min(confidence, 1),
+    source: 'excel'
   };
 };
 
@@ -625,6 +785,7 @@ const parseExcelData = (data) => {
  */
 const validateExtractedData = (data) => {
   const errors = [];
+  const warnings = [];
   
   if (!data.success) {
     errors.push('Data extraction failed');
@@ -639,7 +800,7 @@ const validateExtractedData = (data) => {
   }
   
   // Check individual days
-  for (const [day, hours] of Object.entries(data.dailyHours)) {
+  for (const [day, hours] of Object.entries(data.dailyHours || {})) {
     if (hours > 24) {
       errors.push(`${day.toUpperCase()} hours exceed 24 hours`);
     }
@@ -648,9 +809,23 @@ const validateExtractedData = (data) => {
     }
   }
   
+  // Add warnings for low confidence
+  if (data.confidence && data.confidence < 0.5) {
+    warnings.push('Low confidence extraction. Please verify the extracted data.');
+  }
+  
+  if (!data.employeeName) {
+    warnings.push('Employee name not found in document');
+  }
+  
+  if (!data.clientName) {
+    warnings.push('Client name not found in document');
+  }
+  
   return {
     isValid: errors.length === 0,
-    errors
+    errors,
+    warnings
   };
 };
 

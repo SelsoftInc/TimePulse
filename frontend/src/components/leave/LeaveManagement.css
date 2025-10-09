@@ -1,0 +1,277 @@
+/* Leave Management Component Styles */
+
+/* Ensure cards stay in single row on larger screens */
+.leave-management-cards {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+/* Row spacing for leave cards */
+.leave-cards-row {
+  margin-bottom: 24px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+/* Remove default Bootstrap padding for custom gap */
+.leave-cards-row > .col-lg-5,
+.leave-cards-row > .col-lg-7 {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+/* Leave Balance Card Styling */
+.leave-balance-item {
+  padding: 16px;
+  background: var(--bg-secondary, #f8f9fa);
+  border-radius: 8px;
+  border: 1px solid var(--border-color, #e0e0e0);
+  transition: all 0.3s ease;
+}
+
+.leave-balance-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border-color: #6576ff;
+}
+
+.leave-balance-title h6 {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary, #1a1a1a);
+  margin: 0;
+}
+
+.leave-balance-title .badge {
+  font-size: 11px;
+  padding: 4px 10px;
+  font-weight: 500;
+}
+
+/* Progress Bar Styling */
+.leave-balance-item .progress {
+  height: 8px;
+  border-radius: 10px;
+  background-color: var(--bg-tertiary, #e9ecef);
+  margin: 12px 0 8px 0;
+  overflow: hidden;
+}
+
+.leave-balance-item .progress-bar {
+  border-radius: 10px;
+  transition: width 0.6s ease;
+}
+
+/* Card Enhancements */
+.card.card-bordered {
+  border: 1px solid var(--border-color, #d0d0d0);
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  transition: all 0.3s ease;
+}
+
+.card.card-bordered:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  border-color: #6576ff;
+}
+
+.card-inner {
+  padding: 24px;
+}
+
+.card-title .title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary, #1a1a1a);
+  margin: 0;
+}
+
+/* Form Styling */
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary, #1a1a1a);
+  margin-bottom: 8px;
+  display: block;
+}
+
+.form-control,
+.form-select {
+  border: 1px solid var(--border-color, #d0d0d0);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+.form-control:focus,
+.form-select:focus {
+  border-color: #6576ff;
+  box-shadow: 0 0 0 3px rgba(101, 118, 255, 0.1);
+  outline: none;
+}
+
+/* Button Styling */
+.btn-primary {
+  background: linear-gradient(135deg, #6576ff 0%, #8c9eff 100%);
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 15px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(101, 118, 255, 0.3);
+}
+
+.btn-primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(101, 118, 255, 0.4);
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Dark Theme Support */
+body.dark-mode .leave-balance-item {
+  background: var(--bg-secondary, #0f172a);
+  border-color: var(--border-color, #334155);
+}
+
+body.dark-mode .leave-balance-title h6 {
+  color: var(--text-primary, #f1f5f9);
+}
+
+body.dark-mode .card.card-bordered {
+  background: var(--card-bg, #1e293b);
+  border-color: var(--border-color, #475569);
+}
+
+body.dark-mode .card-title .title {
+  color: var(--text-primary, #f1f5f9);
+}
+
+body.dark-mode .form-label {
+  color: var(--text-primary, #f1f5f9);
+}
+
+body.dark-mode .form-control,
+body.dark-mode .form-select {
+  background: var(--input-bg, #0f172a);
+  border-color: var(--border-color, #475569);
+  color: var(--text-primary, #f1f5f9);
+}
+
+body.dark-mode .leave-balance-item .progress {
+  background-color: var(--bg-tertiary, #334155);
+}
+
+/* Responsive Design */
+@media (min-width: 992px) {
+  /* On LG screens and above, ensure cards are side by side */
+  .leave-cards-row > .col-lg-5 {
+    flex: 0 0 calc(41.666667% - 10px);
+    max-width: calc(41.666667% - 10px);
+  }
+  
+  .leave-cards-row > .col-lg-7 {
+    flex: 0 0 calc(58.333333% - 10px);
+    max-width: calc(58.333333% - 10px);
+  }
+}
+
+@media (max-width: 991px) {
+  /* On screens smaller than LG, cards stack */
+  .leave-cards-row {
+    gap: 20px;
+  }
+  
+  .leave-cards-row > .col-lg-5,
+  .leave-cards-row > .col-lg-7 {
+    flex: 0 0 100%;
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .card-inner {
+    padding: 16px;
+  }
+  
+  .card-title .title {
+    font-size: 16px;
+  }
+  
+  .leave-balance-item {
+    padding: 12px;
+  }
+}
+
+/* Table Styling for Leave History */
+.table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.table thead th {
+  background: var(--bg-secondary, #f8f9fa);
+  border-bottom: 2px solid var(--border-color, #d0d0d0);
+  font-weight: 600;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 12px 16px;
+}
+
+.table tbody td {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border-color, #e0e0e0);
+  font-size: 14px;
+}
+
+.table tbody tr:hover {
+  background: var(--bg-secondary, #f8f9fa);
+}
+
+body.dark-mode .table thead th {
+  background: var(--bg-secondary, #0f172a);
+  border-bottom-color: var(--border-color, #334155);
+}
+
+body.dark-mode .table tbody td {
+  border-bottom-color: var(--border-color, #334155);
+}
+
+body.dark-mode .table tbody tr:hover {
+  background: var(--bg-secondary, #0f172a);
+}
+
+/* Badge Styling */
+.badge {
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.badge-warning {
+  background: rgba(255, 193, 7, 0.2);
+  color: #ff9800;
+}
+
+.badge-success {
+  background: rgba(76, 175, 80, 0.2);
+  color: #4caf50;
+}
+
+.badge-danger {
+  background: rgba(244, 67, 54, 0.2);
+  color: #f44336;
+}

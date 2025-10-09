@@ -12,6 +12,7 @@
     "axios": "^1.6.0",
     "file-saver": "^2.0.5",
     "libphonenumber-js": "^1.12.12",
+    "mammoth": "^1.11.0",
     "pdf-parse": "^2.2.2",
     "pdfjs-dist": "^3.11.174",
     "react": "^19.1.0",

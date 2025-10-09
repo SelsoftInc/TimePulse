@@ -125,12 +125,12 @@ const InvoiceSettings = () => {
       setInvoiceSettings(updatedSettings);
 
       toast.success("Your invoice settings have been saved.", {
-        title: "Invoice Settings Saved"
+        title: "Invoice Settings Saved",
       });
     } catch (error) {
       console.error("Error saving invoice settings:", error);
       toast.error("Please try again.", {
-        title: "Error Saving Settings"
+        title: "Error Saving Settings",
       });
     } finally {
       setLoading(false);

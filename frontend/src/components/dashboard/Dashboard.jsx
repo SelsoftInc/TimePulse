@@ -237,42 +237,13 @@ const TimesheetTable = ({ timesheetData, isEmployeeRole }) => {
               <div className="nk-tb-col nk-tb-col-tools">
                 <ul className="nk-tb-actions gx-1">
                   <li>
-                    <div className="dropdown">
-                      <button
-                        className="dropdown-toggle btn btn-icon btn-trigger"
-                        data-bs-toggle="dropdown"
-                      >
-                        <em className="icon ni ni-more-h"></em>
-                      </button>
-                      <div className="dropdown-menu dropdown-menu-end">
-                        <ul className="link-list-opt no-bdr">
-                          <li>
-                            <button className="dropdown-item">
-                              <em className="icon ni ni-eye"></em>
-                              <span>View Details</span>
-                            </button>
-                          </li>
-                          <li>
-                            <button className="dropdown-item">
-                              <em className="icon ni ni-edit"></em>
-                              <span>Edit</span>
-                            </button>
-                          </li>
-                          <li>
-                            <button className="dropdown-item">
-                              <em className="icon ni ni-check-circle"></em>
-                              <span>Approve</span>
-                            </button>
-                          </li>
-                          <li>
-                            <button className="dropdown-item">
-                              <em className="icon ni ni-na"></em>
-                              <span>Reject</span>
-                            </button>
-                          </li>
-                        </ul>
-                      </div>
-                    </div>
+                    <button 
+                      className="btn btn-icon btn-trigger"
+                      onClick={() => navigate(`/${subdomain}/timesheets/submit/${timesheet.id}`)}
+                      title="View Timesheet Details"
+                    >
+                      <em className="icon ni ni-eye"></em>
+                    </button>
                   </li>
                 </ul>
               </div>
@@ -469,30 +440,159 @@ const Dashboard = () => {
   const isEmployeeRole = currentEmployer?.role === "employee";
 
   // Dashboard stats
-  const dashStats = {
-    totalHours: isEmployeeRole ? "40.0" : "215.5",
-    hoursTrend: 2.5,
-    pendingCount: isEmployeeRole ? 1 : 5,
-    pendingTrend: -1.5,
-    approvedCount: isEmployeeRole ? 3 : 12,
-    approvedTrend: 3.2,
-    overdueCount: isEmployeeRole ? 0 : 1,
-    overdueTrend: -2.0,
-  };
+  const [dashStats, setDashStats] = useState({
+    totalHours: "0.0",
+    hoursTrend: 0,
+    pendingCount: 0,
+    pendingTrend: 0,
+    approvedCount: 0,
+    approvedTrend: 0,
+    overdueCount: 0,
+    overdueTrend: 0,
+    thisWeekHours: "0.0",
+    thisMonthHours: "0.0",
+  });
 
   // Filter timesheets based on role
   const [timesheetData, setTimesheetData] = useState([]);
 
   useEffect(() => {
-    const fetchEmployeesAndTimesheets = async () => {
+    const fetchDashboardData = async () => {
       try {
         const userInfo = JSON.parse(localStorage.getItem("user") || "{}");
+        console.log('👤 User Info from localStorage:', userInfo);
+        console.log('🔑 Employee ID:', userInfo.employeeId);
+        console.log('🏢 Tenant ID:', userInfo.tenantId);
+        
         if (!userInfo.tenantId) {
           console.error("No tenant information available");
           return;
         }
 
-        // Fetch current week's timesheets from backend (creates drafts if missing)
+        // Fetch dashboard data based on role
+        let dashboardResp;
+        if (isEmployeeRole && userInfo.employeeId) {
+          console.log('🌐 Fetching EMPLOYEE dashboard from API...');
+          dashboardResp = await fetch(
+            `http://localhost:5000/api/employee-dashboard?employeeId=${userInfo.employeeId}&tenantId=${userInfo.tenantId}`,
+            {
+              method: "GET",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${localStorage.getItem("token")}`,
+              },
+            }
+          );
+        } else {
+          // Admin/Manager role - fetch aggregated data
+          console.log('🌐 Fetching ADMIN dashboard from API...');
+          dashboardResp = await fetch(
+            `http://localhost:5000/api/employee-dashboard/admin?tenantId=${userInfo.tenantId}`,
+            {
+              method: "GET",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${localStorage.getItem("token")}`,
+              },
+            }
+          );
+        }
+        
+        if (dashboardResp) {
+
+          const dashboardData = await dashboardResp.json();
+          console.log('📊 Dashboard API Response:', dashboardData);
+          
+          if (dashboardData.success && dashboardData.data) {
+            const { data } = dashboardData;
+            console.log('✅ Dashboard Data:', data);
+            console.log('📈 Timesheets:', data.timesheets);
+            console.log('📋 Recent Timesheets:', data.timesheets.recent);
+            
+            // Update dashboard stats with real data from API
+            console.log('🔍 Raw API Data:', {
+              totalHoursAllTime: data.timesheets.totalHoursAllTime,
+              totalHoursThisMonth: data.timesheets.totalHoursThisMonth,
+              thisWeekHours: data.timesheets.thisWeekHours,
+              pending: data.timesheets.pending,
+              approved: data.timesheets.approved,
+              rejected: data.timesheets.rejected
+            });
+            
+            const totalHours = data.timesheets.totalHoursAllTime 
+              ? data.timesheets.totalHoursAllTime.toFixed(1) 
+              : "0.0";
+            const thisWeek = data.timesheets.thisWeekHours 
+              ? data.timesheets.thisWeekHours.toFixed(1) 
+              : "0.0";
+            const thisMonth = data.timesheets.totalHoursThisMonth 
+              ? data.timesheets.totalHoursThisMonth.toFixed(1) 
+              : "0.0";
+            
+            console.log('📊 Calculated Values:', { totalHours, thisWeek, thisMonth });
+            
+            setDashStats({
+              totalHours: totalHours,
+              hoursTrend: 2.5,
+              pendingCount: data.timesheets.pending || 0,
+              pendingTrend: -1.5,
+              approvedCount: data.timesheets.approved || 0,
+              approvedTrend: 3.2,
+              overdueCount: data.timesheets.rejected || 0,
+              overdueTrend: -2.0,
+              thisWeekHours: thisWeek,
+              thisMonthHours: thisMonth,
+            });
+            console.log('📊 Stats Updated:', {
+              totalHours,
+              thisWeek,
+              thisMonth,
+              pending: data.timesheets.pending,
+              approved: data.timesheets.approved,
+              rejected: data.timesheets.rejected
+            });
+
+            // Transform recent timesheets for display
+            if (data.timesheets.recent && data.timesheets.recent.length > 0) {
+              const transformedTimesheets = data.timesheets.recent.map(ts => {
+                // For admin, use employee data from API; for employee, use current user
+                const employeeName = isEmployeeRole 
+                  ? `${userInfo.firstName || ''} ${userInfo.lastName || ''}`.trim()
+                  : ts.employeeName || 'Unknown';
+                const employeeInitials = isEmployeeRole
+                  ? `${userInfo.firstName?.[0] || 'E'}${userInfo.lastName?.[0] || 'E'}`
+                  : employeeName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+                
+                return {
+                  id: ts.id,
+                  employee: {
+                    name: employeeName,
+                    initials: employeeInitials,
+                    // role: 'Employee'
+                  },
+                  project: ts.projectName || 'N/A',
+                  client: ts.clientName || 'N/A',
+                  week: new Date(ts.weekStartDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+                  hours: parseFloat(ts.totalHours) || 0,
+                  status: {
+                    label: ts.status === 'submitted' ? 'Pending' : ts.status.charAt(0).toUpperCase() + ts.status.slice(1),
+                    color: ts.status === 'approved' ? 'success' : ts.status === 'submitted' ? 'warning' : ts.status === 'rejected' ? 'danger' : 'info'
+                  }
+                };
+              });
+              console.log('✅ Transformed Timesheets:', transformedTimesheets);
+              setTimesheetData(transformedTimesheets);
+            } else {
+              console.warn('⚠️ No recent timesheets in response');
+              setTimesheetData([]);
+            }
+            return;
+          } else {
+            console.error('❌ API returned unsuccessful response:', dashboardData);
+          }
+        }
+
+        // Fallback: Fetch current week's timesheets from backend
         const resp = await fetch(
           `http://localhost:5000/api/timesheets/current?tenantId=${userInfo.tenantId}`,
           {
@@ -526,11 +626,11 @@ const Dashboard = () => {
           console.error("Failed to fetch timesheets:", data.error || data);
         }
       } catch (error) {
-        console.error("Error fetching timesheets:", error);
+        console.error("Error fetching dashboard data:", error);
       }
     };
 
-    fetchEmployeesAndTimesheets();
+    fetchDashboardData();
   }, [isEmployeeRole]);
 
   // Sample invoice data
@@ -633,7 +733,7 @@ const Dashboard = () => {
                               <h6 className="nk-block-head-content fw-semibold mb-0 fs-7">This Week</h6>
                             </div>
                             <div className="amount h4 mb-0 text-success fw-bold">
-                              42.5 <span className="fs-7 fw-normal">hrs</span>
+                              {dashStats.thisWeekHours} <span className="fs-7 fw-normal">hrs</span>
                             </div>
                           </div>
                         </div>
@@ -648,7 +748,7 @@ const Dashboard = () => {
                               <h6 className="nk-block-head-content fw-semibold mb-0 fs-7">This Month</h6>
                             </div>
                             <div className="amount h4 mb-0 text-info fw-bold">
-                              168.0 <span className="fs-7 fw-normal">hrs</span>
+                              {dashStats.thisMonthHours} <span className="fs-7 fw-normal">hrs</span>
                             </div>
                           </div>
                         </div>
@@ -663,7 +763,7 @@ const Dashboard = () => {
                               <h6 className="nk-block-head-content fw-semibold mb-0 fs-7">Pending</h6>
                             </div>
                             <div className="amount h4 mb-0 text-warning fw-bold">
-                              2 <span className="fs-7 fw-normal">items</span>
+                              {dashStats.pendingCount} <span className="fs-7 fw-normal">items</span>
                             </div>
                           </div>
                         </div>
@@ -678,7 +778,7 @@ const Dashboard = () => {
                               <h6 className="nk-block-head-content fw-semibold mb-0 fs-7">Approved</h6>
                             </div>
                             <div className="amount h4 mb-0 text-success fw-bold">
-                              5 <span className="fs-7 fw-normal">items</span>
+                              {dashStats.approvedCount} <span className="fs-7 fw-normal">items</span>
                             </div>
                           </div>
                         </div>

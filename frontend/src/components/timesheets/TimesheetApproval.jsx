@@ -130,9 +130,11 @@ const TimesheetApproval = () => {
   };
 
   useEffect(() => {
-    loadPendingTimesheets();
+    if (user?.tenantId) {
+      loadPendingTimesheets();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [user?.tenantId]);
 
   const handleApproval = async (timesheetId, action, comments = "") => {
     setProcessingId(timesheetId);

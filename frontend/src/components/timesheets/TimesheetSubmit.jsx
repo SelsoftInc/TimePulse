@@ -342,9 +342,59 @@ const TimesheetSubmit = () => {
 
         // If weekId is provided, load existing timesheet data from API
         if (weekId) {
-          // TODO: Fetch actual timesheet data from API
-          setWeek(weekId);
-          setIsReadOnly(true);
+          try {
+            console.log('🔍 Loading timesheet by ID:', weekId);
+            const response = await axios.get(`${API_BASE}/api/timesheets/${weekId}`, {
+              params: { tenantId }
+            });
+            
+            if (response.data.success && response.data.timesheet) {
+              const ts = response.data.timesheet;
+              console.log('✅ Loaded timesheet:', ts);
+              
+              // Set week range
+              const weekRange = `${new Date(ts.weekStart).toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' })} To ${new Date(ts.weekEnd).toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' })}`;
+              setWeek(weekRange);
+              setSelectedWeek(weekRange);
+              
+              // Set read-only based on status
+              setIsReadOnly(ts.status === 'approved' || ts.status === 'rejected');
+              
+              // Set notes
+              if (ts.notes) setNotes(ts.notes);
+              
+              // Load daily hours if available
+              if (ts.dailyHours) {
+                // Parse dailyHours and populate clientHours
+                const parsedHours = typeof ts.dailyHours === 'string' 
+                  ? JSON.parse(ts.dailyHours) 
+                  : ts.dailyHours;
+                
+                // Update client hours with loaded data
+                if (clientHours.length > 0) {
+                  const updatedClientHours = clientHours.map(client => {
+                    const clientKey = Object.keys(parsedHours).find(key => 
+                      key.includes(client.clientName) || parsedHours[key].clientId === client.id
+                    );
+                    if (clientKey && parsedHours[clientKey]) {
+                      return {
+                        ...client,
+                        hours: parsedHours[clientKey].hours || Array(7).fill(0)
+                      };
+                    }
+                    return client;
+                  });
+                  setClientHours(updatedClientHours);
+                }
+              }
+            } else {
+              console.error('❌ Failed to load timesheet');
+              setError('Failed to load timesheet data');
+            }
+          } catch (error) {
+            console.error('❌ Error loading timesheet:', error);
+            setError('Failed to load timesheet data');
+          }
         } else {
           // Find and set current week from available weeks
           const currentWeek = mockAvailableWeeks.find((week) => {
@@ -1313,7 +1363,7 @@ const TimesheetSubmit = () => {
                     {clientType === "external" && (
                       <div className="form-group mb-4">
                         <div className="card card-bordered">
-                          <div className="card-inner">
+                          <div className="card-inne">
                             <h6 className="card-title mb-3">
                               <em className="icon ni ni-upload text-primary me-2"></em>
                               Upload Client Submitted Timesheet

@@ -26,6 +26,10 @@ const TimesheetSummary = () => {
   const [generatingInvoice, setGeneratingInvoice] = useState(false);
   const [invoiceSuccess, setInvoiceSuccess] = useState("");
   const [invoiceError, setInvoiceError] = useState("");
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
 
   useEffect(() => {
     if (user?.tenantId) {
@@ -259,6 +263,21 @@ const TimesheetSummary = () => {
       defaultValue: { from: "", to: "" },
     },
   ];
+
+  // Calculate pagination
+  const totalPages = Math.ceil(filteredTimesheets.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedTimesheets = filteredTimesheets.slice(startIndex, endIndex);
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filters]);
 
   const getStatusBadge = (status) => {
     switch (status.toLowerCase()) {
@@ -627,7 +646,7 @@ const TimesheetSummary = () => {
                         </tr>
                       </thead>
                       <tbody>
-                        {filteredTimesheets.map((timesheet) => (
+                        {paginatedTimesheets.map((timesheet) => (
                           <tr key={timesheet.id} className="timesheet-row">
                             <td>
                               <div className="timesheet-week">
@@ -711,6 +730,47 @@ const TimesheetSummary = () => {
                     </table>
                   </div>
                 </div>
+
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <div className="card-inner border-top">
+                    <div className="d-flex justify-content-between align-items-center">
+                      <div className="text-muted">
+                        Showing {startIndex + 1} to {Math.min(endIndex, filteredTimesheets.length)} of {filteredTimesheets.length} entries
+                      </div>
+                      <ul className="pagination pagination-sm">
+                        <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
+                          <button 
+                            className="page-link" 
+                            onClick={() => handlePageChange(currentPage - 1)}
+                            disabled={currentPage === 1}
+                          >
+                            <em className="icon ni ni-chevron-left"></em>
+                          </button>
+                        </li>
+                        {[...Array(totalPages)].map((_, i) => (
+                          <li key={i} className={`page-item ${currentPage === i + 1 ? 'active' : ''}`}>
+                            <button 
+                              className="page-link" 
+                              onClick={() => handlePageChange(i + 1)}
+                            >
+                              {i + 1}
+                            </button>
+                          </li>
+                        ))}
+                        <li className={`page-item ${currentPage === totalPages ? 'disabled' : ''}`}>
+                          <button 
+                            className="page-link" 
+                            onClick={() => handlePageChange(currentPage + 1)}
+                            disabled={currentPage === totalPages}
+                          >
+                            <em className="icon ni ni-chevron-right"></em>
+                          </button>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>

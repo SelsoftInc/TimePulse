@@ -46,6 +46,7 @@ const TimesheetSubmit = () => {
   const [aiProcessing, setAiProcessing] = useState(false);
   const [aiProcessedData, setAiProcessedData] = useState(null);
   const [showAiUpload, setShowAiUpload] = useState(false);
+  const [uploadedAiFile, setUploadedAiFile] = useState(null);
 
   // Auto-conversion state
   const [autoConvertToInvoice, setAutoConvertToInvoice] = useState(true);
@@ -66,41 +67,8 @@ const TimesheetSubmit = () => {
 
   // Function to determine current client type based on clients with hours
   const getCurrentClientType = () => {
-    // If no clients loaded yet, default to internal
-    if (clientHours.length === 0) {
-      return "internal";
-    }
-
-    const clientsWithHours = clientHours.filter((client) =>
-      client.hours.some((hour) => hour > 0)
-    );
-
-    if (clientsWithHours.length === 0) {
-      // Default to internal if no hours entered yet
-      // Check the first client's type
-      const firstClientType = clientHours[0]?.clientType || "internal";
-      console.log(
-        "🔍 No hours entered yet, using first client type:",
-        firstClientType
-      );
-      return firstClientType;
-    }
-
-    // Check if any client with hours is external
-    const hasExternalClient = clientsWithHours.some(
-      (client) => client.clientType === "external"
-    );
-
-    console.log("🔍 Client type detection:", {
-      clientsWithHours: clientsWithHours.length,
-      hasExternalClient,
-      clientTypes: clientsWithHours.map((c) => c.clientType),
-    });
-
-    if (hasExternalClient) {
-      return "external";
-    }
-
+    // Always show internal form (full timesheet table) for all users
+    // This ensures consistent UI across all employees
     return "internal";
   };
 
@@ -933,6 +901,7 @@ const TimesheetSubmit = () => {
 
     setError("");
     setAiProcessing(true);
+    setUploadedAiFile(file); // Store the uploaded file
 
     try {
       // Simulate AI processing
@@ -1145,6 +1114,17 @@ const TimesheetSubmit = () => {
     setAiProcessedData(null);
     setShowAiUpload(false);
     setSuccess("");
+  };
+
+  const removeUploadedAiFile = () => {
+    setUploadedAiFile(null);
+    setAiProcessedData(null);
+    setAiProcessing(false);
+    // Reset file input
+    const fileInput = document.getElementById("aiFileUpload");
+    if (fileInput) {
+      fileInput.value = "";
+    }
   };
 
   const handleExternalTimesheetUpload = (e) => {
@@ -1484,7 +1464,7 @@ const TimesheetSubmit = () => {
                               </div>
                             )}
 
-                            {showAiUpload && !aiProcessing && (
+                            {showAiUpload && !aiProcessing && !uploadedAiFile && (
                               <>
                                 <div
                                   className="ai-upload-dropzone"
@@ -1541,29 +1521,47 @@ const TimesheetSubmit = () => {
                                     (!isEmployee() && !selectedEmployee)
                                   }
                                 />
-
-                                <div className="ai-upload-toggle-section">
-                                  <div
-                                    className={`ai-upload-toggle-switch ${
-                                      showAiUpload ? "on" : "off"
-                                    }`}
-                                  >
-                                    <div className="ai-upload-toggle-slider"></div>
-                                  </div>
-                                  <div>
-                                    <div className="ai-upload-toggle-label">
-                                      <i className="fa fa-robot"></i>
-                                      Auto-convert timesheet to invoice using AI
-                                    </div>
-                                    <div className="ai-upload-toggle-description">
-                                      When enabled, uploaded timesheet images
-                                      will be automatically processed and
-                                      converted to invoice format
-                                    </div>
-                                  </div>
-                                </div>
                               </>
                             )}
+
+                            {/* Show uploaded file */}
+                            {uploadedAiFile && !aiProcessing && !aiProcessedData && (
+                              <div className="uploaded-file-preview mt-3">
+                                <div className="d-flex align-items-center justify-content-between p-3 border rounded bg-light">
+                                  <div className="d-flex align-items-center">
+                                    <em className="icon ni ni-file-docs text-primary me-3 fs-3"></em>
+                                    <div>
+                                      <div className="fw-bold text-dark">{uploadedAiFile.name}</div>
+                                      <small className="text-muted">
+                                        {(uploadedAiFile.size / 1024).toFixed(2)} KB
+                                      </small>
+                                    </div>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    className="btn btn-sm btn-icon btn-outline-danger"
+                                    onClick={removeUploadedAiFile}
+                                    title="Remove file"
+                                  >
+                                    <em className="icon ni ni-trash"></em>
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+
+                            <input
+                              type="file"
+                              id="aiFileUpload"
+                              style={{ display: "none" }}
+                              accept=".jpg,.jpeg,.png,.heic,.webp,.bmp,.pdf,.xlsx,.xls,.csv,.doc,.docx"
+                              onChange={handleAiFileUpload}
+                              disabled={
+                                aiProcessing ||
+                                isReadOnly ||
+                                (!isEmployee() && !selectedEmployee)
+                              }
+                            />
+
 
                             {aiProcessing && (
                               <div className="ai-processing-card mt-3">

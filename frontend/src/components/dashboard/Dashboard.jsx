@@ -10,6 +10,16 @@ const DashCards = ({ stats }) => {
     if (value >= 40) return 'orange';
     return 'red';
   };
+
+  // Calculate dynamic percentages for progress bars
+  const calculatePercentage = (value, max) => {
+    if (!max || max === 0) return 0;
+    return Math.min((value / max) * 100, 100);
+  };
+
+  // Get max values for normalization - use total timesheets as baseline
+  const totalTimesheets = stats.pendingCount + stats.approvedCount + stats.overdueCount;
+  const maxTimesheets = totalTimesheets || 1;
   return (
     <div className="row">
       <div className="col-xxl-3 col-sm-6">
@@ -28,15 +38,18 @@ const DashCards = ({ stats }) => {
                     <div className="chart-bar-background">
                       <div
                         className="chart-bar-fill"
-                        style={{ width: "80%", backgroundColor: getBarColor('80') }}
+                        style={{ 
+                          width: '100%', 
+                          backgroundColor: getBarColor(100) 
+                        }}
                       ></div>
                     </div>
                   </div>
                 </div>
                 <div className="info">
-                  <span className="change up text-success">
-                    <em className="icon ni ni-arrow-long-up"></em>
-                    {stats.hoursTrend}%
+                  <span className={`change ${stats.hoursTrend >= 0 ? 'up text-success' : 'down text-danger'}`}>
+                    <em className={`icon ni ni-arrow-long-${stats.hoursTrend >= 0 ? 'up' : 'down'}`}></em>
+                    {Math.abs(stats.hoursTrend)}%
                   </span>
                   <span> vs. last week</span>
                 </div>
@@ -61,15 +74,18 @@ const DashCards = ({ stats }) => {
                     <div className="chart-bar-background">
                       <div
                         className="chart-bar-fill"
-                        style={{ width: "30%", backgroundColor: getBarColor('30') }}
+                        style={{ 
+                          width: `${calculatePercentage(stats.pendingCount, maxTimesheets)}%`, 
+                          backgroundColor: getBarColor(calculatePercentage(stats.pendingCount, maxTimesheets)) 
+                        }}
                       ></div>
                     </div>
                   </div>
                 </div>
                 <div className="info">
-                  <span className="change down text-danger">
-                    <em className="icon ni ni-arrow-long-down"></em>
-                    {stats.pendingTrend}%
+                  <span className={`change ${stats.pendingTrend >= 0 ? 'up text-danger' : 'down text-success'}`}>
+                    <em className={`icon ni ni-arrow-long-${stats.pendingTrend >= 0 ? 'up' : 'down'}`}></em>
+                    {Math.abs(stats.pendingTrend)}%
                   </span>
                   <span> vs. last week</span>
                 </div>
@@ -94,15 +110,18 @@ const DashCards = ({ stats }) => {
                     <div className="chart-bar-background">
                       <div
                         className="chart-bar-fill"
-                        style={{ width: "60%", backgroundColor: getBarColor('60') }}
+                        style={{ 
+                          width: `${calculatePercentage(stats.approvedCount, maxTimesheets)}%`, 
+                          backgroundColor: getBarColor(calculatePercentage(stats.approvedCount, maxTimesheets)) 
+                        }}
                       ></div>
                     </div>
                   </div>
                 </div>
                 <div className="info">
-                  <span className="change up text-success">
-                    <em className="icon ni ni-arrow-long-up"></em>
-                    {stats.approvedTrend}%
+                  <span className={`change ${stats.approvedTrend >= 0 ? 'up text-success' : 'down text-danger'}`}>
+                    <em className={`icon ni ni-arrow-long-${stats.approvedTrend >= 0 ? 'up' : 'down'}`}></em>
+                    {Math.abs(stats.approvedTrend)}%
                   </span>
                   <span> vs. last week</span>
                 </div>
@@ -127,15 +146,18 @@ const DashCards = ({ stats }) => {
                     <div className="chart-bar-background">
                       <div
                         className="chart-bar-fill"
-                        style={{ width: "15%", backgroundColor: getBarColor('15') }}
+                        style={{ 
+                          width: `${calculatePercentage(stats.overdueCount, maxTimesheets)}%`, 
+                          backgroundColor: getBarColor(calculatePercentage(stats.overdueCount, maxTimesheets)) 
+                        }}
                       ></div>
                     </div>
                   </div>
                 </div>
                 <div className="info">
-                  <span className="change down text-danger">
-                    <em className="icon ni ni-arrow-long-down"></em>
-                    {stats.overdueTrend}%
+                  <span className={`change ${stats.overdueTrend >= 0 ? 'up text-danger' : 'down text-success'}`}>
+                    <em className={`icon ni ni-arrow-long-${stats.overdueTrend >= 0 ? 'up' : 'down'}`}></em>
+                    {Math.abs(stats.overdueTrend)}%
                   </span>
                   <span> vs. last week</span>
                 </div>
@@ -151,9 +173,21 @@ const DashCards = ({ stats }) => {
 const TimesheetTable = ({ timesheetData, isEmployeeRole }) => {
   const { subdomain } = useParams();
   const navigate = useNavigate();
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
+
+  // Calculate pagination
+  const totalPages = Math.ceil(timesheetData.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentData = timesheetData.slice(startIndex, endIndex);
 
   const handleAddTimesheet = () => {
     navigate(`/${subdomain}/timesheets/submit`);
+  };
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
   };
   return (
     <div className="card card-bordered card-full">
@@ -199,7 +233,7 @@ const TimesheetTable = ({ timesheetData, isEmployeeRole }) => {
             <div className="nk-tb-col nk-tb-col-tools"></div>
           </div>
 
-          {timesheetData.map((timesheet, index) => (
+          {currentData.map((timesheet, index) => (
             <div key={index} className="nk-tb-item">
               {!isEmployeeRole && (
                 <div className="nk-tb-col">
@@ -251,6 +285,47 @@ const TimesheetTable = ({ timesheetData, isEmployeeRole }) => {
           ))}
         </div>
       </div>
+      
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="card-inner">
+          <div className="d-flex justify-content-between align-items-center">
+            <div className="text-muted">
+              Showing {startIndex + 1} to {Math.min(endIndex, timesheetData.length)} of {timesheetData.length} entries
+            </div>
+            <ul className="pagination pagination-sm">
+              <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
+                <button 
+                  className="page-link" 
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                >
+                  <em className="icon ni ni-chevron-left"></em>
+                </button>
+              </li>
+              {[...Array(totalPages)].map((_, i) => (
+                <li key={i} className={`page-item ${currentPage === i + 1 ? 'active' : ''}`}>
+                  <button 
+                    className="page-link" 
+                    onClick={() => handlePageChange(i + 1)}
+                  >
+                    {i + 1}
+                  </button>
+                </li>
+              ))}
+              <li className={`page-item ${currentPage === totalPages ? 'disabled' : ''}`}>
+                <button 
+                  className="page-link" 
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                >
+                  <em className="icon ni ni-chevron-right"></em>
+                </button>
+              </li>
+            </ul>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -535,7 +610,7 @@ const Dashboard = () => {
               totalHours: totalHours,
               hoursTrend: 2.5,
               pendingCount: data.timesheets.pending || 0,
-              pendingTrend: -1.5,
+              pendingTrend: -1.2,
               approvedCount: data.timesheets.approved || 0,
               approvedTrend: 3.2,
               overdueCount: data.timesheets.rejected || 0,

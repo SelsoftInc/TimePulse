@@ -84,8 +84,8 @@ const VendorDetail = () => {
   }
 
   return (
-    <div className="nk-content">
-      <div className="container-fluid">
+    <div className="nk-conten">
+      <div className="container-flui">
         <div className="nk-block-head">
           <div className="nk-block-between">
             <div className="nk-block-head-content">
@@ -109,7 +109,7 @@ const VendorDetail = () => {
           <div className="card card-bordered">
             <div className="card-aside-wrap">
               <div className="card-content">
-                <div className="card-inner">
+                <div className="card-inne">
                   <div className="nk-block">
                     <div className="nk-block-head">
                       <h5 className="title">Vendor Information</h5>
@@ -277,7 +277,7 @@ const VendorDetail = () => {
                       <h5 className="title">Notes</h5>
                     </div>
                     <div className="card card-bordered">
-                      <div className="card-inner">
+                      <div className="card-inne">
                         <p>{vendor.notes || 'No notes available.'}</p>
                       </div>
                     </div>

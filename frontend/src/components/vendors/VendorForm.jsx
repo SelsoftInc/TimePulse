@@ -200,7 +200,7 @@ const VendorForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
             <div className="nk-block-between">
               <div className="nk-block-head-content">
                 <h3 className="nk-block-title">Add New Vendor</h3>
-                <p className="nk-block-subtitle">Create a new vendor record</p>
+                {/* <p className="nk-block-subtitle">Create a new vendor record</p> */}
               </div>
             </div>
           </div>

@@ -21,6 +21,10 @@ const EmployeeList = () => {
     search: ''
   });
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
+
   // Modal state for assigning client
   const [assignModalOpen, setAssignModalOpen] = useState(false);
   const [assignTarget, setAssignTarget] = useState(null); // employee object
@@ -426,6 +430,17 @@ const EmployeeList = () => {
     return true;
   });
 
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredEmployees.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedEmployees = filteredEmployees.slice(startIndex, endIndex);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filters]);
+
   // Handle filter changes
   const handleFilterChange = (filterKey, value) => {
     setFilters(prev => ({
@@ -544,7 +559,7 @@ const EmployeeList = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredEmployees.map(employee => (
+                    {paginatedEmployees.map(employee => (
                       <tr key={employee.id}>
                         <td>
                           <Link to={`/${subdomain}/employees/${employee.id}`} className="employee-name fw-medium">
@@ -632,6 +647,49 @@ const EmployeeList = () => {
                     ))}
                   </tbody>
                 </table>
+
+                {/* Pagination Controls */}
+                {filteredEmployees.length > itemsPerPage && (
+                  <div className="card-inner">
+                    <div className="d-flex justify-content-between align-items-center">
+                      <div className="text-muted">
+                        Showing {startIndex + 1} to {Math.min(endIndex, filteredEmployees.length)} of {filteredEmployees.length} employees
+                      </div>
+                      <nav>
+                        <ul className="pagination pagination-sm mb-0">
+                          <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
+                            <button 
+                              className="page-link" 
+                              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                              disabled={currentPage === 1}
+                            >
+                              Previous
+                            </button>
+                          </li>
+                          {[...Array(totalPages)].map((_, index) => (
+                            <li key={index + 1} className={`page-item ${currentPage === index + 1 ? 'active' : ''}`}>
+                              <button 
+                                className="page-link" 
+                                onClick={() => setCurrentPage(index + 1)}
+                              >
+                                {index + 1}
+                              </button>
+                            </li>
+                          ))}
+                          <li className={`page-item ${currentPage === totalPages ? 'disabled' : ''}`}>
+                            <button 
+                              className="page-link" 
+                              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                              disabled={currentPage === totalPages}
+                            >
+                              Next
+                            </button>
+                          </li>
+                        </ul>
+                      </nav>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}

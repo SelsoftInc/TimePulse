@@ -52,16 +52,43 @@
 
 /* Progress Bar Styling */
 .leave-balance-item .progress {
-  height: 8px;
+  height: 10px;
   border-radius: 10px;
-  background-color: var(--bg-tertiary, #e9ecef);
+  background-color: #e9ecef;
   margin: 12px 0 8px 0;
-  overflow: hidden;
+  overflow: visible;
+  display: flex;
+  position: relative;
 }
 
 .leave-balance-item .progress-bar {
   border-radius: 10px;
   transition: width 0.6s ease;
+  position: relative;
+}
+
+/* Specific colors for each leave type */
+.leave-balance-item .progress-bar.bg-primary {
+  background: linear-gradient(90deg, #6576ff 0%, #8c9eff 100%) !important;
+}
+
+.leave-balance-item .progress-bar.bg-warning {
+  background: linear-gradient(90deg, #ffc107 0%, #ffdb4d 100%) !important;
+}
+
+/* Vacation leave - Purple/Blue */
+.leave-balance-item:nth-child(1) .progress-bar.bg-primary {
+  background: linear-gradient(90deg, #6576ff 0%, #8c9eff 100%) !important;
+}
+
+/* Sick leave - Pink/Red */
+.leave-balance-item:nth-child(2) .progress-bar.bg-primary {
+  background: linear-gradient(90deg, #ff6b9d 0%, #ff8fb3 100%) !important;
+}
+
+/* Personal leave - Orange/Yellow */
+.leave-balance-item:nth-child(3) .progress-bar.bg-primary {
+  background: linear-gradient(90deg, #ffa726 0%, #ffb74d 100%) !important;
 }
 
 /* Card Enhancements */

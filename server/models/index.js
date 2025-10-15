@@ -682,6 +682,151 @@ models.Timesheet = sequelize.define('Timesheet', {
   ]
 });
 
+// =============================================
+// INVOICE MODEL
+// =============================================
+models.Invoice = sequelize.define('Invoice', {
+  id: {
+    type: DataTypes.UUID,
+    defaultValue: DataTypes.UUIDV4,
+    primaryKey: true
+  },
+  tenantId: {
+    type: DataTypes.UUID,
+    allowNull: false,
+    field: 'tenant_id',
+    references: { model: 'tenants', key: 'id' }
+  },
+  invoiceNumber: {
+    type: DataTypes.STRING(50),
+    allowNull: false,
+    unique: true,
+    field: 'invoice_number'
+  },
+  vendorId: {
+    type: DataTypes.UUID,
+    allowNull: true,
+    field: 'vendor_id',
+    references: { model: 'vendors', key: 'id' }
+  },
+  clientId: {
+    type: DataTypes.UUID,
+    allowNull: true,
+    field: 'client_id',
+    references: { model: 'clients', key: 'id' }
+  },
+  employeeId: {
+    type: DataTypes.UUID,
+    allowNull: true,
+    field: 'employee_id',
+    references: { model: 'employees', key: 'id' }
+  },
+  timesheetId: {
+    type: DataTypes.UUID,
+    allowNull: true,
+    field: 'timesheet_id',
+    references: { model: 'timesheets', key: 'id' }
+  },
+  weekStart: {
+    type: DataTypes.DATEONLY,
+    allowNull: true,
+    field: 'week_start'
+  },
+  weekEnd: {
+    type: DataTypes.DATEONLY,
+    allowNull: true,
+    field: 'week_end'
+  },
+  invoiceDate: {
+    type: DataTypes.DATEONLY,
+    defaultValue: DataTypes.NOW,
+    field: 'invoice_date'
+  },
+  dueDate: {
+    type: DataTypes.DATEONLY,
+    allowNull: true,
+    field: 'due_date'
+  },
+  lineItems: {
+    // [{ description, hours, rate, amount }]
+    type: DataTypes.JSONB,
+    defaultValue: [],
+    field: 'line_items'
+  },
+  subtotal: {
+    type: DataTypes.DECIMAL(12,2),
+    defaultValue: 0
+  },
+  tax: {
+    type: DataTypes.DECIMAL(12,2),
+    defaultValue: 0
+  },
+  total: {
+    type: DataTypes.DECIMAL(12,2),
+    defaultValue: 0
+  },
+  status: {
+    type: DataTypes.ENUM('draft','pending','sent','approved','rejected','paid','cancelled'),
+    defaultValue: 'draft'
+  },
+  notes: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  attachments: {
+    type: DataTypes.JSONB,
+    defaultValue: [],
+    allowNull: true
+  },
+  discrepancies: {
+    type: DataTypes.JSONB,
+    defaultValue: null,
+    allowNull: true
+  },
+  quickbooksSync: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+    field: 'quickbooks_sync'
+  },
+  quickbooksId: {
+    type: DataTypes.STRING(100),
+    allowNull: true,
+    field: 'quickbooks_id'
+  },
+  approvedBy: {
+    type: DataTypes.UUID,
+    allowNull: true,
+    field: 'approved_by',
+    references: { model: 'users', key: 'id' }
+  },
+  approvedAt: {
+    type: DataTypes.DATE,
+    allowNull: true,
+    field: 'approved_at'
+  },
+  paidAt: {
+    type: DataTypes.DATE,
+    allowNull: true,
+    field: 'paid_at'
+  },
+  rejectionReason: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+    field: 'rejection_reason'
+  }
+}, {
+  tableName: 'invoices',
+  timestamps: true,
+  createdAt: 'created_at',
+  updatedAt: 'updated_at',
+  indexes: [
+    { unique: true, fields: ['invoice_number'] },
+    { fields: ['tenant_id', 'status'] },
+    { fields: ['vendor_id'] },
+    { fields: ['client_id'] }
+  ]
+});
+
 // Onboarding Log associations
 models.OnboardingLog.belongsTo(models.Tenant, { foreignKey: 'tenantId', as: 'tenant' });
 
@@ -714,6 +859,19 @@ models.User.hasMany(models.EmployeeRelationship, { foreignKey: 'relatedUserId', 
 models.EmployeeRelationship.belongsTo(models.Employee, { foreignKey: 'employeeId', as: 'employee' });
 models.EmployeeRelationship.belongsTo(models.User, { foreignKey: 'relatedUserId', as: 'relatedUser' });
 models.EmployeeRelationship.belongsTo(models.Tenant, { foreignKey: 'tenantId', as: 'tenant' });
+
+// Invoice associations
+models.Tenant.hasMany(models.Invoice, { foreignKey: 'tenantId', as: 'invoices' });
+models.Vendor.hasMany(models.Invoice, { foreignKey: 'vendorId', as: 'invoices' });
+models.Client.hasMany(models.Invoice, { foreignKey: 'clientId', as: 'invoices' });
+models.Employee.hasMany(models.Invoice, { foreignKey: 'employeeId', as: 'invoices' });
+models.Timesheet.hasMany(models.Invoice, { foreignKey: 'timesheetId', as: 'invoices' });
+models.Invoice.belongsTo(models.Tenant, { foreignKey: 'tenantId', as: 'tenant' });
+models.Invoice.belongsTo(models.Vendor, { foreignKey: 'vendorId', as: 'vendor' });
+models.Invoice.belongsTo(models.Client, { foreignKey: 'clientId', as: 'client' });
+models.Invoice.belongsTo(models.Employee, { foreignKey: 'employeeId', as: 'employee' });
+models.Invoice.belongsTo(models.Timesheet, { foreignKey: 'timesheetId', as: 'timesheet' });
+models.Invoice.belongsTo(models.User, { foreignKey: 'approvedBy', as: 'approver' });
 
 // =============================================
 // DATABASE CONNECTION AND SYNC

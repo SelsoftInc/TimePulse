@@ -4,80 +4,309 @@
 
 const express = require('express');
 const router = express.Router();
+const { models } = require('../models');
+const { Op } = require('sequelize');
 
-// GET /api/invoices
-router.get('/', (req, res) => {
-  // Mock invoice data
-  const invoices = [
-    {
-      id: 1,
-      invoiceNumber: 'INV-2025-001',
-      client: 'Acme Corp',
-      amount: 5000,
-      status: 'paid',
-      dueDate: '2025-02-15',
-      createdAt: '2025-01-15T10:00:00Z'
-    },
-    {
-      id: 2,
-      invoiceNumber: 'INV-2025-002',
-      client: 'Tech Solutions Inc',
-      amount: 3200,
-      status: 'pending',
-      dueDate: '2025-02-20',
-      createdAt: '2025-01-20T14:30:00Z'
+// GET /api/invoices?tenantId=...
+router.get('/', async (req, res) => {
+  try {
+    const { tenantId, status } = req.query;
+
+    if (!tenantId) {
+      return res.status(400).json({ success: false, message: 'tenantId is required' });
     }
-  ];
 
-  res.json(invoices);
+    const whereClause = { tenantId };
+    if (status && status !== 'all') {
+      whereClause.status = status;
+    }
+
+    const invoices = await models.Invoice.findAll({
+      where: whereClause,
+      include: [
+        { 
+          model: models.Vendor, 
+          as: 'vendor', 
+          attributes: ['id', 'name', 'email', 'phone'],
+          required: false 
+        },
+        { 
+          model: models.Client, 
+          as: 'client', 
+          attributes: ['id', 'clientName', 'email'],
+          required: false 
+        },
+        { 
+          model: models.Employee, 
+          as: 'employee', 
+          attributes: ['id', 'firstName', 'lastName', 'email'],
+          required: false 
+        },
+        { 
+          model: models.User, 
+          as: 'approver', 
+          attributes: ['id', 'firstName', 'lastName', 'email'],
+          required: false 
+        }
+      ],
+      order: [['created_at', 'DESC']]
+    });
+
+    const formattedInvoices = invoices.map(inv => ({
+      id: inv.id,
+      invoiceNumber: inv.invoiceNumber,
+      vendor: inv.vendor?.name || 'N/A',
+      client: inv.client?.clientName || 'N/A',
+      employee: inv.employee ? `${inv.employee.firstName} ${inv.employee.lastName}` : 'N/A',
+      week: inv.weekStart && inv.weekEnd ? `${new Date(inv.weekStart).toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' })} - ${new Date(inv.weekEnd).toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' })}` : 'N/A',
+      weekStart: inv.weekStart,
+      weekEnd: inv.weekEnd,
+      total: parseFloat(inv.total),
+      status: inv.status,
+      lineItems: inv.lineItems || [],
+      attachments: inv.attachments || [],
+      discrepancies: inv.discrepancies,
+      notes: inv.notes,
+      invoiceDate: inv.invoiceDate,
+      dueDate: inv.dueDate,
+      approvedBy: inv.approver ? `${inv.approver.firstName} ${inv.approver.lastName}` : null,
+      approvedAt: inv.approvedAt,
+      paidAt: inv.paidAt,
+      createdAt: inv.createdAt,
+      updatedAt: inv.updatedAt
+    }));
+
+    res.json({ success: true, invoices: formattedInvoices });
+  } catch (error) {
+    console.error('❌ Error fetching invoices:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch invoices', error: error.message });
+  }
 });
 
 // POST /api/invoices
-router.post('/', (req, res) => {
-  const { client, amount, items, dueDate } = req.body;
-  
-  const newInvoice = {
-    id: Date.now(),
-    invoiceNumber: `INV-${new Date().getFullYear()}-${String(Date.now()).slice(-3)}`,
-    client,
-    amount,
-    items,
-    status: 'draft',
-    dueDate,
-    createdAt: new Date().toISOString()
-  };
+router.post('/', async (req, res) => {
+  try {
+    const { 
+      tenantId, 
+      vendorId, 
+      clientId, 
+      employeeId, 
+      timesheetId,
+      weekStart,
+      weekEnd,
+      lineItems, 
+      total,
+      subtotal,
+      tax,
+      dueDate,
+      notes,
+      attachments,
+      quickbooksSync
+    } = req.body;
 
-  res.status(201).json(newInvoice);
+    if (!tenantId) {
+      return res.status(400).json({ success: false, message: 'tenantId is required' });
+    }
+
+    // Generate invoice number
+    const lastInvoice = await models.Invoice.findOne({
+      where: { tenantId },
+      order: [['created_at', 'DESC']]
+    });
+
+    let invoiceNumber;
+    if (lastInvoice && lastInvoice.invoiceNumber) {
+      const lastNumber = parseInt(lastInvoice.invoiceNumber.split('-').pop());
+      invoiceNumber = `INV-${String(lastNumber + 1).padStart(4, '0')}`;
+    } else {
+      invoiceNumber = 'INV-1023';
+    }
+
+    const newInvoice = await models.Invoice.create({
+      tenantId,
+      invoiceNumber,
+      vendorId,
+      clientId,
+      employeeId,
+      timesheetId,
+      weekStart,
+      weekEnd,
+      lineItems: lineItems || [],
+      subtotal: subtotal || 0,
+      tax: tax || 0,
+      total: total || 0,
+      status: 'draft',
+      dueDate,
+      notes,
+      attachments: attachments || [],
+      quickbooksSync: quickbooksSync || false
+    });
+
+    res.status(201).json({ success: true, invoice: newInvoice });
+  } catch (error) {
+    console.error('❌ Error creating invoice:', error);
+    res.status(500).json({ success: false, message: 'Failed to create invoice', error: error.message });
+  }
 });
 
 // GET /api/invoices/:id
-router.get('/:id', (req, res) => {
-  const { id } = req.params;
-  
-  // Mock invoice details
-  const invoice = {
-    id: parseInt(id),
-    invoiceNumber: 'INV-2025-001',
-    client: {
-      name: 'Acme Corp',
-      email: 'billing@acmecorp.com',
-      address: '123 Business St, City, State 12345'
-    },
-    amount: 5000,
-    items: [
-      {
-        description: 'Professional Services - Week 1',
-        quantity: 40,
-        rate: 125,
-        amount: 5000
-      }
-    ],
-    status: 'paid',
-    dueDate: '2025-02-15',
-    createdAt: '2025-01-15T10:00:00Z'
-  };
+router.get('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { tenantId } = req.query;
 
-  res.json(invoice);
+    if (!tenantId) {
+      return res.status(400).json({ success: false, message: 'tenantId is required' });
+    }
+
+    const invoice = await models.Invoice.findOne({
+      where: { id, tenantId },
+      include: [
+        { 
+          model: models.Vendor, 
+          as: 'vendor', 
+          attributes: ['id', 'name', 'email', 'phone', 'address'],
+          required: false 
+        },
+        { 
+          model: models.Client, 
+          as: 'client', 
+          attributes: ['id', 'clientName', 'email', 'billingAddress'],
+          required: false 
+        },
+        { 
+          model: models.Employee, 
+          as: 'employee', 
+          attributes: ['id', 'firstName', 'lastName', 'email'],
+          required: false 
+        },
+        { 
+          model: models.Timesheet, 
+          as: 'timesheet',
+          required: false 
+        },
+        { 
+          model: models.User, 
+          as: 'approver', 
+          attributes: ['id', 'firstName', 'lastName', 'email'],
+          required: false 
+        }
+      ]
+    });
+
+    if (!invoice) {
+      return res.status(404).json({ success: false, message: 'Invoice not found' });
+    }
+
+    res.json({ success: true, invoice });
+  } catch (error) {
+    console.error('❌ Error fetching invoice:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch invoice', error: error.message });
+  }
+});
+
+// PUT /api/invoices/:id
+router.put('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { tenantId, status, notes, lineItems, total, subtotal, tax, approvedBy } = req.body;
+
+    if (!tenantId) {
+      return res.status(400).json({ success: false, message: 'tenantId is required' });
+    }
+
+    const invoice = await models.Invoice.findOne({
+      where: { id, tenantId }
+    });
+
+    if (!invoice) {
+      return res.status(404).json({ success: false, message: 'Invoice not found' });
+    }
+
+    const updateData = {};
+    if (status) updateData.status = status;
+    if (notes !== undefined) updateData.notes = notes;
+    if (lineItems) updateData.lineItems = lineItems;
+    if (total !== undefined) updateData.total = total;
+    if (subtotal !== undefined) updateData.subtotal = subtotal;
+    if (tax !== undefined) updateData.tax = tax;
+    
+    if (status === 'approved') {
+      updateData.approvedBy = approvedBy;
+      updateData.approvedAt = new Date();
+    } else if (status === 'paid') {
+      updateData.paidAt = new Date();
+    }
+
+    await invoice.update(updateData);
+
+    res.json({ success: true, invoice });
+  } catch (error) {
+    console.error('❌ Error updating invoice:', error);
+    res.status(500).json({ success: false, message: 'Failed to update invoice', error: error.message });
+  }
+});
+
+// POST /api/invoices/:id/approve
+router.post('/:id/approve', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { tenantId, approvedBy, notes } = req.body;
+
+    if (!tenantId) {
+      return res.status(400).json({ success: false, message: 'tenantId is required' });
+    }
+
+    const invoice = await models.Invoice.findOne({
+      where: { id, tenantId }
+    });
+
+    if (!invoice) {
+      return res.status(404).json({ success: false, message: 'Invoice not found' });
+    }
+
+    await invoice.update({
+      status: 'approved',
+      approvedBy,
+      approvedAt: new Date(),
+      notes: notes || invoice.notes
+    });
+
+    res.json({ success: true, invoice });
+  } catch (error) {
+    console.error('❌ Error approving invoice:', error);
+    res.status(500).json({ success: false, message: 'Failed to approve invoice', error: error.message });
+  }
+});
+
+// POST /api/invoices/:id/reject
+router.post('/:id/reject', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { tenantId, rejectionReason } = req.body;
+
+    if (!tenantId) {
+      return res.status(400).json({ success: false, message: 'tenantId is required' });
+    }
+
+    const invoice = await models.Invoice.findOne({
+      where: { id, tenantId }
+    });
+
+    if (!invoice) {
+      return res.status(404).json({ success: false, message: 'Invoice not found' });
+    }
+
+    await invoice.update({
+      status: 'rejected',
+      rejectionReason
+    });
+
+    res.json({ success: true, invoice });
+  } catch (error) {
+    console.error('❌ Error rejecting invoice:', error);
+    res.status(500).json({ success: false, message: 'Failed to reject invoice', error: error.message });
+  }
 });
 
 // POST /api/invoices/generate-from-timesheet

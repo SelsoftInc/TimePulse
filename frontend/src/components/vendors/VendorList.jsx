@@ -20,6 +20,10 @@ const VendorList = () => {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState(null);
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
+
   useEffect(() => {
     const fetchVendors = async () => {
       try {
@@ -70,6 +74,12 @@ const VendorList = () => {
   }, [openMenuId]);
 
   const toggleMenu = (id) => setOpenMenuId(prev => (prev === id ? null : id));
+
+  // Pagination calculations
+  const totalPages = Math.ceil(vendors.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedVendors = vendors.slice(startIndex, endIndex);
 
   const handleDelete = async (vendorId) => {
     try {
@@ -158,7 +168,7 @@ const VendorList = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {vendors.map(vendor => (
+                      {paginatedVendors.map(vendor => (
                         <tr key={vendor.id}>
                           <td>
                             <Link to={`/${subdomain}/vendors/${vendor.id}`} className="vendor-name">
@@ -225,6 +235,49 @@ const VendorList = () => {
                       ))}
                     </tbody>
                   </table>
+                )}
+
+                {/* Pagination Controls */}
+                {vendors.length > itemsPerPage && (
+                  <div className="card-inner">
+                    <div className="d-flex justify-content-between align-items-center">
+                      <div className="text-muted">
+                        Showing {startIndex + 1} to {Math.min(endIndex, vendors.length)} of {vendors.length} vendors
+                      </div>
+                      <nav>
+                        <ul className="pagination pagination-sm mb-0">
+                          <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
+                            <button 
+                              className="page-link" 
+                              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                              disabled={currentPage === 1}
+                            >
+                              Previous
+                            </button>
+                          </li>
+                          {[...Array(totalPages)].map((_, index) => (
+                            <li key={index + 1} className={`page-item ${currentPage === index + 1 ? 'active' : ''}`}>
+                              <button 
+                                className="page-link" 
+                                onClick={() => setCurrentPage(index + 1)}
+                              >
+                                {index + 1}
+                              </button>
+                            </li>
+                          ))}
+                          <li className={`page-item ${currentPage === totalPages ? 'disabled' : ''}`}>
+                            <button 
+                              className="page-link" 
+                              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                              disabled={currentPage === totalPages}
+                            >
+                              Next
+                            </button>
+                          </li>
+                        </ul>
+                      </nav>
+                    </div>
+                  </div>
                 )}
               </div>
             </div>

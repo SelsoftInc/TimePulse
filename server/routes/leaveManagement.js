@@ -3,7 +3,263 @@ const router = express.Router();
 const { models } = require('../models');
 const { Op } = require('sequelize');
 
-const { User, Employee } = models;
+const { User, Employee, LeaveRequest, LeaveBalance } = models;
+
+// Submit leave request
+router.post('/request', async (req, res) => {
+  try {
+    const { employeeId, tenantId, leaveType, startDate, endDate, totalDays, reason, approverId, attachmentName } = req.body;
+    
+    if (!employeeId || !tenantId || !leaveType || !startDate || !endDate || !totalDays || !approverId) {
+      return res.status(400).json({ 
+        error: 'Missing required fields' 
+      });
+    }
+
+    // Check if employee exists, if not create one
+    let employee = await Employee.findOne({
+      where: { id: employeeId, tenantId }
+    });
+
+    if (!employee) {
+      // Get user details to create employee record
+      const user = await User.findOne({
+        where: { id: employeeId, tenantId }
+      });
+
+      if (!user) {
+        return res.status(404).json({
+          error: 'User not found. Please contact administrator.'
+        });
+      }
+
+      // Create employee record
+      employee = await Employee.create({
+        id: user.id,
+        tenantId: user.tenantId,
+        firstName: user.name ? user.name.split(' ')[0] : 'Employee',
+        lastName: user.name ? user.name.split(' ').slice(1).join(' ') : '',
+        email: user.email,
+        status: 'active',
+        joiningDate: new Date()
+      });
+
+      console.log('✅ Created employee record for user:', user.email);
+    }
+
+    // Create leave request
+    const leaveRequest = await LeaveRequest.create({
+      employeeId,
+      tenantId,
+      leaveType,
+      startDate,
+      endDate,
+      totalDays,
+      reason: reason || null,
+      status: 'pending',
+      approverId,
+      attachmentName: attachmentName || null
+    });
+
+    // Update leave balance - add to pending days
+    const currentYear = new Date().getFullYear();
+    const [leaveBalance, created] = await LeaveBalance.findOrCreate({
+      where: {
+        employeeId,
+        tenantId,
+        year: currentYear,
+        leaveType
+      },
+      defaults: {
+        totalDays: leaveType === 'vacation' ? 10 : (leaveType === 'sick' ? 5 : 0), // Vacation: 10, Sick: 5
+        usedDays: 0,
+        pendingDays: totalDays,
+        carryForwardDays: 0
+      }
+    });
+
+    if (!created) {
+      await leaveBalance.update({
+        pendingDays: parseFloat(leaveBalance.pendingDays) + parseFloat(totalDays)
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Leave request submitted successfully',
+      leaveRequest
+    });
+
+  } catch (error) {
+    console.error('Error submitting leave request:', error);
+    res.status(500).json({ 
+      error: 'Failed to submit leave request',
+      details: error.message 
+    });
+  }
+});
+
+// Get leave balance for an employee
+router.get('/balance', async (req, res) => {
+  try {
+    const { employeeId, tenantId } = req.query;
+    
+    if (!employeeId || !tenantId) {
+      return res.status(400).json({ 
+        error: 'Employee ID and Tenant ID are required' 
+      });
+    }
+
+    const currentYear = new Date().getFullYear();
+    const balances = await LeaveBalance.findAll({
+      where: {
+        employeeId,
+        tenantId,
+        year: currentYear
+      }
+    });
+
+    // Format balance data
+    const balanceData = {};
+    balances.forEach(balance => {
+      const remaining = parseFloat(balance.totalDays) + parseFloat(balance.carryForwardDays) - parseFloat(balance.usedDays) - parseFloat(balance.pendingDays);
+      balanceData[balance.leaveType] = {
+        total: parseFloat(balance.totalDays) + parseFloat(balance.carryForwardDays),
+        used: parseFloat(balance.usedDays),
+        pending: parseFloat(balance.pendingDays),
+        remaining: remaining
+      };
+    });
+
+    // Ensure vacation and sick leave types have entries (Total 15 days: Vacation 10 + Sick 5)
+    ['vacation', 'sick'].forEach(type => {
+      if (!balanceData[type]) {
+        const defaultTotal = type === 'vacation' ? 10 : 5;
+        balanceData[type] = {
+          total: defaultTotal,
+          used: 0,
+          pending: 0,
+          remaining: defaultTotal
+        };
+      }
+    });
+
+    res.json({
+      success: true,
+      balance: balanceData
+    });
+
+  } catch (error) {
+    console.error('Error fetching leave balance:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch leave balance',
+      details: error.message 
+    });
+  }
+});
+
+// Get leave history for an employee
+router.get('/history', async (req, res) => {
+  try {
+    const { employeeId, tenantId } = req.query;
+    
+    if (!employeeId || !tenantId) {
+      return res.status(400).json({ 
+        error: 'Employee ID and Tenant ID are required' 
+      });
+    }
+
+    const requests = await LeaveRequest.findAll({
+      where: {
+        employeeId,
+        tenantId,
+        status: {
+          [Op.in]: ['approved', 'rejected']
+        }
+      },
+      include: [
+        {
+          model: User,
+          as: 'reviewer',
+          attributes: ['id', 'name', 'email']
+        }
+      ],
+      order: [['createdAt', 'DESC']]
+    });
+
+    const formattedRequests = requests.map(req => ({
+      id: req.id,
+      type: req.leaveType.charAt(0).toUpperCase() + req.leaveType.slice(1),
+      startDate: req.startDate,
+      endDate: req.endDate,
+      days: req.totalDays,
+      status: req.status.charAt(0).toUpperCase() + req.status.slice(1),
+      approvedBy: req.reviewer?.name || 'N/A',
+      approvedOn: req.reviewedAt ? new Date(req.reviewedAt).toISOString().split('T')[0] : 'N/A'
+    }));
+
+    res.json({
+      success: true,
+      requests: formattedRequests
+    });
+
+  } catch (error) {
+    console.error('Error fetching leave history:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch leave history',
+      details: error.message 
+    });
+  }
+});
+
+// Get my pending requests
+router.get('/my-requests', async (req, res) => {
+  try {
+    const { employeeId, tenantId, status } = req.query;
+    
+    if (!employeeId || !tenantId) {
+      return res.status(400).json({ 
+        error: 'Employee ID and Tenant ID are required' 
+      });
+    }
+
+    const whereClause = {
+      employeeId,
+      tenantId
+    };
+
+    if (status) {
+      whereClause.status = status;
+    }
+
+    const requests = await LeaveRequest.findAll({
+      where: whereClause,
+      order: [['createdAt', 'DESC']]
+    });
+
+    const formattedRequests = requests.map(req => ({
+      id: req.id,
+      type: req.leaveType.charAt(0).toUpperCase() + req.leaveType.slice(1),
+      startDate: req.startDate,
+      endDate: req.endDate,
+      days: req.totalDays,
+      status: req.status.charAt(0).toUpperCase() + req.status.slice(1),
+      requestedOn: new Date(req.createdAt).toISOString().split('T')[0]
+    }));
+
+    res.json({
+      success: true,
+      requests: formattedRequests
+    });
+
+  } catch (error) {
+    console.error('Error fetching my requests:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch requests',
+      details: error.message 
+    });
+  }
+});
 
 // Get leave requests for approval (for managers/admins)
 router.get('/pending-approvals', async (req, res) => {
@@ -16,16 +272,41 @@ router.get('/pending-approvals', async (req, res) => {
       });
     }
 
-    // For now, using mock data structure
-    // In production, you would have a LeaveRequest model
-    // Note: John Smith, Sarah Johnson, and Michael Brown have been removed from employees
-    // So their leave requests should not appear
-    const mockLeaveRequests = [];
+    const leaveRequests = await LeaveRequest.findAll({
+      where: {
+        tenantId,
+        approverId: managerId,
+        status: 'pending'
+      },
+      include: [
+        {
+          model: Employee,
+          as: 'employee',
+          attributes: ['id', 'firstName', 'lastName', 'email', 'department']
+        }
+      ],
+      order: [['createdAt', 'ASC']]
+    });
+
+    const formattedRequests = leaveRequests.map(req => ({
+      id: req.id,
+      employeeName: `${req.employee.firstName} ${req.employee.lastName}`,
+      employeeEmail: req.employee.email,
+      department: req.employee.department || 'N/A',
+      leaveType: req.leaveType.charAt(0).toUpperCase() + req.leaveType.slice(1),
+      startDate: req.startDate,
+      endDate: req.endDate,
+      days: req.totalDays,
+      reason: req.reason,
+      attachment: req.attachmentName,
+      status: req.status,
+      submittedAt: req.createdAt
+    }));
 
     res.json({
       success: true,
-      leaveRequests: mockLeaveRequests,
-      total: mockLeaveRequests.length
+      leaveRequests: formattedRequests,
+      total: formattedRequests.length
     });
 
   } catch (error) {
@@ -48,20 +329,61 @@ router.get('/all-requests', async (req, res) => {
       });
     }
 
-    // Mock data for all leave requests
-    // Note: Deleted employees (John Smith, Sarah Johnson, Michael Brown) removed
-    const mockAllRequests = [];
-
-    // Filter by status if provided
-    let filteredRequests = mockAllRequests;
+    // Build query conditions
+    const whereConditions = { tenantId };
+    
     if (status) {
-      filteredRequests = filteredRequests.filter(req => req.status === status);
+      whereConditions.status = status;
     }
+    
+    if (startDate && endDate) {
+      whereConditions.startDate = {
+        [Op.between]: [startDate, endDate]
+      };
+    }
+
+    // Fetch all leave requests from database
+    const leaveRequests = await LeaveRequest.findAll({
+      where: whereConditions,
+      include: [
+        {
+          model: Employee,
+          as: 'employee',
+          attributes: ['id', 'firstName', 'lastName', 'email', 'department']
+        },
+        {
+          model: User,
+          as: 'reviewer',
+          attributes: ['id', 'name', 'email']
+        }
+      ],
+      order: [['createdAt', 'DESC']]
+    });
+
+    // Format the response
+    const formattedRequests = leaveRequests.map(request => ({
+      id: request.id,
+      employeeName: request.employee ? 
+        `${request.employee.firstName} ${request.employee.lastName}` : 
+        'Unknown Employee',
+      employeeEmail: request.employee?.email || '',
+      department: request.employee?.department || 'N/A',
+      leaveType: request.leaveType,
+      startDate: request.startDate,
+      endDate: request.endDate,
+      totalDays: parseFloat(request.totalDays),
+      reason: request.reason,
+      status: request.status,
+      submittedOn: request.createdAt,
+      reviewedBy: request.reviewer?.name || null,
+      reviewedAt: request.reviewedAt,
+      reviewComments: request.reviewComments
+    }));
 
     res.json({
       success: true,
-      leaveRequests: filteredRequests,
-      total: filteredRequests.length
+      leaveRequests: formattedRequests,
+      total: formattedRequests.length
     });
 
   } catch (error) {
@@ -85,8 +407,41 @@ router.post('/approve/:id', async (req, res) => {
       });
     }
 
-    // In production, update the leave request in database
-    // For now, returning success response
+    // Find the leave request
+    const leaveRequest = await LeaveRequest.findByPk(id);
+    
+    if (!leaveRequest) {
+      return res.status(404).json({ 
+        error: 'Leave request not found' 
+      });
+    }
+
+    // Update leave request status
+    await leaveRequest.update({
+      status: 'approved',
+      reviewedBy: managerId,
+      reviewedAt: new Date(),
+      reviewComments: comments || null
+    });
+
+    // Update leave balance - move from pending to used
+    const currentYear = new Date().getFullYear();
+    const leaveBalance = await LeaveBalance.findOne({
+      where: {
+        employeeId: leaveRequest.employeeId,
+        tenantId: leaveRequest.tenantId,
+        year: currentYear,
+        leaveType: leaveRequest.leaveType
+      }
+    });
+
+    if (leaveBalance) {
+      await leaveBalance.update({
+        usedDays: parseFloat(leaveBalance.usedDays) + parseFloat(leaveRequest.totalDays),
+        pendingDays: parseFloat(leaveBalance.pendingDays) - parseFloat(leaveRequest.totalDays)
+      });
+    }
+
     res.json({
       success: true,
       message: 'Leave request approved successfully',
@@ -123,7 +478,40 @@ router.post('/reject/:id', async (req, res) => {
       });
     }
 
-    // In production, update the leave request in database
+    // Find the leave request
+    const leaveRequest = await LeaveRequest.findByPk(id);
+    
+    if (!leaveRequest) {
+      return res.status(404).json({ 
+        error: 'Leave request not found' 
+      });
+    }
+
+    // Update leave request status
+    await leaveRequest.update({
+      status: 'rejected',
+      reviewedBy: managerId,
+      reviewedAt: new Date(),
+      reviewComments: reason
+    });
+
+    // Update leave balance - remove from pending
+    const currentYear = new Date().getFullYear();
+    const leaveBalance = await LeaveBalance.findOne({
+      where: {
+        employeeId: leaveRequest.employeeId,
+        tenantId: leaveRequest.tenantId,
+        year: currentYear,
+        leaveType: leaveRequest.leaveType
+      }
+    });
+
+    if (leaveBalance) {
+      await leaveBalance.update({
+        pendingDays: parseFloat(leaveBalance.pendingDays) - parseFloat(leaveRequest.totalDays)
+      });
+    }
+
     res.json({
       success: true,
       message: 'Leave request rejected',

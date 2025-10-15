@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useToast } from '../../contexts/ToastContext';
 import { API_BASE } from '../../config/api';
 
 const LeaveApprovals = () => {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [pendingRequests, setPendingRequests] = useState([]);
   const [allRequests, setAllRequests] = useState([]);
@@ -83,18 +85,21 @@ const LeaveApprovals = () => {
 
       if (response.ok) {
         // Refresh the list
-        fetchLeaveRequests();
-        alert('Leave request approved successfully!');
+        await fetchLeaveRequests();
+        toast.success('Leave request approved successfully!');
+      } else {
+        const errorData = await response.json();
+        toast.error(errorData.error || 'Failed to approve leave request');
       }
     } catch (error) {
       console.error('Error approving leave request:', error);
-      alert('Failed to approve leave request');
+      toast.error('Failed to approve leave request');
     }
   };
 
   const handleReject = async () => {
     if (!rejectionReason.trim()) {
-      alert('Please provide a reason for rejection');
+      toast.error('Please provide a reason for rejection');
       return;
     }
 
@@ -118,12 +123,15 @@ const LeaveApprovals = () => {
         setShowRejectModal(false);
         setRejectionReason('');
         setSelectedRequest(null);
-        fetchLeaveRequests();
-        alert('Leave request rejected');
+        await fetchLeaveRequests();
+        toast.success('Leave request rejected');
+      } else {
+        const errorData = await response.json();
+        toast.error(errorData.error || 'Failed to reject leave request');
       }
     } catch (error) {
       console.error('Error rejecting leave request:', error);
-      alert('Failed to reject leave request');
+      toast.error('Failed to reject leave request');
     }
   };
 
@@ -332,13 +340,13 @@ const LeaveApprovals = () => {
                       <td>
                         {formatDate(request.startDate)} - {formatDate(request.endDate)}
                       </td>
-                      <td>{request.days}</td>
+                      <td>{request.totalDays || request.days}</td>
                       <td>
                         <span className={`badge ${getStatusBadgeClass(request.status)}`}>
                           {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
                         </span>
                       </td>
-                      <td>{formatDate(request.submittedAt)}</td>
+                      <td>{formatDate(request.submittedOn || request.submittedAt)}</td>
                     </tr>
                   ))}
                 </tbody>

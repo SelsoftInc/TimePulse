@@ -1,13 +1,14 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../../contexts/AuthContext";
+import { useToast } from "../../contexts/ToastContext";
+import { API_BASE } from "../../config/api";
 import LeaveApprovals from "./LeaveApprovals";
 import "./LeaveManagement.css";
 
 const LeaveManagement = () => {
   const { user } = useAuth();
+  const { toast } = useToast();
 
-  // Use subdomain for navigation links and user info for personalization
-  const userFullName = user?.name || "Employee";
   const userRole = user?.role || "employee";
   const isApprover = userRole === "approver" || userRole === "admin";
   const isAdmin = userRole === "admin";
@@ -24,87 +25,96 @@ const LeaveManagement = () => {
     endDate: "",
     reason: "",
     attachment: null,
+    approverId: "",
   });
+  const [approvers, setApprovers] = useState([]);
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+
+  const fetchLeaveData = useCallback(async () => {
+    try {
+      setLoading(true);
+      
+      if (!user?.id || !user?.tenantId) {
+        setLoading(false);
+        return;
+      }
+
+      // Fetch leave balance
+      const balanceResponse = await fetch(
+        `${API_BASE}/api/leave-management/balance?employeeId=${user.id}&tenantId=${user.tenantId}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        }
+      );
+      
+      // Fetch leave history
+      const historyResponse = await fetch(
+        `${API_BASE}/api/leave-management/history?employeeId=${user.id}&tenantId=${user.tenantId}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        }
+      );
+      
+      // Fetch pending requests
+      const pendingResponse = await fetch(
+        `${API_BASE}/api/leave-management/my-requests?employeeId=${user.id}&tenantId=${user.tenantId}&status=pending`,
+        {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        }
+      );
+      
+      const balanceData = balanceResponse.ok ? await balanceResponse.json() : { balance: {} };
+      const historyData = historyResponse.ok ? await historyResponse.json() : { requests: [] };
+      const pendingData = pendingResponse.ok ? await pendingResponse.json() : { requests: [] };
+      
+      setLeaveData({
+        balance: balanceData.balance || {},
+        history: historyData.requests || [],
+        pending: pendingData.requests || []
+      });
+    } catch (error) {
+      console.error("Error fetching leave data:", error);
+      toast.error("Failed to load leave data");
+    } finally {
+      setLoading(false);
+    }
+  }, [user?.id, user?.tenantId, toast]);
+
+  const fetchApprovers = useCallback(async () => {
+    try {
+      if (!user?.tenantId) return;
+      
+      const response = await fetch(
+        `${API_BASE}/api/users?tenantId=${user.tenantId}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        }
+      );
+      
+      if (response.ok) {
+        const data = await response.json();
+        // Filter only admin users
+        const adminUsers = (data.users || []).filter(u => u.role === 'admin');
+        setApprovers(adminUsers);
+      }
+    } catch (error) {
+      console.error('Error fetching approvers:', error);
+    }
+  }, [user?.tenantId]);
 
   useEffect(() => {
-    const fetchLeaveData = async () => {
-      try {
-        setLoading(true);
-        // In a real app, fetch from API
-        // For now, using mock data
-        await new Promise((resolve) => setTimeout(resolve, 800));
-
-        // Mock leave data
-        const mockLeaveData = {
-          balance: {
-            vacation: {
-              total: 15,
-              used: 5,
-              pending: 2,
-              remaining: 8,
-            },
-            sick: {
-              total: 10,
-              used: 2,
-              pending: 0,
-              remaining: 8,
-            },
-            personal: {
-              total: 5,
-              used: 1,
-              pending: 0,
-              remaining: 4,
-            },
-          },
-          history: [
-            {
-              id: "1",
-              type: "Vacation",
-              startDate: "2025-05-10",
-              endDate: "2025-05-14",
-              days: 5,
-              status: "Approved",
-              approvedBy: "John Manager",
-              approvedOn: "2025-04-20",
-            },
-            {
-              id: "2",
-              type: "Sick",
-              startDate: "2025-03-05",
-              endDate: "2025-03-06",
-              days: 2,
-              status: "Approved",
-              approvedBy: "John Manager",
-              approvedOn: "2025-03-07",
-            },
-          ],
-          pending: [
-            {
-              id: "3",
-              type: "Vacation",
-              startDate: "2025-08-15",
-              endDate: "2025-08-16",
-              days: 2,
-              status: "Pending",
-              requestedOn: "2025-07-20",
-            },
-          ],
-        };
-
-        setLeaveData(mockLeaveData);
-      } catch (error) {
-        console.error("Error fetching leave data:", error);
-        setError("Failed to load leave data");
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchLeaveData();
-  }, []);
+    fetchApprovers();
+  }, [fetchLeaveData, fetchApprovers]);
+
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -123,12 +133,20 @@ const LeaveManagement = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
-    setSuccess("");
+    console.log('🚀 Form submitted!', formData);
+    console.log('🔍 User:', user);
+    console.log('🍞 Toast object:', toast);
 
     // Validate form
     if (!formData.startDate || !formData.endDate) {
-      setError("Please select start and end dates");
+      console.log('❌ Validation failed: Missing dates');
+      toast.error("Please select start and end dates");
+      return;
+    }
+
+    if (!formData.approverId) {
+      console.log('❌ Validation failed: Missing approver');
+      toast.error("Please select an approver");
       return;
     }
 
@@ -136,16 +154,15 @@ const LeaveManagement = () => {
     const end = new Date(formData.endDate);
 
     if (end < start) {
-      setError("End date cannot be before start date");
+      console.log('❌ Validation failed: End date before start date');
+      toast.error("End date cannot be before start date");
       return;
     }
 
+    console.log('✅ Validation passed, submitting...');
     setSubmitting(true);
 
     try {
-      // In a real app, send to API
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
       // Calculate days (excluding weekends)
       let days = 0;
       let currentDate = new Date(start);
@@ -157,32 +174,45 @@ const LeaveManagement = () => {
         currentDate.setDate(currentDate.getDate() + 1);
       }
 
-      // Mock new request
-      const newRequest = {
-        id: `new-${Date.now()}`,
-        type:
-          formData.leaveType.charAt(0).toUpperCase() +
-          formData.leaveType.slice(1),
+      // Prepare form data for submission
+      const submitData = {
+        employeeId: user.id,
+        tenantId: user.tenantId,
+        leaveType: formData.leaveType,
         startDate: formData.startDate,
         endDate: formData.endDate,
-        days,
-        status: "Pending",
-        requestedOn: new Date().toISOString().split("T")[0],
+        totalDays: days,
+        reason: formData.reason,
+        approverId: formData.approverId,
+        attachmentName: formData.attachment?.name || null
       };
 
-      // Update state
-      setLeaveData((prev) => ({
-        ...prev,
-        pending: [...prev.pending, newRequest],
-        balance: {
-          ...prev.balance,
-          [formData.leaveType]: {
-            ...prev.balance[formData.leaveType],
-            pending: prev.balance[formData.leaveType].pending + days,
-            remaining: prev.balance[formData.leaveType].remaining - days,
-          },
+      console.log('📤 Submitting data:', submitData);
+      console.log('🌐 API URL:', `${API_BASE}/api/leave-management/request`);
+
+      // Submit to API
+      const response = await fetch(`${API_BASE}/api/leave-management/request`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
-      }));
+        body: JSON.stringify(submitData)
+      });
+
+      console.log('📥 Response status:', response.status);
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.log('❌ Error response:', errorData);
+        throw new Error(errorData.error || 'Failed to submit leave request');
+      }
+
+      const result = await response.json();
+      console.log('✅ Success response:', result);
+
+      // Refresh leave data
+      await fetchLeaveData();
 
       // Reset form
       setFormData({
@@ -191,12 +221,15 @@ const LeaveManagement = () => {
         endDate: "",
         reason: "",
         attachment: null,
+        approverId: "",
       });
 
-      setSuccess("Leave request submitted successfully");
+      console.log('🎉 Showing success toast');
+      toast.success("Leave request submitted successfully");
     } catch (error) {
-      console.error("Error submitting leave request:", error);
-      setError("Failed to submit leave request");
+      console.error("❌ Error submitting leave request:", error);
+      console.log('🔴 Showing error toast');
+      toast.error(error.message || "Failed to submit leave request");
     } finally {
       setSubmitting(false);
     }
@@ -228,10 +261,10 @@ const LeaveManagement = () => {
         },
       }));
 
-      setSuccess("Leave request cancelled successfully");
+      toast.success("Leave request cancelled successfully");
     } catch (error) {
       console.error("Error cancelling leave request:", error);
-      setError("Failed to cancel leave request");
+      toast.error("Failed to cancel leave request");
     }
   };
 
@@ -274,20 +307,6 @@ const LeaveManagement = () => {
               </div>
             </div>
 
-            {error && (
-              <div className="alert alert-danger alert-icon">
-                <em className="icon ni ni-alert-circle"></em>
-                <strong>{error}</strong>
-              </div>
-            )}
-
-            {success && (
-              <div className="alert alert-success alert-icon">
-                <em className="icon ni ni-check-circle"></em>
-                <strong>{success}</strong>
-              </div>
-            )}
-
             <div className="nk-block">
               {/* Employee Sections - Only show for non-owners */}
               {!isOwner && (
@@ -303,58 +322,65 @@ const LeaveManagement = () => {
                           </div>
 
                           <div className="leave-balance">
-                            {Object.entries(leaveData.balance).map(
-                              ([type, data]) => (
-                                <div
-                                  key={type}
-                                  className="leave-balance-item mb-3"
-                                >
-                                  <div className="leave-balance-title d-flex justify-content-between">
-                                    <h6 className="mb-1">
-                                      {type.charAt(0).toUpperCase() +
-                                        type.slice(1)}
-                                    </h6>
-                                    <span className="badge badge-dim badge-outline badge-primary">
-                                      {data.remaining} days remaining
-                                    </span>
+                            {Object.keys(leaveData.balance).length > 0 ? (
+                              Object.entries(leaveData.balance).map(
+                                ([type, data]) => (
+                                  <div
+                                    key={type}
+                                    className="leave-balance-item mb-3"
+                                  >
+                                    <div className="leave-balance-title d-flex justify-content-between align-items-center mb-2">
+                                      <h6 className="mb-0 text-capitalize">
+                                        {type}
+                                      </h6>
+                                      <span className="badge badge-sm badge-dim badge-outline-primary">
+                                        {data.remaining} Days Remaining
+                                      </span>
+                                    </div>
+                                    <div className="progress" style={{ height: '10px' }}>
+                                      <div
+                                        className="progress-bar bg-primary"
+                                        role="progressbar"
+                                        style={{
+                                          width: `${
+                                            (data.used / data.total) * 100
+                                          }%`,
+                                        }}
+                                        aria-valuenow={data.used}
+                                        aria-valuemin="0"
+                                        aria-valuemax={data.total}
+                                      ></div>
+                                      {data.pending > 0 && (
+                                        <div
+                                          className="progress-bar bg-warning"
+                                          role="progressbar"
+                                          style={{
+                                            width: `${
+                                              (data.pending / data.total) * 100
+                                            }%`,
+                                          }}
+                                          aria-valuenow={data.pending}
+                                          aria-valuemin="0"
+                                          aria-valuemax={data.total}
+                                        ></div>
+                                      )}
+                                    </div>
+                                    <div className="d-flex justify-content-between mt-2">
+                                      <small className="text-muted">{data.used} used</small>
+                                      {data.pending > 0 && (
+                                        <small className="text-warning">
+                                          {data.pending} pending
+                                        </small>
+                                      )}
+                                      <small className="text-muted">Total: {data.total}</small>
+                                    </div>
                                   </div>
-                                  <div className="progress">
-                                    <div
-                                      className="progress-bar bg-primary"
-                                      role="progressbar"
-                                      style={{
-                                        width: `${
-                                          (data.used / data.total) * 100
-                                        }%`,
-                                      }}
-                                      aria-valuenow={data.used}
-                                      aria-valuemin="0"
-                                      aria-valuemax={data.total}
-                                    ></div>
-                                    <div
-                                      className="progress-bar bg-warning"
-                                      role="progressbar"
-                                      style={{
-                                        width: `${
-                                          (data.pending / data.total) * 100
-                                        }%`,
-                                      }}
-                                      aria-valuenow={data.pending}
-                                      aria-valuemin="0"
-                                      aria-valuemax={data.total}
-                                    ></div>
-                                  </div>
-                                  <div className="d-flex justify-content-between mt-1">
-                                    <small>{data.used} used</small>
-                                    <small>
-                                      {data.pending > 0
-                                        ? `${data.pending} pending`
-                                        : ""}
-                                    </small>
-                                    <small>Total: {data.total}</small>
-                                  </div>
-                                </div>
+                                )
                               )
+                            ) : (
+                              <div className="text-center py-4">
+                                <p className="text-muted">No leave balance data available</p>
+                              </div>
                             )}
                           </div>
                         </div>
@@ -387,9 +413,6 @@ const LeaveManagement = () => {
                                   >
                                     <option value="vacation">Vacation</option>
                                     <option value="sick">Sick Leave</option>
-                                    <option value="personal">
-                                      Personal Leave
-                                    </option>
                                   </select>
                                 </div>
                               </div>
@@ -419,6 +442,25 @@ const LeaveManagement = () => {
                                     onChange={handleInputChange}
                                     required
                                   />
+                                </div>
+                              </div>
+                              <div className="col-12">
+                                <div className="form-group">
+                                  <label className="form-label">Approver *</label>
+                                  <select
+                                    className="form-select"
+                                    name="approverId"
+                                    value={formData.approverId}
+                                    onChange={handleInputChange}
+                                    required
+                                  >
+                                    <option value="">Select Approver</option>
+                                    {approvers.map(approver => (
+                                      <option key={approver.id} value={approver.id}>
+                                        {approver.name || approver.email}
+                                      </option>
+                                    ))}
+                                  </select>
                                 </div>
                               </div>
                               <div className="col-12">

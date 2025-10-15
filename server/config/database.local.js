@@ -10,7 +10,7 @@ module.exports = {
     port: 5432,
     database: 'timepulse_db',
     username: 'postgres',
-    password: 'password',
+    password: 'postgres',
     logging: console.log,
     pool: {
       max: 10,

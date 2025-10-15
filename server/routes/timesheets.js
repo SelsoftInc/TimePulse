@@ -188,7 +188,7 @@ router.get('/pending-approval', async (req, res, next) => {
           required: false 
         }
       ],
-      order: [['submitted_at', 'DESC']]
+      order: [['submitted_at', 'DESC NULLS LAST']]
     });
 
     console.log(`  Found ${timesheets.length} timesheets with status 'submitted'`);
@@ -238,7 +238,16 @@ router.get('/pending-approval', async (req, res, next) => {
     res.json({ success: true, timesheets: formattedTimesheets });
   } catch (err) {
     console.error('❌ Error in /api/timesheets/pending-approval:', err);
-    next(err);
+    console.error('Error name:', err.name);
+    console.error('Error message:', err.message);
+    if (err.original) {
+      console.error('Database error:', err.original);
+    }
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to fetch pending timesheets',
+      error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
+    });
   }
 });
 
@@ -568,7 +577,7 @@ router.get('/employee/approved', async (req, res, next) => {
           required: false
         }
       ],
-      order: [['approvedAt', 'DESC']]
+      order: [['approved_at', 'DESC NULLS LAST']]
     });
 
     console.log(`✅ Found ${timesheets.length} approved timesheets`);
@@ -617,8 +626,17 @@ router.get('/employee/approved', async (req, res, next) => {
 
     res.json({ success: true, timesheets: formattedTimesheets });
   } catch (err) {
-    console.error('Error fetching approved timesheets:', err);
-    next(err);
+    console.error('❌ Error fetching approved timesheets:', err);
+    console.error('Error name:', err.name);
+    console.error('Error message:', err.message);
+    if (err.original) {
+      console.error('Database error:', err.original);
+    }
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to fetch approved timesheets',
+      error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
+    });
   }
 });
 
@@ -658,7 +676,7 @@ router.get('/employee/rejected', async (req, res, next) => {
           required: false
         }
       ],
-      order: [['updatedAt', 'DESC']]
+      order: [['updated_at', 'DESC NULLS LAST']]
     });
 
     console.log(`✅ Found ${timesheets.length} rejected timesheets`);
@@ -708,10 +726,67 @@ router.get('/employee/rejected', async (req, res, next) => {
 
     res.json({ success: true, timesheets: formattedTimesheets });
   } catch (err) {
-    console.error('Error fetching rejected timesheets:', err);
-    next(err);
+    console.error('❌ Error fetching rejected timesheets:', err);
+    console.error('Error name:', err.name);
+    console.error('Error message:', err.message);
+    if (err.original) {
+      console.error('Database error:', err.original);
+    }
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to fetch rejected timesheets',
+      error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
+    });
   }
 });
+// GET /api/timesheets/employee/:employeeId/approved?tenantId=...
+// Get approved timesheets for a specific employee (for invoice generation)
+router.get('/employee/:employeeId/approved', async (req, res, next) => {
+  try {
+    const { employeeId } = req.params;
+    const { tenantId } = req.query;
+
+    if (!tenantId) {
+      return res.status(400).json({ success: false, message: 'tenantId is required' });
+    }
+
+    const timesheets = await models.Timesheet.findAll({
+      where: {
+        tenantId,
+        employeeId,
+        status: 'approved'
+      },
+      include: [
+        {
+          model: models.Employee,
+          as: 'employee',
+          attributes: ['id', 'firstName', 'lastName', 'email']
+        },
+        {
+          model: models.Client,
+          as: 'client',
+          attributes: ['id', 'clientName', 'email']
+        }
+      ],
+      order: [['week_start', 'DESC']]
+    });
+
+    res.json({ success: true, timesheets });
+  } catch (err) {
+    console.error('❌ Error fetching approved timesheets for employee:', err);
+    console.error('Error name:', err.name);
+    console.error('Error message:', err.message);
+    if (err.parent) {
+      console.error('Database error:', err.parent.message);
+    }
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch approved timesheets',
+      error: err.message
+    });
+  }
+});
+
 // GET /api/timesheets/employee/:employeeId/all?tenantId=...
 // Get all timesheets for a specific employee
 router.get('/employee/:employeeId/all', async (req, res, next) => {
@@ -733,7 +808,7 @@ router.get('/employee/:employeeId/all', async (req, res, next) => {
         { model: models.Client, as: 'client', attributes: ['id', 'clientName'] },
         { model: models.User, as: 'reviewer', attributes: ['id', 'firstName', 'lastName', 'email', 'role'], required: false }
       ],
-      order: [['weekStart', 'DESC']]
+      order: [['week_start', 'DESC']]
     });
 
     const formattedTimesheets = timesheets.map((r) => {
@@ -785,7 +860,17 @@ router.get('/employee/:employeeId/all', async (req, res, next) => {
 
     res.json({ success: true, timesheets: formattedTimesheets });
   } catch (err) {
-    next(err);
+    console.error('❌ Error in /api/timesheets/employee/:employeeId/all:', err);
+    console.error('Error name:', err.name);
+    console.error('Error message:', err.message);
+    if (err.original) {
+      console.error('Database error:', err.original);
+    }
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to fetch employee timesheets',
+      error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
+    });
   }
 });
 
@@ -845,7 +930,7 @@ router.get('/approved-today', async (req, res, next) => {
       where: {
         tenantId,
         status: 'approved',
-        approvedAt: {
+        approved_at: {
           [Op.between]: [startOfDay, endOfDay]
         }
       }
@@ -853,8 +938,17 @@ router.get('/approved-today', async (req, res, next) => {
 
     res.json({ success: true, count });
   } catch (err) {
-    console.error('Error getting approved count:', err);
-    next(err);
+    console.error('❌ Error getting approved count:', err);
+    console.error('Error name:', err.name);
+    console.error('Error message:', err.message);
+    if (err.original) {
+      console.error('Database error:', err.original);
+    }
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to get approved count',
+      error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
+    });
   }
 });
 
@@ -878,7 +972,7 @@ router.get('/rejected-today', async (req, res, next) => {
       where: {
         tenantId,
         status: 'rejected',
-        updatedAt: {
+        updated_at: {
           [Op.between]: [startOfDay, endOfDay]
         }
       }
@@ -886,8 +980,17 @@ router.get('/rejected-today', async (req, res, next) => {
 
     res.json({ success: true, count });
   } catch (err) {
-    console.error('Error getting rejected count:', err);
-    next(err);
+    console.error('❌ Error getting rejected count:', err);
+    console.error('Error name:', err.name);
+    console.error('Error message:', err.message);
+    if (err.original) {
+      console.error('Database error:', err.original);
+    }
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to get rejected count',
+      error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
+    });
   }
 });
 

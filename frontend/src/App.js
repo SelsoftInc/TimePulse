@@ -265,8 +265,8 @@ function App() {
         {/* Fallback route */}
         <Route path="*" element={<Navigate to="/login" />} />
         </Routes>
-        <ToastContainer />
         </AuthProvider>
+        <ToastContainer />
         </ToastProvider>
       </ThemeProvider>
     </BrowserRouter>

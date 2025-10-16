@@ -8,7 +8,7 @@ const { User, Employee, LeaveRequest, LeaveBalance } = models;
 // Submit leave request
 router.post('/request', async (req, res) => {
   try {
-    const { employeeId, tenantId, leaveType, startDate, endDate, totalDays, reason, approverId, attachmentName } = req.body;
+    const { employeeId, employeeName, tenantId, leaveType, startDate, endDate, totalDays, reason, approverId, attachmentName } = req.body;
     
     if (!employeeId || !tenantId || !leaveType || !startDate || !endDate || !totalDays || !approverId) {
       return res.status(400).json({ 
@@ -33,18 +33,33 @@ router.post('/request', async (req, res) => {
         });
       }
 
-      // Create employee record
+      // Create employee record with proper firstName and lastName
       employee = await Employee.create({
         id: user.id,
         tenantId: user.tenantId,
-        firstName: user.name ? user.name.split(' ')[0] : 'Employee',
-        lastName: user.name ? user.name.split(' ').slice(1).join(' ') : '',
+        firstName: user.firstName || 'Employee',
+        lastName: user.lastName || '',
         email: user.email,
         status: 'active',
-        joiningDate: new Date()
+        startDate: new Date()
       });
 
-      console.log('✅ Created employee record for user:', user.email);
+      console.log('✅ Created employee record for user:', user.email, `(${user.firstName} ${user.lastName})`);
+    } else {
+      // Update employee record if firstName/lastName are missing
+      if (!employee.firstName || !employee.lastName) {
+        const user = await User.findOne({
+          where: { id: employeeId, tenantId }
+        });
+        
+        if (user) {
+          await employee.update({
+            firstName: user.firstName || employee.firstName || 'Employee',
+            lastName: user.lastName || employee.lastName || ''
+          });
+          console.log('✅ Updated employee record with name:', `${user.firstName} ${user.lastName}`);
+        }
+      }
     }
 
     // Create leave request
@@ -181,7 +196,8 @@ router.get('/history', async (req, res) => {
         {
           model: User,
           as: 'reviewer',
-          attributes: ['id', 'name', 'email']
+          attributes: ['id', 'firstName', 'lastName', 'email'],
+          required: false
         }
       ],
       order: [['createdAt', 'DESC']]
@@ -194,7 +210,7 @@ router.get('/history', async (req, res) => {
       endDate: req.endDate,
       days: req.totalDays,
       status: req.status.charAt(0).toUpperCase() + req.status.slice(1),
-      approvedBy: req.reviewer?.name || 'N/A',
+      approvedBy: req.reviewer ? `${req.reviewer.firstName} ${req.reviewer.lastName}` : 'N/A',
       approvedOn: req.reviewedAt ? new Date(req.reviewedAt).toISOString().split('T')[0] : 'N/A'
     }));
 
@@ -282,7 +298,8 @@ router.get('/pending-approvals', async (req, res) => {
         {
           model: Employee,
           as: 'employee',
-          attributes: ['id', 'firstName', 'lastName', 'email', 'department']
+          attributes: ['id', 'firstName', 'lastName', 'email', 'department'],
+          required: false
         }
       ],
       order: [['createdAt', 'ASC']]
@@ -290,9 +307,9 @@ router.get('/pending-approvals', async (req, res) => {
 
     const formattedRequests = leaveRequests.map(req => ({
       id: req.id,
-      employeeName: `${req.employee.firstName} ${req.employee.lastName}`,
-      employeeEmail: req.employee.email,
-      department: req.employee.department || 'N/A',
+      employeeName: req.employee ? `${req.employee.firstName} ${req.employee.lastName}` : 'Unknown Employee',
+      employeeEmail: req.employee?.email || 'N/A',
+      department: req.employee?.department || 'N/A',
       leaveType: req.leaveType.charAt(0).toUpperCase() + req.leaveType.slice(1),
       startDate: req.startDate,
       endDate: req.endDate,
@@ -354,7 +371,8 @@ router.get('/all-requests', async (req, res) => {
         {
           model: User,
           as: 'reviewer',
-          attributes: ['id', 'name', 'email']
+          attributes: ['id', 'firstName', 'lastName', 'email'],
+          required: false
         }
       ],
       order: [['createdAt', 'DESC']]
@@ -375,7 +393,7 @@ router.get('/all-requests', async (req, res) => {
       reason: request.reason,
       status: request.status,
       submittedOn: request.createdAt,
-      reviewedBy: request.reviewer?.name || null,
+      reviewedBy: request.reviewer ? `${request.reviewer.firstName} ${request.reviewer.lastName}` : null,
       reviewedAt: request.reviewedAt,
       reviewComments: request.reviewComments
     }));
@@ -571,6 +589,51 @@ router.get('/statistics', async (req, res) => {
     console.error('Error fetching leave statistics:', error);
     res.status(500).json({ 
       error: 'Failed to fetch statistics',
+      details: error.message 
+    });
+  }
+});
+
+// Cancel/Delete a leave request
+router.delete('/cancel/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { employeeId, tenantId } = req.body;
+
+    if (!id || !employeeId || !tenantId) {
+      return res.status(400).json({ 
+        error: 'Leave request ID, Employee ID, and Tenant ID are required' 
+      });
+    }
+
+    // Find the leave request
+    const leaveRequest = await LeaveRequest.findOne({
+      where: {
+        id,
+        employeeId,
+        tenantId,
+        status: 'pending' // Only allow canceling pending requests
+      }
+    });
+
+    if (!leaveRequest) {
+      return res.status(404).json({ 
+        error: 'Leave request not found or cannot be cancelled' 
+      });
+    }
+
+    // Delete the leave request
+    await leaveRequest.destroy();
+
+    res.json({
+      success: true,
+      message: 'Leave request cancelled successfully'
+    });
+
+  } catch (error) {
+    console.error('Error cancelling leave request:', error);
+    res.status(500).json({ 
+      error: 'Failed to cancel leave request',
       details: error.message 
     });
   }

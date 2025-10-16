@@ -109,6 +109,8 @@ const Login = () => {
             id: data.user.id,
             email: data.user.email,
             name: `${data.user.firstName} ${data.user.lastName}`,
+            firstName: data.user.firstName,
+            lastName: data.user.lastName,
             role: data.user.role,
             tenantId: data.user.tenantId,
             employeeId: data.user.employeeId

@@ -845,6 +845,7 @@ models.Tenant.hasMany(models.LeaveRequest, { foreignKey: 'tenantId', as: 'leaveR
 models.Employee.hasMany(models.LeaveRequest, { foreignKey: 'employeeId', as: 'leaveRequests' });
 models.LeaveRequest.belongsTo(models.Tenant, { foreignKey: 'tenantId', as: 'tenant' });
 models.LeaveRequest.belongsTo(models.Employee, { foreignKey: 'employeeId', as: 'employee' });
+models.LeaveRequest.belongsTo(models.User, { foreignKey: 'approverId', as: 'approver' });
 models.LeaveRequest.belongsTo(models.User, { foreignKey: 'reviewedBy', as: 'reviewer' });
 
 // Leave Balance associations

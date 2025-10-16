@@ -1,28 +1,30 @@
 /* Toast Notification Styles */
 .toast-container {
   position: fixed;
-  top: 20px;
+  top: 80px;
   right: 20px;
-  z-index: 9999;
+  z-index: 99999;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
   pointer-events: none;
+  max-width: 500px;
 }
 
 .toast {
-  min-width: 300px;
+  min-width: 320px;
   max-width: 500px;
-  padding: 16px 20px;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  padding: 18px 22px;
+  border-radius: 10px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
   pointer-events: all;
   animation: slideIn 0.3s ease-out;
   background: white;
-  border-left: 4px solid;
+  border-left: 5px solid;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
 }
 
 .toast.toast-exit {

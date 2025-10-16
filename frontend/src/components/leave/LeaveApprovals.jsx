@@ -13,6 +13,11 @@ const LeaveApprovals = () => {
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [rejectionReason, setRejectionReason] = useState('');
   const [showRejectModal, setShowRejectModal] = useState(false);
+  
+  // Pagination states
+  const [pendingPage, setPendingPage] = useState(1);
+  const [allRequestsPage, setAllRequestsPage] = useState(1);
+  const rowsPerPage = 5;
 
   const isAdmin = user?.role === 'admin';
   const isApprover = user?.role === 'approver' || user?.role === 'admin';
@@ -218,7 +223,7 @@ const LeaveApprovals = () => {
 
           {/* Pending Requests */}
           {(activeTab === 'pending' || !isAdmin) && (
-            <div className="leave-requests-list">
+            <div className="leave-requests-table">
               {pendingRequests.length === 0 ? (
                 <div className="text-center p-4">
                   <em className="icon ni ni-check-circle-fill" style={{ fontSize: '48px', color: '#10b981' }}></em>
@@ -226,88 +231,99 @@ const LeaveApprovals = () => {
                   <p className="text-soft">All leave requests have been processed</p>
                 </div>
               ) : (
-                pendingRequests.map((request, index) => (
-                  <div key={request.id}>
-                    <div className="leave-request-card mb-3 p-3 border rounded">
-                    <div className="d-flex justify-content-between align-items-start">
-                      <div className="flex-grow-1">
-                        <div className="d-flex align-items-center mb-2">
-                          <div className="user-avatar bg-primary text-white mr-2">
-                            {request.employeeName.charAt(0)}
-                          </div>
-                          <div>
-                            <h6 className="mb-0">{request.employeeName}</h6>
-                            <small className="text-soft">{request.employeeEmail}</small>
-                          </div>
-                        </div>
-                        
-                        <div className="leave-request-details">
-                          <div className="row g-3">
-                            <div className="col-md-3">
-                              <small className="text-soft d-block">Leave Type</small>
+                <>
+                  <table className="table table-bordered">
+                    <thead>
+                      <tr>
+                        <th>Employee</th>
+                        <th>Employee Email</th>
+                        <th>Leave Type</th>
+                        <th>Dates</th>
+                        <th>Days</th>
+                        <th>Status</th>
+                        <th>Submitted</th>
+                        <th>Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {pendingRequests
+                        .slice((pendingPage - 1) * rowsPerPage, pendingPage * rowsPerPage)
+                        .map((request) => (
+                          <tr key={request.id}>
+                            <td>{request.employeeName}</td>
+                            <td>{request.employeeEmail}</td>
+                            <td>
                               <span className="badge badge-dim badge-outline-primary">
                                 {request.leaveType}
                               </span>
-                            </div>
-                            <div className="col-md-3">
-                              <small className="text-soft d-block">Duration</small>
-                              <strong>{request.days} day{request.days > 1 ? 's' : ''}</strong>
-                            </div>
-                            <div className="col-md-6">
-                              <small className="text-soft d-block">Dates</small>
-                              <strong>{formatDate(request.startDate)} - {formatDate(request.endDate)}</strong>
-                            </div>
-                          </div>
-                          
-                          {request.reason && (
-                            <div className="mt-2">
-                              <small className="text-soft d-block">Reason</small>
-                              <p className="mb-0">{request.reason}</p>
-                            </div>
-                          )}
-                          
-                          {request.attachment && (
-                            <div className="mt-2">
-                              <small className="text-soft d-block">Attachment</small>
-                              <a href="#" className="btn btn-sm btn-outline-light">
-                                <i className="fas fa-paperclip mr-1"></i>
-                                {request.attachment}
-                              </a>
-                            </div>
-                          )}
-                          
-                          <div className="mt-2">
-                            <small className="text-soft">
-                              Submitted: {formatDate(request.submittedAt)}
-                            </small>
-                          </div>
+                            </td>
+                            <td>
+                              {formatDate(request.startDate)} - {formatDate(request.endDate)}
+                            </td>
+                            <td>{request.days}</td>
+                            <td>
+                              <span className="badge badge-warning">
+                                Pending
+                              </span>
+                            </td>
+                            <td>{formatDate(request.submittedAt)}</td>
+                            <td>
+                              <div className="d-flex gap-2">
+                                <button
+                                  className="btn btn-success btn-sm"
+                                  onClick={() => handleApprove(request.id)}
+                                  title="Approve Leave Request"
+                                >
+                                  <i className="fas fa-check mr-1"></i>
+                                  Approve
+                                </button>
+                                <button
+                                  className="btn btn-danger btn-sm"
+                                  onClick={() => openRejectModal(request)}
+                                  title="Reject Leave Request"
+                                >
+                                  <i className="fas fa-times mr-1"></i>
+                                  Reject
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
+                  
+                  {/* Pagination Controls */}
+                  {pendingRequests.length > rowsPerPage && (
+                    <div className="pagination-wrappe">
+                      <div className="pagination-info">
+                        Showing {((pendingPage - 1) * rowsPerPage) + 1} to {Math.min(pendingPage * rowsPerPage, pendingRequests.length)} of {pendingRequests.length} entries
+                      </div>
+                      <div className="pagination-controls">
+                        <button
+                          className="pagination-btn"
+                          onClick={() => setPendingPage(prev => Math.max(1, prev - 1))}
+                          disabled={pendingPage === 1}
+                          title="Previous Page"
+                        >
+                          <i className="fas fa-chevron-left"></i>
+                        </button>
+                        <div className="pagination-pages">
+                          <span className="current-page">{pendingPage}</span>
+                          <span className="page-separator">/</span>
+                          <span className="total-pages">{Math.ceil(pendingRequests.length / rowsPerPage)}</span>
                         </div>
-                      </div>
-                      
-                      <div className="leave-request-actions ml-3">
                         <button
-                          className="btn btn-success btn-sm mb-2"
-                          onClick={() => handleApprove(request.id)}
+                          className="pagination-btn"
+                          onClick={() => setPendingPage(prev => Math.min(Math.ceil(pendingRequests.length / rowsPerPage), prev + 1))}
+                          disabled={pendingPage >= Math.ceil(pendingRequests.length / rowsPerPage)}
+                          title="Next Page"
                         >
-                          <i className="fas fa-check mr-1"></i>
-                          Approve
-                        </button>
-                        <button
-                          className="btn btn-danger btn-sm"
-                          onClick={() => openRejectModal(request)}
-                        >
-                          <i className="fas fa-times mr-1"></i>
-                          Reject
+                          <i className="fas fa-chevron-right"></i>
                         </button>
                       </div>
                     </div>
-                    </div>
-                    {/* Divider between requests */}
-                    {index < pendingRequests.length - 1 && (
-                      <hr className="my-3" style={{ borderTop: '1px solid #e5e9f2' }} />
-                    )}
-                  </div>
-                ))
+                  )}
+                </>
               )}
             </div>
           )}
@@ -319,7 +335,7 @@ const LeaveApprovals = () => {
                 <thead>
                   <tr>
                     <th>Employee</th>
-                    <th>Department</th>
+                    <th>Employee Email</th>
                     <th>Leave Type</th>
                     <th>Dates</th>
                     <th>Days</th>
@@ -328,29 +344,63 @@ const LeaveApprovals = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {allRequests.map((request) => (
-                    <tr key={request.id}>
-                      <td>{request.employeeName}</td>
-                      <td>{request.department}</td>
-                      <td>
-                        <span className="badge badge-dim badge-outline-primary">
-                          {request.leaveType}
-                        </span>
-                      </td>
-                      <td>
-                        {formatDate(request.startDate)} - {formatDate(request.endDate)}
-                      </td>
-                      <td>{request.totalDays || request.days}</td>
-                      <td>
-                        <span className={`badge ${getStatusBadgeClass(request.status)}`}>
-                          {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
-                        </span>
-                      </td>
-                      <td>{formatDate(request.submittedOn || request.submittedAt)}</td>
-                    </tr>
-                  ))}
+                  {allRequests
+                    .slice((allRequestsPage - 1) * rowsPerPage, allRequestsPage * rowsPerPage)
+                    .map((request) => (
+                      <tr key={request.id}>
+                        <td>{request.employeeName}</td>
+                        <td>{request.employeeEmail}</td>
+                        <td>
+                          <span className="badge badge-dim badge-outline-primary">
+                            {request.leaveType}
+                          </span>
+                        </td>
+                        <td>
+                          {formatDate(request.startDate)} - {formatDate(request.endDate)}
+                        </td>
+                        <td>{request.totalDays || request.days}</td>
+                        <td>
+                          <span className={`badge ${getStatusBadgeClass(request.status)}`}>
+                            {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
+                          </span>
+                        </td>
+                        <td>{formatDate(request.submittedOn || request.submittedAt)}</td>
+                      </tr>
+                    ))}
                 </tbody>
               </table>
+              
+              {/* Pagination Controls */}
+              {allRequests.length > rowsPerPage && (
+                <div className="pagination-wrapper">
+                  <div className="pagination-info">
+                    Showing {((allRequestsPage - 1) * rowsPerPage) + 1} to {Math.min(allRequestsPage * rowsPerPage, allRequests.length)} of {allRequests.length} entries
+                  </div>
+                  <div className="pagination-controls">
+                    <button
+                      className="pagination-btn"
+                      onClick={() => setAllRequestsPage(prev => Math.max(1, prev - 1))}
+                      disabled={allRequestsPage === 1}
+                      title="Previous Page"
+                    >
+                      <i className="fas fa-chevron-left"></i>
+                    </button>
+                    <div className="pagination-pages">
+                      <span className="current-page">{allRequestsPage}</span>
+                      <span className="page-separator">/</span>
+                      <span className="total-pages">{Math.ceil(allRequests.length / rowsPerPage)}</span>
+                    </div>
+                    <button
+                      className="pagination-btn"
+                      onClick={() => setAllRequestsPage(prev => Math.min(Math.ceil(allRequests.length / rowsPerPage), prev + 1))}
+                      disabled={allRequestsPage >= Math.ceil(allRequests.length / rowsPerPage)}
+                      title="Next Page"
+                    >
+                      <i className="fas fa-chevron-right"></i>
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>

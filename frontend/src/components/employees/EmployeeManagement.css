@@ -188,12 +188,14 @@
 }
 
 .btn-primary {
-  background-color: var(--color-accent-primary);
-  color: var(--color-text-inverse);
+  background-color: var(--color-accent-primary, #3b82f6) !important;
+  color: var(--color-text-inverse, #ffffff) !important;
+  border: none !important;
 }
 
 .btn-primary:hover {
-  background-color: var(--color-accent-secondary);
+  background-color: var(--color-accent-secondary, #1d4ed8) !important;
+  color: var(--color-text-inverse, #ffffff) !important;
 }
 
 .btn-secondary {

@@ -1,117 +1,121 @@
 // src/components/invoices/InvoiceDashboard.jsx
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import './InvoiceDashboard.css';
+import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import "./InvoiceDashboard.css";
 
 const InvoiceDashboard = () => {
-  // Sample invoice data - in a real app, this would come from an API
-  const [invoices, setInvoices] = useState([
-    { 
-      id: 1, 
-      clientId: 1,
-      clientName: "JPMC", 
-      month: "July", 
-      year: 2023,
-      totalHours: 800, 
-      amount: 80000, 
-      status: "Sent" 
-    },
-    { 
-      id: 2, 
-      clientId: 2,
-      clientName: "Accenture", 
-      month: "July", 
-      year: 2023,
-      totalHours: 500, 
-      amount: 50000, 
-      status: "Draft" 
-    },
-    { 
-      id: 3, 
-      clientId: 3,
-      clientName: "Virtusa", 
-      month: "July", 
-      year: 2023,
-      totalHours: 300, 
-      amount: 30000, 
-      status: "Generated" 
-    },
-    { 
-      id: 4, 
-      clientId: 4,
-      clientName: "Cognizant", 
-      month: "June", 
-      year: 2023,
-      totalHours: 450, 
-      amount: 45000, 
-      status: "Paid" 
-    },
-    { 
-      id: 5, 
-      clientId: 5,
-      clientName: "IBM", 
-      month: "June", 
-      year: 2023,
-      totalHours: 900, 
-      amount: 90000, 
-      status: "Sent" 
+  // Real data from API
+  const [invoices, setInvoices] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const [filterStatus, setFilterStatus] = useState("all");
+  const [filterMonth, setFilterMonth] = useState("all");
+
+  // Fetch invoices from API
+  useEffect(() => {
+    fetchInvoices();
+  }, []);
+
+  const fetchInvoices = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const userInfo = JSON.parse(localStorage.getItem("user") || "{}");
+      if (!userInfo.tenantId) {
+        throw new Error("No tenant information available");
+      }
+
+      const headers = {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      };
+
+      const response = await fetch(
+        `http://localhost:5001/api/reports/invoices?tenantId=${userInfo.tenantId}`,
+        { headers }
+      );
+
+      const data = await response.json();
+      if (data.success) {
+        setInvoices(data.data || []);
+      } else {
+        throw new Error(data.error || "Failed to fetch invoices");
+      }
+    } catch (error) {
+      console.error("Error fetching invoices:", error);
+      setError(error.message);
+    } finally {
+      setLoading(false);
     }
-  ]);
-  
-  const [filterStatus, setFilterStatus] = useState('all');
-  const [filterMonth, setFilterMonth] = useState('all');
-  
+  };
+
   // Generate invoice function
   const generateInvoice = (invoiceId) => {
-    setInvoices(invoices.map(invoice => 
-      invoice.id === invoiceId ? { ...invoice, status: "Generated" } : invoice
-    ));
+    setInvoices(
+      invoices.map((invoice) =>
+        invoice.id === invoiceId ? { ...invoice, status: "Generated" } : invoice
+      )
+    );
     alert(`Invoice #${invoiceId} has been generated successfully!`);
   };
-  
+
   // Send invoice function
   const sendInvoice = (invoiceId) => {
-    setInvoices(invoices.map(invoice => 
-      invoice.id === invoiceId ? { ...invoice, status: "Sent" } : invoice
-    ));
+    setInvoices(
+      invoices.map((invoice) =>
+        invoice.id === invoiceId ? { ...invoice, status: "Sent" } : invoice
+      )
+    );
     alert(`Invoice #${invoiceId} has been sent to the client!`);
   };
-  
+
   // Mark as paid function
   const markAsPaid = (invoiceId) => {
-    setInvoices(invoices.map(invoice => 
-      invoice.id === invoiceId ? { ...invoice, status: "Paid" } : invoice
-    ));
+    setInvoices(
+      invoices.map((invoice) =>
+        invoice.id === invoiceId ? { ...invoice, status: "Paid" } : invoice
+      )
+    );
     alert(`Invoice #${invoiceId} has been marked as paid!`);
   };
-  
+
   // Filter invoices
-  const filteredInvoices = invoices.filter(invoice => {
-    if (filterStatus !== 'all' && invoice.status.toLowerCase() !== filterStatus) {
+  const filteredInvoices = invoices.filter((invoice) => {
+    if (
+      filterStatus !== "all" &&
+      invoice.status.toLowerCase() !== filterStatus
+    ) {
       return false;
     }
-    if (filterMonth !== 'all' && invoice.month.toLowerCase() !== filterMonth.toLowerCase()) {
+    if (
+      filterMonth !== "all" &&
+      invoice.month.toLowerCase() !== filterMonth.toLowerCase()
+    ) {
       return false;
     }
     return true;
   });
-  
+
   // Function to render status badge
   const renderStatusBadge = (status) => {
-    switch(status) {
-      case 'Paid':
+    switch (status) {
+      case "Paid":
         return <span className="badge badge-dot badge-success">Paid</span>;
-      case 'Sent':
+      case "Sent":
         return <span className="badge badge-dot badge-info">Sent</span>;
-      case 'Generated':
+      case "Generated":
         return <span className="badge badge-dot badge-warning">Generated</span>;
-      case 'Draft':
+      case "Draft":
         return <span className="badge badge-dot badge-gray">Draft</span>;
       default:
-        return <span className="badge badge-dot badge-secondary">{status}</span>;
+        return (
+          <span className="badge badge-dot badge-secondary">{status}</span>
+        );
     }
   };
-  
+
   return (
     <div className="nk-content">
       <div className="container-fluid">
@@ -120,9 +124,14 @@ const InvoiceDashboard = () => {
             <div className="nk-block-head nk-block-head-sm">
               <div className="nk-block-between">
                 <div className="nk-block-head-content">
-                  <h3 className="nk-block-title page-title">Invoice Dashboard</h3>
+                  <h3 className="nk-block-title page-title">
+                    Invoice Dashboard
+                  </h3>
                   <div className="nk-block-des text-soft">
-                    <p>Manage and generate client invoices based on approved timesheets.</p>
+                    <p>
+                      Manage and generate client invoices based on approved
+                      timesheets.
+                    </p>
                   </div>
                 </div>
                 <div className="nk-block-head-content">
@@ -135,7 +144,7 @@ const InvoiceDashboard = () => {
                 </div>
               </div>
             </div>
-            
+
             <div className="nk-block">
               <div className="card card-bordered card-stretch">
                 <div className="card-inner-group">
@@ -149,10 +158,12 @@ const InvoiceDashboard = () => {
                           <li>
                             <div className="form-group">
                               <div className="form-control-wrap">
-                                <select 
-                                  className="form-select form-select-sm" 
+                                <select
+                                  className="form-select form-select-sm"
                                   value={filterStatus}
-                                  onChange={(e) => setFilterStatus(e.target.value)}
+                                  onChange={(e) =>
+                                    setFilterStatus(e.target.value)
+                                  }
                                 >
                                   <option value="all">All Status</option>
                                   <option value="draft">Draft</option>
@@ -166,10 +177,12 @@ const InvoiceDashboard = () => {
                           <li>
                             <div className="form-group">
                               <div className="form-control-wrap">
-                                <select 
-                                  className="form-select form-select-sm" 
+                                <select
+                                  className="form-select form-select-sm"
                                   value={filterMonth}
-                                  onChange={(e) => setFilterMonth(e.target.value)}
+                                  onChange={(e) =>
+                                    setFilterMonth(e.target.value)
+                                  }
                                 >
                                   <option value="all">All Months</option>
                                   <option value="july">July</option>
@@ -183,41 +196,59 @@ const InvoiceDashboard = () => {
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="card-inner p-0">
                     <div className="nk-tb-list nk-tb-ulist">
                       <div className="nk-tb-item nk-tb-head">
-                        <div className="nk-tb-col"><span className="sub-text">Client Name</span></div>
-                        <div className="nk-tb-col tb-col-md"><span className="sub-text">Month</span></div>
-                        <div className="nk-tb-col tb-col-md"><span className="sub-text">Total Hours</span></div>
-                        <div className="nk-tb-col"><span className="sub-text">Amount ($)</span></div>
-                        <div className="nk-tb-col tb-col-md"><span className="sub-text">Status</span></div>
-                        <div className="nk-tb-col nk-tb-col-tools text-end">Actions</div>
+                        <div className="nk-tb-col">
+                          <span className="sub-text">Client Name</span>
+                        </div>
+                        <div className="nk-tb-col tb-col-md">
+                          <span className="sub-text">Month</span>
+                        </div>
+                        <div className="nk-tb-col tb-col-md">
+                          <span className="sub-text">Total Hours</span>
+                        </div>
+                        <div className="nk-tb-col">
+                          <span className="sub-text">Amount ($)</span>
+                        </div>
+                        <div className="nk-tb-col tb-col-md">
+                          <span className="sub-text">Status</span>
+                        </div>
+                        <div className="nk-tb-col nk-tb-col-tools text-end">
+                          Actions
+                        </div>
                       </div>
-                      
-                      {filteredInvoices.map(invoice => (
+
+                      {filteredInvoices.map((invoice) => (
                         <div key={invoice.id} className="nk-tb-item">
                           <div className="nk-tb-col">
-                            <span className="tb-lead">{invoice.clientName}</span>
+                            <span className="tb-lead">
+                              {invoice.clientName}
+                            </span>
                           </div>
                           <div className="nk-tb-col tb-col-md">
-                            <span>{invoice.month} {invoice.year}</span>
+                            <span>
+                              {invoice.month} {invoice.year}
+                            </span>
                           </div>
                           <div className="nk-tb-col tb-col-md">
                             <span>{invoice.totalHours}</span>
                           </div>
                           <div className="nk-tb-col">
-                            <span className="tb-amount">${invoice.amount.toLocaleString()}</span>
+                            <span className="tb-amount">
+                              ${invoice.amount.toLocaleString()}
+                            </span>
                           </div>
                           <div className="nk-tb-col tb-col-md">
                             {renderStatusBadge(invoice.status)}
                           </div>
                           <div className="nk-tb-col nk-tb-col-tools">
                             <ul className="nk-tb-actions gx-1">
-                              {invoice.status === 'Draft' && (
+                              {invoice.status === "Draft" && (
                                 <li>
-                                  <button 
-                                    className="btn btn-trigger btn-icon" 
+                                  <button
+                                    className="btn btn-trigger btn-icon"
                                     onClick={() => generateInvoice(invoice.id)}
                                     title="Generate Invoice"
                                   >
@@ -225,11 +256,11 @@ const InvoiceDashboard = () => {
                                   </button>
                                 </li>
                               )}
-                              
-                              {invoice.status === 'Generated' && (
+
+                              {invoice.status === "Generated" && (
                                 <li>
-                                  <button 
-                                    className="btn btn-trigger btn-icon" 
+                                  <button
+                                    className="btn btn-trigger btn-icon"
                                     onClick={() => sendInvoice(invoice.id)}
                                     title="Send Invoice"
                                   >
@@ -237,11 +268,11 @@ const InvoiceDashboard = () => {
                                   </button>
                                 </li>
                               )}
-                              
-                              {invoice.status === 'Sent' && (
+
+                              {invoice.status === "Sent" && (
                                 <li>
-                                  <button 
-                                    className="btn btn-trigger btn-icon" 
+                                  <button
+                                    className="btn btn-trigger btn-icon"
                                     onClick={() => markAsPaid(invoice.id)}
                                     title="Mark as Paid"
                                   >
@@ -249,20 +280,20 @@ const InvoiceDashboard = () => {
                                   </button>
                                 </li>
                               )}
-                              
+
                               <li>
-                                <Link 
-                                  to={`/invoices/view/${invoice.id}`} 
+                                <Link
+                                  to={`/invoices/view/${invoice.id}`}
                                   className="btn btn-trigger btn-icon"
                                   title="View Invoice"
                                 >
                                   <em className="icon ni ni-eye"></em>
                                 </Link>
                               </li>
-                              
+
                               <li>
-                                <Link 
-                                  to={`/invoices/pdf/${invoice.id}`} 
+                                <Link
+                                  to={`/invoices/pdf/${invoice.id}`}
                                   className="btn btn-trigger btn-icon"
                                   title="Download PDF"
                                 >
@@ -273,7 +304,7 @@ const InvoiceDashboard = () => {
                           </div>
                         </div>
                       ))}
-                      
+
                       {filteredInvoices.length === 0 && (
                         <div className="nk-tb-item">
                           <div className="nk-tb-col" colSpan="6">
@@ -288,7 +319,7 @@ const InvoiceDashboard = () => {
                 </div>
               </div>
             </div>
-            
+
             <div className="nk-block mt-5">
               <div className="row g-gs">
                 <div className="col-md-6 col-lg-4">
@@ -308,7 +339,7 @@ const InvoiceDashboard = () => {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="col-md-6 col-lg-4">
                   <div className="card card-bordered">
                     <div className="card-inner">
@@ -326,7 +357,7 @@ const InvoiceDashboard = () => {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="col-md-12 col-lg-4">
                   <div className="card card-bordered">
                     <div className="card-inner">

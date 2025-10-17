@@ -4,11 +4,10 @@ import { useAuth } from "../../contexts/AuthContext";
 import "./Dashboard.css";
 
 const DashCards = ({ stats }) => {
-
   const getBarColor = (value) => {
-    if (value > 70) return 'green';
-    if (value >= 40) return 'orange';
-    return 'red';
+    if (value > 70) return "green";
+    if (value >= 40) return "orange";
+    return "red";
   };
 
   // Calculate dynamic percentages for progress bars
@@ -18,7 +17,8 @@ const DashCards = ({ stats }) => {
   };
 
   // Get max values for normalization - use total timesheets as baseline
-  const totalTimesheets = stats.pendingCount + stats.approvedCount + stats.overdueCount;
+  const totalTimesheets =
+    stats.pendingCount + stats.approvedCount + stats.overdueCount;
   const maxTimesheets = totalTimesheets || 1;
   return (
     <div className="row">
@@ -38,17 +38,27 @@ const DashCards = ({ stats }) => {
                     <div className="chart-bar-background">
                       <div
                         className="chart-bar-fill"
-                        style={{ 
-                          width: '100%', 
-                          backgroundColor: getBarColor(100) 
+                        style={{
+                          width: "100%",
+                          backgroundColor: getBarColor(100),
                         }}
                       ></div>
                     </div>
                   </div>
                 </div>
                 <div className="info">
-                  <span className={`change ${stats.hoursTrend >= 0 ? 'up text-success' : 'down text-danger'}`}>
-                    <em className={`icon ni ni-arrow-long-${stats.hoursTrend >= 0 ? 'up' : 'down'}`}></em>
+                  <span
+                    className={`change ${
+                      stats.hoursTrend >= 0
+                        ? "up text-success"
+                        : "down text-danger"
+                    }`}
+                  >
+                    <em
+                      className={`icon ni ni-arrow-long-${
+                        stats.hoursTrend >= 0 ? "up" : "down"
+                      }`}
+                    ></em>
                     {Math.abs(stats.hoursTrend)}%
                   </span>
                   <span> vs. last week</span>
@@ -74,17 +84,35 @@ const DashCards = ({ stats }) => {
                     <div className="chart-bar-background">
                       <div
                         className="chart-bar-fill"
-                        style={{ 
-                          width: `${calculatePercentage(stats.pendingCount, maxTimesheets)}%`, 
-                          backgroundColor: getBarColor(calculatePercentage(stats.pendingCount, maxTimesheets)) 
+                        style={{
+                          width: `${calculatePercentage(
+                            stats.pendingCount,
+                            maxTimesheets
+                          )}%`,
+                          backgroundColor: getBarColor(
+                            calculatePercentage(
+                              stats.pendingCount,
+                              maxTimesheets
+                            )
+                          ),
                         }}
                       ></div>
                     </div>
                   </div>
                 </div>
                 <div className="info">
-                  <span className={`change ${stats.pendingTrend >= 0 ? 'up text-danger' : 'down text-success'}`}>
-                    <em className={`icon ni ni-arrow-long-${stats.pendingTrend >= 0 ? 'up' : 'down'}`}></em>
+                  <span
+                    className={`change ${
+                      stats.pendingTrend >= 0
+                        ? "up text-danger"
+                        : "down text-success"
+                    }`}
+                  >
+                    <em
+                      className={`icon ni ni-arrow-long-${
+                        stats.pendingTrend >= 0 ? "up" : "down"
+                      }`}
+                    ></em>
                     {Math.abs(stats.pendingTrend)}%
                   </span>
                   <span> vs. last week</span>
@@ -110,17 +138,35 @@ const DashCards = ({ stats }) => {
                     <div className="chart-bar-background">
                       <div
                         className="chart-bar-fill"
-                        style={{ 
-                          width: `${calculatePercentage(stats.approvedCount, maxTimesheets)}%`, 
-                          backgroundColor: getBarColor(calculatePercentage(stats.approvedCount, maxTimesheets)) 
+                        style={{
+                          width: `${calculatePercentage(
+                            stats.approvedCount,
+                            maxTimesheets
+                          )}%`,
+                          backgroundColor: getBarColor(
+                            calculatePercentage(
+                              stats.approvedCount,
+                              maxTimesheets
+                            )
+                          ),
                         }}
                       ></div>
                     </div>
                   </div>
                 </div>
                 <div className="info">
-                  <span className={`change ${stats.approvedTrend >= 0 ? 'up text-success' : 'down text-danger'}`}>
-                    <em className={`icon ni ni-arrow-long-${stats.approvedTrend >= 0 ? 'up' : 'down'}`}></em>
+                  <span
+                    className={`change ${
+                      stats.approvedTrend >= 0
+                        ? "up text-success"
+                        : "down text-danger"
+                    }`}
+                  >
+                    <em
+                      className={`icon ni ni-arrow-long-${
+                        stats.approvedTrend >= 0 ? "up" : "down"
+                      }`}
+                    ></em>
                     {Math.abs(stats.approvedTrend)}%
                   </span>
                   <span> vs. last week</span>
@@ -146,17 +192,35 @@ const DashCards = ({ stats }) => {
                     <div className="chart-bar-background">
                       <div
                         className="chart-bar-fill"
-                        style={{ 
-                          width: `${calculatePercentage(stats.overdueCount, maxTimesheets)}%`, 
-                          backgroundColor: getBarColor(calculatePercentage(stats.overdueCount, maxTimesheets)) 
+                        style={{
+                          width: `${calculatePercentage(
+                            stats.overdueCount,
+                            maxTimesheets
+                          )}%`,
+                          backgroundColor: getBarColor(
+                            calculatePercentage(
+                              stats.overdueCount,
+                              maxTimesheets
+                            )
+                          ),
                         }}
                       ></div>
                     </div>
                   </div>
                 </div>
                 <div className="info">
-                  <span className={`change ${stats.overdueTrend >= 0 ? 'up text-danger' : 'down text-success'}`}>
-                    <em className={`icon ni ni-arrow-long-${stats.overdueTrend >= 0 ? 'up' : 'down'}`}></em>
+                  <span
+                    className={`change ${
+                      stats.overdueTrend >= 0
+                        ? "up text-danger"
+                        : "down text-success"
+                    }`}
+                  >
+                    <em
+                      className={`icon ni ni-arrow-long-${
+                        stats.overdueTrend >= 0 ? "up" : "down"
+                      }`}
+                    ></em>
                     {Math.abs(stats.overdueTrend)}%
                   </span>
                   <span> vs. last week</span>
@@ -271,9 +335,13 @@ const TimesheetTable = ({ timesheetData, isEmployeeRole }) => {
               <div className="nk-tb-col nk-tb-col-tools">
                 <ul className="nk-tb-actions gx-1">
                   <li>
-                    <button 
+                    <button
                       className="btn btn-icon btn-trigger"
-                      onClick={() => navigate(`/${subdomain}/timesheets/submit/${timesheet.id}`)}
+                      onClick={() =>
+                        navigate(
+                          `/${subdomain}/timesheets/submit/${timesheet.id}`
+                        )
+                      }
                       title="View Timesheet Details"
                     >
                       <em className="icon ni ni-eye"></em>
@@ -285,18 +353,22 @@ const TimesheetTable = ({ timesheetData, isEmployeeRole }) => {
           ))}
         </div>
       </div>
-      
+
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="card-inner">
           <div className="d-flex justify-content-between align-items-center">
             <div className="text-muted">
-              Showing {startIndex + 1} to {Math.min(endIndex, timesheetData.length)} of {timesheetData.length} entries
+              Showing {startIndex + 1} to{" "}
+              {Math.min(endIndex, timesheetData.length)} of{" "}
+              {timesheetData.length} entries
             </div>
             <ul className="pagination pagination-sm">
-              <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
-                <button 
-                  className="page-link" 
+              <li
+                className={`page-item ${currentPage === 1 ? "disabled" : ""}`}
+              >
+                <button
+                  className="page-link"
                   onClick={() => handlePageChange(currentPage - 1)}
                   disabled={currentPage === 1}
                 >
@@ -304,18 +376,27 @@ const TimesheetTable = ({ timesheetData, isEmployeeRole }) => {
                 </button>
               </li>
               {[...Array(totalPages)].map((_, i) => (
-                <li key={i} className={`page-item ${currentPage === i + 1 ? 'active' : ''}`}>
-                  <button 
-                    className="page-link" 
+                <li
+                  key={i}
+                  className={`page-item ${
+                    currentPage === i + 1 ? "active" : ""
+                  }`}
+                >
+                  <button
+                    className="page-link"
                     onClick={() => handlePageChange(i + 1)}
                   >
                     {i + 1}
                   </button>
                 </li>
               ))}
-              <li className={`page-item ${currentPage === totalPages ? 'disabled' : ''}`}>
-                <button 
-                  className="page-link" 
+              <li
+                className={`page-item ${
+                  currentPage === totalPages ? "disabled" : ""
+                }`}
+              >
+                <button
+                  className="page-link"
                   onClick={() => handlePageChange(currentPage + 1)}
                   disabled={currentPage === totalPages}
                 >
@@ -503,7 +584,7 @@ const Dashboard = () => {
   // useEffect(() => {
   //   console.log('Dashboard - currentEmployer:', currentEmployer);
   //   console.log('Dashboard - currentEmployer.role:', currentEmployer?.role);
-  //   
+  //
   //   // Only redirect if user is ONLY an employee (not admin or approver)
   //   if (currentEmployer?.role === "employee") {
   //     console.log('Redirecting employee to employee-dashboard');
@@ -535,10 +616,10 @@ const Dashboard = () => {
     const fetchDashboardData = async () => {
       try {
         const userInfo = JSON.parse(localStorage.getItem("user") || "{}");
-        console.log('👤 User Info from localStorage:', userInfo);
-        console.log('🔑 Employee ID:', userInfo.employeeId);
-        console.log('🏢 Tenant ID:', userInfo.tenantId);
-        
+        console.log("👤 User Info from localStorage:", userInfo);
+        console.log("🔑 Employee ID:", userInfo.employeeId);
+        console.log("🏢 Tenant ID:", userInfo.tenantId);
+
         if (!userInfo.tenantId) {
           console.error("No tenant information available");
           return;
@@ -547,7 +628,7 @@ const Dashboard = () => {
         // Fetch dashboard data based on role
         let dashboardResp;
         if (isEmployeeRole && userInfo.employeeId) {
-          console.log('🌐 Fetching EMPLOYEE dashboard from API...');
+          console.log("🌐 Fetching EMPLOYEE dashboard from API...");
           dashboardResp = await fetch(
             `http://localhost:5000/api/employee-dashboard?employeeId=${userInfo.employeeId}&tenantId=${userInfo.tenantId}`,
             {
@@ -560,7 +641,7 @@ const Dashboard = () => {
           );
         } else {
           // Admin/Manager role - fetch aggregated data
-          console.log('🌐 Fetching ADMIN dashboard from API...');
+          console.log("🌐 Fetching ADMIN dashboard from API...");
           dashboardResp = await fetch(
             `http://localhost:5000/api/employee-dashboard/admin?tenantId=${userInfo.tenantId}`,
             {
@@ -572,40 +653,43 @@ const Dashboard = () => {
             }
           );
         }
-        
-        if (dashboardResp) {
 
+        if (dashboardResp) {
           const dashboardData = await dashboardResp.json();
-          console.log('📊 Dashboard API Response:', dashboardData);
-          
+          console.log("📊 Dashboard API Response:", dashboardData);
+
           if (dashboardData.success && dashboardData.data) {
             const { data } = dashboardData;
-            console.log('✅ Dashboard Data:', data);
-            console.log('📈 Timesheets:', data.timesheets);
-            console.log('📋 Recent Timesheets:', data.timesheets.recent);
-            
+            console.log("✅ Dashboard Data:", data);
+            console.log("📈 Timesheets:", data.timesheets);
+            console.log("📋 Recent Timesheets:", data.timesheets.recent);
+
             // Update dashboard stats with real data from API
-            console.log('🔍 Raw API Data:', {
+            console.log("🔍 Raw API Data:", {
               totalHoursAllTime: data.timesheets.totalHoursAllTime,
               totalHoursThisMonth: data.timesheets.totalHoursThisMonth,
               thisWeekHours: data.timesheets.thisWeekHours,
               pending: data.timesheets.pending,
               approved: data.timesheets.approved,
-              rejected: data.timesheets.rejected
+              rejected: data.timesheets.rejected,
             });
-            
-            const totalHours = data.timesheets.totalHoursAllTime 
-              ? data.timesheets.totalHoursAllTime.toFixed(1) 
+
+            const totalHours = data.timesheets.totalHoursAllTime
+              ? data.timesheets.totalHoursAllTime.toFixed(1)
               : "0.0";
-            const thisWeek = data.timesheets.thisWeekHours 
-              ? data.timesheets.thisWeekHours.toFixed(1) 
+            const thisWeek = data.timesheets.thisWeekHours
+              ? data.timesheets.thisWeekHours.toFixed(1)
               : "0.0";
-            const thisMonth = data.timesheets.totalHoursThisMonth 
-              ? data.timesheets.totalHoursThisMonth.toFixed(1) 
+            const thisMonth = data.timesheets.totalHoursThisMonth
+              ? data.timesheets.totalHoursThisMonth.toFixed(1)
               : "0.0";
-            
-            console.log('📊 Calculated Values:', { totalHours, thisWeek, thisMonth });
-            
+
+            console.log("📊 Calculated Values:", {
+              totalHours,
+              thisWeek,
+              thisMonth,
+            });
+
             setDashStats({
               totalHours: totalHours,
               hoursTrend: 2.5,
@@ -618,26 +702,35 @@ const Dashboard = () => {
               thisWeekHours: thisWeek,
               thisMonthHours: thisMonth,
             });
-            console.log('📊 Stats Updated:', {
+            console.log("📊 Stats Updated:", {
               totalHours,
               thisWeek,
               thisMonth,
               pending: data.timesheets.pending,
               approved: data.timesheets.approved,
-              rejected: data.timesheets.rejected
+              rejected: data.timesheets.rejected,
             });
 
             // Transform recent timesheets for display
             if (data.timesheets.recent && data.timesheets.recent.length > 0) {
-              const transformedTimesheets = data.timesheets.recent.map(ts => {
+              const transformedTimesheets = data.timesheets.recent.map((ts) => {
                 // For admin, use employee data from API; for employee, use current user
-                const employeeName = isEmployeeRole 
-                  ? `${userInfo.firstName || ''} ${userInfo.lastName || ''}`.trim()
-                  : ts.employeeName || 'Unknown';
+                const employeeName = isEmployeeRole
+                  ? `${userInfo.firstName || ""} ${
+                      userInfo.lastName || ""
+                    }`.trim()
+                  : ts.employeeName || "Unknown";
                 const employeeInitials = isEmployeeRole
-                  ? `${userInfo.firstName?.[0] || 'E'}${userInfo.lastName?.[0] || 'E'}`
-                  : employeeName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
-                
+                  ? `${userInfo.firstName?.[0] || "E"}${
+                      userInfo.lastName?.[0] || "E"
+                    }`
+                  : employeeName
+                      .split(" ")
+                      .map((n) => n[0])
+                      .join("")
+                      .toUpperCase()
+                      .substring(0, 2);
+
                 return {
                   id: ts.id,
                   employee: {
@@ -645,25 +738,42 @@ const Dashboard = () => {
                     initials: employeeInitials,
                     // role: 'Employee'
                   },
-                  project: ts.projectName || 'N/A',
-                  client: ts.clientName || 'N/A',
-                  week: new Date(ts.weekStartDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+                  project: ts.projectName || "N/A",
+                  client: ts.clientName || "N/A",
+                  week: new Date(ts.weekStartDate).toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                  }),
                   hours: parseFloat(ts.totalHours) || 0,
                   status: {
-                    label: ts.status === 'submitted' ? 'Pending' : ts.status.charAt(0).toUpperCase() + ts.status.slice(1),
-                    color: ts.status === 'approved' ? 'success' : ts.status === 'submitted' ? 'warning' : ts.status === 'rejected' ? 'danger' : 'info'
-                  }
+                    label:
+                      ts.status === "submitted"
+                        ? "Pending"
+                        : ts.status.charAt(0).toUpperCase() +
+                          ts.status.slice(1),
+                    color:
+                      ts.status === "approved"
+                        ? "success"
+                        : ts.status === "submitted"
+                        ? "warning"
+                        : ts.status === "rejected"
+                        ? "danger"
+                        : "info",
+                  },
                 };
               });
-              console.log('✅ Transformed Timesheets:', transformedTimesheets);
+              console.log("✅ Transformed Timesheets:", transformedTimesheets);
               setTimesheetData(transformedTimesheets);
             } else {
-              console.warn('⚠️ No recent timesheets in response');
+              console.warn("⚠️ No recent timesheets in response");
               setTimesheetData([]);
             }
             return;
           } else {
-            console.error('❌ API returned unsuccessful response:', dashboardData);
+            console.error(
+              "❌ API returned unsuccessful response:",
+              dashboardData
+            );
           }
         }
 
@@ -708,44 +818,58 @@ const Dashboard = () => {
     fetchDashboardData();
   }, [isEmployeeRole]);
 
-  // Sample invoice data
-  const invoiceData = [
-    {
-      id: "JPMC-INV-001",
-      client: "JPMC",
-      amount: "80,000",
-      dueDate: "Due Jul 15, 2025",
-      status: { label: "Pending", color: "warning" },
-    },
-    {
-      id: "AccentureINV-002",
-      client: "Accenture",
-      amount: "50,000",
-      dueDate: "Paid Jun 28, 2025",
-      status: { label: "Paid", color: "success" },
-    },
-    {
-      id: "VirtusaINV-003",
-      client: "Virtusa",
-      amount: "30,000",
-      dueDate: "Due Jul 20, 2025",
-      status: { label: "Pending", color: "warning" },
-    },
-    {
-      id: "CognizantINV-004",
-      client: "Cognizant",
-      amount: "45,000",
-      dueDate: "Due Jun 30, 2025",
-      status: { label: "Overdue", color: "danger" },
-    },
-    {
-      id: "IBMINV-005",
-      client: "IBM",
-      amount: "90,000",
-      dueDate: "Paid Jul 5, 2025",
-      status: { label: "Paid", color: "success" },
-    },
-  ];
+  // Real invoice data from API
+  const [invoiceData, setInvoiceData] = useState([]);
+
+  // Fetch invoice data
+  useEffect(() => {
+    const fetchInvoiceData = async () => {
+      try {
+        const userInfo = JSON.parse(localStorage.getItem("user") || "{}");
+        if (!userInfo.tenantId) return;
+
+        const headers = {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        };
+
+        const response = await fetch(
+          `http://localhost:5001/api/reports/invoices?tenantId=${userInfo.tenantId}`,
+          { headers }
+        );
+
+        const data = await response.json();
+        if (data.success && data.data) {
+          // Transform data for display
+          const transformedInvoices = data.data.slice(0, 5).map((invoice) => ({
+            id: invoice.id,
+            client: invoice.clientName,
+            amount: invoice.amount.toLocaleString(),
+            dueDate:
+              invoice.status === "Paid"
+                ? `Paid ${invoice.month} ${invoice.year}`
+                : `Due ${invoice.month} ${invoice.year}`,
+            status: {
+              label: invoice.status,
+              color:
+                invoice.status === "Paid"
+                  ? "success"
+                  : invoice.status === "Pending"
+                  ? "warning"
+                  : "danger",
+            },
+          }));
+          setInvoiceData(transformedInvoices);
+        }
+      } catch (error) {
+        console.error("Error fetching invoice data:", error);
+      }
+    };
+
+    if (!isEmployeeRole) {
+      fetchInvoiceData();
+    }
+  }, [isEmployeeRole]);
 
   // Render dashboard content
   return (
@@ -805,10 +929,13 @@ const Dashboard = () => {
                           <div className="card-inner p-2 text-center">
                             <div className="d-flex align-items-center justify-content-center mb-1">
                               <em className="icon ni ni-clock text-primary fs-6 me-1"></em>
-                              <h6 className="nk-block-head-content fw-semibold mb-0 fs-7">This Week</h6>
+                              <h6 className="nk-block-head-content fw-semibold mb-0 fs-7">
+                                This Week
+                              </h6>
                             </div>
                             <div className="amount h4 mb-0 text-success fw-bold">
-                              {dashStats.thisWeekHours} <span className="fs-7 fw-normal">hrs</span>
+                              {dashStats.thisWeekHours}{" "}
+                              <span className="fs-7 fw-normal">hrs</span>
                             </div>
                           </div>
                         </div>
@@ -820,10 +947,13 @@ const Dashboard = () => {
                           <div className="card-inner p-2 text-center">
                             <div className="d-flex align-items-center justify-content-center mb-1">
                               <em className="icon ni ni-activity text-info fs-6 me-1"></em>
-                              <h6 className="nk-block-head-content fw-semibold mb-0 fs-7">This Month</h6>
+                              <h6 className="nk-block-head-content fw-semibold mb-0 fs-7">
+                                This Month
+                              </h6>
                             </div>
                             <div className="amount h4 mb-0 text-info fw-bold">
-                              {dashStats.thisMonthHours} <span className="fs-7 fw-normal">hrs</span>
+                              {dashStats.thisMonthHours}{" "}
+                              <span className="fs-7 fw-normal">hrs</span>
                             </div>
                           </div>
                         </div>
@@ -835,10 +965,13 @@ const Dashboard = () => {
                           <div className="card-inner p-2 text-center">
                             <div className="d-flex align-items-center justify-content-center mb-1">
                               <em className="icon ni ni-clock text-warning fs-6 me-1"></em>
-                              <h6 className="nk-block-head-content fw-semibold mb-0 fs-7">Pending</h6>
+                              <h6 className="nk-block-head-content fw-semibold mb-0 fs-7">
+                                Pending
+                              </h6>
                             </div>
                             <div className="amount h4 mb-0 text-warning fw-bold">
-                              {dashStats.pendingCount} <span className="fs-7 fw-normal">items</span>
+                              {dashStats.pendingCount}{" "}
+                              <span className="fs-7 fw-normal">items</span>
                             </div>
                           </div>
                         </div>
@@ -850,10 +983,13 @@ const Dashboard = () => {
                           <div className="card-inner p-2 text-center">
                             <div className="d-flex align-items-center justify-content-center mb-1">
                               <em className="icon ni ni-check-circle text-success fs-6 me-1"></em>
-                              <h6 className="nk-block-head-content fw-semibold mb-0 fs-7">Approved</h6>
+                              <h6 className="nk-block-head-content fw-semibold mb-0 fs-7">
+                                Approved
+                              </h6>
                             </div>
                             <div className="amount h4 mb-0 text-success fw-bold">
-                              {dashStats.approvedCount} <span className="fs-7 fw-normal">items</span>
+                              {dashStats.approvedCount}{" "}
+                              <span className="fs-7 fw-normal">items</span>
                             </div>
                           </div>
                         </div>

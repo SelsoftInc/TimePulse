@@ -4,6 +4,7 @@ import { useToast } from "../../contexts/ToastContext";
 import { API_BASE } from "../../config/api";
 import LeaveApprovals from "./LeaveApprovals";
 import "./LeaveManagement.css";
+import "../common/Pagination.css";
 
 const LeaveManagement = () => {
   const { user } = useAuth();

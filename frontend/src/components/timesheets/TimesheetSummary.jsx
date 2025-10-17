@@ -10,6 +10,7 @@ import {
   transformTimesheetToInvoice,
 } from "../../services/engineService";
 import "./TimesheetSummary.css";
+import "../common/Pagination.css";
 
 const TimesheetSummary = () => {
   const { subdomain } = useParams();

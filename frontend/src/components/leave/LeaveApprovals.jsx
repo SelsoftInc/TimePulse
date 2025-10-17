@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import { API_BASE } from '../../config/api';
+import '../common/Pagination.css';
 
 const LeaveApprovals = () => {
   const { user } = useAuth();

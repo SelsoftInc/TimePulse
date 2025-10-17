@@ -7,6 +7,7 @@ import { useToast } from "../../contexts/ToastContext";
 import DataGridFilter from "../common/DataGridFilter";
 import "./Employees.css";
 import "./EmployeeManagement.css";
+import "../common/Pagination.css";
 import { apiFetch } from "../../config/api";
 
 const EmployeeList = () => {
@@ -885,27 +886,28 @@ const EmployeeList = () => {
 
                 {/* Pagination Controls */}
                 {filteredEmployees.length > itemsPerPage && (
-                  <div className="card-inner">
-                    <div className="d-flex justify-content-between align-items-center">
-                      <div className="pagination-info">
-                        Showing {startIndex + 1} to{" "}
-                        {Math.min(endIndex, filteredEmployees.length)} of{" "}
-                        {filteredEmployees.length} employees
-                      </div>
+                  <div className="pagination-wrapper">
+                    <div className="pagination-info">
+                      Showing {startIndex + 1} to{" "}
+                      {Math.min(endIndex, filteredEmployees.length)} of{" "}
+                      {filteredEmployees.length} employees
+                    </div>
+                    <div className="pagination-controls">
                       <nav>
-                        <ul className="pagination pagination-sm mb-0">
+                        <ul className="pagination">
                           <li
                             className={`page-item ${
                               currentPage === 1 ? "disabled" : ""
                             }`}
                           >
                             <button
-                              className="pagination-btn"
+                              className="page-link"
                               onClick={() =>
                                 setCurrentPage((prev) => Math.max(1, prev - 1))
                               }
                               disabled={currentPage === 1}
                             >
+                              <i className="fas fa-chevron-left"></i>
                               Previous
                             </button>
                           </li>
@@ -917,11 +919,7 @@ const EmployeeList = () => {
                               }`}
                             >
                               <button
-                                className={
-                                  currentPage === index + 1
-                                    ? "current-page"
-                                    : "pagination-btn"
-                                }
+                                className="page-link"
                                 onClick={() => setCurrentPage(index + 1)}
                               >
                                 {index + 1}
@@ -934,7 +932,7 @@ const EmployeeList = () => {
                             }`}
                           >
                             <button
-                              className="pagination-btn"
+                              className="page-link"
                               onClick={() =>
                                 setCurrentPage((prev) =>
                                   Math.min(totalPages, prev + 1)
@@ -943,6 +941,7 @@ const EmployeeList = () => {
                               disabled={currentPage === totalPages}
                             >
                               Next
+                              <i className="fas fa-chevron-right"></i>
                             </button>
                           </li>
                         </ul>

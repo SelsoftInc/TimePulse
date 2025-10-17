@@ -84,6 +84,7 @@
 .sidebar-text {
   color: rgba(255, 255, 255, 0.8) !important;
   font-family: var(--font-family-primary) !important;
+  font-weight: 500 !important;
 }
 
 .sidebar-link:hover .sidebar-text {

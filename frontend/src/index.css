@@ -248,7 +248,7 @@ p, .p {
 .sidebar-text {
   font-family: var(--font-family-primary);
   font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
+  font-weight: var(--font-weight-medium) !important;
   line-height: var(--line-height-normal);
 }
 
@@ -347,7 +347,7 @@ p, .p {
 
 .sidebar-text {
   font-size: 14px;
-  font-weight: 500;
+  font-weight: var(--font-weight-medium) !important;
   white-space: nowrap;
 }
 

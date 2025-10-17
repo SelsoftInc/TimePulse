@@ -155,7 +155,7 @@
 
 .sidebar-text {
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 500 !important;
 }
 
 /* Removed old footer since collapse button moved to top */

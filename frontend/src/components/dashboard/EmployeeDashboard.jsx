@@ -258,7 +258,12 @@ const NotificationList = ({ notifications }) => {
 };
 
 // Modern UpcomingLeave component
-const UpcomingLeave = ({ leaveRequests, user, checkPermission, currentEmployer }) => {
+const UpcomingLeave = ({
+  leaveRequests,
+  user,
+  checkPermission,
+  currentEmployer,
+}) => {
   const getLeaveIcon = (type) => {
     switch (type.toLowerCase()) {
       case "vacation":

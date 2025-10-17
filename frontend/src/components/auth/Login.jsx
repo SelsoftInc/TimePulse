@@ -1,33 +1,32 @@
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import './Auth.css';
-import { API_BASE } from '../../config/api';
-import logo2 from '../../assets/images/jsTree/TimePulseLogoAuth.png';
-
+import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import "./Auth.css";
+import { API_BASE } from "../../config/api";
+import logo2 from "../../assets/images/jsTree/TimePulseLogoAuth.png";
 
 const Login = () => {
   const [formData, setFormData] = useState({
-    email: '',
-    password: ''
+    email: "",
+    password: "",
   });
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
 
   // Load saved email on component mount
   useEffect(() => {
-    const savedEmail = localStorage.getItem('rememberedEmail');
+    const savedEmail = localStorage.getItem("rememberedEmail");
     if (savedEmail) {
       setFormData({
         email: savedEmail,
-        password: ''
+        password: "",
       });
       setRememberMe(true);
     } else {
       setFormData({
-        email: '',
-        password: ''
+        email: "",
+        password: "",
       });
     }
   }, []);
@@ -35,76 +34,80 @@ const Login = () => {
   const handleChange = (e) => {
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
+    setError("");
 
     // Handle remember me functionality
     if (rememberMe) {
-      localStorage.setItem('rememberedEmail', formData.email);
+      localStorage.setItem("rememberedEmail", formData.email);
     } else {
-      localStorage.removeItem('rememberedEmail');
+      localStorage.removeItem("rememberedEmail");
     }
 
     try {
       // Check for demo credentials first
-      if ((formData.email === 'test' || formData.email === 'test@example.com') && formData.password === 'test') {
+      if (
+        (formData.email === "test" || formData.email === "test@example.com") &&
+        formData.password === "test"
+      ) {
         // Simulate API call for login
-        await new Promise(resolve => setTimeout(resolve, 800));
-        
+        await new Promise((resolve) => setTimeout(resolve, 800));
+
         // Mock successful login
-        localStorage.setItem('token', 'mock-jwt-token');
-        
+        localStorage.setItem("token", "mock-jwt-token");
+
         // Store user info
         const userInfo = {
-          id: 'user-123',
-          email: formData.email === 'test' ? 'test@example.com' : formData.email,
-          name: 'Demo User',
-          role: 'admin',
-          tenantId: '6d872133-6fab-4804-9abf-187ece5d7d40'
+          id: "user-123",
+          email:
+            formData.email === "test" ? "test@example.com" : formData.email,
+          name: "Demo User",
+          role: "admin",
+          tenantId: "6d872133-6fab-4804-9abf-187ece5d7d40",
         };
-        localStorage.setItem('user', JSON.stringify(userInfo));
-        localStorage.setItem('userInfo', JSON.stringify(userInfo)); // App.js uses userInfo key
-        
+        localStorage.setItem("user", JSON.stringify(userInfo));
+        localStorage.setItem("userInfo", JSON.stringify(userInfo)); // App.js uses userInfo key
+
         // Create a default tenant for testing using real tenant ID
         const defaultTenant = {
-          id: '6d872133-6fab-4804-9abf-187ece5d7d40',
-          name: 'Selsoft',
-          subdomain: 'selsoft',
-          status: 'active',
-          role: 'admin'
+          id: "6d872133-6fab-4804-9abf-187ece5d7d40",
+          name: "Selsoft",
+          subdomain: "selsoft",
+          status: "active",
+          role: "admin",
         };
-        
+
         // Store the tenant info but don't set as current tenant yet
         // This will direct the user to the workspace selection screen
-        localStorage.setItem('tenants', JSON.stringify([defaultTenant]));
-        
+        localStorage.setItem("tenants", JSON.stringify([defaultTenant]));
+
         // Use window.location for full page reload to ensure proper state initialization
-        window.location.href = '/workspaces';
+        window.location.href = "/workspaces";
       } else {
         // Try real authentication with backend
         const response = await fetch(`${API_BASE}/api/auth/login`, {
-          method: 'POST',
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
           body: JSON.stringify({
             email: formData.email,
-            password: formData.password
-          })
+            password: formData.password,
+          }),
         });
 
         const data = await response.json();
 
         if (response.ok && data.success) {
           // Store authentication token
-          localStorage.setItem('token', data.token);
-          
+          localStorage.setItem("token", data.token);
+
           // Store user info
           const userInfo = {
             id: data.user.id,
@@ -114,39 +117,42 @@ const Login = () => {
             lastName: data.user.lastName,
             role: data.user.role,
             tenantId: data.user.tenantId,
-            employeeId: data.user.employeeId
+            employeeId: data.user.employeeId,
           };
-          localStorage.setItem('user', JSON.stringify(userInfo));
-          localStorage.setItem('userInfo', JSON.stringify(userInfo));
-          
+          localStorage.setItem("user", JSON.stringify(userInfo));
+          localStorage.setItem("userInfo", JSON.stringify(userInfo));
+
           // Store tenant info
           if (data.tenant) {
             const tenantInfo = {
               id: data.tenant.id,
               name: data.tenant.tenantName,
               subdomain: data.tenant.subdomain,
-              status: 'active',
-              role: data.user.role
+              status: "active",
+              role: data.user.role,
             };
-            localStorage.setItem('tenants', JSON.stringify([tenantInfo]));
-            localStorage.setItem('currentTenant', JSON.stringify(tenantInfo));
-            localStorage.setItem('currentEmployer', JSON.stringify(tenantInfo));
+            localStorage.setItem("tenants", JSON.stringify([tenantInfo]));
+            localStorage.setItem("currentTenant", JSON.stringify(tenantInfo));
+            localStorage.setItem("currentEmployer", JSON.stringify(tenantInfo));
           }
-          
+
           // Redirect based on user role
-          const subdomain = data.tenant?.subdomain || 'selsoft';
-          if (data.user.role === 'employee') {
+          const subdomain = data.tenant?.subdomain || "selsoft";
+          if (data.user.role === "employee") {
             window.location.href = `/${subdomain}/dashboard`;
           } else {
             window.location.href = `/${subdomain}/dashboard`;
           }
         } else {
-          setError(data.message || 'Invalid credentials. Please check your username and password.');
+          setError(
+            data.message ||
+              "Invalid credentials. Please check your username and password."
+          );
         }
       }
     } catch (err) {
-      console.error('Login error:', err);
-      setError('Login failed. Please check your connection and try again.');
+      console.error("Login error:", err);
+      setError("Login failed. Please check your connection and try again.");
     } finally {
       setLoading(false);
     }
@@ -160,7 +166,7 @@ const Login = () => {
           <h2>Welcome to TimePulse</h2>
           <p>Sign in to your account</p>
         </div>
-        
+
         {error && <div className="auth-error">{error}</div>}
 
         <form onSubmit={handleSubmit} className="auth-form" autoComplete="off">
@@ -200,14 +206,28 @@ const Login = () => {
                 aria-label={showPassword ? "Hide password" : "Show password"}
               >
                 {showPassword ? (
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
-                    <line x1="1" y1="1" x2="23" y2="23"/>
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                    <line x1="1" y1="1" x2="23" y2="23" />
                   </svg>
                 ) : (
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                    <circle cx="12" cy="12" r="3"/>
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                    <circle cx="12" cy="12" r="3" />
                   </svg>
                 )}
               </button>
@@ -216,23 +236,25 @@ const Login = () => {
 
           <div className="form-footer">
             <div className="remember-me">
-              <input 
-                type="checkbox" 
-                id="remember" 
+              <input
+                type="checkbox"
+                id="remember"
                 checked={rememberMe}
                 onChange={(e) => setRememberMe(e.target.checked)}
               />
               <label htmlFor="remember">Remember Me</label>
             </div>
-            <Link to="/forgot-password" className="forgot-link">Forgot Password?</Link>
+            <Link to="/forgot-password" className="forgot-link">
+              Forgot Password?
+            </Link>
           </div>
 
-          <button 
-            type="submit" 
-            className="btn-primary btn-block" 
+          <button
+            type="submit"
+            className="btn-primary btn-block"
             disabled={loading}
           >
-            {loading ? 'Signing In...' : 'Sign In'}
+            {loading ? "Signing In..." : "Sign In"}
           </button>
         </form>
       </div>

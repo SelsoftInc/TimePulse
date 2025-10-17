@@ -292,7 +292,14 @@ const UpcomingLeave = ({ leaveRequests, user, checkPermission }) => {
       <div className="leave-header">
         <h3>Upcoming Leave</h3>
         {/* Only show Request Leave button for employees, not admins */}
-        {!((checkPermission("admin") || user?.role === "admin" || currentEmployer?.role === "admin") || (checkPermission("approver") || user?.role === "approver" || currentEmployer?.role === "approver")) && (
+        {!(
+          checkPermission("admin") ||
+          user?.role === "admin" ||
+          currentEmployer?.role === "admin" ||
+          checkPermission("approver") ||
+          user?.role === "approver" ||
+          currentEmployer?.role === "approver"
+        ) && (
           <Link to="/dashboard" className="btn-modern btn-outline">
             + Request Leave
           </Link>
@@ -341,7 +348,7 @@ const UpcomingLeave = ({ leaveRequests, user, checkPermission }) => {
 // Main EmployeeDashboard component
 const EmployeeDashboard = () => {
   const { subdomain } = useParams();
-  const { user, checkPermission } = useAuth();
+  const { user, checkPermission, currentEmployer } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [timesheets, setTimesheets] = useState([]);
@@ -590,7 +597,14 @@ const EmployeeDashboard = () => {
           </div>
           <div className="header-actions">
             {/* Only show Submit Timesheet button for employees, not admins */}
-            {!((checkPermission("admin") || user?.role === "admin" || currentEmployer?.role === "admin") || (checkPermission("approver") || user?.role === "approver" || currentEmployer?.role === "approver")) && (
+            {!(
+              checkPermission("admin") ||
+              user?.role === "admin" ||
+              currentEmployer?.role === "admin" ||
+              checkPermission("approver") ||
+              user?.role === "approver" ||
+              currentEmployer?.role === "approver"
+            ) && (
               <Link
                 to={`/${subdomain}/timesheets/submit`}
                 className="btn-modern btn-primary"
@@ -673,7 +687,11 @@ const EmployeeDashboard = () => {
         <div className="dashboard-bottom">
           {/* Upcoming Leave */}
           <div className="bottom-card">
-            <UpcomingLeave leaveRequests={leaveRequests} user={user} checkPermission={checkPermission} />
+            <UpcomingLeave
+              leaveRequests={leaveRequests}
+              user={user}
+              checkPermission={checkPermission}
+            />
           </div>
 
           {/* Quick Actions */}

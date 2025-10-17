@@ -5,6 +5,8 @@ import PermissionGuard from "../common/PermissionGuard";
 import { useAuth } from "../../contexts/AuthContext";
 import { useToast } from "../../contexts/ToastContext";
 import DataGridFilter from "../common/DataGridFilter";
+import ConfirmationDialog from "../common/ConfirmationDialog";
+import { useConfirmation } from "../../hooks/useConfirmation";
 import "./Employees.css";
 import "./EmployeeManagement.css";
 import "../common/Pagination.css";
@@ -14,6 +16,7 @@ const EmployeeList = () => {
   const { subdomain } = useParams();
   const { checkPermission, user } = useAuth();
   const { toast } = useToast();
+  const { confirmation, showConfirmation, confirm, cancel } = useConfirmation();
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -491,44 +494,44 @@ const EmployeeList = () => {
     }
   };
 
-  const handleDeleteEmployee = async (employee) => {
-    if (
-      !window.confirm(
-        `Are you sure you want to delete ${employee.name}? This action cannot be undone.`
-      )
-    ) {
-      return;
-    }
+  const handleDeleteEmployee = (employee) => {
+    showConfirmation({
+      title: "Delete Employee",
+      message: `Are you sure you want to delete ${employee.name}? This action cannot be undone.`,
+      confirmText: "Delete",
+      cancelText: "Cancel",
+      type: "error",
+      onConfirm: async () => {
+        try {
+          setOpenMenuFor(null);
+          const response = await apiFetch(
+            `/api/employees/${employee.id}?tenantId=${user.tenantId}`,
+            {
+              method: "DELETE",
+              headers: {
+                Authorization: `Bearer ${localStorage.getItem("token")}`,
+              },
+            },
+            { timeoutMs: 15000 }
+          );
 
-    try {
-      setOpenMenuFor(null);
-      const response = await apiFetch(
-        `/api/employees/${employee.id}?tenantId=${user.tenantId}`,
-        {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        },
-        { timeoutMs: 15000 }
-      );
+          if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            throw new Error(
+              error.message ||
+                error.details ||
+                `Failed to delete employee (${response.status})`
+            );
+          }
 
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(
-          error.message ||
-            error.details ||
-            `Failed to delete employee (${response.status})`
-        );
+          // Remove from local state
+          setEmployees((prev) => prev.filter((e) => e.id !== employee.id));
+        } catch (error) {
+          console.error("Error deleting employee:", error);
+          throw error; // Re-throw to be caught by the confirmation hook
+        }
       }
-
-      // Remove from local state
-      setEmployees((prev) => prev.filter((e) => e.id !== employee.id));
-      toast.success(`${employee.name} has been deleted successfully`);
-    } catch (error) {
-      console.error("Error deleting employee:", error);
-      toast.error(`Failed to delete employee: ${error.message}`);
-    }
+    });
   };
 
   // Filter employees based on all filters
@@ -1279,6 +1282,19 @@ const EmployeeList = () => {
           </div>
         </div>
       )}
+
+      {/* Confirmation Dialog */}
+      <ConfirmationDialog
+        isOpen={confirmation.isOpen}
+        onClose={cancel}
+        onConfirm={confirm}
+        title={confirmation.title}
+        message={confirmation.message}
+        confirmText={confirmation.confirmText}
+        cancelText={confirmation.cancelText}
+        type={confirmation.type}
+        isLoading={confirmation.isLoading}
+      />
     </div>
   );
 };

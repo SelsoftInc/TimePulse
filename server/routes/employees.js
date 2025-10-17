@@ -15,7 +15,10 @@ router.get("/", async (req, res) => {
     }
 
     const employees = await Employee.findAll({
-      where: { tenantId },
+      where: { 
+        tenantId,
+        status: "active" // Only show active employees
+      },
       // Include all attributes including the new relationship fields
       attributes: [
         "id",
@@ -349,7 +352,7 @@ router.put("/:id", async (req, res) => {
   }
 });
 
-// Delete employee with cascading deletes
+// Soft delete employee (set status to inactive)
 router.delete("/:id", async (req, res) => {
   try {
     const { id } = req.params;
@@ -363,54 +366,71 @@ router.delete("/:id", async (req, res) => {
       return res.status(404).json({ error: "Employee not found" });
     }
 
-    // Store userId before deleting employee
-    const userId = employee.userId;
+    // Soft delete: Update status to inactive instead of destroying the record
+    await employee.update({ status: "inactive" });
 
-    // Cascade delete all related data
-    const deletedRecords = {
-      timesheets: 0,
-      invoices: 0,
-      user: false,
-      // Future: leave_requests, performance_reviews, etc.
-    };
-
-    // Delete timesheets
-    if (models.Timesheet) {
-      const timesheetsDeleted = await models.Timesheet.destroy({
-        where: { employeeId: id, tenantId },
-      });
-      deletedRecords.timesheets = timesheetsDeleted;
-    }
-
-    // Delete invoices
-    if (models.Invoice) {
-      const invoicesDeleted = await models.Invoice.destroy({
-        where: { employeeId: id, tenantId },
-      });
-      deletedRecords.invoices = invoicesDeleted;
-    }
-
-    // Delete the employee
-    await employee.destroy();
-
-    // Delete the linked user account if exists
-    if (userId) {
-      const user = await models.User.findByPk(userId);
+    // Optionally deactivate the associated user account
+    let userDeactivated = false;
+    if (employee.userId) {
+      const user = await models.User.findByPk(employee.userId);
       if (user) {
-        await user.destroy();
-        deletedRecords.user = true;
+        await user.update({ status: "inactive" });
+        userDeactivated = true;
       }
     }
 
     res.json({
       success: true,
-      message: "Employee and all related data deleted successfully",
-      deletedRecords,
+      message: "Employee soft deleted successfully (status set to inactive)",
+      employeeId: id,
+      userDeactivated,
     });
   } catch (error) {
-    console.error("Error deleting employee:", error);
+    console.error("Error soft deleting employee:", error);
     res.status(500).json({
-      error: "Failed to delete employee",
+      error: "Failed to soft delete employee",
+      details: error.message,
+    });
+  }
+});
+
+// Restore soft-deleted employee (set status back to active)
+router.patch("/:id/restore", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { tenantId } = req.query;
+
+    const employee = await Employee.findOne({
+      where: { id, tenantId },
+    });
+
+    if (!employee) {
+      return res.status(404).json({ error: "Employee not found" });
+    }
+
+    // Restore: Update status back to active
+    await employee.update({ status: "active" });
+
+    // Optionally restore the associated user account
+    let userRestored = false;
+    if (employee.userId) {
+      const user = await models.User.findByPk(employee.userId);
+      if (user) {
+        await user.update({ status: "active" });
+        userRestored = true;
+      }
+    }
+
+    res.json({
+      success: true,
+      message: "Employee restored successfully (status set to active)",
+      employeeId: id,
+      userRestored,
+    });
+  } catch (error) {
+    console.error("Error restoring employee:", error);
+    res.status(500).json({
+      error: "Failed to restore employee",
       details: error.message,
     });
   }

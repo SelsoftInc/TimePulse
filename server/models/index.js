@@ -297,6 +297,15 @@ models.Employee = sequelize.define(
         key: 'id'
       }
     },
+    employmentTypeId: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      field: 'employment_type_id',
+      references: {
+        model: 'employment_types',
+        key: 'id'
+      }
+    },
     startDate: {
       type: DataTypes.DATEONLY,
       field: "start_date",
@@ -569,6 +578,11 @@ models.LeaveBalance = LeaveBalanceModel(sequelize);
 // =============================================
 const ImplementationPartnerModel = require("./ImplementationPartner");
 models.ImplementationPartner = ImplementationPartnerModel(sequelize);
+
+// EMPLOYMENT TYPE MODEL
+// =============================================
+const EmploymentTypeModel = require("./EmploymentType");
+models.EmploymentType = EmploymentTypeModel(sequelize);
 
 // =============================================
 // VENDOR MODEL
@@ -1071,9 +1085,14 @@ const getTenantBySubdomain = async (subdomain) => {
 models.Employee.belongsTo(models.Client, { foreignKey: 'clientId', as: 'client' });
 models.Employee.belongsTo(models.Vendor, { foreignKey: 'vendorId', as: 'vendor' });
 models.Employee.belongsTo(models.ImplementationPartner, { foreignKey: 'implPartnerId', as: 'implPartner' });
+models.Employee.belongsTo(models.EmploymentType, { foreignKey: 'employmentTypeId', as: 'employmentType' });
 
 // Client associations
 models.Client.hasMany(models.Employee, { foreignKey: "clientId", as: "employees" });
+
+// EmploymentType associations
+models.EmploymentType.belongsTo(models.Tenant, { foreignKey: "tenantId", as: "tenant" });
+models.EmploymentType.hasMany(models.Employee, { foreignKey: "employmentTypeId", as: "employees" });
 
 module.exports = {
   sequelize,

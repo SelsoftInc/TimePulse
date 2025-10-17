@@ -61,7 +61,15 @@ const WorkspaceSelector = () => {
   }, []);
 
   const handleClick = () => {
-    navigate('/workspaces');
+    // Navigate to the current workspace dashboard instead of workspaces page
+    const currentTenant = localStorage.getItem('currentTenant');
+    if (currentTenant) {
+      const tenant = JSON.parse(currentTenant);
+      navigate(`/${tenant.subdomain}/dashboard`);
+    } else {
+      // Fallback to workspaces if no current tenant
+      navigate('/workspaces');
+    }
   };
 
   return (

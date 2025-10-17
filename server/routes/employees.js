@@ -3,22 +3,27 @@ const router = express.Router();
 const { models } = require("../models");
 const { Op } = require("sequelize");
 
-const { Employee, User, Client, Tenant, Vendor } = models;
+const { Employee, User, Client, Tenant, Vendor, EmploymentType } = models;
 
 // Get all employees for a tenant
 router.get("/", async (req, res) => {
   try {
-    const { tenantId } = req.query;
+    const { tenantId, status } = req.query;
 
     if (!tenantId) {
       return res.status(400).json({ error: "Tenant ID is required" });
     }
 
+    // Build where clause based on status filter
+    const whereClause = { tenantId };
+    if (status && status !== "all") {
+      whereClause.status = status;
+    } else {
+      whereClause.status = "active"; // Default to active employees
+    }
+
     const allEmployees = await Employee.findAll({
-      where: { 
-        tenantId,
-        status: "active" // Only show active employees
-      },
+      where: whereClause,
       // Include all attributes including the new relationship fields
       attributes: [
         "id",
@@ -69,13 +74,24 @@ router.get("/", async (req, res) => {
           attributes: ["id", "name", "specialization"],
           required: false,
         },
+        {
+          model: models.EmploymentType,
+          as: "employmentType",
+          attributes: ["id", "name", "description"],
+          required: false,
+        },
       ],
     });
 
-    // Filter out admin users at application level
-    const employees = allEmployees.filter(emp => 
-      !emp.user || emp.user.role !== "admin"
-    );
+    // Filter out admin users at application level (only for active employees)
+    const employees = allEmployees.filter(emp => {
+      // For inactive employees, show them regardless of role (they might be admins who were deactivated)
+      if (emp.status === "inactive") {
+        return true;
+      }
+      // For active employees, exclude admin users
+      return !emp.user || emp.user.role !== "admin";
+    });
 
     // Transform the data to match frontend expectations
     const transformedEmployees = employees.map((emp) => ({
@@ -101,7 +117,7 @@ router.get("/", async (req, res) => {
           }
         : null,
       clientId: emp.clientId,
-      employmentType: emp.salaryType || "hourly",
+      employmentType: emp.employmentType?.name || "hourly",
       // Vendor relationship data
       vendor: emp.vendor
         ? {
@@ -212,6 +228,12 @@ router.get("/:id", async (req, res) => {
           model: models.ImplementationPartner,
           as: "implPartner",
           attributes: ["id", "name", "specialization"],
+          required: false,
+        },
+        {
+          model: models.EmploymentType,
+          as: "employmentType",
+          attributes: ["id", "name", "description"],
           required: false,
         },
       ],

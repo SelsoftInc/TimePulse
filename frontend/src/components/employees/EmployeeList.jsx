@@ -22,7 +22,7 @@ const EmployeeList = () => {
   const [error, setError] = useState("");
   const [filters, setFilters] = useState({
     employmentType: "all",
-    status: "all",
+    status: "active", // Default to active employees only
     search: "",
   });
 
@@ -223,7 +223,7 @@ const EmployeeList = () => {
       }
 
       const response = await apiFetch(
-        `/api/employees?tenantId=${user.tenantId}`,
+        `/api/employees?tenantId=${user.tenantId}&status=${filters.status}`,
         {
           method: "GET",
           headers: {
@@ -254,7 +254,7 @@ const EmployeeList = () => {
 
   useEffect(() => {
     fetchEmployees();
-  }, [user?.tenantId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [user?.tenantId, filters.status]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Fetch clients when opening modal
   const fetchClients = async () => {
@@ -544,7 +544,7 @@ const EmployeeList = () => {
       return false;
     }
 
-    // Status filter
+    // Status filter (handled by backend API, but keep for frontend filtering if needed)
     if (filters.status !== "all" && employee.status !== filters.status) {
       return false;
     }
@@ -601,7 +601,7 @@ const EmployeeList = () => {
       options: [
         { value: "all", label: "All Types" },
         { value: "W2", label: "W2 Only" },
-        { value: "Subcontractor", label: "Subcontractors Only" },
+        { value: "Sub-Contract", label: "Sub-Contract Only" },
       ],
     },
     {
@@ -609,11 +609,11 @@ const EmployeeList = () => {
       label: "Status",
       type: "select",
       value: filters.status,
-      defaultValue: "all",
+      defaultValue: "active", // Default to active employees
       options: [
-        { value: "all", label: "All Statuses" },
         { value: "active", label: "Active" },
         { value: "inactive", label: "Inactive" },
+        { value: "all", label: "All Statuses" },
       ],
     },
     {

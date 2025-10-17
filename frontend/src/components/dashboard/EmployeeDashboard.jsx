@@ -292,7 +292,7 @@ const UpcomingLeave = ({ leaveRequests, user, checkPermission }) => {
       <div className="leave-header">
         <h3>Upcoming Leave</h3>
         {/* Only show Request Leave button for employees, not admins */}
-        {!(checkPermission("admin") || user?.role === "admin" || checkPermission("approver") || user?.role === "approver") && (
+        {!((checkPermission("admin") || user?.role === "admin" || currentEmployer?.role === "admin") || (checkPermission("approver") || user?.role === "approver" || currentEmployer?.role === "approver")) && (
           <Link to="/dashboard" className="btn-modern btn-outline">
             + Request Leave
           </Link>
@@ -511,8 +511,10 @@ const EmployeeDashboard = () => {
 
   // Get Quick Actions based on user role
   const getQuickActions = () => {
-    const isAdmin = checkPermission("admin") || user?.role === "admin";
-    const isApprover = checkPermission("approver") || user?.role === "approver";
+    // Check role from multiple sources
+    const userRole = user?.role || currentEmployer?.role;
+    const isAdmin = checkPermission("admin") || userRole === "admin";
+    const isApprover = checkPermission("approver") || userRole === "approver";
 
     if (isAdmin || isApprover) {
       // Admin/Approver Quick Actions
@@ -588,7 +590,7 @@ const EmployeeDashboard = () => {
           </div>
           <div className="header-actions">
             {/* Only show Submit Timesheet button for employees, not admins */}
-            {!(checkPermission("admin") || user?.role === "admin" || checkPermission("approver") || user?.role === "approver") && (
+            {!((checkPermission("admin") || user?.role === "admin" || currentEmployer?.role === "admin") || (checkPermission("approver") || user?.role === "approver" || currentEmployer?.role === "approver")) && (
               <Link
                 to={`/${subdomain}/timesheets/submit`}
                 className="btn-modern btn-primary"

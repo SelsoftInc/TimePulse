@@ -65,6 +65,7 @@ const Login = () => {
           id: 'user-123',
           email: formData.email === 'test' ? 'test@example.com' : formData.email,
           name: 'Demo User',
+          role: 'admin',
           tenantId: '6d872133-6fab-4804-9abf-187ece5d7d40'
         };
         localStorage.setItem('user', JSON.stringify(userInfo));

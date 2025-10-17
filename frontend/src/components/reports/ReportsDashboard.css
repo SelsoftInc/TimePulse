@@ -891,7 +891,7 @@ body.dark-mode .form-select {
 .toggle-pill {
   position: relative;
   display: flex;
-  width: 180px;          /* Adjust width as needed */
+  width: 400px;          /* Increased width for 4 options */
   height: 40px;          /* Adjust height as needed */
   background-color: var(--reports-toggle-bg);
   border-radius: 99px;
@@ -911,8 +911,10 @@ body.dark-mode .form-select {
   color: var(--reports-toggle-text);
   z-index: 2;
   transition: color 0.3s ease;
-  font-size: 15px;
-  font-weight: 600;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 0 8px;
+  white-space: nowrap;
 }
 
 /* Active Text Color */
@@ -925,21 +927,28 @@ body.dark-mode .form-select {
   position: absolute;
   top: 4px;
   bottom: 4px;
-  width: calc(50% - 8px);
+  width: calc(33.33% - 8px);
   background: var(--reports-toggle-slider-bg);
   border-radius: 99px;
   transition: left 0.3s ease;
   z-index: 1;
 }
 
-/* Slide left */
+/* Slide positions for 4 options */
 .pill-slider.client {
   left: 4px;
 }
 
-/* Slide right */
 .pill-slider.employee {
-  left: calc(50% + 4px);
+  left: calc(33.33% + 4px);
+}
+
+.pill-slider.invoice {
+  left: calc(66.66% + 4px);
+}
+
+.pill-slider.analytics {
+  left: calc(99.99% + 4px);
 }
 
 /* Viewing status on the right */

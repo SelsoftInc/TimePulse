@@ -258,7 +258,7 @@ const NotificationList = ({ notifications }) => {
 };
 
 // Modern UpcomingLeave component
-const UpcomingLeave = ({ leaveRequests, user, checkPermission }) => {
+const UpcomingLeave = ({ leaveRequests, user, checkPermission, currentEmployer }) => {
   const getLeaveIcon = (type) => {
     switch (type.toLowerCase()) {
       case "vacation":
@@ -691,6 +691,7 @@ const EmployeeDashboard = () => {
               leaveRequests={leaveRequests}
               user={user}
               checkPermission={checkPermission}
+              currentEmployer={currentEmployer}
             />
           </div>
 

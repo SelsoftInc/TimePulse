@@ -14,7 +14,7 @@ router.get("/", async (req, res) => {
       return res.status(400).json({ error: "Tenant ID is required" });
     }
 
-    const employees = await Employee.findAll({
+    const allEmployees = await Employee.findAll({
       where: { 
         tenantId,
         status: "active" // Only show active employees
@@ -71,6 +71,11 @@ router.get("/", async (req, res) => {
         },
       ],
     });
+
+    // Filter out admin users at application level
+    const employees = allEmployees.filter(emp => 
+      !emp.user || emp.user.role !== "admin"
+    );
 
     // Transform the data to match frontend expectations
     const transformedEmployees = employees.map((emp) => ({
@@ -352,7 +357,7 @@ router.put("/:id", async (req, res) => {
   }
 });
 
-// Soft delete employee (set status to inactive)
+// Soft delete employee (set status to inactive) with cascade soft delete
 router.delete("/:id", async (req, res) => {
   try {
     const { id } = req.params;
@@ -366,24 +371,48 @@ router.delete("/:id", async (req, res) => {
       return res.status(404).json({ error: "Employee not found" });
     }
 
-    // Soft delete: Update status to inactive instead of destroying the record
+    // Cascade soft delete all related data
+    const deletedRecords = {
+      timesheets: 0,
+      invoices: 0,
+      user: false,
+    };
+
+    // Soft delete timesheets
+    if (models.Timesheet) {
+      const timesheetsUpdated = await models.Timesheet.update(
+        { status: "deleted" },
+        { where: { employeeId: id, tenantId } }
+      );
+      deletedRecords.timesheets = timesheetsUpdated[0];
+    }
+
+    // Soft delete invoices
+    if (models.Invoice) {
+      const invoicesUpdated = await models.Invoice.update(
+        { status: "deleted" },
+        { where: { createdBy: employee.userId, tenantId } }
+      );
+      deletedRecords.invoices = invoicesUpdated[0];
+    }
+
+    // Soft delete the employee
     await employee.update({ status: "inactive" });
 
     // Optionally deactivate the associated user account
-    let userDeactivated = false;
     if (employee.userId) {
       const user = await models.User.findByPk(employee.userId);
       if (user) {
         await user.update({ status: "inactive" });
-        userDeactivated = true;
+        deletedRecords.user = true;
       }
     }
 
     res.json({
       success: true,
-      message: "Employee soft deleted successfully (status set to inactive)",
+      message: "Employee and all related data soft deleted successfully",
       employeeId: id,
-      userDeactivated,
+      deletedRecords,
     });
   } catch (error) {
     console.error("Error soft deleting employee:", error);

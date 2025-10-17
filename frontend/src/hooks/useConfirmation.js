@@ -1,55 +1,58 @@
-import { useState, useCallback } from 'react';
-import { useToast } from '../contexts/ToastContext';
+import { useState, useCallback } from "react";
+import { useToast } from "../contexts/ToastContext";
 
 export const useConfirmation = () => {
   const [confirmation, setConfirmation] = useState({
     isOpen: false,
-    title: '',
-    message: '',
-    confirmText: 'Confirm',
-    cancelText: 'Cancel',
-    type: 'warning',
+    title: "",
+    message: "",
+    confirmText: "Confirm",
+    cancelText: "Cancel",
+    type: "warning",
     onConfirm: null,
     onCancel: null,
-    isLoading: false
+    isLoading: false,
   });
 
   const { toast } = useToast();
 
-  const showConfirmation = useCallback(({
-    title = 'Confirm Action',
-    message,
-    confirmText = 'Confirm',
-    cancelText = 'Cancel',
-    type = 'warning',
-    onConfirm,
-    onCancel
-  }) => {
-    setConfirmation({
-      isOpen: true,
-      title,
+  const showConfirmation = useCallback(
+    ({
+      title = "Confirm Action",
       message,
-      confirmText,
-      cancelText,
-      type,
-      onConfirm: onConfirm || (() => {}),
-      onCancel: onCancel || (() => {}),
-      isLoading: false
-    });
-  }, []);
+      confirmText = "Confirm",
+      cancelText = "Cancel",
+      type = "warning",
+      onConfirm,
+      onCancel,
+    }) => {
+      setConfirmation({
+        isOpen: true,
+        title,
+        message,
+        confirmText,
+        cancelText,
+        type,
+        onConfirm: onConfirm || (() => {}),
+        onCancel: onCancel || (() => {}),
+        isLoading: false,
+      });
+    },
+    []
+  );
 
   const hideConfirmation = useCallback(() => {
-    setConfirmation(prev => ({
+    setConfirmation((prev) => ({
       ...prev,
       isOpen: false,
-      isLoading: false
+      isLoading: false,
     }));
   }, []);
 
   const setLoading = useCallback((isLoading) => {
-    setConfirmation(prev => ({
+    setConfirmation((prev) => ({
       ...prev,
-      isLoading
+      isLoading,
     }));
   }, []);
 
@@ -58,10 +61,10 @@ export const useConfirmation = () => {
       setLoading(true);
       await confirmation.onConfirm();
       hideConfirmation();
-      toast.success('Action completed successfully');
+      toast.success("Action completed successfully");
     } catch (error) {
-      console.error('Confirmation action failed:', error);
-      toast.error(error.message || 'Action failed');
+      console.error("Confirmation action failed:", error);
+      toast.error(error.message || "Action failed");
     } finally {
       setLoading(false);
     }
@@ -80,6 +83,6 @@ export const useConfirmation = () => {
     hideConfirmation,
     confirm,
     cancel,
-    setLoading
+    setLoading,
   };
 };

@@ -718,7 +718,7 @@ models.Timesheet = sequelize.define(
       field: "total_hours",
     },
     status: {
-      type: DataTypes.ENUM("draft", "submitted", "approved", "rejected"),
+      type: DataTypes.ENUM("draft", "submitted", "approved", "rejected", "deleted"),
       defaultValue: "draft",
     },
     submittedAt: {
@@ -845,6 +845,10 @@ models.Invoice = sequelize.define(
       allowNull: true,
       field: "created_by",
       references: { model: "users", key: "id" },
+    },
+    status: {
+      type: DataTypes.ENUM("active", "inactive", "deleted"),
+      defaultValue: "active",
     },
   },
   {

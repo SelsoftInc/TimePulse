@@ -530,7 +530,7 @@ const EmployeeList = () => {
           console.error("Error deleting employee:", error);
           throw error; // Re-throw to be caught by the confirmation hook
         }
-      }
+      },
     });
   };
 

@@ -34,13 +34,16 @@ router.get("/clients", async (req, res) => {
       attributes: ["id", "clientName", "legalName", "hourlyRate"],
     });
 
-    // Get timesheets for the date range
+    // Get timesheets for the date range (exclude soft-deleted)
     const timesheets = await Timesheet.findAll({
       where: {
         tenantId,
         week_start_date: {
           [Op.gte]: defaultStartDate,
           [Op.lte]: defaultEndDate,
+        },
+        status: {
+          [Op.ne]: "deleted", // Exclude soft-deleted timesheets
         },
       },
       include: [
@@ -60,13 +63,16 @@ router.get("/clients", async (req, res) => {
       order: [["week_start_date", "DESC"]],
     });
 
-    // Get invoices for the date range
+    // Get invoices for the date range (exclude soft-deleted)
     const invoices = await Invoice.findAll({
       where: {
         tenantId,
         invoiceDate: {
           [Op.gte]: defaultStartDate,
           [Op.lte]: defaultEndDate,
+        },
+        status: {
+          [Op.ne]: "deleted", // Exclude soft-deleted invoices
         },
       },
       attributes: ["id", "clientId", "totalAmount", "paymentStatus"],
@@ -166,27 +172,38 @@ router.get("/employees", async (req, res) => {
       endDate: defaultEndDate,
     });
 
-    // Get all employees for the tenant
-    const employees = await Employee.findAll({
-      where: { tenantId },
+    // Get all active employees for the tenant (exclude soft-deleted and admin users)
+    const allEmployees = await Employee.findAll({
+      where: { 
+        tenantId,
+        status: "active" // Only include active employees
+      },
       attributes: ["id", "firstName", "lastName", "hourlyRate"],
       include: [
         {
           model: User,
           as: "user",
-          attributes: ["department", "title"],
+          attributes: ["department", "title", "role"],
           required: false,
         },
       ],
     });
 
-    // Get timesheets for the date range
+    // Filter out admin users at application level
+    const employees = allEmployees.filter(emp => 
+      !emp.user || emp.user.role !== "admin"
+    );
+
+    // Get timesheets for the date range (exclude soft-deleted)
     const timesheets = await Timesheet.findAll({
       where: {
         tenantId,
         week_start_date: {
           [Op.gte]: defaultStartDate,
           [Op.lte]: defaultEndDate,
+        },
+        status: {
+          [Op.ne]: "deleted", // Exclude soft-deleted timesheets
         },
       },
       include: [
@@ -313,13 +330,16 @@ router.get("/invoices", async (req, res) => {
       endDate: defaultEndDate,
     });
 
-    // Get invoices for the date range
+    // Get invoices for the date range (exclude soft-deleted)
     const invoices = await Invoice.findAll({
       where: {
         tenantId,
         invoiceDate: {
           [Op.gte]: defaultStartDate,
           [Op.lte]: defaultEndDate,
+        },
+        status: {
+          [Op.ne]: "deleted", // Exclude soft-deleted invoices
         },
       },
       include: [
@@ -448,13 +468,16 @@ router.get("/analytics", async (req, res) => {
       endDate,
     });
 
-    // Get timesheets for the period
+    // Get timesheets for the period (exclude soft-deleted)
     const timesheets = await Timesheet.findAll({
       where: {
         tenantId,
         week_start_date: {
           [Op.gte]: startDate,
           [Op.lte]: endDate,
+        },
+        status: {
+          [Op.ne]: "deleted", // Exclude soft-deleted timesheets
         },
       },
       include: [
@@ -474,13 +497,16 @@ router.get("/analytics", async (req, res) => {
       order: [["week_start_date", "ASC"]],
     });
 
-    // Get invoices for the period
+    // Get invoices for the period (exclude soft-deleted)
     const invoices = await Invoice.findAll({
       where: {
         tenantId,
         invoiceDate: {
           [Op.gte]: startDate,
           [Op.lte]: endDate,
+        },
+        status: {
+          [Op.ne]: "deleted", // Exclude soft-deleted invoices
         },
       },
       include: [

@@ -297,7 +297,7 @@ const UpcomingLeave = ({ leaveRequests }) => {
 // Main EmployeeDashboard component
 const EmployeeDashboard = () => {
   const { subdomain } = useParams();
-  const { user } = useAuth();
+  const { user, checkPermission } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [timesheets, setTimesheets] = useState([]);
@@ -435,6 +435,70 @@ const EmployeeDashboard = () => {
       </div>
     );
   }
+
+  // Get Quick Actions based on user role
+  const getQuickActions = () => {
+    const isAdmin = checkPermission('admin') || user?.role === 'admin';
+    const isApprover = checkPermission('approver') || user?.role === 'approver';
+    
+    if (isAdmin || isApprover) {
+      // Admin/Approver Quick Actions
+      return [
+        {
+          to: `/${subdomain}/timesheets/approval`,
+          icon: "✅",
+          title: "Approve Timesheet",
+          description: "Review pending timesheets"
+        },
+        {
+          to: `/${subdomain}/leave-management`,
+          icon: "📋",
+          title: "Approve Leave",
+          description: "Review leave requests"
+        },
+        {
+          to: `/${subdomain}/leave`,
+          icon: "📅",
+          title: "Upcoming Leaves",
+          description: "View employee leave calendar"
+        },
+        {
+          to: `/${subdomain}/employees`,
+          icon: "👥",
+          title: "Manage Employees",
+          description: "Add or edit team members"
+        }
+      ];
+    } else {
+      // Employee Quick Actions
+      return [
+        {
+          to: `/${subdomain}/timesheets/submit`,
+          icon: "📝",
+          title: "Submit Timesheet",
+          description: "Log your hours"
+        },
+        {
+          to: `/${subdomain}/timesheets/mobile-upload`,
+          icon: "📱",
+          title: "Mobile Upload",
+          description: "Quick photo upload"
+        },
+        {
+          to: `/${subdomain}/leave`,
+          icon: "🏖️",
+          title: "Request Leave",
+          description: "Plan time off"
+        },
+        {
+          to: `/${subdomain}/profile`,
+          icon: "👤",
+          title: "Update Profile",
+          description: "Manage account"
+        }
+      ];
+    }
+  };
   
   return (
     <div className="modern-employee-dashboard">
@@ -533,34 +597,15 @@ const EmployeeDashboard = () => {
                 <p>Frequently used features</p>
               </div>
               <div className="actions-grid">
-                <Link to={`/${subdomain}/timesheets/submit`} className="action-item">
-                  <div className="action-icon">📝</div>
-                  <div className="action-content">
-                    <h4>Submit Timesheet</h4>
-                    <p>Log your hours</p>
-                  </div>
-                </Link>
-                <Link to={`/${subdomain}/timesheets/mobile-upload`} className="action-item">
-                  <div className="action-icon">📱</div>
-                  <div className="action-content">
-                    <h4>Mobile Upload</h4>
-                    <p>Quick photo upload</p>
-                  </div>
-                </Link>
-                <Link to={`/${subdomain}/leave`} className="action-item">
-                  <div className="action-icon">🏖️</div>
-                  <div className="action-content">
-                    <h4>Request Leave</h4>
-                    <p>Plan time off</p>
-                  </div>
-                </Link>
-                <Link to={`/${subdomain}/profile`} className="action-item">
-                  <div className="action-icon">👤</div>
-                  <div className="action-content">
-                    <h4>Update Profile</h4>
-                    <p>Manage account</p>
-                  </div>
-                </Link>
+                {getQuickActions().map((action, index) => (
+                  <Link key={index} to={action.to} className="action-item">
+                    <div className="action-icon">{action.icon}</div>
+                    <div className="action-content">
+                      <h4>{action.title}</h4>
+                      <p>{action.description}</p>
+                    </div>
+                  </Link>
+                ))}
               </div>
             </div>
           </div>

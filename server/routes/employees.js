@@ -84,7 +84,7 @@ router.get("/", async (req, res) => {
     });
 
     // Filter out admin users at application level (only for active employees)
-    const employees = allEmployees.filter(emp => {
+    const employees = allEmployees.filter((emp) => {
       // For inactive employees, show them regardless of role (they might be admins who were deactivated)
       if (emp.status === "inactive") {
         return true;

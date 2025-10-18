@@ -21,8 +21,18 @@ const EmployerSettings = () => {
 
   // Handle tab parameter from URL
   useEffect(() => {
-    const tabFromUrl = searchParams.get('tab');
-    if (tabFromUrl && ['company', 'users', 'security', 'invoices', 'billing', 'notifications'].includes(tabFromUrl)) {
+    const tabFromUrl = searchParams.get("tab");
+    if (
+      tabFromUrl &&
+      [
+        "company",
+        "users",
+        "security",
+        "invoices",
+        "billing",
+        "notifications",
+      ].includes(tabFromUrl)
+    ) {
       setActiveTab(tabFromUrl);
     }
   }, [searchParams]);
@@ -32,10 +42,10 @@ const EmployerSettings = () => {
     // In a real app, this would call an API to log the user out
     // Clear all localStorage data including theme
     localStorage.clear();
-    
+
     // Remove dark-mode class from body to reset to light theme
-    document.body.classList.remove('dark-mode');
-    
+    document.body.classList.remove("dark-mode");
+
     // Use window.location for full page reload to reset app state
     window.location.href = "/";
   };
@@ -82,12 +92,9 @@ const EmployerSettings = () => {
               : "Manage your employer settings for automated invoice generation"}
           </p>
         </div>
-          <button
-            onClick={handleSettingsLogout}
-            className="btn-logout"
-          >
-            <i className="fas fa-sign-out-alt mr-1"></i> Logout
-          </button>
+        <button onClick={handleSettingsLogout} className="btn-logout">
+          <i className="fas fa-sign-out-alt mr-1"></i> Logout
+        </button>
       </div>
 
       <ul className="settings-menu">
@@ -112,9 +119,7 @@ const EmployerSettings = () => {
               </button>
             </li> */}
             <li className={activeTab === "invoices" ? "active" : ""}>
-              <button
-                onClick={() => setActiveTab("invoices")}
-              >
+              <button onClick={() => setActiveTab("invoices")}>
                 <i className="fas fa-file-invoice"></i>
                 <span>Invoice Settings</span>
               </button>

@@ -9,10 +9,12 @@ const express = require("express");
 const cors = require("cors");
 const path = require("path");
 const fs = require("fs");
+const http = require("http");
 require("dotenv").config();
 
 // Import database connection
 const { connectDB } = require("./models");
+const WebSocketService = require("./services/WebSocketService");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -32,6 +34,7 @@ const tenantRoutes = require("./routes/tenants");
 const vendorRoutes = require("./routes/vendors");
 const userRoutes = require("./routes/users");
 const reportRoutes = require("./routes/reports");
+const notificationRoutes = require("./routes/notifications");
 
 // Middleware
 app.use(
@@ -104,6 +107,7 @@ app.use("/api/tenants", tenantRoutes);
 app.use("/api/vendors", vendorRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/reports", reportRoutes);
+app.use("/api/notifications", notificationRoutes);
 app.use("/api/auth", require("./routes/auth"));
 
 // Error handling middleware
@@ -140,12 +144,22 @@ const startServer = async () => {
     process.exit(1);
   }
 
+  // Create HTTP server
+  const server = http.createServer(app);
+  
+  // Initialize WebSocket service
+  const wsService = new WebSocketService(server);
+  
+  // Make WebSocket service available globally
+  global.wsService = wsService;
+
   // Start HTTP server
-  app.listen(PORT, () => {
+  server.listen(PORT, () => {
     console.log(`🚀 TimePulse Server running on port ${PORT}`);
     console.log(`📖 Health check: http://localhost:${PORT}/health`);
     console.log(`🔧 Environment: ${process.env.NODE_ENV || "development"}`);
     console.log(`🗄️  Database: Connected`);
+    console.log(`🔌 WebSocket: Enabled`);
   });
 };
 

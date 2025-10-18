@@ -6,6 +6,7 @@ const express = require('express');
 const router = express.Router();
 const { models } = require('../models');
 const { Op } = require('sequelize');
+const NotificationService = require('../services/NotificationService');
 
 // Helpers
 // Format date as YYYY-MM-DD in local time to avoid UTC shift issues
@@ -363,6 +364,46 @@ router.post('/submit', async (req, res, next) => {
     });
     
     console.log('✅ Created new timesheet:', newTimesheet.id);
+    
+    // Create notification for timesheet submission
+    try {
+      await NotificationService.createTimesheetNotification(
+        tenantId,
+        employeeId,
+        'submitted',
+        {
+          id: newTimesheet.id,
+          weekStartDate: weekStart,
+          weekEndDate: weekEnd,
+        }
+      );
+
+      // Create approval notification for managers/admins
+      const employee = await models.Employee.findByPk(employeeId, {
+        include: [{ model: models.User, as: 'user', attributes: ['firstName', 'lastName'] }],
+      });
+
+      if (employee && employee.user) {
+        await NotificationService.createApprovalNotification(tenantId, 'timesheet', {
+          employeeName: `${employee.user.firstName} ${employee.user.lastName}`,
+          weekStartDate: weekStart,
+          weekEndDate: weekEnd,
+        });
+      }
+
+      // Send real-time notification via WebSocket
+      if (global.wsService) {
+        global.wsService.sendToTenant(tenantId, {
+          type: 'timesheet_submitted',
+          title: 'Timesheet Submitted',
+          message: `New timesheet submitted for week of ${weekStart}`,
+          timestamp: new Date().toISOString(),
+        });
+      }
+    } catch (notificationError) {
+      console.error('Error creating timesheet notification:', notificationError);
+      // Don't fail the timesheet submission if notification fails
+    }
     
     res.json({
       success: true,

@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { models } = require('../models');
+const NotificationService = require('../services/NotificationService');
 const { Op } = require('sequelize');
 
 const { User, Employee, LeaveRequest, LeaveBalance } = models;
@@ -458,6 +459,34 @@ router.post('/approve/:id', async (req, res) => {
         usedDays: parseFloat(leaveBalance.usedDays) + parseFloat(leaveRequest.totalDays),
         pendingDays: parseFloat(leaveBalance.pendingDays) - parseFloat(leaveRequest.totalDays)
       });
+    }
+
+    // Create notification for leave approval
+    try {
+      await NotificationService.createLeaveNotification(
+        leaveRequest.tenantId,
+        leaveRequest.employeeId,
+        'approved',
+        {
+          id: leaveRequest.id,
+          startDate: leaveRequest.startDate,
+          endDate: leaveRequest.endDate,
+          leaveType: leaveRequest.leaveType,
+        }
+      );
+
+      // Send real-time notification via WebSocket
+      if (global.wsService) {
+        global.wsService.sendToUser(leaveRequest.employeeId, {
+          type: 'leave_approved',
+          title: 'Leave Request Approved',
+          message: `Your leave request for ${leaveRequest.startDate} to ${leaveRequest.endDate} has been approved.`,
+          timestamp: new Date().toISOString(),
+        });
+      }
+    } catch (notificationError) {
+      console.error('Error creating leave approval notification:', notificationError);
+      // Don't fail the approval if notification fails
     }
 
     res.json({

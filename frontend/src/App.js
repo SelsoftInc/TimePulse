@@ -45,6 +45,7 @@ import EmployerLayout from "./components/layout/EmployerLayout";
 // Import AuthProvider and useAuth hook
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import { WebSocketProvider } from "./contexts/WebSocketContext";
 import { PERMISSIONS } from "./utils/roles";
 import { ToastProvider, ToastContainer } from "./contexts/ToastContext";
 
@@ -78,7 +79,8 @@ function App() {
       <ThemeProvider>
         <ToastProvider>
           <AuthProvider>
-            <Routes>
+            <WebSocketProvider>
+              <Routes>
               {/* Public routes */}
               <Route path="/" element={<Navigate to="/login" />} />
               <Route path="/login" element={<Login />} />
@@ -483,7 +485,8 @@ function App() {
 
               {/* Fallback route */}
               <Route path="*" element={<Navigate to="/login" />} />
-            </Routes>
+              </Routes>
+            </WebSocketProvider>
           </AuthProvider>
           <ToastContainer />
         </ToastProvider>

@@ -584,6 +584,11 @@ models.ImplementationPartner = ImplementationPartnerModel(sequelize);
 const EmploymentTypeModel = require("./EmploymentType");
 models.EmploymentType = EmploymentTypeModel(sequelize);
 
+// NOTIFICATION MODEL
+// =============================================
+const NotificationModel = require("./Notification");
+models.Notification = NotificationModel(sequelize);
+
 // =============================================
 // VENDOR MODEL
 // =============================================
@@ -1097,6 +1102,16 @@ models.Client.hasMany(models.Employee, { foreignKey: "clientId", as: "employees"
 // EmploymentType associations
 models.EmploymentType.belongsTo(models.Tenant, { foreignKey: "tenantId", as: "tenant" });
 models.EmploymentType.hasMany(models.Employee, { foreignKey: "employmentTypeId", as: "employees" });
+
+// Notification associations
+models.Notification.belongsTo(models.Tenant, { foreignKey: "tenantId", as: "tenant" });
+models.Notification.belongsTo(models.User, { foreignKey: "userId", as: "user" });
+
+// User associations for notifications
+models.User.hasMany(models.Notification, { foreignKey: "userId", as: "notifications" });
+
+// Tenant associations for notifications
+models.Tenant.hasMany(models.Notification, { foreignKey: "tenantId", as: "notifications" });
 
 module.exports = {
   sequelize,

@@ -83,13 +83,9 @@ const EmployerSettings = () => {
     <div className="employer-settings-container">
       <div className="settings-header">
         <div>
-          <h1 className="nk-block-title">
-            {isEmployee() ? "Profile Settings" : "Settings"}
-          </h1>
+          <h1 className="nk-block-title">Profile Settings</h1>
           <p className="nk-block-subtitle">
-            {isEmployee()
-              ? "Manage your profile and notification preferences"
-              : "Manage your employer settings for automated invoice generation"}
+            Manage your personal profile and account settings
           </p>
         </div>
         <button onClick={handleSettingsLogout} className="btn-logout">

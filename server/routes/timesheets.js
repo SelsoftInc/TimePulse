@@ -29,6 +29,119 @@ const getWeekRangeMonToSun = (date = new Date()) => {
   return { weekStart: toDateOnly(monday), weekEnd: toDateOnly(sunday) };
 };
 
+// GET /api/timesheets?tenantId=...&scope=...&employeeId=...&from=...&to=...&client=...&q=...
+// Get timesheets with scope filtering for dashboard
+router.get("/", async (req, res, next) => {
+  try {
+    const {
+      tenantId,
+      scope = "company",
+      employeeId,
+      from,
+      to,
+      client,
+      q,
+      excludeUserId,
+    } = req.query;
+
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        message: "tenantId is required",
+      });
+    }
+
+    // Build where clause
+    const whereClause = { tenantId };
+
+    // Add scope filtering
+    if (scope === "employee" && employeeId) {
+      whereClause.employeeId = employeeId;
+    }
+
+    // Add date filtering
+    if (from) {
+      whereClause.weekStart = { [Op.gte]: from };
+    }
+    if (to) {
+      whereClause.weekEnd = { [Op.lte]: to };
+    }
+
+    // Add client filtering
+    if (client) {
+      whereClause.clientId = client;
+    }
+
+    // Exclude specific user if needed
+    if (excludeUserId) {
+      whereClause.employeeId = { [Op.ne]: excludeUserId };
+    }
+
+    // Add search filtering
+    let includeClause = [
+      {
+        model: models.Employee,
+        as: "employee",
+        attributes: ["id", "firstName", "lastName", "email"],
+        required: true,
+      },
+      {
+        model: models.Client,
+        as: "client",
+        attributes: ["id", "clientName"],
+        required: false,
+      },
+    ];
+
+    // Add search filter to employee if q is provided
+    if (q) {
+      includeClause[0].where = {
+        [Op.or]: [
+          { firstName: { [Op.iLike]: `%${q}%` } },
+          { lastName: { [Op.iLike]: `%${q}%` } },
+          { email: { [Op.iLike]: `%${q}%` } },
+        ],
+      };
+    }
+
+    const timesheets = await models.Timesheet.findAll({
+      where: whereClause,
+      include: includeClause,
+      order: [["weekStart", "DESC"]],
+      limit: 100, // Limit for performance
+    });
+
+    // Transform data for frontend
+    const transformedTimesheets = timesheets.map((ts) => ({
+      id: ts.id,
+      employeeId: ts.employeeId,
+      employeeName: ts.employee
+        ? `${ts.employee.firstName} ${ts.employee.lastName}`
+        : "Unknown",
+      client: ts.client ? ts.client.clientName : "No Client",
+      weekEnding: ts.weekEnd,
+      hours: ts.totalHours || 0,
+      overtimeHours: 0, // Calculate if needed
+      billRate: ts.billRate || 0,
+      payRate: ts.payRate || 0,
+      approved: ts.status === "approved",
+    }));
+
+    res.json({
+      success: true,
+      timesheets: transformedTimesheets,
+      total: transformedTimesheets.length,
+    });
+  } catch (err) {
+    console.error("❌ Error fetching timesheets:", err);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch timesheets",
+      error: err.message,
+    });
+  }
+});
+
 // GET /api/timesheets/employees/by-email/:email?tenantId=...
 // Get employee by email (fallback for when employeeId is not in user object)
 router.get("/employees/by-email/:email", async (req, res, next) => {

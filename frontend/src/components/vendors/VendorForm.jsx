@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { API_BASE } from '../../config/api';
+import React, { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { API_BASE } from "../../config/api";
 import {
   COUNTRY_OPTIONS,
   STATES_BY_COUNTRY,
@@ -10,80 +10,141 @@ import {
   fetchPaymentTerms,
   getPostalLabel,
   getPostalPlaceholder,
-  validateCountryTaxId
-} from '../../config/lookups';
-import { PERMISSIONS } from '../../utils/roles';
-import PermissionGuard from '../common/PermissionGuard';
-import { useAuth } from '../../contexts/AuthContext';
-import { useToast } from '../../contexts/ToastContext';
-import { validatePhoneNumber, validateZipCode, validateEmail, validateName } from '../../utils/validations';
-import './Vendors.css';
+  validateCountryTaxId,
+} from "../../config/lookups";
+import { PERMISSIONS } from "../../utils/roles";
+import PermissionGuard from "../common/PermissionGuard";
+import { useAuth } from "../../contexts/AuthContext";
+import { useToast } from "../../contexts/ToastContext";
+import {
+  validatePhoneNumber,
+  validateZipCode,
+  validateEmail,
+  validateName,
+} from "../../utils/validations";
+import "./Vendors.css";
 
-const VendorForm = ({ mode = 'create', initialData = null, onSubmitOverride = null, submitLabel = null }) => {
+const VendorForm = ({
+  mode = "create",
+  initialData = null,
+  onSubmitOverride = null,
+  submitLabel = null,
+}) => {
   const navigate = useNavigate();
   const { subdomain } = useParams();
   const { user } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [errors, setErrors] = useState({});
-  const [paymentTermsOptions, setPaymentTermsOptions] = useState(PAYMENT_TERMS_OPTIONS);
+  const [paymentTermsOptions, setPaymentTermsOptions] = useState(
+    PAYMENT_TERMS_OPTIONS
+  );
   const [formData, setFormData] = useState({
-    name: '',
-    contactPerson: '',
-    email: '',
-    phone: '',
-    address: '',
-    city: '',
-    state: '',
-    zip: '',
-    country: 'United States',
-    taxId: '', // not sent to backend currently
-    vendorType: 'consultant', // mapped to category
-    paymentTerms: 'net30',
-    status: 'active',
-    notes: ''
+    name: "",
+    contactPerson: "",
+    email: "",
+    phone: "",
+    address: "",
+    city: "",
+    state: "",
+    zip: "",
+    country: "United States",
+    taxId: "", // not sent to backend currently
+    vendorType: "consultant", // mapped to category
+    paymentTerms: "net30",
+    status: "active",
+    notes: "",
   });
-  
+
   const [contractFile, setContractFile] = useState(null);
-  const [contractPreview, setContractPreview] = useState('');
+  const [contractPreview, setContractPreview] = useState("");
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    if (name === 'country') {
+    let processedValue = value;
+
+    if (name === "country") {
       // Reset state when country changes
-      setFormData({ ...formData, country: value, state: '' });
+      setFormData({ ...formData, country: value, state: "" });
       return;
     }
+
+    // Format phone number as user types
+    if (name === "phone") {
+      // Remove all non-digit characters
+      const digits = value.replace(/\D/g, "");
+
+      // Limit to 10 digits
+      const limitedDigits = digits.slice(0, 10);
+
+      // Format as (XXX) XXX-XXXX
+      if (limitedDigits.length >= 6) {
+        processedValue = `(${limitedDigits.slice(0, 3)}) ${limitedDigits.slice(
+          3,
+          6
+        )}-${limitedDigits.slice(6)}`;
+      } else if (limitedDigits.length >= 3) {
+        processedValue = `(${limitedDigits.slice(0, 3)}) ${limitedDigits.slice(
+          3
+        )}`;
+      } else if (limitedDigits.length > 0) {
+        processedValue = `(${limitedDigits}`;
+      } else {
+        processedValue = "";
+      }
+    }
+
+    // Format zip code - only allow digits and limit to 5
+    if (name === "zip") {
+      const digits = value.replace(/\D/g, "");
+      processedValue = digits.slice(0, 5);
+    }
+
     setFormData({
       ...formData,
-      [name]: value
+      [name]: processedValue,
     });
-    
+
     // Clear field-specific error on change
     if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: '' }));
+      setErrors((prev) => ({ ...prev, [name]: "" }));
     }
   };
 
   const handleBlur = (e) => {
     const { name, value } = e.target;
-    
-    if (name === 'phone') {
+
+    if (name === "phone") {
       const validation = validatePhoneNumber(value);
-      setErrors(prev => ({ ...prev, phone: validation.isValid ? '' : validation.message }));
-    } else if (name === 'zip') {
+      setErrors((prev) => ({
+        ...prev,
+        phone: validation.isValid ? "" : validation.message,
+      }));
+    } else if (name === "zip") {
       const validation = validateZipCode(value);
-      setErrors(prev => ({ ...prev, zip: validation.isValid ? '' : validation.message }));
-    } else if (name === 'email') {
+      setErrors((prev) => ({
+        ...prev,
+        zip: validation.isValid ? "" : validation.message,
+      }));
+    } else if (name === "email") {
       const validation = validateEmail(value);
-      setErrors(prev => ({ ...prev, email: validation.isValid ? '' : validation.message }));
-    } else if (name === 'name') {
-      const validation = validateName(value, 'Vendor Name');
-      setErrors(prev => ({ ...prev, name: validation.isValid ? '' : validation.message }));
-    } else if (name === 'contactPerson') {
-      const validation = validateName(value, 'Contact Person');
-      setErrors(prev => ({ ...prev, contactPerson: validation.isValid ? '' : validation.message }));
+      setErrors((prev) => ({
+        ...prev,
+        email: validation.isValid ? "" : validation.message,
+      }));
+    } else if (name === "name") {
+      const validation = validateName(value, "Vendor Name");
+      setErrors((prev) => ({
+        ...prev,
+        name: validation.isValid ? "" : validation.message,
+      }));
+    } else if (name === "contactPerson") {
+      const validation = validateName(value, "Contact Person");
+      setErrors((prev) => ({
+        ...prev,
+        contactPerson: validation.isValid ? "" : validation.message,
+      }));
     }
   };
 
@@ -91,7 +152,7 @@ const VendorForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
     const file = e.target.files[0];
     if (file) {
       setContractFile(file);
-      
+
       // Create a preview URL for the uploaded file
       const fileReader = new FileReader();
       fileReader.onload = () => {
@@ -114,49 +175,53 @@ const VendorForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
   useEffect(() => {
     if (initialData) {
       setFormData({
-        name: initialData.name || '',
-        contactPerson: initialData.contactPerson || '',
-        email: initialData.email || '',
-        phone: initialData.phone || '',
-        address: initialData.address || '',
-        city: initialData.city || '',
-        state: initialData.state || '',
-        zip: initialData.zip || '',
-        country: initialData.country || 'United States',
-        taxId: '',
-        vendorType: initialData.category || 'consultant',
-        paymentTerms: initialData.paymentTerms || 'net30',
-        status: initialData.status || 'active',
-        notes: initialData.notes || ''
+        name: initialData.name || "",
+        contactPerson: initialData.contactPerson || "",
+        email: initialData.email || "",
+        phone: initialData.phone || "",
+        address: initialData.address || "",
+        city: initialData.city || "",
+        state: initialData.state || "",
+        zip: initialData.zip || "",
+        country: initialData.country || "United States",
+        taxId: "",
+        vendorType: initialData.category || "consultant",
+        paymentTerms: initialData.paymentTerms || "net30",
+        status: initialData.status || "active",
+        notes: initialData.notes || "",
       });
     }
   }, [initialData]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     // Validate form fields
     const phoneValidation = validatePhoneNumber(formData.phone);
     const zipValidation = validateZipCode(formData.zip);
     const emailValidation = validateEmail(formData.email);
-    const nameValidation = validateName(formData.name, 'Vendor Name');
-    const contactValidation = validateName(formData.contactPerson, 'Contact Person');
-    
+    const nameValidation = validateName(formData.name, "Vendor Name");
+    const contactValidation = validateName(
+      formData.contactPerson,
+      "Contact Person"
+    );
+
     const newErrors = {};
     if (!phoneValidation.isValid) newErrors.phone = phoneValidation.message;
     if (!zipValidation.isValid) newErrors.zip = zipValidation.message;
     if (!emailValidation.isValid) newErrors.email = emailValidation.message;
     if (!nameValidation.isValid) newErrors.name = nameValidation.message;
-    if (!contactValidation.isValid) newErrors.contactPerson = contactValidation.message;
-    
+    if (!contactValidation.isValid)
+      newErrors.contactPerson = contactValidation.message;
+
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
-      toast.error('Please fix the validation errors before submitting');
+      toast.error("Please fix the validation errors before submitting");
       return;
     }
-    
+
     try {
-      setError('');
+      setError("");
       setLoading(true);
       // Country-specific tax id validation
       const taxErr = validateCountryTaxId(formData.country, formData.taxId);
@@ -166,7 +231,7 @@ const VendorForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
         return;
       }
       if (!user?.tenantId) {
-        setError('No tenant information available');
+        setError("No tenant information available");
         setLoading(false);
         return;
       }
@@ -180,7 +245,7 @@ const VendorForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
           email: formData.email.trim() || null,
           phone: formData.phone.trim() || null,
           category: formData.vendorType || null,
-          status: formData.status || 'active',
+          status: formData.status || "active",
           address: formData.address.trim() || null,
           city: formData.city.trim() || null,
           state: formData.state.trim() || null,
@@ -190,10 +255,10 @@ const VendorForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
           paymentTerms: formData.paymentTerms || null,
           contractStart: initialData?.contractStart ?? null,
           contractEnd: initialData?.contractEnd ?? null,
-          notes: formData.notes || null
+          notes: formData.notes || null,
         };
         await onSubmitOverride(payload);
-        toast.success('Vendor updated');
+        toast.success("Vendor updated");
         return;
       }
 
@@ -205,7 +270,7 @@ const VendorForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
         email: formData.email.trim() || null,
         phone: formData.phone.trim() || null,
         category: formData.vendorType || null,
-        status: formData.status || 'active',
+        status: formData.status || "active",
         address: formData.address.trim() || null,
         city: formData.city.trim() || null,
         state: formData.state.trim() || null,
@@ -215,27 +280,31 @@ const VendorForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
         paymentTerms: formData.paymentTerms || null,
         contractStart: null,
         contractEnd: null,
-        notes: formData.notes || null
+        notes: formData.notes || null,
       };
 
       const resp = await fetch(`${API_BASE}/api/vendors`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
         body: JSON.stringify(payload),
       });
       if (!resp.ok) {
         const err = await resp.json().catch(() => ({}));
-        throw new Error(err.details ? JSON.stringify(err.details) : `Create failed with status ${resp.status}`);
+        throw new Error(
+          err.details
+            ? JSON.stringify(err.details)
+            : `Create failed with status ${resp.status}`
+        );
       }
-      toast.success('Vendor created');
+      toast.success("Vendor created");
       navigate(`/${subdomain}/vendors`);
     } catch (err) {
-      console.error('Create vendor failed:', err);
-      setError(err.message || 'Failed to create vendor');
-      toast.error(err.message || 'Failed to save vendor');
+      console.error("Create vendor failed:", err);
+      setError(err.message || "Failed to create vendor");
+      toast.error(err.message || "Failed to save vendor");
     } finally {
       setLoading(false);
     }
@@ -267,7 +336,9 @@ const VendorForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
                   <div className="row g-4">
                     <div className="col-lg-6">
                       <div className="form-group">
-                        <label className="form-label" htmlFor="name">Vendor Name*</label>
+                        <label className="form-label" htmlFor="name">
+                          Vendor Name*
+                        </label>
                         <input
                           type="text"
                           className="form-control"
@@ -280,13 +351,17 @@ const VendorForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
                           required
                         />
                         {errors.name && (
-                          <div className="mt-1"><small className="text-danger">{errors.name}</small></div>
+                          <div className="mt-1">
+                            <small className="text-danger">{errors.name}</small>
+                          </div>
                         )}
                       </div>
                     </div>
                     <div className="col-lg-6">
                       <div className="form-group">
-                        <label className="form-label" htmlFor="contactPerson">Contact Person*</label>
+                        <label className="form-label" htmlFor="contactPerson">
+                          Contact Person*
+                        </label>
                         <input
                           type="text"
                           className="form-control"
@@ -299,13 +374,19 @@ const VendorForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
                           required
                         />
                         {errors.contactPerson && (
-                          <div className="mt-1"><small className="text-danger">{errors.contactPerson}</small></div>
+                          <div className="mt-1">
+                            <small className="text-danger">
+                              {errors.contactPerson}
+                            </small>
+                          </div>
                         )}
                       </div>
                     </div>
                     <div className="col-lg-6">
                       <div className="form-group">
-                        <label className="form-label" htmlFor="email">Email Address*</label>
+                        <label className="form-label" htmlFor="email">
+                          Email Address*
+                        </label>
                         <input
                           type="email"
                           className="form-control"
@@ -318,13 +399,19 @@ const VendorForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
                           required
                         />
                         {errors.email && (
-                          <div className="mt-1"><small className="text-danger">{errors.email}</small></div>
+                          <div className="mt-1">
+                            <small className="text-danger">
+                              {errors.email}
+                            </small>
+                          </div>
                         )}
                       </div>
                     </div>
                     <div className="col-lg-6">
                       <div className="form-group">
-                        <label className="form-label" htmlFor="phone">Phone Number*</label>
+                        <label className="form-label" htmlFor="phone">
+                          Phone Number*
+                        </label>
                         <input
                           type="tel"
                           className="form-control"
@@ -334,17 +421,23 @@ const VendorForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
                           onChange={handleChange}
                           onBlur={handleBlur}
                           placeholder="Enter phone number"
-                          maxLength="20"
+                          maxLength="14"
                           required
                         />
                         {errors.phone && (
-                          <div className="mt-1"><small className="text-danger">{errors.phone}</small></div>
+                          <div className="mt-1">
+                            <small className="text-danger">
+                              {errors.phone}
+                            </small>
+                          </div>
                         )}
                       </div>
                     </div>
                     <div className="col-lg-12">
                       <div className="form-group">
-                        <label className="form-label" htmlFor="address">Address</label>
+                        <label className="form-label" htmlFor="address">
+                          Address
+                        </label>
                         <input
                           type="text"
                           className="form-control"
@@ -358,7 +451,9 @@ const VendorForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
                     </div>
                     <div className="col-lg-4">
                       <div className="form-group">
-                        <label className="form-label" htmlFor="city">City</label>
+                        <label className="form-label" htmlFor="city">
+                          City
+                        </label>
                         <input
                           type="text"
                           className="form-control"
@@ -372,8 +467,11 @@ const VendorForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
                     </div>
                     <div className="col-lg-4">
                       <div className="form-group">
-                        <label className="form-label" htmlFor="state">State</label>
-                        {STATES_BY_COUNTRY[formData.country] && STATES_BY_COUNTRY[formData.country].length > 0 ? (
+                        <label className="form-label" htmlFor="state">
+                          State
+                        </label>
+                        {STATES_BY_COUNTRY[formData.country] &&
+                        STATES_BY_COUNTRY[formData.country].length > 0 ? (
                           <select
                             className="form-select"
                             id="state"
@@ -383,7 +481,9 @@ const VendorForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
                           >
                             <option value="">Select state</option>
                             {STATES_BY_COUNTRY[formData.country].map((st) => (
-                              <option key={st} value={st}>{st}</option>
+                              <option key={st} value={st}>
+                                {st}
+                              </option>
                             ))}
                           </select>
                         ) : (
@@ -401,7 +501,9 @@ const VendorForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
                     </div>
                     <div className="col-lg-4">
                       <div className="form-group">
-                        <label className="form-label" htmlFor="zip">{getPostalLabel(formData.country)}</label>
+                        <label className="form-label" htmlFor="zip">
+                          {getPostalLabel(formData.country)}
+                        </label>
                         <input
                           type="text"
                           className="form-control"
@@ -411,16 +513,22 @@ const VendorForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
                           onChange={handleChange}
                           onBlur={handleBlur}
                           placeholder={getPostalPlaceholder(formData.country)}
-                          maxLength={formData.country === 'United States' ? 5 : 10}
+                          maxLength={
+                            formData.country === "United States" ? 5 : 10
+                          }
                         />
                         {errors.zip && (
-                          <div className="mt-1"><small className="text-danger">{errors.zip}</small></div>
+                          <div className="mt-1">
+                            <small className="text-danger">{errors.zip}</small>
+                          </div>
                         )}
                       </div>
                     </div>
                     <div className="col-lg-6">
                       <div className="form-group">
-                        <label className="form-label" htmlFor="country">Country</label>
+                        <label className="form-label" htmlFor="country">
+                          Country
+                        </label>
                         <select
                           className="form-select"
                           id="country"
@@ -429,14 +537,18 @@ const VendorForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
                           onChange={handleChange}
                         >
                           {COUNTRY_OPTIONS.map((c) => (
-                            <option key={c} value={c}>{c}</option>
+                            <option key={c} value={c}>
+                              {c}
+                            </option>
                           ))}
                         </select>
                       </div>
                     </div>
                     <div className="col-lg-6">
                       <div className="form-group">
-                        <label className="form-label" htmlFor="taxId">{TAX_ID_LABELS[formData.country] || 'Tax ID'}</label>
+                        <label className="form-label" htmlFor="taxId">
+                          {TAX_ID_LABELS[formData.country] || "Tax ID"}
+                        </label>
                         <input
                           type="text"
                           className="form-control"
@@ -444,14 +556,22 @@ const VendorForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
                           name="taxId"
                           value={formData.taxId}
                           onChange={handleChange}
-                          placeholder={TAX_ID_PLACEHOLDERS[formData.country] || 'Enter tax identifier'}
+                          placeholder={
+                            TAX_ID_PLACEHOLDERS[formData.country] ||
+                            "Enter tax identifier"
+                          }
                         />
-                        <small className="text-muted">This identifier varies by country (e.g., EIN in US, GSTIN in India, VAT in UK).</small>
+                        <small className="text-muted">
+                          This identifier varies by country (e.g., EIN in US,
+                          GSTIN in India, VAT in UK).
+                        </small>
                       </div>
                     </div>
                     <div className="col-lg-6">
                       <div className="form-group">
-                        <label className="form-label" htmlFor="vendorType">Vendor Type*</label>
+                        <label className="form-label" htmlFor="vendorType">
+                          Vendor Type*
+                        </label>
                         <select
                           className="form-select"
                           id="vendorType"
@@ -470,7 +590,9 @@ const VendorForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
                     </div>
                     <div className="col-lg-6">
                       <div className="form-group">
-                        <label className="form-label" htmlFor="paymentTerms">Payment Term*</label>
+                        <label className="form-label" htmlFor="paymentTerms">
+                          Payment Term*
+                        </label>
                         <select
                           className="form-select"
                           id="paymentTerms"
@@ -480,15 +602,23 @@ const VendorForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
                           required
                         >
                           {paymentTermsOptions.map((opt) => (
-                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                            <option key={opt.value} value={opt.value}>
+                              {opt.label}
+                            </option>
                           ))}
                         </select>
-                        <small className="text-muted">Invoices are generated after timesheet approval. Invoice cycle controls when the invoice is created (e.g., Net 30).</small>
+                        <small className="text-muted">
+                          Invoices are generated after timesheet approval.
+                          Invoice cycle controls when the invoice is created
+                          (e.g., Net 30).
+                        </small>
                       </div>
                     </div>
                     <div className="col-lg-6">
                       <div className="form-group">
-                        <label className="form-label" htmlFor="status">Status</label>
+                        <label className="form-label" htmlFor="status">
+                          Status
+                        </label>
                         <select
                           className="form-select"
                           id="status"
@@ -504,7 +634,9 @@ const VendorForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
                     </div>
                     <div className="col-lg-12">
                       <div className="form-group">
-                        <label className="form-label">Contract / Agreement</label>
+                        <label className="form-label">
+                          Contract / Agreement
+                        </label>
                         <div className="form-control-wrap">
                           <div className="custom-file">
                             <input
@@ -514,21 +646,26 @@ const VendorForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
                               accept=".pdf,.doc,.docx"
                               onChange={handleFileChange}
                             />
-                            <label className="custom-file-label" htmlFor="contractFile">
-                              {contractFile ? contractFile.name : 'Choose file'}
+                            <label
+                              className="custom-file-label"
+                              htmlFor="contractFile"
+                            >
+                              {contractFile ? contractFile.name : "Choose file"}
                             </label>
                           </div>
                         </div>
-                        <small className="text-muted">Upload vendor contract or agreement (PDF, DOC, DOCX)</small>
-                        
+                        <small className="text-muted">
+                          Upload vendor contract or agreement (PDF, DOC, DOCX)
+                        </small>
+
                         {contractPreview && (
                           <div className="document-preview mt-3">
                             <p>Document uploaded: {contractFile.name}</p>
-                            {contractFile.type.includes('image') ? (
-                              <img 
-                                src={contractPreview} 
-                                alt="Contract Preview" 
-                                style={{ maxWidth: '100%', maxHeight: '200px' }} 
+                            {contractFile.type.includes("image") ? (
+                              <img
+                                src={contractPreview}
+                                alt="Contract Preview"
+                                style={{ maxWidth: "100%", maxHeight: "200px" }}
                               />
                             ) : (
                               <div className="document-icon">
@@ -542,7 +679,9 @@ const VendorForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
                     </div>
                     <div className="col-lg-12">
                       <div className="form-group">
-                        <label className="form-label" htmlFor="notes">Notes</label>
+                        <label className="form-label" htmlFor="notes">
+                          Notes
+                        </label>
                         <textarea
                           className="form-control"
                           id="notes"
@@ -556,18 +695,27 @@ const VendorForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
                     </div>
                     <div className="col-12">
                       <div className="form-group">
-                        <button type="submit" className="btn btn-primary btn-create-vendor" disabled={loading}>
+                        <button
+                          type="submit"
+                          className="btn btn-primary btn-create-vendor"
+                          disabled={loading}
+                        >
                           {loading ? (
                             <>
-                              <span className="spinner-border spinner-border-sm mr-1" role="status" aria-hidden="true"></span>
-                              {mode === 'edit' ? 'Saving...' : 'Creating...'}
+                              <span
+                                className="spinner-border spinner-border-sm mr-1"
+                                role="status"
+                                aria-hidden="true"
+                              ></span>
+                              {mode === "edit" ? "Saving..." : "Creating..."}
                             </>
                           ) : (
-                            submitLabel || (mode === 'edit' ? 'Save Changes' : 'Create Vendor')
+                            submitLabel ||
+                            (mode === "edit" ? "Save Changes" : "Create Vendor")
                           )}
                         </button>
-                        <button 
-                          type="button" 
+                        <button
+                          type="button"
                           className="btn btn-outline-light ml-3"
                           onClick={() => navigate(`/${subdomain}/vendors`)}
                         >

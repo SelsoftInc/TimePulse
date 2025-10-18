@@ -33,6 +33,10 @@ import VendorList from "./components/vendors/VendorList";
 import VendorForm from "./components/vendors/VendorForm";
 import VendorDetail from "./components/vendors/VendorDetail";
 import VendorEdit from "./components/vendors/VendorEdit";
+import ImplementationPartnerList from "./components/implementationPartners/ImplementationPartnerList";
+import ImplementationPartnerForm from "./components/implementationPartners/ImplementationPartnerForm";
+import ImplementationPartnerDetail from "./components/implementationPartners/ImplementationPartnerDetail";
+import ImplementationPartnerEdit from "./components/implementationPartners/ImplementationPartnerEdit";
 import EmployerSettings from "./components/settings/EmployerSettings";
 import InvoiceSettings from "./components/settings/InvoiceSettings";
 import TestLogin from "./components/auth/TestLogin";
@@ -424,6 +428,54 @@ function App() {
                     >
                       <EmployerLayout>
                         <VendorEdit />
+                      </EmployerLayout>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/:subdomain/implementation-partners"
+                  element={
+                    <ProtectedRoute
+                      requiredPermission={PERMISSIONS.VIEW_IMPLEMENTATION_PARTNER}
+                    >
+                      <EmployerLayout>
+                        <ImplementationPartnerList />
+                      </EmployerLayout>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/:subdomain/implementation-partners/new"
+                  element={
+                    <ProtectedRoute
+                      requiredPermission={PERMISSIONS.CREATE_IMPLEMENTATION_PARTNER}
+                    >
+                      <EmployerLayout>
+                        <ImplementationPartnerForm />
+                      </EmployerLayout>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/:subdomain/implementation-partners/:id"
+                  element={
+                    <ProtectedRoute
+                      requiredPermission={PERMISSIONS.VIEW_IMPLEMENTATION_PARTNER}
+                    >
+                      <EmployerLayout>
+                        <ImplementationPartnerDetail />
+                      </EmployerLayout>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/:subdomain/implementation-partners/:id/edit"
+                  element={
+                    <ProtectedRoute
+                      requiredPermission={PERMISSIONS.EDIT_IMPLEMENTATION_PARTNER}
+                    >
+                      <EmployerLayout>
+                        <ImplementationPartnerEdit />
                       </EmployerLayout>
                     </ProtectedRoute>
                   }

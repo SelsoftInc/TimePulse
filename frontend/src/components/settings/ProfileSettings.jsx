@@ -240,6 +240,7 @@ const ProfileSettings = () => {
     return 'Standard user access';
   };
 
+
   const getRoleName = () => {
     if (isAdmin()) return 'ADMIN';
     if (isApprover()) return 'APPROVER';

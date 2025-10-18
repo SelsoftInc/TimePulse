@@ -1,8 +1,8 @@
 /* Comprehensive Theme Styles for TimePulse */
 
-/* Light mode variables (default) */
+/* Light mode variables (default) - TimePulse Style */
 :root {
-  /* Base colors */
+  /* Base colors - TimePulse original colors */
   --background-color: #ffffff;
   --background-secondary: #f8f9fa;
   --background-tertiary: #f4f6f8;
@@ -18,18 +18,19 @@
   --modal-bg: #ffffff;
   --modal-backdrop: rgba(0, 0, 0, 0.5);
   
-  /* Border and divider colors */
+  /* Border and divider colors - TimePulse original */
   --border-color: #e0e0e0;
   --border-light: #dee2e6;
   --border-dark: #dbdfea;
   --divider-color: #e5e7eb;
   
-  /* Sidebar and navigation */
+  /* Sidebar and navigation - TimePulse original blue */
   --sidebar-bg: #1976d2;
   --sidebar-text: #ffffff;
   --sidebar-hover: #1565c0;
+  --sidebar-active: #0d47a1;
   
-  /* Header colors */
+  /* Header colors - TimePulse original blue */
   --header-bg: #1976d2;
   --header-text: #ffffff;
   
@@ -367,9 +368,9 @@ body.dark-mode {
   --approval-stats-rejected: #f87171;
 }
 
-/* Dark mode variables */
+/* Dark mode variables - TimePulse Dark Style */
 body.dark-mode {
-  /* Base colors */
+  /* Base colors - TimePulse dark theme */
   --background-color: #121212;
   --background-secondary: #1e1e1e;
   --background-tertiary: #2c2c2c;
@@ -379,28 +380,29 @@ body.dark-mode {
   --text-light: #ffffff;
   --text-dark: #e0e0e0;
   
-  /* Card and container colors */
+  /* Card and container colors - TimePulse dark cards */
   --card-bg: #1e1e1e;
   --card-border: #333333;
   --modal-bg: #2c2c2c;
   --modal-backdrop: rgba(0, 0, 0, 0.8);
   
-  /* Border and divider colors */
+  /* Border and divider colors - TimePulse dark borders */
   --border-color: #333333;
   --border-light: #404040;
   --border-dark: #2e2e2e;
   --divider-color: #404040;
   
-  /* Sidebar and navigation */
+  /* Sidebar and navigation - TimePulse dark blue */
   --sidebar-bg: #1976d2;
   --sidebar-text: #ffffff;
   --sidebar-hover: #1565c0;
+  --sidebar-active: #0d47a1;
   
-  /* Header colors */
+  /* Header colors - TimePulse dark blue header */
   --header-bg: #1976d2;
   --header-text: #ffffff;
   
-  /* Settings specific colors */
+  /* Settings specific colors - TimePulse dark settings */
   --settings-sidebar-bg: #2c2c2c;
   --settings-content-bg: #1e1e1e;
   --settings-menu-bg: #2c2c2c;
@@ -408,7 +410,7 @@ body.dark-mode {
   --settings-menu-active: #404040;
   --settings-menu-border: #2196f3;
   
-  /* Form elements */
+  /* Form elements - TimePulse dark forms */
   --form-bg: #2c2c2c;
   --form-border: #404040;
   --form-focus-border: #2196f3;
@@ -417,7 +419,7 @@ body.dark-mode {
   --form-disabled-text: #666666;
   --form-placeholder: #888888;
   
-  /* Button colors */
+  /* Button colors - TimePulse dark buttons */
   --btn-primary-bg: #2196f3;
   --btn-primary-hover: #1976d2;
   --btn-primary-text: #ffffff;
@@ -441,7 +443,7 @@ body.dark-mode {
   --info-color: #2196f3;
   --info-bg: rgba(33, 150, 243, 0.2);
   
-  /* Table colors */
+  /* Table colors - TimePulse dark tables */
   --table-bg: #1e1e1e;
   --table-stripe: #2c2c2c;
   --table-hover: #333333;
@@ -449,7 +451,7 @@ body.dark-mode {
   --table-header-bg: #2c2c2c;
   --table-header-text: #e0e0e0;
   
-  /* Interactive elements */
+  /* Interactive elements - TimePulse dark interactions */
   --hover-bg: #2c2c2c;
   --active-bg: #404040;
   --focus-outline: rgba(33, 150, 243, 0.25);
@@ -625,6 +627,48 @@ body {
   background-color: var(--background-color);
   color: var(--text-color);
   transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Jugl-style navigation improvements while keeping TimePulse colors */
+.nk-sidebar {
+  background-color: var(--sidebar-bg);
+  color: var(--sidebar-text);
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.nk-sidebar .sidebar-link {
+  transition: all 0.2s ease;
+  border-radius: 8px;
+  margin: 2px 8px;
+  padding: 12px 16px;
+}
+
+.nk-sidebar .sidebar-link:hover {
+  background-color: var(--sidebar-hover);
+  transform: translateX(2px);
+}
+
+.nk-sidebar .sidebar-link.active {
+  background-color: var(--sidebar-active);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.nk-header {
+  background-color: var(--header-bg);
+  color: var(--header-text);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.nk-header .header-action-item {
+  transition: all 0.2s ease;
+  border-radius: 6px;
+  padding: 8px;
+}
+
+.nk-header .header-action-item:hover {
+  background-color: rgba(255, 255, 255, 0.1);
 }
 
 /* Universal component styling */

@@ -191,15 +191,14 @@ const Sidebar = ({ collapsed, toggleSidebar, className = "" }) => {
           </PermissionGuard>
 
           <PermissionGuard
-            requiredPermission={PERMISSIONS.VIEW_VENDOR}
+            requiredPermission={PERMISSIONS.VIEW_IMPLEMENTATION_PARTNER}
             fallback={null}
           >
             <li className="sidebar-item">
               <Link
-                to={`/${currentSubdomain}/vendors?implPartner=1`}
+                to={`/${currentSubdomain}/implementation-partners`}
                 className={`sidebar-link ${
-                  currentPath.includes(`/${currentSubdomain}/vendors`) &&
-                  new URLSearchParams(window.location.search).get("implPartner")
+                  currentPath.includes(`/${currentSubdomain}/implementation-partners`)
                     ? "active"
                     : ""
                 }`}

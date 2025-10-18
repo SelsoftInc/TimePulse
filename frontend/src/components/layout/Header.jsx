@@ -6,8 +6,9 @@ import { useAuth } from "../../contexts/AuthContext";
 import { useTheme } from "../../contexts/ThemeContext";
 import PermissionGuard from "../common/PermissionGuard";
 import TimesheetAlerts from "../notifications/TimesheetAlerts";
+import AskAIButton from "../ai/AskAIButton";
 // import logo2 from "../../assets/images/jsTree/logo2.png";
-import logo3 from '../../assets/images/jsTree/TimePulse6.png';
+import logo3 from "../../assets/images/jsTree/TimePulse6.png";
 
 import "./Header.css";
 
@@ -69,13 +70,20 @@ const Header = ({ toggleSidebar }) => {
   // Theme toggle is now handled by ThemeContext
 
   const goToSettings = () => {
+    console.log("🔧 Gear icon clicked - navigating to settings");
     // Get current tenant from localStorage
     const currentTenant = localStorage.getItem("currentTenant");
+    console.log("Current tenant from localStorage:", currentTenant);
+
     if (currentTenant) {
       const tenant = JSON.parse(currentTenant);
+      console.log("Parsed tenant:", tenant);
       // Navigate to tenant-specific settings page
-      navigate(`/${tenant.subdomain}/settings`);
+      const settingsPath = `/${tenant.subdomain}/settings`;
+      console.log("Navigating to:", settingsPath);
+      navigate(settingsPath);
     } else {
+      console.log("No tenant found, navigating to workspaces");
       // Fallback to workspaces if no tenant is selected
       navigate("/workspaces");
     }
@@ -110,7 +118,11 @@ const Header = ({ toggleSidebar }) => {
       <div className="container-fluid">
         <div className="nk-header-wrap">
           {/* Brand logo and name */}
-          <div className="app-brand" onClick={() => navigate(`/${subdomain}/employee-dashboard`)} style={{ cursor: 'pointer' }}>
+          <div
+            className="app-brand"
+            onClick={() => navigate(`/${subdomain}/employee-dashboard`)}
+            style={{ cursor: "pointer" }}
+          >
             <img
               src={tenantLogo || logo3}
               alt={tenantLogo ? "Company Logo" : "TimePulse Logo"}
@@ -140,6 +152,11 @@ const Header = ({ toggleSidebar }) => {
 
           {/* Right side tools */}
           <div className="nk-header-tools">
+            {/* Ask AI Button */}
+            <div className="header-action-item">
+              <AskAIButton />
+            </div>
+
             {/* Action icons */}
             <div className="header-action-item dropdown">
               <TimesheetAlerts subdomain={subdomain} />
@@ -153,25 +170,26 @@ const Header = ({ toggleSidebar }) => {
                 className={`fas ${
                   isDarkMode ? "fa-sun" : "fa-moon"
                 } header-action-icon`}
-                title={`Switch to ${isDarkMode ? 'light' : 'dark'} mode`}
+                title={`Switch to ${isDarkMode ? "light" : "dark"} mode`}
               ></i>
             </div>
 
-            <PermissionGuard
-              requiredPermission={PERMISSIONS.VIEW_SETTINGS}
-              fallback={null}
+            <div
+              className="header-action-item"
+              onClick={goToSettings}
+              style={{ cursor: "pointer" }}
+              title="Settings"
             >
-              <div
-                className="header-action-item"
-                onClick={goToSettings}
-                style={{ cursor: "pointer" }}
-              >
-                <i className="fas fa-cog header-action-icon"></i>
-              </div>
-            </PermissionGuard>
+              <i className="fas fa-cog header-action-icon"></i>
+            </div>
 
             {/* User dropdown */}
-            <div className="user-dropdown">
+            <div
+              className="user-dropdown"
+              onClick={goToSettings}
+              style={{ cursor: "pointer" }}
+              title="Edit Profile"
+            >
               <div className="user-avatar">{getUserInitials()}</div>
             </div>
           </div>

@@ -1,4 +1,4 @@
-const { DataTypes } = require("sequelize");
+const { DataTypes, Op } = require("sequelize");
 
 module.exports = (sequelize) => {
   const Notification = sequelize.define(
@@ -104,10 +104,7 @@ module.exports = (sequelize) => {
         userId,
         tenantId,
         readAt: null,
-        [sequelize.Op.or]: [
-          { expiresAt: null },
-          { expiresAt: { [sequelize.Op.gt]: new Date() } },
-        ],
+        [Op.or]: [{ expiresAt: null }, { expiresAt: { [Op.gt]: new Date() } }],
       },
     });
   };
@@ -129,10 +126,7 @@ module.exports = (sequelize) => {
     const whereClause = {
       userId,
       tenantId,
-      [sequelize.Op.or]: [
-        { expiresAt: null },
-        { expiresAt: { [sequelize.Op.gt]: new Date() } },
-      ],
+      [Op.or]: [{ expiresAt: null }, { expiresAt: { [Op.gt]: new Date() } }],
     };
 
     if (!includeRead) {
@@ -153,7 +147,7 @@ module.exports = (sequelize) => {
 
     return await this.findAndCountAll({
       where: whereClause,
-      order: [["createdAt", "DESC"]],
+      order: [["created_at", "DESC"]],
       limit,
       offset,
     });

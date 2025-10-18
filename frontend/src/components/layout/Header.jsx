@@ -69,22 +69,63 @@ const Header = ({ toggleSidebar }) => {
 
   // Theme toggle is now handled by ThemeContext
 
-  const goToSettings = () => {
-    console.log("🔧 Gear icon clicked - navigating to settings");
-    // Get current tenant from localStorage
-    const currentTenant = localStorage.getItem("currentTenant");
-    console.log("Current tenant from localStorage:", currentTenant);
+  // Helper function to get tenant info
+  const getTenantInfo = () => {
+    let tenant = null;
 
+    // Method 1: From localStorage
+    const currentTenant = localStorage.getItem("currentTenant");
     if (currentTenant) {
-      const tenant = JSON.parse(currentTenant);
-      console.log("Parsed tenant:", tenant);
-      // Navigate to tenant-specific settings page
+      try {
+        tenant = JSON.parse(currentTenant);
+      } catch (e) {
+        console.error("Error parsing tenant from localStorage:", e);
+      }
+    }
+
+    // Method 2: From user context
+    if (!tenant && user?.tenantId) {
+      const currentPath = window.location.pathname;
+      const subdomainMatch = currentPath.match(/\/([^\/]+)\//);
+      if (subdomainMatch) {
+        tenant = { subdomain: subdomainMatch[1] };
+      }
+    }
+
+    // Method 3: From URL params
+    if (!tenant && subdomain) {
+      tenant = { subdomain };
+    }
+
+    return tenant;
+  };
+
+  // Gear icon - goes to main settings page
+  const goToSettings = () => {
+    console.log("🔧 Gear icon clicked - navigating to main settings");
+    const tenant = getTenantInfo();
+
+    if (tenant && tenant.subdomain) {
       const settingsPath = `/${tenant.subdomain}/settings`;
-      console.log("Navigating to:", settingsPath);
+      console.log("Navigating to main settings:", settingsPath);
       navigate(settingsPath);
     } else {
       console.log("No tenant found, navigating to workspaces");
-      // Fallback to workspaces if no tenant is selected
+      navigate("/workspaces");
+    }
+  };
+
+  // Profile icon - goes to profile settings tab
+  const goToProfileSettings = () => {
+    console.log("👤 Profile icon clicked - navigating to profile settings");
+    const tenant = getTenantInfo();
+
+    if (tenant && tenant.subdomain) {
+      const profilePath = `/${tenant.subdomain}/settings?tab=security`;
+      console.log("Navigating to profile settings:", profilePath);
+      navigate(profilePath);
+    } else {
+      console.log("No tenant found, navigating to workspaces");
       navigate("/workspaces");
     }
   };
@@ -176,7 +217,16 @@ const Header = ({ toggleSidebar }) => {
 
             <div
               className="header-action-item"
-              onClick={goToSettings}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log("Gear icon clicked!");
+                console.log(
+                  "Current URL before navigation:",
+                  window.location.href
+                );
+                goToSettings();
+              }}
               style={{ cursor: "pointer" }}
               title="Settings"
             >
@@ -186,7 +236,7 @@ const Header = ({ toggleSidebar }) => {
             {/* User dropdown */}
             <div
               className="user-dropdown"
-              onClick={goToSettings}
+              onClick={goToProfileSettings}
               style={{ cursor: "pointer" }}
               title="Edit Profile"
             >

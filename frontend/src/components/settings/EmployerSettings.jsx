@@ -16,7 +16,7 @@ const EmployerSettings = () => {
   const { checkPermission, isEmployee } = useAuth();
   const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState(
-    checkPermission(PERMISSIONS.MANAGE_SETTINGS) ? "company" : "security"
+    checkPermission(PERMISSIONS.MANAGE_SETTINGS) ? "company" : "company"
   );
 
   // Handle tab parameter from URL
@@ -54,6 +54,44 @@ const EmployerSettings = () => {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const handleSettingsLogout = () => setShowLogoutConfirm(true);
 
+  const getPageTitle = () => {
+    switch (activeTab) {
+      case "company":
+        return "Company Information";
+      case "users":
+        return "User Management";
+      case "security":
+        return "Profile Settings";
+      case "invoices":
+        return "Invoice Settings";
+      case "billing":
+        return "Billing & Subscription";
+      case "notifications":
+        return "Notification Settings";
+      default:
+        return "Settings";
+    }
+  };
+
+  const getPageSubtitle = () => {
+    switch (activeTab) {
+      case "company":
+        return "Manage your company information and settings";
+      case "users":
+        return "Manage user accounts and permissions";
+      case "security":
+        return "Manage your personal profile and account settings";
+      case "invoices":
+        return "Configure invoice templates and preferences";
+      case "billing":
+        return "Manage your subscription and billing information";
+      case "notifications":
+        return "Configure your notification preferences";
+      default:
+        return "Manage your account and system settings";
+    }
+  };
+
   const renderTabContent = () => {
     switch (activeTab) {
       case "company":
@@ -83,10 +121,8 @@ const EmployerSettings = () => {
     <div className="employer-settings-container">
       <div className="settings-header">
         <div>
-          <h1 className="nk-block-title">Profile Settings</h1>
-          <p className="nk-block-subtitle">
-            Manage your personal profile and account settings
-          </p>
+          <h1 className="nk-block-title">{getPageTitle()}</h1>
+          <p className="nk-block-subtitle">{getPageSubtitle()}</p>
         </div>
         <button onClick={handleSettingsLogout} className="btn-logout">
           <i className="fas fa-sign-out-alt mr-1"></i> Logout

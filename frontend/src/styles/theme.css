@@ -671,6 +671,16 @@ body {
   background-color: rgba(255, 255, 255, 0.1);
 }
 
+/* Ensure gear icon is clickable */
+.nk-header .header-action-item {
+  position: relative;
+  z-index: 10;
+}
+
+.nk-header .header-action-item i {
+  pointer-events: none; /* Ensure clicks go to parent */
+}
+
 /* Universal component styling */
 
 /* Headers and Navigation */

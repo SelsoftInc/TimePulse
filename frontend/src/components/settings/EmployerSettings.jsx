@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import { PERMISSIONS } from "../../utils/roles";
+import { useSearchParams } from "react-router-dom";
 import "./EmployerSettings.css";
 import CompanyInformation from "./CompanyInformation";
 import ProfileSettings from "./ProfileSettings";
@@ -13,9 +14,18 @@ import InvoiceSettings from "./InvoiceSettings";
 
 const EmployerSettings = () => {
   const { checkPermission, isEmployee } = useAuth();
+  const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState(
     checkPermission(PERMISSIONS.MANAGE_SETTINGS) ? "company" : "security"
   );
+
+  // Handle tab parameter from URL
+  useEffect(() => {
+    const tabFromUrl = searchParams.get('tab');
+    if (tabFromUrl && ['company', 'users', 'security', 'invoices', 'billing', 'notifications'].includes(tabFromUrl)) {
+      setActiveTab(tabFromUrl);
+    }
+  }, [searchParams]);
 
   // Logout function available for use in settings components
   const handleLogout = () => {

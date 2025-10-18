@@ -194,9 +194,19 @@ const TimesheetAlerts = ({ subdomain }) => {
         >
           <div className="dropdown-head">
             <span className="dropdown-title">Notifications</span>
-            {unreadCount > 0 && (
-              <span className="badge-unread">{unreadCount} Unread</span>
-            )}
+            <div className="dropdown-head-actions">
+              {unreadCount > 0 && (
+                <span className="badge-unread">{unreadCount} Unread</span>
+              )}
+              <Link
+                to={`/${subdomain}/settings?tab=notifications`}
+                className="settings-link"
+                onClick={() => setDropdownOpen(false)}
+              >
+                <i className="fas fa-cog"></i>
+                Settings
+              </Link>
+            </div>
           </div>
 
           <div className="dropdown-body">

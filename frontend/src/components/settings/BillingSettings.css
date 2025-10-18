@@ -17,6 +17,9 @@
 }
 
 .current-plan-section {
+  display: flex;
+  align-items: center;
+  gap: 20px;
   margin-bottom: 24px;
 }
 
@@ -25,6 +28,31 @@
   font-weight: 600;
   color: #666;
   margin: 0;
+}
+
+.manage-billing-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border: 1px solid #007bff;
+  background: transparent;
+  color: #007bff;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.manage-billing-btn:hover:not(:disabled) {
+  background: #007bff;
+  color: white;
+}
+
+.manage-billing-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 /* Pricing Toggle */

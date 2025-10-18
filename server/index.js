@@ -36,6 +36,7 @@ const userRoutes = require("./routes/users");
 const reportRoutes = require("./routes/reports");
 const notificationRoutes = require("./routes/notifications");
 const subscriptionRoutes = require("./routes/subscriptions");
+const billingRoutes = require("./routes/billing");
 
 // Middleware
 app.use(
@@ -110,6 +111,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/reports", reportRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/subscriptions", subscriptionRoutes);
+app.use("/api/billing", billingRoutes);
 app.use("/api/auth", require("./routes/auth"));
 
 // Error handling middleware

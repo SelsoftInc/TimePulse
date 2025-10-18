@@ -66,27 +66,34 @@ const BillingSettings = () => {
     { id: "INV-2025-003", date: "2025-04-01", amount: 99, status: "paid" },
   ];
 
-  // Fetch current subscription
+  // Fetch current subscription status
   useEffect(() => {
     const fetchSubscription = async () => {
       if (!user?.tenantId) return;
-      
+
       try {
-        const token = localStorage.getItem('token');
-        const response = await fetch(`${API_BASE}/api/subscriptions/current?tenantId=${user.tenantId}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        });
-        
+        const token = localStorage.getItem("token");
+        const response = await fetch(
+          `${API_BASE}/api/billing/status?tenantId=${user.tenantId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
         if (response.ok) {
           const data = await response.json();
-          setSubscription(data.subscription);
-          setBillingPlan(data.subscription.planId);
-          setBillingCycle(data.subscription.billingCycle);
+          setSubscription(data);
+          if (data.plan && data.plan !== "none") {
+            setBillingPlan(data.plan);
+          }
+          if (data.interval) {
+            setBillingCycle(data.interval);
+          }
         }
       } catch (error) {
-        console.error('Error fetching subscription:', error);
+        console.error("Error fetching subscription:", error);
       }
     };
 
@@ -95,33 +102,50 @@ const BillingSettings = () => {
 
   const handlePlanChange = async (planId) => {
     if (planId === billingPlan) return;
-    
+
+    // If no subscription exists, start checkout
+    if (!subscription || subscription.status === "none") {
+      await startCheckout(planId, billingCycle);
+      return;
+    }
+
     setLoading(true);
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE}/api/subscriptions/change-plan`, {
-        method: 'POST',
+      const token = localStorage.getItem("token");
+      const response = await fetch(`${API_BASE}/api/billing/change-plan`, {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           tenantId: user.tenantId,
-          planId,
-          billingCycle
+          plan: planId,
+          interval: billingCycle,
         }),
       });
 
       if (response.ok) {
         setBillingPlan(planId);
-        toast.success('Subscription plan updated successfully');
+        toast.success("Subscription plan updated successfully");
+        // Refresh subscription data
+        const statusResponse = await fetch(
+          `${API_BASE}/api/billing/status?tenantId=${user.tenantId}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        if (statusResponse.ok) {
+          const data = await statusResponse.json();
+          setSubscription(data);
+        }
       } else {
         const error = await response.json();
-        toast.error(error.error || 'Failed to update subscription plan');
+        toast.error(error.error || "Failed to update subscription plan");
       }
     } catch (error) {
-      console.error('Error updating subscription:', error);
-      toast.error('Failed to update subscription plan');
+      console.error("Error updating subscription:", error);
+      toast.error("Failed to update subscription plan");
     } finally {
       setLoading(false);
     }
@@ -129,35 +153,112 @@ const BillingSettings = () => {
 
   const handleCycleChange = async (cycle) => {
     if (cycle === billingCycle) return;
-    
+
+    // If no subscription exists, start checkout
+    if (!subscription || subscription.status === "none") {
+      await startCheckout(billingPlan, cycle);
+      return;
+    }
+
     setLoading(true);
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE}/api/subscriptions/change-plan`, {
-        method: 'POST',
+      const token = localStorage.getItem("token");
+      const response = await fetch(`${API_BASE}/api/billing/change-plan`, {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           tenantId: user.tenantId,
-          planId: billingPlan,
-          billingCycle: cycle
+          plan: billingPlan,
+          interval: cycle,
         }),
       });
 
       if (response.ok) {
         setBillingCycle(cycle);
-        toast.success('Billing cycle updated successfully');
+        toast.success("Billing cycle updated successfully");
+        // Refresh subscription data
+        const statusResponse = await fetch(
+          `${API_BASE}/api/billing/status?tenantId=${user.tenantId}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        if (statusResponse.ok) {
+          const data = await statusResponse.json();
+          setSubscription(data);
+        }
       } else {
         const error = await response.json();
-        toast.error(error.error || 'Failed to update billing cycle');
+        toast.error(error.error || "Failed to update billing cycle");
       }
     } catch (error) {
-      console.error('Error updating billing cycle:', error);
-      toast.error('Failed to update billing cycle');
+      console.error("Error updating billing cycle:", error);
+      toast.error("Failed to update billing cycle");
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Start Stripe checkout for new subscriptions
+  const startCheckout = async (plan, interval) => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(`${API_BASE}/api/billing/checkout`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          tenantId: user.tenantId,
+          email: user.email,
+          plan,
+          interval,
+          seats: 1, // Default to 1 seat, can be made configurable
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        window.location.href = data.url;
+      } else {
+        const error = await response.json();
+        toast.error(error.error || "Failed to start checkout");
+      }
+    } catch (error) {
+      console.error("Error starting checkout:", error);
+      toast.error("Failed to start checkout");
+    }
+  };
+
+  // Open Stripe customer portal
+  const openPortal = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(`${API_BASE}/api/billing/portal`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          tenantId: user.tenantId,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        window.location.href = data.url;
+      } else {
+        const error = await response.json();
+        toast.error(error.error || "Failed to open billing portal");
+      }
+    } catch (error) {
+      console.error("Error opening portal:", error);
+      toast.error("Failed to open billing portal");
     }
   };
 
@@ -167,6 +268,16 @@ const BillingSettings = () => {
         <h1 className="billing-title">Billing & Subscription</h1>
         <div className="current-plan-section">
           <h3 className="current-plan-title">Current Plan</h3>
+          {subscription && subscription.status !== "none" && (
+            <button
+              className="btn btn-outline-primary manage-billing-btn"
+              onClick={openPortal}
+              disabled={loading}
+            >
+              <i className="fas fa-cog mr-1"></i>
+              Manage Billing
+            </button>
+          )}
         </div>
       </div>
 
@@ -174,14 +285,18 @@ const BillingSettings = () => {
       <div className="pricing-toggle-container">
         <div className="pricing-toggle">
           <button
-            className={`toggle-option ${billingCycle === "monthly" ? "active" : ""}`}
+            className={`toggle-option ${
+              billingCycle === "monthly" ? "active" : ""
+            }`}
             onClick={() => handleCycleChange("monthly")}
             disabled={loading}
           >
             Monthly
           </button>
           <button
-            className={`toggle-option ${billingCycle === "annual" ? "active" : ""}`}
+            className={`toggle-option ${
+              billingCycle === "annual" ? "active" : ""
+            }`}
             onClick={() => handleCycleChange("annual")}
             disabled={loading}
           >
@@ -195,7 +310,9 @@ const BillingSettings = () => {
         {plans.map((plan) => (
           <div
             key={plan.id}
-            className={`pricing-card ${plan.id === billingPlan ? "current-plan" : ""} ${loading ? "loading" : ""}`}
+            className={`pricing-card ${
+              plan.id === billingPlan ? "current-plan" : ""
+            } ${loading ? "loading" : ""}`}
             onClick={() => !loading && handlePlanChange(plan.id)}
           >
             {plan.id === billingPlan && (
@@ -242,28 +359,20 @@ const BillingSettings = () => {
           {paymentMethods.map((method) => (
             <div key={method.id} className="payment-method-card">
               <div className="payment-icon">
-                {method.brand === "Visa" && (
-                  <i className="fab fa-cc-visa"></i>
-                )}
+                {method.brand === "Visa" && <i className="fab fa-cc-visa"></i>}
                 {method.brand === "Mastercard" && (
                   <i className="fab fa-cc-mastercard"></i>
                 )}
-                {method.brand === "Amex" && (
-                  <i className="fab fa-cc-amex"></i>
-                )}
+                {method.brand === "Amex" && <i className="fab fa-cc-amex"></i>}
               </div>
               <div className="payment-details">
                 <div className="payment-name">
                   {method.brand} ending in {method.last4}
                 </div>
-                <div className="payment-expiry">
-                  Expires {method.expiry}
-                </div>
+                <div className="payment-expiry">Expires {method.expiry}</div>
               </div>
               <div className="payment-actions">
-                <button className="btn btn-sm btn-outline-primary">
-                  Edit
-                </button>
+                <button className="btn btn-sm btn-outline-primary">Edit</button>
               </div>
             </div>
           ))}
@@ -272,7 +381,6 @@ const BillingSettings = () => {
           </button>
         </div>
       </div>
-
     </div>
   );
 };

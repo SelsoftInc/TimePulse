@@ -13,6 +13,7 @@ const Login = () => {
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const [backgroundTheme, setBackgroundTheme] = useState("default");
 
   // Load saved email on component mount
   useEffect(() => {
@@ -30,6 +31,22 @@ const Login = () => {
       });
     }
   }, []);
+
+  // Cycle through background themes
+  const cycleBackground = () => {
+    const themes = [
+      "default",
+      "corporate-1",
+      "corporate-2",
+      "corporate-3",
+      "corporate-4",
+      "corporate-5",
+      "corporate-6",
+    ];
+    const currentIndex = themes.indexOf(backgroundTheme);
+    const nextIndex = (currentIndex + 1) % themes.length;
+    setBackgroundTheme(themes[nextIndex]);
+  };
 
   const handleChange = (e) => {
     setFormData({
@@ -159,7 +176,31 @@ const Login = () => {
   };
 
   return (
-    <div className="auth-container">
+    <div className={`auth-container ${backgroundTheme}`}>
+      {/* Floating Elements */}
+      <div className="floating-element"></div>
+      <div className="floating-element"></div>
+      <div className="floating-element"></div>
+
+      {/* Background Theme Selector */}
+      <button
+        className="theme-selector"
+        onClick={cycleBackground}
+        title="Change background theme"
+      >
+        <svg
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+        >
+          <circle cx="12" cy="12" r="3" />
+          <path d="M12 1v6m0 6v6m11-7h-6m-6 0H1" />
+        </svg>
+      </button>
+
       <div className="auth-card">
         <div className="auth-header">
           <img src={logo2} alt="TimePulse Logo" className="auth-logo" />

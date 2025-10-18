@@ -103,6 +103,36 @@ models.Tenant = sequelize.define(
       defaultValue: DataTypes.NOW,
       field: "onboarded_at",
     },
+    // Stripe billing fields
+    stripeCustomerId: {
+      type: DataTypes.STRING(100),
+      allowNull: true,
+      field: "stripe_customer_id",
+    },
+    stripeSubscriptionId: {
+      type: DataTypes.STRING(100),
+      allowNull: true,
+      field: "stripe_subscription_id",
+    },
+    plan: {
+      type: DataTypes.STRING(30),
+      allowNull: true,
+    },
+    billingInterval: {
+      type: DataTypes.STRING(10),
+      allowNull: true,
+      field: "billing_interval",
+    },
+    seatLimit: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      field: "seat_limit",
+    },
+    currentPeriodEnd: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      field: "current_period_end",
+    },
   },
   {
     tableName: "tenants",

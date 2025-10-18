@@ -1,0 +1,310 @@
+/* Billing Settings Styles */
+.billing-settings {
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.billing-header {
+  margin-bottom: 32px;
+}
+
+.billing-title {
+  font-size: 32px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0 0 16px 0;
+}
+
+.current-plan-section {
+  margin-bottom: 24px;
+}
+
+.current-plan-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #666;
+  margin: 0;
+}
+
+/* Pricing Toggle */
+.pricing-toggle-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 40px;
+}
+
+.pricing-toggle {
+  display: flex;
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 4px;
+  border: 1px solid #e9ecef;
+}
+
+.toggle-option {
+  padding: 12px 24px;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  font-weight: 500;
+  font-size: 14px;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.toggle-option.active {
+  background: #007bff;
+  color: white;
+  box-shadow: 0 2px 4px rgba(0, 123, 255, 0.2);
+}
+
+.toggle-option:hover:not(.active):not(:disabled) {
+  background: #e9ecef;
+  color: #333;
+}
+
+.toggle-option:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Pricing Plans */
+.pricing-plans {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 24px;
+  margin-bottom: 48px;
+}
+
+.pricing-card {
+  background: white;
+  border: 2px solid #e9ecef;
+  border-radius: 12px;
+  padding: 24px;
+  position: relative;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.pricing-card:hover:not(.loading) {
+  border-color: #007bff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 123, 255, 0.15);
+}
+
+.pricing-card.loading {
+  opacity: 0.6;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.pricing-card.current-plan {
+  border-color: #007bff;
+  box-shadow: 0 4px 16px rgba(0, 123, 255, 0.2);
+}
+
+.current-plan-badge {
+  position: absolute;
+  top: -1px;
+  right: 24px;
+  background: #007bff;
+  color: white;
+  padding: 6px 12px;
+  border-radius: 0 0 8px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.plan-header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.plan-name {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0 0 16px 0;
+}
+
+.plan-price {
+  margin-bottom: 12px;
+}
+
+.price-amount {
+  font-size: 36px;
+  font-weight: 700;
+  color: #007bff;
+}
+
+.price-period {
+  font-size: 16px;
+  color: #666;
+  margin-left: 4px;
+}
+
+.plan-users {
+  font-size: 14px;
+  color: #666;
+  font-weight: 500;
+}
+
+.plan-features {
+  margin-top: 24px;
+}
+
+.features-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.feature-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+  font-size: 14px;
+  color: #333;
+}
+
+.check-icon {
+  color: #28a745;
+  margin-right: 12px;
+  flex-shrink: 0;
+}
+
+.feature-text {
+  line-height: 1.4;
+}
+
+/* Payment Methods */
+.payment-methods-section {
+  margin-top: 48px;
+}
+
+.section-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 0 0 24px 0;
+}
+
+.payment-methods {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.payment-method-card {
+  display: flex;
+  align-items: center;
+  background: white;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 16px 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+}
+
+.payment-method-card:hover {
+  border-color: #007bff;
+  box-shadow: 0 2px 8px rgba(0, 123, 255, 0.1);
+}
+
+.payment-icon {
+  font-size: 24px;
+  color: #007bff;
+  margin-right: 16px;
+  width: 40px;
+  text-align: center;
+}
+
+.payment-details {
+  flex: 1;
+}
+
+.payment-name {
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 4px;
+}
+
+.payment-expiry {
+  font-size: 14px;
+  color: #666;
+}
+
+.payment-actions {
+  margin-left: 16px;
+}
+
+.add-payment-btn {
+  margin-top: 8px;
+  width: 100%;
+  padding: 12px 24px;
+  font-weight: 500;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .billing-settings {
+    padding: 16px;
+  }
+  
+  .billing-title {
+    font-size: 24px;
+  }
+  
+  .pricing-plans {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  
+  .pricing-card {
+    padding: 20px;
+  }
+  
+  .plan-name {
+    font-size: 20px;
+  }
+  
+  .price-amount {
+    font-size: 28px;
+  }
+  
+  .pricing-toggle {
+    width: 100%;
+  }
+  
+  .toggle-option {
+    flex: 1;
+    text-align: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .payment-method-card {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  
+  .payment-icon {
+    margin-right: 0;
+    margin-bottom: 8px;
+  }
+  
+  .payment-actions {
+    margin-left: 0;
+    width: 100%;
+  }
+  
+  .payment-actions .btn {
+    width: 100%;
+  }
+}

@@ -3,7 +3,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import { useToast } from "../../contexts/ToastContext";
 import { API_BASE } from "../../config/api";
 import LeaveApprovals from "./LeaveApprovals";
-import { validateWeekdays, validateDateRange, validateRequired } from "../../utils/validations";
+import { validateWeekdays } from "../../utils/validations";
 import "./LeaveManagement.css";
 import "../common/Pagination.css";
 
@@ -36,6 +36,9 @@ const LeaveManagement = () => {
   const [pendingPage, setPendingPage] = useState(1);
   const [historyPage, setHistoryPage] = useState(1);
   const rowsPerPage = 5;
+
+  // Combined requests for display and validation
+  const allRequests = [...leaveData.history, ...leaveData.pending];
 
   const fetchLeaveData = useCallback(async () => {
     try {
@@ -178,7 +181,6 @@ const LeaveManagement = () => {
     }
 
     // Check for overlapping dates with existing requests
-    const allRequests = [...leaveData.history, ...leaveData.pending];
     const hasOverlap = allRequests.some(request => {
       if (request.status === 'cancelled') return false; // Skip cancelled requests
       

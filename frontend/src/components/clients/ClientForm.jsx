@@ -6,8 +6,8 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import './Clients.css';
 import { PAYMENT_METHODS, CURRENCIES, CLIENT_TYPES } from '../../constants/lookups';
-import { formatPhoneInput, validatePhoneDigits } from '../../utils/validation';
-import { validatePhoneNumber, validateZipCode, validateEmail, validateName, formatPhoneNumber } from '../../utils/validations';
+import { formatPhoneInput } from '../../utils/validation';
+import { validatePhoneNumber, validateZipCode, validateEmail, validateName } from '../../utils/validations';
 import { apiFetch } from '../../config/api';
 import {
   COUNTRY_OPTIONS,

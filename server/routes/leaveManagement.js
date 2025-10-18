@@ -1,36 +1,107 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const { models } = require('../models');
-const NotificationService = require('../services/NotificationService');
-const { Op } = require('sequelize');
+const { models } = require("../models");
+const NotificationService = require("../services/NotificationService");
+const { Op } = require("sequelize");
 
 const { User, Employee, LeaveRequest, LeaveBalance } = models;
 
 // Submit leave request
-router.post('/request', async (req, res) => {
+router.post("/request", async (req, res) => {
   try {
-    const { employeeId, employeeName, tenantId, leaveType, startDate, endDate, totalDays, reason, approverId, attachmentName } = req.body;
+    const {
+      employeeId,
+      employeeName,
+      tenantId,
+      leaveType,
+      startDate,
+      endDate,
+      totalDays,
+      reason,
+      approverId,
+      attachmentName,
+    } = req.body;
+
+    if (
+      !employeeId ||
+      !tenantId ||
+      !leaveType ||
+      !startDate ||
+      !endDate ||
+      !totalDays ||
+      !approverId
+    ) {
+      return res.status(400).json({
+        error: "Missing required fields",
+      });
+    }
+
+    // Validate date range
+    const start = new Date(startDate);
+    const end = new Date(endDate);
     
-    if (!employeeId || !tenantId || !leaveType || !startDate || !endDate || !totalDays || !approverId) {
-      return res.status(400).json({ 
-        error: 'Missing required fields' 
+    if (start > end) {
+      return res.status(400).json({
+        error: "Start date cannot be after end date",
+      });
+    }
+
+    // Check for overlapping leave requests (approved, pending, or rejected)
+    const overlappingRequest = await LeaveRequest.findOne({
+      where: {
+        employeeId,
+        tenantId,
+        status: {
+          [Op.in]: ['pending', 'approved', 'rejected']
+        },
+        [Op.or]: [
+          // New request starts within existing request
+          {
+            startDate: { [Op.lte]: startDate },
+            endDate: { [Op.gte]: startDate }
+          },
+          // New request ends within existing request
+          {
+            startDate: { [Op.lte]: endDate },
+            endDate: { [Op.gte]: endDate }
+          },
+          // New request completely contains existing request
+          {
+            startDate: { [Op.gte]: startDate },
+            endDate: { [Op.lte]: endDate }
+          }
+        ]
+      }
+    });
+
+    if (overlappingRequest) {
+      const statusText = overlappingRequest.status.charAt(0).toUpperCase() + overlappingRequest.status.slice(1);
+      return res.status(409).json({
+        error: `You already have a ${statusText} leave request for overlapping dates (${overlappingRequest.startDate} to ${overlappingRequest.endDate}). Please choose different dates or cancel the existing request.`,
+        overlappingRequest: {
+          id: overlappingRequest.id,
+          startDate: overlappingRequest.startDate,
+          endDate: overlappingRequest.endDate,
+          status: overlappingRequest.status,
+          leaveType: overlappingRequest.leaveType
+        }
       });
     }
 
     // Check if employee exists, if not create one
     let employee = await Employee.findOne({
-      where: { id: employeeId, tenantId }
+      where: { id: employeeId, tenantId },
     });
 
     if (!employee) {
       // Get user details to create employee record
       const user = await User.findOne({
-        where: { id: employeeId, tenantId }
+        where: { id: employeeId, tenantId },
       });
 
       if (!user) {
         return res.status(404).json({
-          error: 'User not found. Please contact administrator.'
+          error: "User not found. Please contact administrator.",
         });
       }
 
@@ -38,27 +109,34 @@ router.post('/request', async (req, res) => {
       employee = await Employee.create({
         id: user.id,
         tenantId: user.tenantId,
-        firstName: user.firstName || 'Employee',
-        lastName: user.lastName || '',
+        firstName: user.firstName || "Employee",
+        lastName: user.lastName || "",
         email: user.email,
-        status: 'active',
-        startDate: new Date()
+        status: "active",
+        startDate: new Date(),
       });
 
-      console.log('✅ Created employee record for user:', user.email, `(${user.firstName} ${user.lastName})`);
+      console.log(
+        "✅ Created employee record for user:",
+        user.email,
+        `(${user.firstName} ${user.lastName})`
+      );
     } else {
       // Update employee record if firstName/lastName are missing
       if (!employee.firstName || !employee.lastName) {
         const user = await User.findOne({
-          where: { id: employeeId, tenantId }
+          where: { id: employeeId, tenantId },
         });
-        
+
         if (user) {
           await employee.update({
-            firstName: user.firstName || employee.firstName || 'Employee',
-            lastName: user.lastName || employee.lastName || ''
+            firstName: user.firstName || employee.firstName || "Employee",
+            lastName: user.lastName || employee.lastName || "",
           });
-          console.log('✅ Updated employee record with name:', `${user.firstName} ${user.lastName}`);
+          console.log(
+            "✅ Updated employee record with name:",
+            `${user.firstName} ${user.lastName}`
+          );
         }
       }
     }
@@ -72,9 +150,9 @@ router.post('/request', async (req, res) => {
       endDate,
       totalDays,
       reason: reason || null,
-      status: 'pending',
+      status: "pending",
       approverId,
-      attachmentName: attachmentName || null
+      attachmentName: attachmentName || null,
     });
 
     // Update leave balance - add to pending days
@@ -84,45 +162,45 @@ router.post('/request', async (req, res) => {
         employeeId,
         tenantId,
         year: currentYear,
-        leaveType
+        leaveType,
       },
       defaults: {
-        totalDays: leaveType === 'vacation' ? 10 : (leaveType === 'sick' ? 5 : 0), // Vacation: 10, Sick: 5
+        totalDays: leaveType === "vacation" ? 10 : leaveType === "sick" ? 5 : 0, // Vacation: 10, Sick: 5
         usedDays: 0,
         pendingDays: totalDays,
-        carryForwardDays: 0
-      }
+        carryForwardDays: 0,
+      },
     });
 
     if (!created) {
       await leaveBalance.update({
-        pendingDays: parseFloat(leaveBalance.pendingDays) + parseFloat(totalDays)
+        pendingDays:
+          parseFloat(leaveBalance.pendingDays) + parseFloat(totalDays),
       });
     }
 
     res.json({
       success: true,
-      message: 'Leave request submitted successfully',
-      leaveRequest
+      message: "Leave request submitted successfully",
+      leaveRequest,
     });
-
   } catch (error) {
-    console.error('Error submitting leave request:', error);
-    res.status(500).json({ 
-      error: 'Failed to submit leave request',
-      details: error.message 
+    console.error("Error submitting leave request:", error);
+    res.status(500).json({
+      error: "Failed to submit leave request",
+      details: error.message,
     });
   }
 });
 
 // Get leave balance for an employee
-router.get('/balance', async (req, res) => {
+router.get("/balance", async (req, res) => {
   try {
     const { employeeId, tenantId } = req.query;
-    
+
     if (!employeeId || !tenantId) {
-      return res.status(400).json({ 
-        error: 'Employee ID and Tenant ID are required' 
+      return res.status(400).json({
+        error: "Employee ID and Tenant ID are required",
       });
     }
 
@@ -131,57 +209,61 @@ router.get('/balance', async (req, res) => {
       where: {
         employeeId,
         tenantId,
-        year: currentYear
-      }
+        year: currentYear,
+      },
     });
 
     // Format balance data
     const balanceData = {};
-    balances.forEach(balance => {
-      const remaining = parseFloat(balance.totalDays) + parseFloat(balance.carryForwardDays) - parseFloat(balance.usedDays) - parseFloat(balance.pendingDays);
+    balances.forEach((balance) => {
+      const remaining =
+        parseFloat(balance.totalDays) +
+        parseFloat(balance.carryForwardDays) -
+        parseFloat(balance.usedDays) -
+        parseFloat(balance.pendingDays);
       balanceData[balance.leaveType] = {
-        total: parseFloat(balance.totalDays) + parseFloat(balance.carryForwardDays),
+        total:
+          parseFloat(balance.totalDays) + parseFloat(balance.carryForwardDays),
         used: parseFloat(balance.usedDays),
         pending: parseFloat(balance.pendingDays),
-        remaining: remaining
+        remaining: remaining,
       };
     });
 
     // Ensure vacation and sick leave types have entries (Total 15 days: Vacation 10 + Sick 5)
-    ['vacation', 'sick'].forEach(type => {
+    ["vacation", "sick"].forEach((type) => {
       if (!balanceData[type]) {
-        const defaultTotal = type === 'vacation' ? 10 : 5;
+        const defaultTotal = type === "vacation" ? 10 : 5;
         balanceData[type] = {
           total: defaultTotal,
           used: 0,
           pending: 0,
-          remaining: defaultTotal
+          remaining: defaultTotal,
         };
       }
     });
 
     res.json({
       success: true,
-      balance: balanceData
+      balance: balanceData,
     });
-
   } catch (error) {
-    console.error('Error fetching leave balance:', error);
-    res.status(500).json({ 
-      error: 'Failed to fetch leave balance',
-      details: error.message 
+    console.error("Error fetching leave balance:", error);
+    res.status(500).json({
+      error: "Failed to fetch leave balance",
+      details: error.message,
     });
   }
 });
 
 // Get leave history for an employee
-router.get('/history', async (req, res) => {
+router.get("/history", async (req, res) => {
   try {
     const { employeeId, tenantId } = req.query;
-    
+
     if (!employeeId || !tenantId) {
-      return res.status(400).json({ 
-        error: 'Employee ID and Tenant ID are required' 
+      return res.status(400).json({
+        error: "Employee ID and Tenant ID are required",
       });
     }
 
@@ -190,59 +272,62 @@ router.get('/history', async (req, res) => {
         employeeId,
         tenantId,
         status: {
-          [Op.in]: ['approved', 'rejected']
-        }
+          [Op.in]: ["approved", "rejected"],
+        },
       },
       include: [
         {
           model: User,
-          as: 'reviewer',
-          attributes: ['id', 'firstName', 'lastName', 'email'],
-          required: false
-        }
+          as: "reviewer",
+          attributes: ["id", "firstName", "lastName", "email"],
+          required: false,
+        },
       ],
-      order: [['createdAt', 'DESC']]
+      order: [["createdAt", "DESC"]],
     });
 
-    const formattedRequests = requests.map(req => ({
+    const formattedRequests = requests.map((req) => ({
       id: req.id,
       type: req.leaveType.charAt(0).toUpperCase() + req.leaveType.slice(1),
       startDate: req.startDate,
       endDate: req.endDate,
       days: req.totalDays,
       status: req.status.charAt(0).toUpperCase() + req.status.slice(1),
-      approvedBy: req.reviewer ? `${req.reviewer.firstName} ${req.reviewer.lastName}` : 'N/A',
-      approvedOn: req.reviewedAt ? new Date(req.reviewedAt).toISOString().split('T')[0] : 'N/A'
+      approvedBy: req.reviewer
+        ? `${req.reviewer.firstName} ${req.reviewer.lastName}`
+        : "N/A",
+      approvedOn: req.reviewedAt
+        ? new Date(req.reviewedAt).toISOString().split("T")[0]
+        : "N/A",
     }));
 
     res.json({
       success: true,
-      requests: formattedRequests
+      requests: formattedRequests,
     });
-
   } catch (error) {
-    console.error('Error fetching leave history:', error);
-    res.status(500).json({ 
-      error: 'Failed to fetch leave history',
-      details: error.message 
+    console.error("Error fetching leave history:", error);
+    res.status(500).json({
+      error: "Failed to fetch leave history",
+      details: error.message,
     });
   }
 });
 
 // Get my pending requests
-router.get('/my-requests', async (req, res) => {
+router.get("/my-requests", async (req, res) => {
   try {
     const { employeeId, tenantId, status } = req.query;
-    
+
     if (!employeeId || !tenantId) {
-      return res.status(400).json({ 
-        error: 'Employee ID and Tenant ID are required' 
+      return res.status(400).json({
+        error: "Employee ID and Tenant ID are required",
       });
     }
 
     const whereClause = {
       employeeId,
-      tenantId
+      tenantId,
     };
 
     if (status) {
@@ -251,41 +336,40 @@ router.get('/my-requests', async (req, res) => {
 
     const requests = await LeaveRequest.findAll({
       where: whereClause,
-      order: [['createdAt', 'DESC']]
+      order: [["createdAt", "DESC"]],
     });
 
-    const formattedRequests = requests.map(req => ({
+    const formattedRequests = requests.map((req) => ({
       id: req.id,
       type: req.leaveType.charAt(0).toUpperCase() + req.leaveType.slice(1),
       startDate: req.startDate,
       endDate: req.endDate,
       days: req.totalDays,
       status: req.status.charAt(0).toUpperCase() + req.status.slice(1),
-      requestedOn: new Date(req.createdAt).toISOString().split('T')[0]
+      requestedOn: new Date(req.createdAt).toISOString().split("T")[0],
     }));
 
     res.json({
       success: true,
-      requests: formattedRequests
+      requests: formattedRequests,
     });
-
   } catch (error) {
-    console.error('Error fetching my requests:', error);
-    res.status(500).json({ 
-      error: 'Failed to fetch requests',
-      details: error.message 
+    console.error("Error fetching my requests:", error);
+    res.status(500).json({
+      error: "Failed to fetch requests",
+      details: error.message,
     });
   }
 });
 
 // Get leave requests for approval (for managers/admins)
-router.get('/pending-approvals', async (req, res) => {
+router.get("/pending-approvals", async (req, res) => {
   try {
     const { managerId, tenantId } = req.query;
-    
+
     if (!managerId || !tenantId) {
-      return res.status(400).json({ 
-        error: 'Manager ID and Tenant ID are required' 
+      return res.status(400).json({
+        error: "Manager ID and Tenant ID are required",
       });
     }
 
@@ -293,24 +377,26 @@ router.get('/pending-approvals', async (req, res) => {
       where: {
         tenantId,
         approverId: managerId,
-        status: 'pending'
+        status: "pending",
       },
       include: [
         {
           model: Employee,
-          as: 'employee',
-          attributes: ['id', 'firstName', 'lastName', 'email', 'department'],
-          required: false
-        }
+          as: "employee",
+          attributes: ["id", "firstName", "lastName", "email", "department"],
+          required: false,
+        },
       ],
-      order: [['createdAt', 'ASC']]
+      order: [["createdAt", "ASC"]],
     });
 
-    const formattedRequests = leaveRequests.map(req => ({
+    const formattedRequests = leaveRequests.map((req) => ({
       id: req.id,
-      employeeName: req.employee ? `${req.employee.firstName} ${req.employee.lastName}` : 'Unknown Employee',
-      employeeEmail: req.employee?.email || 'N/A',
-      department: req.employee?.department || 'N/A',
+      employeeName: req.employee
+        ? `${req.employee.firstName} ${req.employee.lastName}`
+        : "Unknown Employee",
+      employeeEmail: req.employee?.email || "N/A",
+      department: req.employee?.department || "N/A",
       leaveType: req.leaveType.charAt(0).toUpperCase() + req.leaveType.slice(1),
       startDate: req.startDate,
       endDate: req.endDate,
@@ -318,45 +404,44 @@ router.get('/pending-approvals', async (req, res) => {
       reason: req.reason,
       attachment: req.attachmentName,
       status: req.status,
-      submittedAt: req.createdAt
+      submittedAt: req.createdAt,
     }));
 
     res.json({
       success: true,
       leaveRequests: formattedRequests,
-      total: formattedRequests.length
+      total: formattedRequests.length,
     });
-
   } catch (error) {
-    console.error('Error fetching pending leave approvals:', error);
-    res.status(500).json({ 
-      error: 'Failed to fetch leave approvals',
-      details: error.message 
+    console.error("Error fetching pending leave approvals:", error);
+    res.status(500).json({
+      error: "Failed to fetch leave approvals",
+      details: error.message,
     });
   }
 });
 
 // Get all leave requests (for admins)
-router.get('/all-requests', async (req, res) => {
+router.get("/all-requests", async (req, res) => {
   try {
     const { tenantId, status, startDate, endDate } = req.query;
-    
+
     if (!tenantId) {
-      return res.status(400).json({ 
-        error: 'Tenant ID is required' 
+      return res.status(400).json({
+        error: "Tenant ID is required",
       });
     }
 
     // Build query conditions
     const whereConditions = { tenantId };
-    
+
     if (status) {
       whereConditions.status = status;
     }
-    
+
     if (startDate && endDate) {
       whereConditions.startDate = {
-        [Op.between]: [startDate, endDate]
+        [Op.between]: [startDate, endDate],
       };
     }
 
@@ -366,27 +451,27 @@ router.get('/all-requests', async (req, res) => {
       include: [
         {
           model: Employee,
-          as: 'employee',
-          attributes: ['id', 'firstName', 'lastName', 'email', 'department']
+          as: "employee",
+          attributes: ["id", "firstName", "lastName", "email", "department"],
         },
         {
           model: User,
-          as: 'reviewer',
-          attributes: ['id', 'firstName', 'lastName', 'email'],
-          required: false
-        }
+          as: "reviewer",
+          attributes: ["id", "firstName", "lastName", "email"],
+          required: false,
+        },
       ],
-      order: [['createdAt', 'DESC']]
+      order: [["createdAt", "DESC"]],
     });
 
     // Format the response
-    const formattedRequests = leaveRequests.map(request => ({
+    const formattedRequests = leaveRequests.map((request) => ({
       id: request.id,
-      employeeName: request.employee ? 
-        `${request.employee.firstName} ${request.employee.lastName}` : 
-        'Unknown Employee',
-      employeeEmail: request.employee?.email || '',
-      department: request.employee?.department || 'N/A',
+      employeeName: request.employee
+        ? `${request.employee.firstName} ${request.employee.lastName}`
+        : "Unknown Employee",
+      employeeEmail: request.employee?.email || "",
+      department: request.employee?.department || "N/A",
       leaveType: request.leaveType,
       startDate: request.startDate,
       endDate: request.endDate,
@@ -394,53 +479,54 @@ router.get('/all-requests', async (req, res) => {
       reason: request.reason,
       status: request.status,
       submittedOn: request.createdAt,
-      reviewedBy: request.reviewer ? `${request.reviewer.firstName} ${request.reviewer.lastName}` : null,
+      reviewedBy: request.reviewer
+        ? `${request.reviewer.firstName} ${request.reviewer.lastName}`
+        : null,
       reviewedAt: request.reviewedAt,
-      reviewComments: request.reviewComments
+      reviewComments: request.reviewComments,
     }));
 
     res.json({
       success: true,
       leaveRequests: formattedRequests,
-      total: formattedRequests.length
+      total: formattedRequests.length,
     });
-
   } catch (error) {
-    console.error('Error fetching all leave requests:', error);
-    res.status(500).json({ 
-      error: 'Failed to fetch leave requests',
-      details: error.message 
+    console.error("Error fetching all leave requests:", error);
+    res.status(500).json({
+      error: "Failed to fetch leave requests",
+      details: error.message,
     });
   }
 });
 
 // Approve leave request
-router.post('/approve/:id', async (req, res) => {
+router.post("/approve/:id", async (req, res) => {
   try {
     const { id } = req.params;
     const { managerId, comments } = req.body;
-    
+
     if (!managerId) {
-      return res.status(400).json({ 
-        error: 'Manager ID is required' 
+      return res.status(400).json({
+        error: "Manager ID is required",
       });
     }
 
     // Find the leave request
     const leaveRequest = await LeaveRequest.findByPk(id);
-    
+
     if (!leaveRequest) {
-      return res.status(404).json({ 
-        error: 'Leave request not found' 
+      return res.status(404).json({
+        error: "Leave request not found",
       });
     }
 
     // Update leave request status
     await leaveRequest.update({
-      status: 'approved',
+      status: "approved",
       reviewedBy: managerId,
       reviewedAt: new Date(),
-      reviewComments: comments || null
+      reviewComments: comments || null,
     });
 
     // Update leave balance - move from pending to used
@@ -450,14 +536,18 @@ router.post('/approve/:id', async (req, res) => {
         employeeId: leaveRequest.employeeId,
         tenantId: leaveRequest.tenantId,
         year: currentYear,
-        leaveType: leaveRequest.leaveType
-      }
+        leaveType: leaveRequest.leaveType,
+      },
     });
 
     if (leaveBalance) {
       await leaveBalance.update({
-        usedDays: parseFloat(leaveBalance.usedDays) + parseFloat(leaveRequest.totalDays),
-        pendingDays: parseFloat(leaveBalance.pendingDays) - parseFloat(leaveRequest.totalDays)
+        usedDays:
+          parseFloat(leaveBalance.usedDays) +
+          parseFloat(leaveRequest.totalDays),
+        pendingDays:
+          parseFloat(leaveBalance.pendingDays) -
+          parseFloat(leaveRequest.totalDays),
       });
     }
 
@@ -466,7 +556,7 @@ router.post('/approve/:id', async (req, res) => {
       await NotificationService.createLeaveNotification(
         leaveRequest.tenantId,
         leaveRequest.employeeId,
-        'approved',
+        "approved",
         {
           id: leaveRequest.id,
           startDate: leaveRequest.startDate,
@@ -478,68 +568,70 @@ router.post('/approve/:id', async (req, res) => {
       // Send real-time notification via WebSocket
       if (global.wsService) {
         global.wsService.sendToUser(leaveRequest.employeeId, {
-          type: 'leave_approved',
-          title: 'Leave Request Approved',
+          type: "leave_approved",
+          title: "Leave Request Approved",
           message: `Your leave request for ${leaveRequest.startDate} to ${leaveRequest.endDate} has been approved.`,
           timestamp: new Date().toISOString(),
         });
       }
     } catch (notificationError) {
-      console.error('Error creating leave approval notification:', notificationError);
+      console.error(
+        "Error creating leave approval notification:",
+        notificationError
+      );
       // Don't fail the approval if notification fails
     }
 
     res.json({
       success: true,
-      message: 'Leave request approved successfully',
+      message: "Leave request approved successfully",
       leaveRequestId: id,
       approvedBy: managerId,
       approvedAt: new Date().toISOString(),
-      comments
+      comments,
     });
-
   } catch (error) {
-    console.error('Error approving leave request:', error);
-    res.status(500).json({ 
-      error: 'Failed to approve leave request',
-      details: error.message 
+    console.error("Error approving leave request:", error);
+    res.status(500).json({
+      error: "Failed to approve leave request",
+      details: error.message,
     });
   }
 });
 
 // Reject leave request
-router.post('/reject/:id', async (req, res) => {
+router.post("/reject/:id", async (req, res) => {
   try {
     const { id } = req.params;
     const { managerId, reason } = req.body;
-    
+
     if (!managerId) {
-      return res.status(400).json({ 
-        error: 'Manager ID is required' 
+      return res.status(400).json({
+        error: "Manager ID is required",
       });
     }
 
     if (!reason) {
-      return res.status(400).json({ 
-        error: 'Rejection reason is required' 
+      return res.status(400).json({
+        error: "Rejection reason is required",
       });
     }
 
     // Find the leave request
     const leaveRequest = await LeaveRequest.findByPk(id);
-    
+
     if (!leaveRequest) {
-      return res.status(404).json({ 
-        error: 'Leave request not found' 
+      return res.status(404).json({
+        error: "Leave request not found",
       });
     }
 
     // Update leave request status
     await leaveRequest.update({
-      status: 'rejected',
+      status: "rejected",
       reviewedBy: managerId,
       reviewedAt: new Date(),
-      reviewComments: reason
+      reviewComments: reason,
     });
 
     // Update leave balance - remove from pending
@@ -549,42 +641,43 @@ router.post('/reject/:id', async (req, res) => {
         employeeId: leaveRequest.employeeId,
         tenantId: leaveRequest.tenantId,
         year: currentYear,
-        leaveType: leaveRequest.leaveType
-      }
+        leaveType: leaveRequest.leaveType,
+      },
     });
 
     if (leaveBalance) {
       await leaveBalance.update({
-        pendingDays: parseFloat(leaveBalance.pendingDays) - parseFloat(leaveRequest.totalDays)
+        pendingDays:
+          parseFloat(leaveBalance.pendingDays) -
+          parseFloat(leaveRequest.totalDays),
       });
     }
 
     res.json({
       success: true,
-      message: 'Leave request rejected',
+      message: "Leave request rejected",
       leaveRequestId: id,
       rejectedBy: managerId,
       rejectedAt: new Date().toISOString(),
-      reason
+      reason,
     });
-
   } catch (error) {
-    console.error('Error rejecting leave request:', error);
-    res.status(500).json({ 
-      error: 'Failed to reject leave request',
-      details: error.message 
+    console.error("Error rejecting leave request:", error);
+    res.status(500).json({
+      error: "Failed to reject leave request",
+      details: error.message,
     });
   }
 });
 
 // Get leave statistics for dashboard
-router.get('/statistics', async (req, res) => {
+router.get("/statistics", async (req, res) => {
   try {
     const { managerId, tenantId } = req.query;
-    
+
     if (!tenantId) {
-      return res.status(400).json({ 
-        error: 'Tenant ID is required' 
+      return res.status(400).json({
+        error: "Tenant ID is required",
       });
     }
 
@@ -597,41 +690,40 @@ router.get('/statistics', async (req, res) => {
       byLeaveType: {
         vacation: 8,
         sick: 5,
-        personal: 3
+        personal: 3,
       },
       upcomingLeaves: [
         {
-          employeeName: 'John Smith',
-          leaveType: 'Vacation',
-          startDate: '2025-10-15',
-          days: 5
-        }
-      ]
+          employeeName: "John Smith",
+          leaveType: "Vacation",
+          startDate: "2025-10-15",
+          days: 5,
+        },
+      ],
     };
 
     res.json({
       success: true,
-      statistics: stats
+      statistics: stats,
     });
-
   } catch (error) {
-    console.error('Error fetching leave statistics:', error);
-    res.status(500).json({ 
-      error: 'Failed to fetch statistics',
-      details: error.message 
+    console.error("Error fetching leave statistics:", error);
+    res.status(500).json({
+      error: "Failed to fetch statistics",
+      details: error.message,
     });
   }
 });
 
 // Cancel/Delete a leave request
-router.delete('/cancel/:id', async (req, res) => {
+router.delete("/cancel/:id", async (req, res) => {
   try {
     const { id } = req.params;
     const { employeeId, tenantId } = req.body;
 
     if (!id || !employeeId || !tenantId) {
-      return res.status(400).json({ 
-        error: 'Leave request ID, Employee ID, and Tenant ID are required' 
+      return res.status(400).json({
+        error: "Leave request ID, Employee ID, and Tenant ID are required",
       });
     }
 
@@ -641,13 +733,13 @@ router.delete('/cancel/:id', async (req, res) => {
         id,
         employeeId,
         tenantId,
-        status: 'pending' // Only allow canceling pending requests
-      }
+        status: "pending", // Only allow canceling pending requests
+      },
     });
 
     if (!leaveRequest) {
-      return res.status(404).json({ 
-        error: 'Leave request not found or cannot be cancelled' 
+      return res.status(404).json({
+        error: "Leave request not found or cannot be cancelled",
       });
     }
 
@@ -656,14 +748,13 @@ router.delete('/cancel/:id', async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Leave request cancelled successfully'
+      message: "Leave request cancelled successfully",
     });
-
   } catch (error) {
-    console.error('Error cancelling leave request:', error);
-    res.status(500).json({ 
-      error: 'Failed to cancel leave request',
-      details: error.message 
+    console.error("Error cancelling leave request:", error);
+    res.status(500).json({
+      error: "Failed to cancel leave request",
+      details: error.message,
     });
   }
 });

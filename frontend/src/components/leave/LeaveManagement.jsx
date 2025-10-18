@@ -168,6 +168,27 @@ const LeaveManagement = () => {
       return;
     }
 
+    // Check for overlapping dates with existing requests
+    const hasOverlap = leaveRequests.some(request => {
+      if (request.status === 'cancelled') return false; // Skip cancelled requests
+      
+      const existingStart = new Date(request.startDate);
+      const existingEnd = new Date(request.endDate);
+      
+      // Check if new request overlaps with existing request
+      return (
+        (start >= existingStart && start <= existingEnd) || // New start within existing
+        (end >= existingStart && end <= existingEnd) ||     // New end within existing
+        (start <= existingStart && end >= existingEnd)      // New request contains existing
+      );
+    });
+
+    if (hasOverlap) {
+      console.log("❌ Validation failed: Overlapping dates");
+      toast.error("You already have a leave request for overlapping dates. Please choose different dates or cancel the existing request.");
+      return;
+    }
+
     console.log("✅ Validation passed, submitting...");
     setSubmitting(true);
 
@@ -221,6 +242,15 @@ const LeaveManagement = () => {
       if (!response.ok) {
         const errorData = await response.json();
         console.log("❌ Error response:", errorData);
+        
+        // Handle specific error cases
+        if (response.status === 409 && errorData.overlappingRequest) {
+          const overlap = errorData.overlappingRequest;
+          toast.error(`You already have a ${overlap.status} leave request for ${overlap.startDate} to ${overlap.endDate}. Please choose different dates.`);
+        } else {
+          toast.error(errorData.error || "Failed to submit leave request");
+        }
+        
         throw new Error(errorData.error || "Failed to submit leave request");
       }
 
@@ -663,6 +693,25 @@ const LeaveManagement = () => {
                                 />
                               </div>
                             </div>
+                            {leaveRequests.length > 0 && (
+                              <div className="col-12">
+                                <div className="form-note">
+                                  <strong>Existing Leave Requests:</strong>
+                                  <ul className="mt-2 mb-0">
+                                    {leaveRequests
+                                      .filter(req => req.status !== 'cancelled')
+                                      .map((req, index) => (
+                                        <li key={index} className="small">
+                                          <span className={`badge badge-${req.status === 'approved' ? 'success' : req.status === 'pending' ? 'warning' : 'secondary'} me-2`}>
+                                            {req.status}
+                                          </span>
+                                          {req.leaveType} - {req.startDate} to {req.endDate}
+                                        </li>
+                                      ))}
+                                  </ul>
+                                </div>
+                              </div>
+                            )}
                             <div className="col-12">
                               <div className="form-group">
                                 <label className="form-label">Approver *</label>

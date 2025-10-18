@@ -23,19 +23,23 @@ class WebSocketService {
     // Authentication middleware
     this.io.use(async (socket, next) => {
       try {
-        const token = socket.handshake.auth.token || socket.handshake.headers.authorization?.replace('Bearer ', '');
-        
+        const token =
+          socket.handshake.auth.token ||
+          socket.handshake.headers.authorization?.replace("Bearer ", "");
+
         if (!token) {
           return next(new Error("Authentication error: No token provided"));
         }
 
         // For demo purposes, we'll use a simple token validation
         // In production, you should verify JWT tokens properly
-        if (token === 'mock-jwt-token') {
+        if (token === "mock-jwt-token") {
           // Get user info from localStorage or database
           const userInfo = socket.handshake.auth.userInfo;
           if (!userInfo) {
-            return next(new Error("Authentication error: No user info provided"));
+            return next(
+              new Error("Authentication error: No user info provided")
+            );
           }
 
           socket.userId = userInfo.id;
@@ -43,7 +47,10 @@ class WebSocketService {
           next();
         } else {
           // Try to verify JWT token
-          const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
+          const decoded = jwt.verify(
+            token,
+            process.env.JWT_SECRET || "your-secret-key"
+          );
           socket.userId = decoded.userId;
           socket.tenantId = decoded.tenantId;
           next();
@@ -90,7 +97,9 @@ class WebSocketService {
 
       // Handle notification acknowledgment
       socket.on("notification-ack", (notificationId) => {
-        console.log(`User ${socket.userId} acknowledged notification ${notificationId}`);
+        console.log(
+          `User ${socket.userId} acknowledged notification ${notificationId}`
+        );
         // You can implement notification acknowledgment logic here
       });
     });
@@ -127,7 +136,7 @@ class WebSocketService {
    * @param {Object} notification - Notification data
    */
   sendToUsers(userIds, notification) {
-    userIds.forEach(userId => {
+    userIds.forEach((userId) => {
       this.sendToUser(userId, notification);
     });
   }
@@ -141,14 +150,14 @@ class WebSocketService {
   async sendToRoles(tenantId, roles, notification) {
     try {
       const users = await models.User.findAll({
-        where: { 
+        where: {
           tenantId,
-          role: { [models.Sequelize.Op.in]: roles }
+          role: { [models.Sequelize.Op.in]: roles },
         },
-        attributes: ['id'],
+        attributes: ["id"],
       });
 
-      const userIds = users.map(user => user.id);
+      const userIds = users.map((user) => user.id);
       this.sendToUsers(userIds, notification);
     } catch (error) {
       console.error("Error sending notification to roles:", error);

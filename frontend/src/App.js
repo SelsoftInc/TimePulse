@@ -81,410 +81,428 @@ function App() {
           <AuthProvider>
             <WebSocketProvider>
               <Routes>
-              {/* Public routes */}
-              <Route path="/" element={<Navigate to="/login" />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/test-login" element={<TestLogin />} />
-              <Route path="/simple-login" element={<SimpleLogin />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/register/:token" element={<EmployeeRegister />} />
+                {/* Public routes */}
+                <Route path="/" element={<Navigate to="/login" />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/test-login" element={<TestLogin />} />
+                <Route path="/simple-login" element={<SimpleLogin />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/register/:token" element={<EmployeeRegister />} />
 
-              {/* Workspace management route */}
-              <Route
-                path="/workspaces"
-                element={
-                  <ProtectedRoute>
-                    <Workspaces />
-                  </ProtectedRoute>
-                }
-              />
+                {/* Workspace management route */}
+                <Route
+                  path="/workspaces"
+                  element={
+                    <ProtectedRoute>
+                      <Workspaces />
+                    </ProtectedRoute>
+                  }
+                />
 
-              {/* Employer-specific routes using EmployerLayout */}
-              <Route
-                path="/:subdomain"
-                element={
-                  <ProtectedRoute>
-                    <EmployerLayout>
-                      <Dashboard />
-                    </EmployerLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/:subdomain/dashboard"
-                element={
-                  <ProtectedRoute>
-                    <EmployerLayout>
-                      <Dashboard />
-                    </EmployerLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/:subdomain/employee-dashboard"
-                element={
-                  <ProtectedRoute>
-                    <EmployerLayout>
-                      <EmployeeDashboard />
-                    </EmployerLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/:subdomain/timesheets"
-                element={
-                  <ProtectedRoute
-                    requiredPermission={PERMISSIONS.VIEW_TIMESHEET}
-                  >
-                    <EmployerLayout>
-                      <TimesheetSummary />
-                    </EmployerLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/:subdomain/timesheets/edit/:employeeId"
-                element={
-                  <ProtectedRoute
-                    requiredPermission={PERMISSIONS.EDIT_TIMESHEET}
-                  >
-                    <EmployerLayout>
-                      <EmployeeTimesheet />
-                    </EmployerLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/:subdomain/timesheets/submit"
-                element={
-                  <ProtectedRoute>
-                    <EmployerLayout>
-                      <TimesheetSubmit />
-                    </EmployerLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/:subdomain/timesheets/mobile-upload"
-                element={
-                  <ProtectedRoute>
-                    <EmployerLayout>
-                      <MobileTimesheetUpload />
-                    </EmployerLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/:subdomain/timesheets/submit/:weekId"
-                element={
-                  <ProtectedRoute>
-                    <EmployerLayout>
-                      <TimesheetSubmit />
-                    </EmployerLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/:subdomain/timesheets/approval"
-                element={
-                  <ProtectedRoute
-                    requiredPermission={PERMISSIONS.APPROVE_TIMESHEETS}
-                  >
-                    <EmployerLayout>
-                      <TimesheetApproval />
-                    </EmployerLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/:subdomain/timesheets/to-invoice"
-                element={
-                  <ProtectedRoute
-                    requiredPermission={PERMISSIONS.CREATE_INVOICE}
-                  >
-                    <EmployerLayout>
-                      <TimesheetToInvoice />
-                    </EmployerLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/:subdomain/timesheets/auto-convert"
-                element={
-                  <ProtectedRoute>
-                    <EmployerLayout>
-                      <TimesheetAutoConvert />
-                    </EmployerLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/:subdomain/leave"
-                element={
-                  <ProtectedRoute>
-                    <EmployerLayout>
-                      <LeaveManagement />
-                    </EmployerLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/:subdomain/leave-management"
-                element={
-                  <ProtectedRoute>
-                    <EmployerLayout>
-                      <LeaveManagement />
-                    </EmployerLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/:subdomain/documents"
-                element={
-                  <ProtectedRoute>
-                    <EmployerLayout>
-                      <EmployeeDocuments />
-                    </EmployerLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/:subdomain/clients"
-                element={
-                  <ProtectedRoute requiredPermission={PERMISSIONS.VIEW_CLIENT}>
-                    <EmployerLayout>
-                      <ClientsList />
-                    </EmployerLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/:subdomain/clients/new"
-                element={
-                  <ProtectedRoute
-                    requiredPermission={PERMISSIONS.CREATE_CLIENT}
-                  >
-                    <EmployerLayout>
-                      <ClientForm />
-                    </EmployerLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/:subdomain/clients/:clientId"
-                element={
-                  <ProtectedRoute requiredPermission={PERMISSIONS.VIEW_CLIENT}>
-                    <EmployerLayout>
-                      <ClientDetails />
-                    </EmployerLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/:subdomain/clients/edit/:clientId"
-                element={
-                  <ProtectedRoute requiredPermission={PERMISSIONS.EDIT_CLIENT}>
-                    <EmployerLayout>
-                      <ClientEdit />
-                    </EmployerLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/:subdomain/employees"
-                element={
-                  <ProtectedRoute
-                    requiredPermission={PERMISSIONS.VIEW_EMPLOYEE}
-                  >
-                    <EmployerLayout>
-                      <EmployeeList />
-                    </EmployerLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/:subdomain/employees/new"
-                element={
-                  <ProtectedRoute
-                    requiredPermission={PERMISSIONS.CREATE_EMPLOYEE}
-                  >
-                    <EmployerLayout>
-                      <EmployeeForm />
-                    </EmployerLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/:subdomain/employees/:id/form"
-                element={
-                  <ProtectedRoute
-                    requiredPermission={PERMISSIONS.EDIT_EMPLOYEE}
-                  >
-                    <EmployerLayout>
-                      <EmployeeForm />
-                    </EmployerLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/:subdomain/employees/invite"
-                element={
-                  <ProtectedRoute
-                    requiredPermission={PERMISSIONS.CREATE_EMPLOYEE}
-                  >
-                    <EmployerLayout>
-                      <EmployeeInvite />
-                    </EmployerLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/:subdomain/employees/:id"
-                element={
-                  <ProtectedRoute
-                    requiredPermission={PERMISSIONS.VIEW_EMPLOYEE}
-                  >
-                    <EmployerLayout>
-                      <EmployeeDetail />
-                    </EmployerLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/:subdomain/employees/:id/edit"
-                element={
-                  <ProtectedRoute
-                    requiredPermission={PERMISSIONS.EDIT_EMPLOYEE}
-                  >
-                    <EmployerLayout>
-                      <EmployeeEdit />
-                    </EmployerLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/:subdomain/employees/:id/settings"
-                element={
-                  <ProtectedRoute
-                    requiredPermission={PERMISSIONS.EDIT_EMPLOYEE}
-                  >
-                    <EmployerLayout>
-                      <EmployeeSettings />
-                    </EmployerLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/:subdomain/vendors"
-                element={
-                  <ProtectedRoute requiredPermission={PERMISSIONS.VIEW_VENDOR}>
-                    <EmployerLayout>
-                      <VendorList />
-                    </EmployerLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/:subdomain/vendors/new"
-                element={
-                  <ProtectedRoute
-                    requiredPermission={PERMISSIONS.CREATE_VENDOR}
-                  >
-                    <EmployerLayout>
-                      <VendorForm />
-                    </EmployerLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/:subdomain/vendors/:id"
-                element={
-                  <ProtectedRoute requiredPermission={PERMISSIONS.VIEW_VENDOR}>
-                    <EmployerLayout>
-                      <VendorDetail />
-                    </EmployerLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/:subdomain/vendors/edit/:id"
-                element={
-                  <ProtectedRoute requiredPermission={PERMISSIONS.EDIT_VENDOR}>
-                    <EmployerLayout>
-                      <VendorEdit />
-                    </EmployerLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/:subdomain/invoices"
-                element={
-                  <ProtectedRoute requiredPermission={PERMISSIONS.VIEW_INVOICE}>
-                    <EmployerLayout>
-                      <Invoice />
-                    </EmployerLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/:subdomain/invoices/dashboard"
-                element={
-                  <ProtectedRoute requiredPermission={PERMISSIONS.VIEW_INVOICE}>
-                    <EmployerLayout>
-                      <InvoiceDashboard />
-                    </EmployerLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/:subdomain/invoices/create"
-                element={
-                  <ProtectedRoute
-                    requiredPermission={PERMISSIONS.CREATE_INVOICE}
-                  >
-                    <EmployerLayout>
-                      <InvoiceForm />
-                    </EmployerLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/:subdomain/reports"
-                element={
-                  <ProtectedRoute requiredPermission={PERMISSIONS.VIEW_REPORTS}>
-                    <EmployerLayout>
-                      <ReportsDashboard />
-                    </EmployerLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/:subdomain/settings"
-                element={
-                  <ProtectedRoute
-                    requiredPermission={PERMISSIONS.VIEW_SETTINGS}
-                  >
-                    <EmployerLayout>
-                      <EmployerSettings />
-                    </EmployerLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/:subdomain/settings/invoices"
-                element={
-                  <ProtectedRoute
-                    requiredPermission={PERMISSIONS.MANAGE_SETTINGS}
-                  >
-                    <EmployerLayout>
-                      <InvoiceSettings />
-                    </EmployerLayout>
-                  </ProtectedRoute>
-                }
-              />
+                {/* Employer-specific routes using EmployerLayout */}
+                <Route
+                  path="/:subdomain"
+                  element={
+                    <ProtectedRoute>
+                      <EmployerLayout>
+                        <Dashboard />
+                      </EmployerLayout>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/:subdomain/dashboard"
+                  element={
+                    <ProtectedRoute>
+                      <EmployerLayout>
+                        <Dashboard />
+                      </EmployerLayout>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/:subdomain/employee-dashboard"
+                  element={
+                    <ProtectedRoute>
+                      <EmployerLayout>
+                        <EmployeeDashboard />
+                      </EmployerLayout>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/:subdomain/timesheets"
+                  element={
+                    <ProtectedRoute
+                      requiredPermission={PERMISSIONS.VIEW_TIMESHEET}
+                    >
+                      <EmployerLayout>
+                        <TimesheetSummary />
+                      </EmployerLayout>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/:subdomain/timesheets/edit/:employeeId"
+                  element={
+                    <ProtectedRoute
+                      requiredPermission={PERMISSIONS.EDIT_TIMESHEET}
+                    >
+                      <EmployerLayout>
+                        <EmployeeTimesheet />
+                      </EmployerLayout>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/:subdomain/timesheets/submit"
+                  element={
+                    <ProtectedRoute>
+                      <EmployerLayout>
+                        <TimesheetSubmit />
+                      </EmployerLayout>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/:subdomain/timesheets/mobile-upload"
+                  element={
+                    <ProtectedRoute>
+                      <EmployerLayout>
+                        <MobileTimesheetUpload />
+                      </EmployerLayout>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/:subdomain/timesheets/submit/:weekId"
+                  element={
+                    <ProtectedRoute>
+                      <EmployerLayout>
+                        <TimesheetSubmit />
+                      </EmployerLayout>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/:subdomain/timesheets/approval"
+                  element={
+                    <ProtectedRoute
+                      requiredPermission={PERMISSIONS.APPROVE_TIMESHEETS}
+                    >
+                      <EmployerLayout>
+                        <TimesheetApproval />
+                      </EmployerLayout>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/:subdomain/timesheets/to-invoice"
+                  element={
+                    <ProtectedRoute
+                      requiredPermission={PERMISSIONS.CREATE_INVOICE}
+                    >
+                      <EmployerLayout>
+                        <TimesheetToInvoice />
+                      </EmployerLayout>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/:subdomain/timesheets/auto-convert"
+                  element={
+                    <ProtectedRoute>
+                      <EmployerLayout>
+                        <TimesheetAutoConvert />
+                      </EmployerLayout>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/:subdomain/leave"
+                  element={
+                    <ProtectedRoute>
+                      <EmployerLayout>
+                        <LeaveManagement />
+                      </EmployerLayout>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/:subdomain/leave-management"
+                  element={
+                    <ProtectedRoute>
+                      <EmployerLayout>
+                        <LeaveManagement />
+                      </EmployerLayout>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/:subdomain/documents"
+                  element={
+                    <ProtectedRoute>
+                      <EmployerLayout>
+                        <EmployeeDocuments />
+                      </EmployerLayout>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/:subdomain/clients"
+                  element={
+                    <ProtectedRoute
+                      requiredPermission={PERMISSIONS.VIEW_CLIENT}
+                    >
+                      <EmployerLayout>
+                        <ClientsList />
+                      </EmployerLayout>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/:subdomain/clients/new"
+                  element={
+                    <ProtectedRoute
+                      requiredPermission={PERMISSIONS.CREATE_CLIENT}
+                    >
+                      <EmployerLayout>
+                        <ClientForm />
+                      </EmployerLayout>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/:subdomain/clients/:clientId"
+                  element={
+                    <ProtectedRoute
+                      requiredPermission={PERMISSIONS.VIEW_CLIENT}
+                    >
+                      <EmployerLayout>
+                        <ClientDetails />
+                      </EmployerLayout>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/:subdomain/clients/edit/:clientId"
+                  element={
+                    <ProtectedRoute
+                      requiredPermission={PERMISSIONS.EDIT_CLIENT}
+                    >
+                      <EmployerLayout>
+                        <ClientEdit />
+                      </EmployerLayout>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/:subdomain/employees"
+                  element={
+                    <ProtectedRoute
+                      requiredPermission={PERMISSIONS.VIEW_EMPLOYEE}
+                    >
+                      <EmployerLayout>
+                        <EmployeeList />
+                      </EmployerLayout>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/:subdomain/employees/new"
+                  element={
+                    <ProtectedRoute
+                      requiredPermission={PERMISSIONS.CREATE_EMPLOYEE}
+                    >
+                      <EmployerLayout>
+                        <EmployeeForm />
+                      </EmployerLayout>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/:subdomain/employees/:id/form"
+                  element={
+                    <ProtectedRoute
+                      requiredPermission={PERMISSIONS.EDIT_EMPLOYEE}
+                    >
+                      <EmployerLayout>
+                        <EmployeeForm />
+                      </EmployerLayout>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/:subdomain/employees/invite"
+                  element={
+                    <ProtectedRoute
+                      requiredPermission={PERMISSIONS.CREATE_EMPLOYEE}
+                    >
+                      <EmployerLayout>
+                        <EmployeeInvite />
+                      </EmployerLayout>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/:subdomain/employees/:id"
+                  element={
+                    <ProtectedRoute
+                      requiredPermission={PERMISSIONS.VIEW_EMPLOYEE}
+                    >
+                      <EmployerLayout>
+                        <EmployeeDetail />
+                      </EmployerLayout>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/:subdomain/employees/:id/edit"
+                  element={
+                    <ProtectedRoute
+                      requiredPermission={PERMISSIONS.EDIT_EMPLOYEE}
+                    >
+                      <EmployerLayout>
+                        <EmployeeEdit />
+                      </EmployerLayout>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/:subdomain/employees/:id/settings"
+                  element={
+                    <ProtectedRoute
+                      requiredPermission={PERMISSIONS.EDIT_EMPLOYEE}
+                    >
+                      <EmployerLayout>
+                        <EmployeeSettings />
+                      </EmployerLayout>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/:subdomain/vendors"
+                  element={
+                    <ProtectedRoute
+                      requiredPermission={PERMISSIONS.VIEW_VENDOR}
+                    >
+                      <EmployerLayout>
+                        <VendorList />
+                      </EmployerLayout>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/:subdomain/vendors/new"
+                  element={
+                    <ProtectedRoute
+                      requiredPermission={PERMISSIONS.CREATE_VENDOR}
+                    >
+                      <EmployerLayout>
+                        <VendorForm />
+                      </EmployerLayout>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/:subdomain/vendors/:id"
+                  element={
+                    <ProtectedRoute
+                      requiredPermission={PERMISSIONS.VIEW_VENDOR}
+                    >
+                      <EmployerLayout>
+                        <VendorDetail />
+                      </EmployerLayout>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/:subdomain/vendors/edit/:id"
+                  element={
+                    <ProtectedRoute
+                      requiredPermission={PERMISSIONS.EDIT_VENDOR}
+                    >
+                      <EmployerLayout>
+                        <VendorEdit />
+                      </EmployerLayout>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/:subdomain/invoices"
+                  element={
+                    <ProtectedRoute
+                      requiredPermission={PERMISSIONS.VIEW_INVOICE}
+                    >
+                      <EmployerLayout>
+                        <Invoice />
+                      </EmployerLayout>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/:subdomain/invoices/dashboard"
+                  element={
+                    <ProtectedRoute
+                      requiredPermission={PERMISSIONS.VIEW_INVOICE}
+                    >
+                      <EmployerLayout>
+                        <InvoiceDashboard />
+                      </EmployerLayout>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/:subdomain/invoices/create"
+                  element={
+                    <ProtectedRoute
+                      requiredPermission={PERMISSIONS.CREATE_INVOICE}
+                    >
+                      <EmployerLayout>
+                        <InvoiceForm />
+                      </EmployerLayout>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/:subdomain/reports"
+                  element={
+                    <ProtectedRoute
+                      requiredPermission={PERMISSIONS.VIEW_REPORTS}
+                    >
+                      <EmployerLayout>
+                        <ReportsDashboard />
+                      </EmployerLayout>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/:subdomain/settings"
+                  element={
+                    <ProtectedRoute
+                      requiredPermission={PERMISSIONS.VIEW_SETTINGS}
+                    >
+                      <EmployerLayout>
+                        <EmployerSettings />
+                      </EmployerLayout>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/:subdomain/settings/invoices"
+                  element={
+                    <ProtectedRoute
+                      requiredPermission={PERMISSIONS.MANAGE_SETTINGS}
+                    >
+                      <EmployerLayout>
+                        <InvoiceSettings />
+                      </EmployerLayout>
+                    </ProtectedRoute>
+                  }
+                />
 
-              {/* Fallback route */}
-              <Route path="*" element={<Navigate to="/login" />} />
+                {/* Fallback route */}
+                <Route path="*" element={<Navigate to="/login" />} />
               </Routes>
             </WebSocketProvider>
           </AuthProvider>

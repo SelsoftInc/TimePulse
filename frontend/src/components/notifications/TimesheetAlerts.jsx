@@ -7,7 +7,8 @@ import "./TimesheetAlert.css";
 
 const TimesheetAlerts = ({ subdomain }) => {
   const { user, currentEmployer } = useAuth();
-  const { notifications, unreadCount, markNotificationAsRead, markAllAsRead } = useWebSocket();
+  const { notifications, unreadCount, markNotificationAsRead, markAllAsRead } =
+    useWebSocket();
   const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -17,10 +18,10 @@ const TimesheetAlerts = ({ subdomain }) => {
   useEffect(() => {
     const fetchAlerts = async () => {
       if (!user || !currentEmployer) return;
-      
+
       try {
         setLoading(true);
-        
+
         const response = await apiFetch(
           `/api/notifications?tenantId=${currentEmployer.id}&userId=${user.id}&limit=20`,
           {
@@ -78,7 +79,9 @@ const TimesheetAlerts = ({ subdomain }) => {
 
       setAlerts((prev) =>
         prev.map((alert) =>
-          alert.id === alertId ? { ...alert, readAt: new Date().toISOString() } : alert
+          alert.id === alertId
+            ? { ...alert, readAt: new Date().toISOString() }
+            : alert
         )
       );
     } catch (error) {
@@ -155,7 +158,7 @@ const TimesheetAlerts = ({ subdomain }) => {
     }
   };
 
-  const unreadCount = alerts.filter((alert) => !alert.readAt).length;
+  // unreadCount is already provided by useWebSocket context
 
   const toggleDropdown = () => setDropdownOpen((prev) => !prev);
 

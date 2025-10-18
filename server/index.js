@@ -146,10 +146,10 @@ const startServer = async () => {
 
   // Create HTTP server
   const server = http.createServer(app);
-  
+
   // Initialize WebSocket service
   const wsService = new WebSocketService(server);
-  
+
   // Make WebSocket service available globally
   global.wsService = wsService;
 

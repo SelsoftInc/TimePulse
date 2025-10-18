@@ -112,7 +112,11 @@ module.exports = (sequelize) => {
     });
   };
 
-  Notification.getUserNotifications = async function (userId, tenantId, options = {}) {
+  Notification.getUserNotifications = async function (
+    userId,
+    tenantId,
+    options = {}
+  ) {
     const {
       limit = 20,
       offset = 0,

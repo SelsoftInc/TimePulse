@@ -37,7 +37,7 @@ class NotificationService {
   static async createBulkNotifications(tenantId, userIds, notificationData) {
     try {
       const notifications = await Promise.all(
-        userIds.map(userId =>
+        userIds.map((userId) =>
           Notification.create({
             ...notificationData,
             tenantId,
@@ -63,11 +63,15 @@ class NotificationService {
       // Get all users in the tenant
       const users = await User.findAll({
         where: { tenantId },
-        attributes: ['id'],
+        attributes: ["id"],
       });
 
-      const userIds = users.map(user => user.id);
-      return await this.createBulkNotifications(tenantId, userIds, notificationData);
+      const userIds = users.map((user) => user.id);
+      return await this.createBulkNotifications(
+        tenantId,
+        userIds,
+        notificationData
+      );
     } catch (error) {
       console.error("Error creating tenant notification:", error);
       throw error;
@@ -84,22 +88,28 @@ class NotificationService {
     try {
       // Get all employees with user accounts in the tenant
       const employees = await Employee.findAll({
-        where: { 
+        where: {
           tenantId,
-          userId: { [models.Sequelize.Op.ne]: null }
+          userId: { [models.Sequelize.Op.ne]: null },
         },
-        include: [{
-          model: User,
-          as: 'user',
-          attributes: ['id'],
-        }],
+        include: [
+          {
+            model: User,
+            as: "user",
+            attributes: ["id"],
+          },
+        ],
       });
 
       const userIds = employees
-        .filter(emp => emp.user)
-        .map(emp => emp.user.id);
-      
-      return await this.createBulkNotifications(tenantId, userIds, notificationData);
+        .filter((emp) => emp.user)
+        .map((emp) => emp.user.id);
+
+      return await this.createBulkNotifications(
+        tenantId,
+        userIds,
+        notificationData
+      );
     } catch (error) {
       console.error("Error creating employee notification:", error);
       throw error;
@@ -116,15 +126,19 @@ class NotificationService {
   static async createRoleNotification(tenantId, roles, notificationData) {
     try {
       const users = await User.findAll({
-        where: { 
+        where: {
           tenantId,
-          role: { [models.Sequelize.Op.in]: roles }
+          role: { [models.Sequelize.Op.in]: roles },
         },
-        attributes: ['id'],
+        attributes: ["id"],
       });
 
-      const userIds = users.map(user => user.id);
-      return await this.createBulkNotifications(tenantId, userIds, notificationData);
+      const userIds = users.map((user) => user.id);
+      return await this.createBulkNotifications(
+        tenantId,
+        userIds,
+        notificationData
+      );
     } catch (error) {
       console.error("Error creating role notification:", error);
       throw error;
@@ -139,10 +153,21 @@ class NotificationService {
    * @param {Object} timesheetData - Timesheet data
    * @returns {Promise<Object>} Created notification
    */
-  static async createTimesheetNotification(tenantId, employeeId, type, timesheetData) {
+  static async createTimesheetNotification(
+    tenantId,
+    employeeId,
+    type,
+    timesheetData
+  ) {
     const employee = await Employee.findOne({
       where: { id: employeeId, tenantId },
-      include: [{ model: User, as: 'user', attributes: ['id', 'firstName', 'lastName'] }],
+      include: [
+        {
+          model: User,
+          as: "user",
+          attributes: ["id", "firstName", "lastName"],
+        },
+      ],
     });
 
     if (!employee || !employee.user) {
@@ -213,7 +238,13 @@ class NotificationService {
   static async createLeaveNotification(tenantId, employeeId, type, leaveData) {
     const employee = await Employee.findOne({
       where: { id: employeeId, tenantId },
-      include: [{ model: User, as: 'user', attributes: ['id', 'firstName', 'lastName'] }],
+      include: [
+        {
+          model: User,
+          as: "user",
+          attributes: ["id", "firstName", "lastName"],
+        },
+      ],
     });
 
     if (!employee || !employee.user) {
@@ -274,8 +305,8 @@ class NotificationService {
    * @returns {Promise<Array>} Created notifications
    */
   static async createApprovalNotification(tenantId, type, data) {
-    const approverRoles = ['admin', 'manager', 'approver'];
-    
+    const approverRoles = ["admin", "manager", "approver"];
+
     const notificationTemplates = {
       timesheet: {
         title: "Timesheet Pending Approval",

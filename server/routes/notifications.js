@@ -19,7 +19,9 @@ router.get("/", async (req, res) => {
     } = req.query;
 
     if (!tenantId || !userId) {
-      return res.status(400).json({ error: "Tenant ID and User ID are required" });
+      return res
+        .status(400)
+        .json({ error: "Tenant ID and User ID are required" });
     }
 
     const options = {
@@ -31,7 +33,11 @@ router.get("/", async (req, res) => {
       includeRead: includeRead === "true",
     };
 
-    const result = await Notification.getUserNotifications(userId, tenantId, options);
+    const result = await Notification.getUserNotifications(
+      userId,
+      tenantId,
+      options
+    );
 
     res.json({
       success: true,
@@ -51,7 +57,9 @@ router.get("/unread-count", async (req, res) => {
     const { tenantId, userId } = req.query;
 
     if (!tenantId || !userId) {
-      return res.status(400).json({ error: "Tenant ID and User ID are required" });
+      return res
+        .status(400)
+        .json({ error: "Tenant ID and User ID are required" });
     }
 
     const count = await Notification.getUnreadCount(userId, tenantId);
@@ -73,7 +81,9 @@ router.patch("/:id/read", async (req, res) => {
     const { tenantId, userId } = req.body;
 
     if (!tenantId || !userId) {
-      return res.status(400).json({ error: "Tenant ID and User ID are required" });
+      return res
+        .status(400)
+        .json({ error: "Tenant ID and User ID are required" });
     }
 
     const notification = await Notification.findOne({
@@ -106,7 +116,9 @@ router.patch("/mark-all-read", async (req, res) => {
     const { tenantId, userId } = req.body;
 
     if (!tenantId || !userId) {
-      return res.status(400).json({ error: "Tenant ID and User ID are required" });
+      return res
+        .status(400)
+        .json({ error: "Tenant ID and User ID are required" });
     }
 
     await Notification.update(
@@ -137,7 +149,9 @@ router.delete("/:id", async (req, res) => {
     const { tenantId, userId } = req.body;
 
     if (!tenantId || !userId) {
-      return res.status(400).json({ error: "Tenant ID and User ID are required" });
+      return res
+        .status(400)
+        .json({ error: "Tenant ID and User ID are required" });
     }
 
     const notification = await Notification.findOne({
@@ -181,7 +195,9 @@ router.post("/", async (req, res) => {
     } = req.body;
 
     if (!tenantId || !title || !message) {
-      return res.status(400).json({ error: "Tenant ID, title, and message are required" });
+      return res
+        .status(400)
+        .json({ error: "Tenant ID, title, and message are required" });
     }
 
     const notification = await Notification.create({

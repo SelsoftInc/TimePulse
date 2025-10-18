@@ -273,38 +273,38 @@ models.Employee = sequelize.define(
     clientId: {
       type: DataTypes.UUID,
       allowNull: true,
-      field: 'client_id',
+      field: "client_id",
       references: {
-        model: 'clients',
-        key: 'id'
-      }
+        model: "clients",
+        key: "id",
+      },
     },
     vendorId: {
       type: DataTypes.UUID,
       allowNull: true,
-      field: 'vendor_id',
+      field: "vendor_id",
       references: {
-        model: 'vendors',
-        key: 'id'
-      }
+        model: "vendors",
+        key: "id",
+      },
     },
     implPartnerId: {
       type: DataTypes.UUID,
       allowNull: true,
-      field: 'impl_partner_id',
+      field: "impl_partner_id",
       references: {
-        model: 'implementation_partners',
-        key: 'id'
-      }
+        model: "implementation_partners",
+        key: "id",
+      },
     },
     employmentTypeId: {
       type: DataTypes.UUID,
       allowNull: true,
-      field: 'employment_type_id',
+      field: "employment_type_id",
       references: {
-        model: 'employment_types',
-        key: 'id'
-      }
+        model: "employment_types",
+        key: "id",
+      },
     },
     startDate: {
       type: DataTypes.DATEONLY,
@@ -662,7 +662,10 @@ models.Vendor.belongsTo(models.Tenant, {
 });
 
 // Implementation Partner associations
-models.Tenant.hasMany(models.ImplementationPartner, { foreignKey: "tenantId", as: "implementationPartners" });
+models.Tenant.hasMany(models.ImplementationPartner, {
+  foreignKey: "tenantId",
+  as: "implementationPartners",
+});
 models.ImplementationPartner.belongsTo(models.Tenant, {
   foreignKey: "tenantId",
   as: "tenant",
@@ -723,7 +726,13 @@ models.Timesheet = sequelize.define(
       field: "total_hours",
     },
     status: {
-      type: DataTypes.ENUM("draft", "submitted", "approved", "rejected", "deleted"),
+      type: DataTypes.ENUM(
+        "draft",
+        "submitted",
+        "approved",
+        "rejected",
+        "deleted"
+      ),
       defaultValue: "draft",
     },
     submittedAt: {
@@ -822,12 +831,7 @@ models.Invoice = sequelize.define(
       field: "total_amount",
     },
     paymentStatus: {
-      type: DataTypes.ENUM(
-        "pending",
-        "paid",
-        "overdue",
-        "cancelled"
-      ),
+      type: DataTypes.ENUM("pending", "paid", "overdue", "cancelled"),
       defaultValue: "pending",
       field: "payment_status",
     },
@@ -1091,27 +1095,60 @@ const getTenantBySubdomain = async (subdomain) => {
 // =============================================
 
 // Employee associations (set up after all models are defined)
-models.Employee.belongsTo(models.Client, { foreignKey: 'clientId', as: 'client' });
-models.Employee.belongsTo(models.Vendor, { foreignKey: 'vendorId', as: 'vendor' });
-models.Employee.belongsTo(models.ImplementationPartner, { foreignKey: 'implPartnerId', as: 'implPartner' });
-models.Employee.belongsTo(models.EmploymentType, { foreignKey: 'employmentTypeId', as: 'employmentType' });
+models.Employee.belongsTo(models.Client, {
+  foreignKey: "clientId",
+  as: "client",
+});
+models.Employee.belongsTo(models.Vendor, {
+  foreignKey: "vendorId",
+  as: "vendor",
+});
+models.Employee.belongsTo(models.ImplementationPartner, {
+  foreignKey: "implPartnerId",
+  as: "implPartner",
+});
+models.Employee.belongsTo(models.EmploymentType, {
+  foreignKey: "employmentTypeId",
+  as: "employmentType",
+});
 
 // Client associations
-models.Client.hasMany(models.Employee, { foreignKey: "clientId", as: "employees" });
+models.Client.hasMany(models.Employee, {
+  foreignKey: "clientId",
+  as: "employees",
+});
 
 // EmploymentType associations
-models.EmploymentType.belongsTo(models.Tenant, { foreignKey: "tenantId", as: "tenant" });
-models.EmploymentType.hasMany(models.Employee, { foreignKey: "employmentTypeId", as: "employees" });
+models.EmploymentType.belongsTo(models.Tenant, {
+  foreignKey: "tenantId",
+  as: "tenant",
+});
+models.EmploymentType.hasMany(models.Employee, {
+  foreignKey: "employmentTypeId",
+  as: "employees",
+});
 
 // Notification associations
-models.Notification.belongsTo(models.Tenant, { foreignKey: "tenantId", as: "tenant" });
-models.Notification.belongsTo(models.User, { foreignKey: "userId", as: "user" });
+models.Notification.belongsTo(models.Tenant, {
+  foreignKey: "tenantId",
+  as: "tenant",
+});
+models.Notification.belongsTo(models.User, {
+  foreignKey: "userId",
+  as: "user",
+});
 
 // User associations for notifications
-models.User.hasMany(models.Notification, { foreignKey: "userId", as: "notifications" });
+models.User.hasMany(models.Notification, {
+  foreignKey: "userId",
+  as: "notifications",
+});
 
 // Tenant associations for notifications
-models.Tenant.hasMany(models.Notification, { foreignKey: "tenantId", as: "notifications" });
+models.Tenant.hasMany(models.Notification, {
+  foreignKey: "tenantId",
+  as: "notifications",
+});
 
 module.exports = {
   sequelize,
@@ -1121,4 +1158,3 @@ module.exports = {
   getTenantBySubdomain,
   Sequelize,
 };
-

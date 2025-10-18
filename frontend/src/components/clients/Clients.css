@@ -33,14 +33,15 @@
   border-bottom: none;
 }
 
-.client-name {
-  font-weight: 500;
-  color: #6576ff;
+.table-clients .client-name {
+  font-size: 0.9375rem !important;
+  font-weight: 500 !important;
+  color: #6576ff !important;
   text-decoration: none;
   transition: color 0.3s;
 }
 
-.client-name:hover {
+.table-clients .client-name:hover {
   text-decoration: underline;
 }
 
@@ -132,11 +133,11 @@
   color: #b7c2d0;
 }
 
-.dark-mode .client-name {
-  color: #6576ff;
+.dark-mode .table-clients .client-name {
+  color: #6576ff !important;
 }
 
-.dark-mode .client-name:hover {
+.dark-mode .table-clients .client-name:hover {
   text-decoration: underline;
 }
 

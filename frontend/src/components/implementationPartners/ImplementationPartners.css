@@ -1,4 +1,47 @@
 /* Implementation Partners Styles */
+
+/* Table Styling */
+.table-implementation-partners {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table-implementation-partners thead th {
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: #8094ae;
+  text-transform: uppercase;
+  padding: 12px 15px;
+  border-bottom: 1px solid #e5e9f2;
+  white-space: nowrap;
+  background-color: #f5f6fa;
+}
+
+.table-implementation-partners tbody td {
+  padding: 15px;
+  vertical-align: middle;
+  border-bottom: 1px solid #e5e9f2;
+  color: #3c4d62;
+  font-size: 0.9375rem;
+}
+
+.table-implementation-partners tbody tr:hover {
+  background-color: #f9fafc;
+}
+
+.table-implementation-partners tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.table-implementation-partners .implementation-partner-name {
+  color: #6576ff;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.table-implementation-partners .implementation-partner-name:hover {
+  text-decoration: underline;
+}
 .implementation-partners-container {
   padding: 20px;
 }

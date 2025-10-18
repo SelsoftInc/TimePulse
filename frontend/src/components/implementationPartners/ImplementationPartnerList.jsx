@@ -295,7 +295,7 @@ const ImplementationPartnerList = () => {
           ) : (
             <div className="card">
               <div className="card-inne">
-                <table className="table table-clients">
+                <table className="table table-implementation-partners">
                   <thead>
                     <tr>
                       <th>Implementation Partner Name</th>
@@ -313,7 +313,7 @@ const ImplementationPartnerList = () => {
                         <td>
                           <Link
                             to={`/${subdomain}/implementation-partners/${partner.id}`}
-                            className="client-name"
+                            className="implementation-partner-name"
                           >
                             {partner.name}
                           </Link>

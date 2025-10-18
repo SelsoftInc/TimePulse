@@ -7,6 +7,7 @@ import { useToast } from '../../contexts/ToastContext';
 import './Clients.css';
 import { PAYMENT_METHODS, CURRENCIES, CLIENT_TYPES } from '../../constants/lookups';
 import { formatPhoneInput, validatePhoneDigits } from '../../utils/validation';
+import { validatePhoneNumber, validateZipCode, validateEmail, validateName, formatPhoneNumber } from '../../utils/validations';
 import { apiFetch } from '../../config/api';
 import {
   COUNTRY_OPTIONS,
@@ -178,11 +179,20 @@ const ClientForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
   const handleBlur = (e) => {
     const { name, value } = e.target;
     if (name === 'phone') {
-      const msg = validatePhoneDigits(value);
-      setErrors(prev => ({ ...prev, phone: msg }));
+      const validation = validatePhoneNumber(value);
+      setErrors(prev => ({ ...prev, phone: validation.isValid ? '' : validation.message }));
     } else if (name === 'taxId') {
       const msg = validateCountryTaxId(formData.country, value);
       setErrors(prev => ({ ...prev, taxId: msg }));
+    } else if (name === 'zip') {
+      const validation = validateZipCode(value);
+      setErrors(prev => ({ ...prev, zip: validation.isValid ? '' : validation.message }));
+    } else if (name === 'email') {
+      const validation = validateEmail(value);
+      setErrors(prev => ({ ...prev, email: validation.isValid ? '' : validation.message }));
+    } else if (name === 'clientName') {
+      const validation = validateName(value, 'Client Name');
+      setErrors(prev => ({ ...prev, clientName: validation.isValid ? '' : validation.message }));
     }
   };
 
@@ -194,10 +204,21 @@ const ClientForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
       if (!tenantId) throw new Error('No tenant information');
 
       // Validate critical fields
-      const phoneErr = validatePhoneDigits(formData.phone);
+      const phoneValidation = validatePhoneNumber(formData.phone);
       const taxErr = validateCountryTaxId(formData.country, formData.taxId);
-      if (phoneErr || taxErr) {
-        setErrors({ phone: phoneErr, taxId: taxErr });
+      const zipValidation = validateZipCode(formData.zip);
+      const emailValidation = validateEmail(formData.email);
+      const nameValidation = validateName(formData.clientName, 'Client Name');
+      
+      const newErrors = {};
+      if (!phoneValidation.isValid) newErrors.phone = phoneValidation.message;
+      if (taxErr) newErrors.taxId = taxErr;
+      if (!zipValidation.isValid) newErrors.zip = zipValidation.message;
+      if (!emailValidation.isValid) newErrors.email = emailValidation.message;
+      if (!nameValidation.isValid) newErrors.clientName = nameValidation.message;
+      
+      if (Object.keys(newErrors).length > 0) {
+        setErrors(newErrors);
         setLoading(false);
         return;
       }
@@ -418,8 +439,13 @@ const ClientForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
                           name="zip"
                           value={formData.zip}
                           onChange={handleChange}
+                          onBlur={handleBlur}
                           placeholder={getPostalPlaceholder(formData.country)}
+                          maxLength={formData.country === 'United States' ? 5 : 10}
                         />
+                        {errors.zip && (
+                          <div className="mt-1"><small className="text-danger">{errors.zip}</small></div>
+                        )}
                       </div>
                     </div>
                     <div className="col-lg-6">

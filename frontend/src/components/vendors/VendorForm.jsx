@@ -16,6 +16,7 @@ import { PERMISSIONS } from '../../utils/roles';
 import PermissionGuard from '../common/PermissionGuard';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
+import { validatePhoneNumber, validateZipCode, validateEmail, validateName } from '../../utils/validations';
 import './Vendors.css';
 
 const VendorForm = ({ mode = 'create', initialData = null, onSubmitOverride = null, submitLabel = null }) => {
@@ -25,6 +26,7 @@ const VendorForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [errors, setErrors] = useState({});
   const [paymentTermsOptions, setPaymentTermsOptions] = useState(PAYMENT_TERMS_OPTIONS);
   const [formData, setFormData] = useState({
     name: '',
@@ -57,6 +59,32 @@ const VendorForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
       ...formData,
       [name]: value
     });
+    
+    // Clear field-specific error on change
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: '' }));
+    }
+  };
+
+  const handleBlur = (e) => {
+    const { name, value } = e.target;
+    
+    if (name === 'phone') {
+      const validation = validatePhoneNumber(value);
+      setErrors(prev => ({ ...prev, phone: validation.isValid ? '' : validation.message }));
+    } else if (name === 'zip') {
+      const validation = validateZipCode(value);
+      setErrors(prev => ({ ...prev, zip: validation.isValid ? '' : validation.message }));
+    } else if (name === 'email') {
+      const validation = validateEmail(value);
+      setErrors(prev => ({ ...prev, email: validation.isValid ? '' : validation.message }));
+    } else if (name === 'name') {
+      const validation = validateName(value, 'Vendor Name');
+      setErrors(prev => ({ ...prev, name: validation.isValid ? '' : validation.message }));
+    } else if (name === 'contactPerson') {
+      const validation = validateName(value, 'Contact Person');
+      setErrors(prev => ({ ...prev, contactPerson: validation.isValid ? '' : validation.message }));
+    }
   };
 
   const handleFileChange = (e) => {
@@ -106,6 +134,27 @@ const VendorForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validate form fields
+    const phoneValidation = validatePhoneNumber(formData.phone);
+    const zipValidation = validateZipCode(formData.zip);
+    const emailValidation = validateEmail(formData.email);
+    const nameValidation = validateName(formData.name, 'Vendor Name');
+    const contactValidation = validateName(formData.contactPerson, 'Contact Person');
+    
+    const newErrors = {};
+    if (!phoneValidation.isValid) newErrors.phone = phoneValidation.message;
+    if (!zipValidation.isValid) newErrors.zip = zipValidation.message;
+    if (!emailValidation.isValid) newErrors.email = emailValidation.message;
+    if (!nameValidation.isValid) newErrors.name = nameValidation.message;
+    if (!contactValidation.isValid) newErrors.contactPerson = contactValidation.message;
+    
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      toast.error('Please fix the validation errors before submitting');
+      return;
+    }
+    
     try {
       setError('');
       setLoading(true);
@@ -226,9 +275,13 @@ const VendorForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
                           name="name"
                           value={formData.name}
                           onChange={handleChange}
+                          onBlur={handleBlur}
                           placeholder="Enter vendor name"
                           required
                         />
+                        {errors.name && (
+                          <div className="mt-1"><small className="text-danger">{errors.name}</small></div>
+                        )}
                       </div>
                     </div>
                     <div className="col-lg-6">
@@ -241,9 +294,13 @@ const VendorForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
                           name="contactPerson"
                           value={formData.contactPerson}
                           onChange={handleChange}
+                          onBlur={handleBlur}
                           placeholder="Enter contact person name"
                           required
                         />
+                        {errors.contactPerson && (
+                          <div className="mt-1"><small className="text-danger">{errors.contactPerson}</small></div>
+                        )}
                       </div>
                     </div>
                     <div className="col-lg-6">
@@ -256,9 +313,13 @@ const VendorForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
                           name="email"
                           value={formData.email}
                           onChange={handleChange}
+                          onBlur={handleBlur}
                           placeholder="Enter email address"
                           required
                         />
+                        {errors.email && (
+                          <div className="mt-1"><small className="text-danger">{errors.email}</small></div>
+                        )}
                       </div>
                     </div>
                     <div className="col-lg-6">
@@ -271,9 +332,14 @@ const VendorForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
                           name="phone"
                           value={formData.phone}
                           onChange={handleChange}
+                          onBlur={handleBlur}
                           placeholder="Enter phone number"
+                          maxLength="20"
                           required
                         />
+                        {errors.phone && (
+                          <div className="mt-1"><small className="text-danger">{errors.phone}</small></div>
+                        )}
                       </div>
                     </div>
                     <div className="col-lg-12">
@@ -343,8 +409,13 @@ const VendorForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
                           name="zip"
                           value={formData.zip}
                           onChange={handleChange}
+                          onBlur={handleBlur}
                           placeholder={getPostalPlaceholder(formData.country)}
+                          maxLength={formData.country === 'United States' ? 5 : 10}
                         />
+                        {errors.zip && (
+                          <div className="mt-1"><small className="text-danger">{errors.zip}</small></div>
+                        )}
                       </div>
                     </div>
                     <div className="col-lg-6">

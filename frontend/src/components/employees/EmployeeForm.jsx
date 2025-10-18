@@ -5,6 +5,7 @@ import PermissionGuard from '../common/PermissionGuard';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import { API_BASE, apiFetch } from '../../config/api';
+import { validatePhoneNumber, validateZipCode, validateEmail, validateName } from '../../utils/validations';
 import './Employees.css';
 
 const EmployeeForm = () => {
@@ -15,6 +16,7 @@ const EmployeeForm = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [employeeLoading, setEmployeeLoading] = useState(false);
+  const [errors, setErrors] = useState({});
   const isEditMode = !!id; // Determine if we're in edit mode
   const [formData, setFormData] = useState({
     firstName: '',
@@ -168,6 +170,32 @@ const EmployeeForm = () => {
       ...formData,
       [name]: value
     });
+    
+    // Clear field-specific error on change
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: '' }));
+    }
+  };
+
+  const handleBlur = (e) => {
+    const { name, value } = e.target;
+    
+    if (name === 'phone') {
+      const validation = validatePhoneNumber(value);
+      setErrors(prev => ({ ...prev, phone: validation.isValid ? '' : validation.message }));
+    } else if (name === 'zip') {
+      const validation = validateZipCode(value);
+      setErrors(prev => ({ ...prev, zip: validation.isValid ? '' : validation.message }));
+    } else if (name === 'email') {
+      const validation = validateEmail(value);
+      setErrors(prev => ({ ...prev, email: validation.isValid ? '' : validation.message }));
+    } else if (name === 'firstName') {
+      const validation = validateName(value, 'First Name');
+      setErrors(prev => ({ ...prev, firstName: validation.isValid ? '' : validation.message }));
+    } else if (name === 'lastName') {
+      const validation = validateName(value, 'Last Name');
+      setErrors(prev => ({ ...prev, lastName: validation.isValid ? '' : validation.message }));
+    }
   };
   
   const handleClientChange = (e) => {
@@ -197,6 +225,26 @@ const EmployeeForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validate form fields
+    const phoneValidation = validatePhoneNumber(formData.phone);
+    const zipValidation = validateZipCode(formData.zip);
+    const emailValidation = validateEmail(formData.email);
+    const firstNameValidation = validateName(formData.firstName, 'First Name');
+    const lastNameValidation = validateName(formData.lastName, 'Last Name');
+    
+    const newErrors = {};
+    if (!phoneValidation.isValid) newErrors.phone = phoneValidation.message;
+    if (!zipValidation.isValid) newErrors.zip = zipValidation.message;
+    if (!emailValidation.isValid) newErrors.email = emailValidation.message;
+    if (!firstNameValidation.isValid) newErrors.firstName = firstNameValidation.message;
+    if (!lastNameValidation.isValid) newErrors.lastName = lastNameValidation.message;
+    
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      toast.error('Please fix the validation errors before submitting');
+      return;
+    }
     
     // Validation
     if (!formData.clientId) {
@@ -321,9 +369,13 @@ const EmployeeForm = () => {
                           name="firstName"
                           value={formData.firstName}
                           onChange={handleChange}
+                          onBlur={handleBlur}
                           placeholder="Enter first name"
                           required
                         />
+                        {errors.firstName && (
+                          <div className="mt-1"><small className="text-danger">{errors.firstName}</small></div>
+                        )}
                       </div>
                     </div>
                     <div className="col-lg-6">
@@ -336,9 +388,13 @@ const EmployeeForm = () => {
                           name="lastName"
                           value={formData.lastName}
                           onChange={handleChange}
+                          onBlur={handleBlur}
                           placeholder="Enter last name"
                           required
                         />
+                        {errors.lastName && (
+                          <div className="mt-1"><small className="text-danger">{errors.lastName}</small></div>
+                        )}
                       </div>
                     </div>
                     <div className="col-lg-6">
@@ -351,9 +407,13 @@ const EmployeeForm = () => {
                           name="email"
                           value={formData.email}
                           onChange={handleChange}
+                          onBlur={handleBlur}
                           placeholder="Enter email address"
                           required
                         />
+                        {errors.email && (
+                          <div className="mt-1"><small className="text-danger">{errors.email}</small></div>
+                        )}
                       </div>
                     </div>
                     <div className="col-lg-6">
@@ -366,8 +426,13 @@ const EmployeeForm = () => {
                           name="phone"
                           value={formData.phone}
                           onChange={handleChange}
+                          onBlur={handleBlur}
                           placeholder="Enter phone number"
+                          maxLength="20"
                         />
+                        {errors.phone && (
+                          <div className="mt-1"><small className="text-danger">{errors.phone}</small></div>
+                        )}
                       </div>
                     </div>
                     <div className="col-lg-6">
@@ -678,8 +743,13 @@ const EmployeeForm = () => {
                           name="zip"
                           value={formData.zip}
                           onChange={handleChange}
+                          onBlur={handleBlur}
                           placeholder="Enter ZIP code"
+                          maxLength="5"
                         />
+                        {errors.zip && (
+                          <div className="mt-1"><small className="text-danger">{errors.zip}</small></div>
+                        )}
                       </div>
                     </div>
                     <div className="col-lg-4">

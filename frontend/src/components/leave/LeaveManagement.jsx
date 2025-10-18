@@ -3,6 +3,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import { useToast } from "../../contexts/ToastContext";
 import { API_BASE } from "../../config/api";
 import LeaveApprovals from "./LeaveApprovals";
+import { validateWeekdays, validateDateRange, validateRequired } from "../../utils/validations";
 import "./LeaveManagement.css";
 import "../common/Pagination.css";
 
@@ -168,8 +169,17 @@ const LeaveManagement = () => {
       return;
     }
 
+    // Validate weekdays using utility function
+    const weekdayValidation = validateWeekdays(formData.startDate, formData.endDate);
+    if (!weekdayValidation.isValid) {
+      console.log("❌ Validation failed: Weekend dates not allowed");
+      toast.error(weekdayValidation.message);
+      return;
+    }
+
     // Check for overlapping dates with existing requests
-    const hasOverlap = leaveRequests.some(request => {
+    const allRequests = [...leaveData.history, ...leaveData.pending];
+    const hasOverlap = allRequests.some(request => {
       if (request.status === 'cancelled') return false; // Skip cancelled requests
       
       const existingStart = new Date(request.startDate);
@@ -693,12 +703,12 @@ const LeaveManagement = () => {
                                 />
                               </div>
                             </div>
-                            {leaveRequests.length > 0 && (
+                            {allRequests.length > 0 && (
                               <div className="col-12">
                                 <div className="form-note">
                                   <strong>Existing Leave Requests:</strong>
                                   <ul className="mt-2 mb-0">
-                                    {leaveRequests
+                                    {allRequests
                                       .filter(req => req.status !== 'cancelled')
                                       .map((req, index) => (
                                         <li key={index} className="small">

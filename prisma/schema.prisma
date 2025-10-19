@@ -1,0 +1,479 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider     = "postgresql"
+  url          = env("DATABASE_URL")
+  directUrl    = env("DIRECT_URL")
+  relationMode = "foreignKeys"
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model clients {
+  id               String       @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  tenant_id        String       @db.Uuid
+  client_name      String       @db.VarChar(255)
+  legal_name       String?      @db.VarChar(255)
+  contact_person   String?      @db.VarChar(255)
+  email            String?      @db.VarChar(255)
+  phone            String?      @db.VarChar(50)
+  billing_address  Json?        @default("{}")
+  shipping_address Json?        @default("{}")
+  tax_id           String?      @db.VarChar(50)
+  payment_terms    Int?         @default(30)
+  hourly_rate      Decimal?     @default(0) @db.Decimal(10, 2)
+  client_type      String?      @default("external") @db.VarChar(20)
+  status           String?      @default("active") @db.VarChar(20)
+  created_at       DateTime?    @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime?    @default(now()) @db.Timestamptz(6)
+  tenants          tenants      @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  employees        employees[]
+  invoices         invoices[]
+  projects         projects[]
+  timesheets       timesheets[]
+
+  @@index([tenant_id], map: "idx_clients_tenant_id")
+  @@index([tenant_id, hourly_rate], map: "idx_clients_tenant_rate")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model employees {
+  id                      String                   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  tenant_id               String                   @db.Uuid
+  user_id                 String?                  @db.Uuid
+  employee_id             String?                  @db.VarChar(50)
+  first_name              String                   @db.VarChar(100)
+  last_name               String                   @db.VarChar(100)
+  email                   String?                  @db.VarChar(255)
+  department              String?                  @db.VarChar(100)
+  title                   String?                  @db.VarChar(100)
+  manager_id              String?                  @db.Uuid
+  start_date              DateTime?                @db.Date
+  end_date                DateTime?                @db.Date
+  hourly_rate             Decimal?                 @default(0) @db.Decimal(10, 2)
+  salary_amount           Decimal?                 @default(0) @db.Decimal(12, 2)
+  salary_type             String?                  @default("hourly") @db.VarChar(20)
+  contact_info            Json?                    @default("{}")
+  status                  String?                  @default("active") @db.VarChar(20)
+  created_at              DateTime?                @default(now()) @db.Timestamptz(6)
+  updated_at              DateTime?                @default(now()) @db.Timestamptz(6)
+  phone                   String?                  @db.VarChar(20)
+  client_id               String?                  @db.Uuid
+  vendor_id               String?                  @db.Uuid
+  impl_partner_id         String?                  @db.Uuid
+  employment_type_id      String?                  @db.Uuid
+  clients                 clients?                 @relation(fields: [client_id], references: [id], onUpdate: NoAction)
+  employment_types        employment_types?        @relation(fields: [employment_type_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  implementation_partners implementation_partners? @relation(fields: [impl_partner_id], references: [id], onUpdate: NoAction)
+  employees               employees?               @relation("employeesToemployees", fields: [manager_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  other_employees         employees[]              @relation("employeesToemployees")
+  tenants                 tenants                  @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users                   users?                   @relation(fields: [user_id], references: [id], onUpdate: NoAction)
+  vendors                 vendors?                 @relation(fields: [vendor_id], references: [id], onUpdate: NoAction)
+  leave_balances          leave_balances[]
+  leave_requests          leave_requests[]
+  timesheets              timesheets[]
+
+  @@unique([tenant_id, employee_id])
+  @@index([client_id], map: "idx_employees_client_id")
+  @@index([tenant_id, email], map: "idx_employees_email")
+  @@index([tenant_id, employee_id], map: "idx_employees_employee_id")
+  @@index([employment_type_id], map: "idx_employees_employment_type_id")
+  @@index([impl_partner_id], map: "idx_employees_impl_partner_id")
+  @@index([tenant_id], map: "idx_employees_tenant_id")
+  @@index([tenant_id, hourly_rate], map: "idx_employees_tenant_rate")
+  @@index([vendor_id], map: "idx_employees_vendor_id")
+}
+
+model employment_types {
+  id          String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id   String      @db.Uuid
+  name        String      @db.VarChar(50)
+  description String?
+  is_active   Boolean?    @default(true)
+  created_at  DateTime?   @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime?   @default(now()) @db.Timestamptz(6)
+  employees   employees[]
+  tenants     tenants     @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([tenant_id, name])
+  @@index([tenant_id], map: "idx_employment_types_tenant_id")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model implementation_partners {
+  id             String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id      String      @db.Uuid
+  name           String      @db.VarChar(255)
+  legal_name     String?     @db.VarChar(255)
+  contact_person String?     @db.VarChar(255)
+  email          String?     @db.VarChar(255)
+  phone          String?     @db.VarChar(20)
+  address        Json?       @default("{}")
+  category       String?     @default("implementation_partner") @db.VarChar(50)
+  specialization String?     @db.VarChar(255)
+  status         String?     @default("active") @db.VarChar(20)
+  notes          String?
+  created_at     DateTime?   @default(now()) @db.Timestamptz(6)
+  updated_at     DateTime?   @default(now()) @db.Timestamptz(6)
+  employees      employees[]
+  tenants        tenants     @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([tenant_id, name], map: "unique_tenant_name")
+  @@index([tenant_id, status], map: "idx_implementation_partners_tenant_status")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model invoices {
+  id             String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  tenant_id      String    @db.Uuid
+  client_id      String    @db.Uuid
+  invoice_number String    @db.VarChar(100)
+  invoice_date   DateTime  @db.Date
+  due_date       DateTime  @db.Date
+  line_items     Json?     @default("[]")
+  subtotal       Decimal?  @default(0) @db.Decimal(12, 2)
+  tax_amount     Decimal?  @default(0) @db.Decimal(12, 2)
+  total_amount   Decimal?  @default(0) @db.Decimal(12, 2)
+  payment_status String?   @default("pending") @db.VarChar(20)
+  payment_date   DateTime? @db.Date
+  payment_method String?   @db.VarChar(50)
+  notes          String?
+  created_by     String?   @db.Uuid
+  created_at     DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at     DateTime? @default(now()) @db.Timestamptz(6)
+  status         String?   @default("active") @db.VarChar(20)
+  clients        clients   @relation(fields: [client_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users          users?    @relation(fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  tenants        tenants   @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([tenant_id, invoice_number])
+  @@index([client_id], map: "idx_invoices_client")
+  @@index([tenant_id, invoice_date], map: "idx_invoices_date")
+  @@index([tenant_id, payment_status], map: "idx_invoices_status")
+  @@index([tenant_id, due_date, payment_status], map: "idx_invoices_tenant_due_status")
+  @@index([tenant_id], map: "idx_invoices_tenant_id")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model leave_balances {
+  id                 String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  employee_id        String    @db.Uuid
+  tenant_id          String    @db.Uuid
+  year               Int
+  leave_type         String    @db.VarChar(20)
+  total_days         Decimal   @default(0) @db.Decimal(5, 2)
+  used_days          Decimal   @default(0) @db.Decimal(5, 2)
+  pending_days       Decimal   @default(0) @db.Decimal(5, 2)
+  carry_forward_days Decimal   @default(0) @db.Decimal(5, 2)
+  created_at         DateTime  @default(now()) @db.Timestamp(6)
+  updated_at         DateTime  @default(now()) @db.Timestamp(6)
+  employees          employees @relation(fields: [employee_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  tenants            tenants   @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([employee_id, tenant_id, year, leave_type], map: "unique_employee_year_leave_type")
+  @@index([employee_id, tenant_id], map: "idx_leave_balances_employee_tenant")
+  @@index([tenant_id, year], map: "idx_leave_balances_tenant_year")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model leave_requests {
+  id                                      String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  employee_id                             String    @db.Uuid
+  tenant_id                               String    @db.Uuid
+  leave_type                              String    @db.VarChar(20)
+  start_date                              DateTime  @db.Date
+  end_date                                DateTime  @db.Date
+  total_days                              Decimal   @db.Decimal(5, 2)
+  reason                                  String?
+  status                                  String    @default("pending") @db.VarChar(20)
+  attachment_url                          String?   @db.VarChar(500)
+  attachment_name                         String?   @db.VarChar(255)
+  reviewed_by                             String?   @db.Uuid
+  reviewed_at                             DateTime? @db.Timestamp(6)
+  review_comments                         String?
+  created_at                              DateTime  @default(now()) @db.Timestamp(6)
+  updated_at                              DateTime  @default(now()) @db.Timestamp(6)
+  approver_id                             String?   @db.Uuid
+  users_leave_requests_approver_idTousers users?    @relation("leave_requests_approver_idTousers", fields: [approver_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  employees                               employees @relation(fields: [employee_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users_leave_requests_reviewed_byTousers users?    @relation("leave_requests_reviewed_byTousers", fields: [reviewed_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  tenants                                 tenants   @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([approver_id], map: "idx_leave_requests_approver_id")
+  @@index([start_date, end_date], map: "idx_leave_requests_dates")
+  @@index([employee_id, tenant_id], map: "idx_leave_requests_employee_tenant")
+  @@index([status], map: "idx_leave_requests_status")
+  @@index([tenant_id, status], map: "idx_leave_requests_tenant_status")
+}
+
+model notifications {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id  String    @db.Uuid
+  user_id    String?   @db.Uuid
+  title      String    @db.VarChar(255)
+  message    String
+  type       String    @default("info") @db.VarChar(50)
+  category   String    @default("general") @db.VarChar(50)
+  priority   String    @default("medium") @db.VarChar(20)
+  read_at    DateTime? @db.Timestamp(6)
+  created_at DateTime? @default(now()) @db.Timestamp(6)
+  updated_at DateTime? @default(now()) @db.Timestamp(6)
+  expires_at DateTime? @db.Timestamp(6)
+  action_url String?   @db.VarChar(500)
+  metadata   Json?
+  tenants    tenants   @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users      users?    @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([category], map: "idx_notifications_category")
+  @@index([created_at], map: "idx_notifications_created_at")
+  @@index([priority], map: "idx_notifications_priority")
+  @@index([read_at], map: "idx_notifications_read_at")
+  @@index([tenant_id], map: "idx_notifications_tenant_id")
+  @@index([type], map: "idx_notifications_type")
+  @@index([user_id], map: "idx_notifications_user_id")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model onboarding_logs {
+  id                String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  tenant_id         String    @db.Uuid
+  source_file       String?   @db.VarChar(255)
+  onboarding_data   Json?     @default("{}")
+  users_created     Int?      @default(0)
+  employees_created Int?      @default(0)
+  clients_created   Int?      @default(0)
+  status            String?   @default("completed") @db.VarChar(20)
+  error_message     String?
+  created_at        DateTime? @default(now()) @db.Timestamptz(6)
+  tenants           tenants   @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model projects {
+  id              String       @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  tenant_id       String       @db.Uuid
+  client_id       String       @db.Uuid
+  project_name    String       @db.VarChar(255)
+  description     String?
+  project_code    String?      @db.VarChar(50)
+  start_date      DateTime?    @db.Date
+  end_date        DateTime?    @db.Date
+  estimated_hours Int?
+  hourly_rate     Decimal?     @db.Decimal(10, 2)
+  budget          Decimal?     @db.Decimal(12, 2)
+  status          String?      @default("active") @db.VarChar(20)
+  created_at      DateTime?    @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime?    @default(now()) @db.Timestamptz(6)
+  clients         clients      @relation(fields: [client_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  tenants         tenants      @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  timesheets      timesheets[]
+
+  @@index([tenant_id], map: "idx_projects_tenant_id")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model tenants {
+  id                      String                    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  tenant_name             String                    @unique @db.VarChar(255)
+  legal_name              String                    @db.VarChar(255)
+  subdomain               String                    @unique @db.VarChar(100)
+  contact_address         Json?                     @default("{}")
+  invoice_address         Json?                     @default("{}")
+  contact_info            Json?                     @default("{}")
+  tax_info                Json?                     @default("{}")
+  settings                Json?                     @default("{}")
+  status                  String?                   @default("active") @db.VarChar(20)
+  onboarded_at            DateTime?                 @default(now()) @db.Timestamptz(6)
+  created_at              DateTime?                 @default(now()) @db.Timestamptz(6)
+  updated_at              DateTime?                 @default(now()) @db.Timestamptz(6)
+  logo                    String?
+  stripe_customer_id      String?                   @db.VarChar(100)
+  stripe_subscription_id  String?                   @db.VarChar(100)
+  plan                    String?                   @db.VarChar(30)
+  billing_interval        String?                   @db.VarChar(10)
+  seat_limit              Int?
+  current_period_end      DateTime?                 @db.Timestamptz(6)
+  clients                 clients[]
+  employees               employees[]
+  employment_types        employment_types[]
+  implementation_partners implementation_partners[]
+  invoices                invoices[]
+  leave_balances          leave_balances[]
+  leave_requests          leave_requests[]
+  notifications           notifications[]
+  onboarding_logs         onboarding_logs[]
+  projects                projects[]
+  timesheets              timesheets[]
+  users                   users[]
+  vendors                 vendors[]
+
+  @@index([status], map: "idx_tenants_status")
+  @@index([stripe_customer_id], map: "idx_tenants_stripe_customer_id")
+  @@index([stripe_subscription_id], map: "idx_tenants_stripe_subscription_id")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model timesheets {
+  id               String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  tenant_id        String    @db.Uuid
+  employee_id      String    @db.Uuid
+  project_id       String?   @db.Uuid
+  week_start_date  DateTime  @db.Date
+  week_end_date    DateTime  @db.Date
+  time_entries     Json?     @default("[]")
+  total_hours      Decimal?  @default(0) @db.Decimal(5, 2)
+  status           String?   @default("draft") @db.VarChar(20)
+  submitted_at     DateTime? @db.Timestamptz(6)
+  approved_at      DateTime? @db.Timestamptz(6)
+  approved_by      String?   @db.Uuid
+  rejection_reason String?
+  created_at       DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime? @default(now()) @db.Timestamptz(6)
+  client_id        String?   @db.Uuid
+  users            users?    @relation(fields: [approved_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  clients          clients?  @relation(fields: [client_id], references: [id], onUpdate: NoAction)
+  employees        employees @relation(fields: [employee_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  projects         projects? @relation(fields: [project_id], references: [id], onUpdate: NoAction)
+  tenants          tenants   @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([tenant_id, employee_id, week_start_date])
+  @@index([client_id], map: "idx_timesheets_client_id")
+  @@index([tenant_id, employee_id, status, week_end_date], map: "idx_timesheets_employee_status")
+  @@index([employee_id, week_start_date], map: "idx_timesheets_employee_week")
+  @@index([tenant_id, status], map: "idx_timesheets_status")
+  @@index([tenant_id], map: "idx_timesheets_tenant_id")
+  @@index([tenant_id, week_end_date], map: "idx_timesheets_tenant_week_end")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model users {
+  id                                               String           @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  tenant_id                                        String           @db.Uuid
+  first_name                                       String           @db.VarChar(100)
+  last_name                                        String           @db.VarChar(100)
+  email                                            String           @db.VarChar(255)
+  password_hash                                    String           @db.VarChar(255)
+  must_change_password                             Boolean?         @default(true)
+  last_login                                       DateTime?        @db.Timestamptz(6)
+  role                                             String           @default("employee") @db.VarChar(50)
+  permissions                                      Json?            @default("[]")
+  department                                       String?          @db.VarChar(100)
+  title                                            String?          @db.VarChar(100)
+  manager_id                                       String?          @db.Uuid
+  status                                           String?          @default("active") @db.VarChar(20)
+  created_at                                       DateTime?        @default(now()) @db.Timestamptz(6)
+  updated_at                                       DateTime?        @default(now()) @db.Timestamptz(6)
+  employees                                        employees[]
+  invoices                                         invoices[]
+  leave_requests_leave_requests_approver_idTousers leave_requests[] @relation("leave_requests_approver_idTousers")
+  leave_requests_leave_requests_reviewed_byTousers leave_requests[] @relation("leave_requests_reviewed_byTousers")
+  notifications                                    notifications[]
+  timesheets                                       timesheets[]
+  users                                            users?           @relation("usersTousers", fields: [manager_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  other_users                                      users[]          @relation("usersTousers")
+  tenants                                          tenants          @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([tenant_id, email], map: "users_tenant_id_email")
+  @@unique([tenant_id, email])
+  @@index([email], map: "idx_users_email")
+  @@index([tenant_id, email], map: "idx_users_tenant_email")
+  @@index([tenant_id], map: "idx_users_tenant_id")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model vendors {
+  id             String      @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  tenant_id      String      @db.Uuid
+  name           String      @db.VarChar(255)
+  contact_person String?     @db.VarChar(255)
+  email          String?     @db.VarChar(255)
+  phone          String?     @db.VarChar(50)
+  category       String?     @db.VarChar(100)
+  status         String?     @default("active") @db.VarChar(20)
+  total_spent    Decimal?    @default(0) @db.Decimal(12, 2)
+  address        String?     @db.VarChar(255)
+  city           String?     @db.VarChar(100)
+  state          String?     @db.VarChar(100)
+  zip            String?     @db.VarChar(20)
+  country        String?     @db.VarChar(100)
+  website        String?     @db.VarChar(255)
+  payment_terms  String?     @db.VarChar(50)
+  contract_start DateTime?   @db.Date
+  contract_end   DateTime?   @db.Date
+  notes          String?
+  created_at     DateTime?   @default(now()) @db.Timestamptz(6)
+  updated_at     DateTime?   @default(now()) @db.Timestamptz(6)
+  employees      employees[]
+  tenants        tenants     @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([tenant_id, name], map: "idx_vendors_name")
+  @@index([tenant_id, status], map: "idx_vendors_status")
+  @@index([tenant_id], map: "idx_vendors_tenant_id")
+}
+
+enum enum_clients_status {
+  active
+  inactive
+}
+
+enum enum_employees_salary_type {
+  hourly
+  salary
+  contract
+}
+
+enum enum_employees_status {
+  active
+  inactive
+  terminated
+}
+
+enum enum_onboarding_logs_status {
+  in_progress
+  completed
+  failed
+}
+
+enum enum_tenants_status {
+  active
+  inactive
+  suspended
+}
+
+enum enum_timesheets_status {
+  draft
+  submitted
+  approved
+  rejected
+}
+
+enum enum_users_role {
+  admin
+  manager
+  employee
+  accountant
+  hr
+}
+
+enum enum_users_status {
+  active
+  inactive
+  suspended
+}
+
+enum enum_vendors_status {
+  active
+  inactive
+  pending
+}

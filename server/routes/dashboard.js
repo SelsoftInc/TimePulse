@@ -62,38 +62,58 @@ router.get("/", async (req, res) => {
     ] = await Promise.all([
       // KPIs based on scope
       scope === "employee"
-        ? sequelize.query(`SELECT * FROM get_employee_kpis(?, ?, ?, ?)`, {
-            replacements: [tenantId, employeeId, fromDate, toDate],
-            type: sequelize.QueryTypes.SELECT,
-          })
-        : sequelize.query(`SELECT * FROM get_company_kpis(?, ?, ?)`, {
-            replacements: [tenantId, fromDate, toDate],
-            type: sequelize.QueryTypes.SELECT,
-          }),
+        ? sequelize.query(
+            `SELECT * FROM get_employee_kpis('${tenantId}', '${employeeId}', ${
+              fromDate ? `'${fromDate.toISOString().split("T")[0]}'` : "NULL"
+            }, ${toDate ? `'${toDate.toISOString().split("T")[0]}'` : "NULL"})`,
+            {
+              type: sequelize.QueryTypes.SELECT,
+            }
+          )
+        : sequelize.query(
+            `SELECT * FROM get_company_kpis('${tenantId}', ${
+              fromDate ? `'${fromDate.toISOString().split("T")[0]}'` : "NULL"
+            }, ${toDate ? `'${toDate.toISOString().split("T")[0]}'` : "NULL"})`,
+            {
+              type: sequelize.QueryTypes.SELECT,
+            }
+          ),
 
       // AR Aging (company scope only)
       scope === "company"
-        ? sequelize.query(`SELECT * FROM get_ar_aging(?, ?, ?)`, {
-            replacements: [tenantId, fromDate, toDate],
-            type: sequelize.QueryTypes.SELECT,
-          })
+        ? sequelize.query(
+            `SELECT * FROM get_ar_aging('${tenantId}', ${
+              fromDate ? `'${fromDate.toISOString().split("T")[0]}'` : "NULL"
+            }, ${toDate ? `'${toDate.toISOString().split("T")[0]}'` : "NULL"})`,
+            {
+              type: sequelize.QueryTypes.SELECT,
+            }
+          )
         : Promise.resolve([
             { current: 0, d1_30: 0, d31_60: 0, d61_90: 0, d90_plus: 0 },
           ]),
 
       // Revenue by Employee (company scope only)
       scope === "company"
-        ? sequelize.query(`SELECT * FROM get_revenue_by_employee(?, ?, ?)`, {
-            replacements: [tenantId, fromDate, toDate],
-            type: sequelize.QueryTypes.SELECT,
-          })
+        ? sequelize.query(
+            `SELECT * FROM get_revenue_by_employee('${tenantId}', ${
+              fromDate ? `'${fromDate.toISOString().split("T")[0]}'` : "NULL"
+            }, ${toDate ? `'${toDate.toISOString().split("T")[0]}'` : "NULL"})`,
+            {
+              type: sequelize.QueryTypes.SELECT,
+            }
+          )
         : Promise.resolve([]),
 
       // Revenue Trend
-      sequelize.query(`SELECT * FROM get_revenue_trend(?, ?, ?)`, {
-        replacements: [tenantId, fromDate, toDate],
-        type: sequelize.QueryTypes.SELECT,
-      }),
+      sequelize.query(
+        `SELECT * FROM get_revenue_trend('${tenantId}', ${
+          fromDate ? `'${fromDate.toISOString().split("T")[0]}'` : "NULL"
+        }, ${toDate ? `'${toDate.toISOString().split("T")[0]}'` : "NULL"})`,
+        {
+          type: sequelize.QueryTypes.SELECT,
+        }
+      ),
     ]);
 
     // Format response
@@ -148,10 +168,9 @@ router.get("/employees", async (req, res) => {
         title,
         status
        FROM employees 
-       WHERE tenant_id = ? AND status = 'active'
+       WHERE tenant_id = '${tenantId}' AND status = 'active'
        ORDER BY first_name, last_name`,
       {
-        replacements: [tenantId],
         type: sequelize.QueryTypes.SELECT,
       }
     );

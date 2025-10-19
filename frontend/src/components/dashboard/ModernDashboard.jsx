@@ -27,6 +27,7 @@ const ModernDashboard = () => {
     user?.role === "admin" ? "company" : "employee"
   );
   const [selectedEmployeeId, setSelectedEmployeeId] = useState(null);
+  const [employees, setEmployees] = useState([]);
   const [dateRange] = useState({
     start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // 30 days ago
     end: new Date(),
@@ -40,6 +41,7 @@ const ModernDashboard = () => {
 
       // Build query parameters for the new optimized dashboard API
       const queryParams = new URLSearchParams({
+        tenantId,
         scope,
         ...(scope === "employee" &&
           selectedEmployeeId && { employeeId: selectedEmployeeId }),
@@ -55,9 +57,12 @@ const ModernDashboard = () => {
       };
 
       // Use the new optimized dashboard API
-      const response = await fetch(`${API_BASE}/dashboard?${queryParams}`, {
-        headers,
-      });
+      const response = await fetch(
+        `${API_BASE}/dashboard-prisma?${queryParams}`,
+        {
+          headers,
+        }
+      );
       const data = await response.json();
 
       if (response.ok) {
@@ -87,15 +92,46 @@ const ModernDashboard = () => {
     }
   }, [
     user?.tenantId,
+    user?.id,
+    user?.role,
     scope,
     selectedEmployeeId,
     dateRange.start,
     dateRange.end,
   ]);
 
+  // Fetch employees for dropdown
+  const fetchEmployees = useCallback(async () => {
+    try {
+      const tenantId = user?.tenantId;
+      if (!tenantId) return;
+
+      const headers = {
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      };
+
+      const response = await fetch(
+        `${API_BASE}/dashboard/employees?tenantId=${tenantId}`,
+        {
+          headers,
+        }
+      );
+      const data = await response.json();
+
+      if (response.ok) {
+        setEmployees(data.employees || []);
+      } else {
+        console.error("Error fetching employees:", data.message);
+      }
+    } catch (error) {
+      console.error("Error fetching employees:", error);
+    }
+  }, [user?.tenantId]);
+
   useEffect(() => {
     fetchDashboardData();
-  }, [fetchDashboardData, scope, selectedEmployeeId]);
+    fetchEmployees();
+  }, [fetchDashboardData, fetchEmployees, scope, selectedEmployeeId]);
 
   // Staffing Management Metrics - Updated to use optimized data
   const getTotalRevenue = () => {
@@ -352,9 +388,9 @@ const ModernDashboard = () => {
                 onChange={(e) => setSelectedEmployeeId(e.target.value || null)}
               >
                 <option value="">Select Employee</option>
-                {dashboardData.employees.map((emp) => (
+                {employees.map((emp) => (
                   <option key={emp.id} value={emp.id}>
-                    {emp.firstName} {emp.lastName}
+                    {emp.name}
                   </option>
                 ))}
               </select>

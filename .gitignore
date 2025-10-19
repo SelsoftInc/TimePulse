@@ -29,3 +29,5 @@ dist/
 .vscode/
 *.swp
 *.swo
+
+/generated/prisma

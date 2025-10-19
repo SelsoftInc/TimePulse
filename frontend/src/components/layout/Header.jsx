@@ -1,10 +1,10 @@
 // src/components/layout/Header.jsx
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { PERMISSIONS } from "../../utils/roles";
+// import { PERMISSIONS } from "../../utils/roles";
 import { useAuth } from "../../contexts/AuthContext";
 import { useTheme } from "../../contexts/ThemeContext";
-import PermissionGuard from "../common/PermissionGuard";
+// import PermissionGuard from "../common/PermissionGuard";
 import TimesheetAlerts from "../notifications/TimesheetAlerts";
 import AskAIButton from "../ai/AskAIButton";
 // import logo2 from "../../assets/images/jsTree/logo2.png";
@@ -86,7 +86,7 @@ const Header = ({ toggleSidebar }) => {
     // Method 2: From user context
     if (!tenant && user?.tenantId) {
       const currentPath = window.location.pathname;
-      const subdomainMatch = currentPath.match(/\/([^\/]+)\//);
+      const subdomainMatch = currentPath.match(/\/([^/]+)\//);
       if (subdomainMatch) {
         tenant = { subdomain: subdomainMatch[1] };
       }

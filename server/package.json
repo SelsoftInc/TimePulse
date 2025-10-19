@@ -34,9 +34,14 @@
     "dev": "nodemon index.js",
     "setup-db": "node scripts/setup-db.js",
     "setup-dashboard": "node scripts/setup-dashboard.js",
+    "seed-dashboard": "node scripts/seed-dashboard-data.js",
     "migrate:add-client-type": "node scripts/migrate-add-client-type.js",
     "migrate:create-vendors": "node scripts/migrate-create-vendors.js",
     "migrate:add-employee-vendor-impl-partner": "node scripts/migrate-add-employee-vendor-impl-partner.js",
+    "prisma:pull": "cd .. && prisma db pull && prisma generate",
+    "prisma:studio": "cd .. && prisma studio",
+    "migrate:dev": "cd .. && prisma migrate dev",
+    "migrate:deploy": "cd .. && prisma migrate deploy",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "devDependencies": {

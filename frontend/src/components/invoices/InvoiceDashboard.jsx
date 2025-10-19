@@ -1,9 +1,11 @@
 // src/components/invoices/InvoiceDashboard.jsx
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import "./InvoiceDashboard.css";
 
 const InvoiceDashboard = () => {
+  const { subdomain } = useParams();
+
   // Real data from API
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -136,10 +138,13 @@ const InvoiceDashboard = () => {
                 </div>
                 <div className="nk-block-head-content">
                   <div className="toggle-wrap nk-block-tools-toggle">
-                    <button className="btn btn-primary">
+                    <Link
+                      to={`/${subdomain}/invoices/new`}
+                      className="btn btn-primary"
+                    >
                       <em className="icon ni ni-plus"></em>
                       <span>Create Invoice</span>
-                    </button>
+                    </Link>
                   </div>
                 </div>
               </div>

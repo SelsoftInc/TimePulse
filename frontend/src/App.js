@@ -15,6 +15,8 @@ import TimesheetAutoConvert from "./components/timesheets/TimesheetAutoConvert";
 import Invoice from "./components/invoices/Invoice";
 import InvoiceDashboard from "./components/invoices/InvoiceDashboard";
 import InvoiceForm from "./components/invoices/InvoiceForm";
+import InvoiceCreation from "./components/invoices/InvoiceCreation";
+import ManualInvoiceForm from "./components/invoices/ManualInvoiceForm";
 import ReportsDashboard from "./components/reports/ReportsDashboard";
 import ClientsList from "./components/clients/ClientsList";
 import ClientDetails from "./components/clients/ClientDetails";
@@ -436,7 +438,9 @@ function App() {
                   path="/:subdomain/implementation-partners"
                   element={
                     <ProtectedRoute
-                      requiredPermission={PERMISSIONS.VIEW_IMPLEMENTATION_PARTNER}
+                      requiredPermission={
+                        PERMISSIONS.VIEW_IMPLEMENTATION_PARTNER
+                      }
                     >
                       <EmployerLayout>
                         <ImplementationPartnerList />
@@ -448,7 +452,9 @@ function App() {
                   path="/:subdomain/implementation-partners/new"
                   element={
                     <ProtectedRoute
-                      requiredPermission={PERMISSIONS.CREATE_IMPLEMENTATION_PARTNER}
+                      requiredPermission={
+                        PERMISSIONS.CREATE_IMPLEMENTATION_PARTNER
+                      }
                     >
                       <EmployerLayout>
                         <ImplementationPartnerForm />
@@ -460,7 +466,9 @@ function App() {
                   path="/:subdomain/implementation-partners/:id"
                   element={
                     <ProtectedRoute
-                      requiredPermission={PERMISSIONS.VIEW_IMPLEMENTATION_PARTNER}
+                      requiredPermission={
+                        PERMISSIONS.VIEW_IMPLEMENTATION_PARTNER
+                      }
                     >
                       <EmployerLayout>
                         <ImplementationPartnerDetail />
@@ -472,7 +480,9 @@ function App() {
                   path="/:subdomain/implementation-partners/:id/edit"
                   element={
                     <ProtectedRoute
-                      requiredPermission={PERMISSIONS.EDIT_IMPLEMENTATION_PARTNER}
+                      requiredPermission={
+                        PERMISSIONS.EDIT_IMPLEMENTATION_PARTNER
+                      }
                     >
                       <EmployerLayout>
                         <ImplementationPartnerEdit />
@@ -500,6 +510,30 @@ function App() {
                     >
                       <EmployerLayout>
                         <InvoiceDashboard />
+                      </EmployerLayout>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/:subdomain/invoices/new"
+                  element={
+                    <ProtectedRoute
+                      requiredPermission={PERMISSIONS.CREATE_INVOICE}
+                    >
+                      <EmployerLayout>
+                        <InvoiceCreation />
+                      </EmployerLayout>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/:subdomain/invoices/new/manual"
+                  element={
+                    <ProtectedRoute
+                      requiredPermission={PERMISSIONS.CREATE_INVOICE}
+                    >
+                      <EmployerLayout>
+                        <ManualInvoiceForm />
                       </EmployerLayout>
                     </ProtectedRoute>
                   }

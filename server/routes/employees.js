@@ -18,10 +18,9 @@ router.get("/", async (req, res) => {
     const whereClause = { tenantId };
     if (status && status !== "all") {
       whereClause.status = status;
-    } else {
-      whereClause.status = "active"; // Default to active employees
     }
-
+    // If status is "all" or not provided, don't filter by status (show all employees)
+    
     const allEmployees = await Employee.findAll({
       where: whereClause,
       // Include all attributes including the new relationship fields
@@ -83,14 +82,19 @@ router.get("/", async (req, res) => {
       ],
     });
 
-    // Filter out admin users at application level (only for active employees)
+    // Filter out employees without user records and admin users at application level
     const employees = allEmployees.filter((emp) => {
+      // Only show employees that have user records
+      if (!emp.user) {
+        return false;
+      }
+      
       // For inactive employees, show them regardless of role (they might be admins who were deactivated)
       if (emp.status === "inactive") {
         return true;
       }
       // For active employees, exclude admin users
-      return !emp.user || emp.user.role !== "admin";
+      return emp.user.role !== "admin";
     });
 
     // Transform the data to match frontend expectations
@@ -117,7 +121,7 @@ router.get("/", async (req, res) => {
           }
         : null,
       clientId: emp.clientId,
-      employmentType: emp.employmentType?.name || "hourly",
+      employmentType: emp.employmentType?.name || "W2",
       // Vendor relationship data
       vendor: emp.vendor
         ? {
@@ -268,7 +272,7 @@ router.get("/:id", async (req, res) => {
           }
         : null,
       clientId: employee.clientId,
-      employmentType: employee.salaryType || "hourly",
+      employmentType: employee.employmentType?.name || "W2",
       // Vendor relationship data
       vendor: employee.vendor
         ? {

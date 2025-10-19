@@ -7,6 +7,7 @@ import { useToast } from "../../contexts/ToastContext";
 import { API_BASE } from "../../config/api";
 import "./Clients.css";
 import "../common/Pagination.css";
+import "../common/TableScroll.css";
 
 const ClientsList = () => {
   const { subdomain } = useParams();
@@ -241,7 +242,7 @@ const ClientsList = () => {
             </div>
           ) : (
             <div className="card">
-              <div className="card-inne">
+              <div className="card-inne table-responsive">
                 <table className="table table-clients">
                   <thead>
                     <tr>

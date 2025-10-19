@@ -10,6 +10,7 @@ import { useConfirmation } from "../../hooks/useConfirmation";
 import "./Employees.css";
 import "./EmployeeManagement.css";
 import "../common/Pagination.css";
+import "../common/TableScroll.css";
 import { apiFetch } from "../../config/api";
 
 const EmployeeList = () => {
@@ -22,7 +23,7 @@ const EmployeeList = () => {
   const [error, setError] = useState("");
   const [filters, setFilters] = useState({
     employmentType: "all",
-    status: "active", // Default to active employees only
+    status: "all", // Default to all employees (active and inactive)
     search: "",
   });
 

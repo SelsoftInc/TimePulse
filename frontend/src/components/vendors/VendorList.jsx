@@ -7,6 +7,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import { useToast } from "../../contexts/ToastContext";
 import ConfirmDialog from "../common/ConfirmDialog";
 import "../common/Pagination.css";
+import "../common/TableScroll.css";
 
 const VendorList = () => {
   const { subdomain } = useParams();
@@ -169,7 +170,7 @@ const VendorList = () => {
             </div>
           ) : (
             <div className="card">
-              <div className="card-inne">
+              <div className="card-inne table-responsive">
                 {vendors.length === 0 ? (
                   <div className="text-center text-muted py-5">
                     <p className="mb-2">No vendors found.</p>

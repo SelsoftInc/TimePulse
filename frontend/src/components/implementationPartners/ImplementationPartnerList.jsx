@@ -7,6 +7,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import { useToast } from "../../contexts/ToastContext";
 import ConfirmDialog from "../common/ConfirmDialog";
 import "../common/Pagination.css";
+import "../common/TableScroll.css";
 
 const ImplementationPartnerList = () => {
   const { subdomain } = useParams();
@@ -294,7 +295,7 @@ const ImplementationPartnerList = () => {
             </div>
           ) : (
             <div className="card">
-              <div className="card-inne">
+              <div className="card-inne table-responsive">
                 <table className="table table-implementation-partners">
                   <thead>
                     <tr>

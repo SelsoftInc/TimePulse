@@ -215,23 +215,26 @@ const Header = ({ toggleSidebar }) => {
               ></i>
             </div>
 
-            <div
-              className="header-action-item"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                console.log("Gear icon clicked!");
-                console.log(
-                  "Current URL before navigation:",
-                  window.location.href
-                );
-                goToSettings();
-              }}
-              style={{ cursor: "pointer" }}
-              title="Settings"
-            >
-              <i className="fas fa-cog header-action-icon"></i>
-            </div>
+            {/* Settings icon - only show for admin/approver roles */}
+            {user?.role === "admin" || user?.role === "approver" ? (
+              <div
+                className="header-action-item"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  console.log("Gear icon clicked!");
+                  console.log(
+                    "Current URL before navigation:",
+                    window.location.href
+                  );
+                  goToSettings();
+                }}
+                style={{ cursor: "pointer" }}
+                title="Settings"
+              >
+                <i className="fas fa-cog header-action-icon"></i>
+              </div>
+            ) : null}
 
             {/* User dropdown */}
             <div

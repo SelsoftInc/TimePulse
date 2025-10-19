@@ -33,6 +33,7 @@
     "start": "node index.js",
     "dev": "nodemon index.js",
     "setup-db": "node scripts/setup-db.js",
+    "setup-dashboard": "node scripts/setup-dashboard.js",
     "migrate:add-client-type": "node scripts/migrate-add-client-type.js",
     "migrate:create-vendors": "node scripts/migrate-create-vendors.js",
     "migrate:add-employee-vendor-impl-partner": "node scripts/migrate-add-employee-vendor-impl-partner.js",

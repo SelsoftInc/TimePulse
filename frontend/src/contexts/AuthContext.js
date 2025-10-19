@@ -1,6 +1,6 @@
 // src/contexts/AuthContext.js
-import React, { createContext, useState, useContext, useEffect } from 'react';
-import { hasPermission, ROLES } from '../utils/roles';
+import React, { createContext, useState, useContext, useEffect } from "react";
+import { hasPermission, ROLES } from "../utils/roles";
 
 // Create the context
 const AuthContext = createContext();
@@ -17,24 +17,28 @@ export const AuthProvider = ({ children }) => {
     const initializeAuth = () => {
       try {
         // Check for token
-        const token = localStorage.getItem('token');
-        
+        const token = localStorage.getItem("token");
+
         if (!token) {
           setLoading(false);
           return;
         }
-        
+
         // Get user info
-        const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
-        const employer = JSON.parse(localStorage.getItem('currentEmployer') || localStorage.getItem('currentTenant') || 'null');
-        
+        const userInfo = JSON.parse(localStorage.getItem("userInfo") || "{}");
+        const employer = JSON.parse(
+          localStorage.getItem("currentEmployer") ||
+            localStorage.getItem("currentTenant") ||
+            "null"
+        );
+
         if (userInfo && Object.keys(userInfo).length > 0) {
           setUser(userInfo);
           setIsAuthenticated(true);
           setCurrentEmployer(employer);
         }
       } catch (error) {
-        console.error('Error initializing auth:', error);
+        console.error("Error initializing auth:", error);
       } finally {
         setLoading(false);
       }
@@ -46,25 +50,25 @@ export const AuthProvider = ({ children }) => {
   // Login function
   const login = (userData, employerData) => {
     // Store user data in localStorage
-    localStorage.setItem('token', 'mock-jwt-token');
-    localStorage.setItem('userInfo', JSON.stringify(userData));
-    
+    localStorage.setItem("token", "mock-jwt-token");
+    localStorage.setItem("userInfo", JSON.stringify(userData));
+
     if (employerData) {
-      localStorage.setItem('currentEmployer', JSON.stringify(employerData));
+      localStorage.setItem("currentEmployer", JSON.stringify(employerData));
       setCurrentEmployer(employerData);
     }
-    
+
     setUser(userData);
     setIsAuthenticated(true);
   };
 
   // Logout function
   const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('userInfo');
-    localStorage.removeItem('currentEmployer');
-    localStorage.removeItem('currentTenant'); // Remove legacy item too
-    
+    localStorage.removeItem("token");
+    localStorage.removeItem("userInfo");
+    localStorage.removeItem("currentEmployer");
+    localStorage.removeItem("currentTenant"); // Remove legacy item too
+
     setUser(null);
     setIsAuthenticated(false);
     setCurrentEmployer(null);
@@ -72,7 +76,7 @@ export const AuthProvider = ({ children }) => {
 
   // Set current employer
   const switchEmployer = (employer) => {
-    localStorage.setItem('currentEmployer', JSON.stringify(employer));
+    localStorage.setItem("currentEmployer", JSON.stringify(employer));
     setCurrentEmployer(employer);
   };
 
@@ -112,7 +116,7 @@ export const AuthProvider = ({ children }) => {
     checkPermission,
     isAdmin,
     isApprover,
-    isEmployee
+    isEmployee,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
@@ -122,7 +126,7 @@ export const AuthProvider = ({ children }) => {
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 };

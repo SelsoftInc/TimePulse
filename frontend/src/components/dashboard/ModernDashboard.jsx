@@ -12,13 +12,21 @@ const ModernDashboard = () => {
     clients: [],
     invoices: [],
     leaveRequests: [],
+    // New optimized data
+    kpis: {},
+    arAging: {},
+    revenueByEmployee: [],
+    revenueTrend: [],
+    scope: "company",
+    employeeId: null,
+    dateRange: {},
   });
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [scope, setScope] = useState(
     user?.role === "admin" ? "company" : "employee"
   );
-  const [selectedEmployee] = useState(null);
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState(null);
   const [dateRange] = useState({
     start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // 30 days ago
     end: new Date(),
@@ -30,101 +38,100 @@ const ModernDashboard = () => {
       const tenantId = user?.tenantId;
       if (!tenantId) return;
 
-      // Build query parameters based on scope
+      // Build query parameters for the new optimized dashboard API
       const queryParams = new URLSearchParams({
-        tenantId,
         scope,
-        ...(scope === "employee" && selectedEmployee && { employeeId: selectedEmployee })
+        ...(scope === "employee" &&
+          selectedEmployeeId && { employeeId: selectedEmployeeId }),
+        // Add date range if needed
+        ...(dateRange.start && {
+          from: dateRange.start.toISOString().split("T")[0],
+        }),
+        ...(dateRange.end && { to: dateRange.end.toISOString().split("T")[0] }),
       });
 
-      const [timesheetsRes, employeesRes, clientsRes, invoicesRes, leaveRes] =
-        await Promise.all([
-          fetch(`${API_BASE}/timesheets?${queryParams}`),
-          fetch(`${API_BASE}/employees?tenantId=${tenantId}`),
-          fetch(`${API_BASE}/clients?tenantId=${tenantId}`),
-          fetch(`${API_BASE}/invoices?${queryParams}`),
-          fetch(`${API_BASE}/leave-requests?${queryParams}`),
-        ]);
+      const headers = {
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      };
 
-      const [timesheets, employees, clients, invoices, leaveRequests] =
-        await Promise.all([
-          timesheetsRes.json(),
-          employeesRes.json(),
-          clientsRes.json(),
-          invoicesRes.json(),
-          leaveRes.json(),
-        ]);
-
-      setDashboardData({
-        timesheets: timesheets.timesheets || [],
-        employees: employees.employees || [],
-        clients: clients.clients || [],
-        invoices: invoices.invoices || [],
-        leaveRequests: leaveRequests.leaveRequests || [],
+      // Use the new optimized dashboard API
+      const response = await fetch(`${API_BASE}/dashboard?${queryParams}`, {
+        headers,
       });
+      const data = await response.json();
+
+      if (response.ok) {
+        setDashboardData({
+          // Transform the new API response to match existing structure
+          timesheets: [], // Not needed for the new dashboard
+          employees: data.revenueByEmployee || [],
+          clients: [], // Not needed for the new dashboard
+          invoices: [], // Not needed for the new dashboard
+          leaveRequests: [], // Not needed for the new dashboard
+          // New optimized data
+          kpis: data.kpis || {},
+          arAging: data.arAging || {},
+          revenueByEmployee: data.revenueByEmployee || [],
+          revenueTrend: data.revenueTrend || [],
+          scope: data.scope,
+          employeeId: data.employeeId,
+          dateRange: data.dateRange,
+        });
+      } else {
+        throw new Error(data.message || "Failed to fetch dashboard data");
+      }
     } catch (error) {
       console.error("Error fetching dashboard data:", error);
     } finally {
       setLoading(false);
     }
-  }, [user?.tenantId, scope, selectedEmployee]);
+  }, [
+    user?.tenantId,
+    scope,
+    selectedEmployeeId,
+    dateRange.start,
+    dateRange.end,
+  ]);
 
   useEffect(() => {
     fetchDashboardData();
-  }, [fetchDashboardData, scope, selectedEmployee]);
+  }, [fetchDashboardData, scope, selectedEmployeeId]);
 
-  // Staffing Management Metrics
+  // Staffing Management Metrics - Updated to use optimized data
   const getTotalRevenue = () => {
-    return dashboardData.invoices
-      .filter((inv) => inv.status === "paid")
-      .reduce((sum, inv) => sum + (parseFloat(inv.total_amount) || 0), 0);
+    return parseFloat(dashboardData.kpis?.total_revenue || 0);
   };
 
   const getMonthlyRevenue = () => {
-    const currentMonth = new Date().getMonth();
-    const currentYear = new Date().getFullYear();
-
-    return dashboardData.invoices
-      .filter((inv) => {
-        const invDate = new Date(inv.created_at);
-        return (
-          inv.status === "paid" &&
-          invDate.getMonth() === currentMonth &&
-          invDate.getFullYear() === currentYear
-        );
-      })
-      .reduce((sum, inv) => sum + (parseFloat(inv.total_amount) || 0), 0);
+    // For now, use total revenue as monthly revenue
+    // In the future, we can add a separate monthly KPI
+    return parseFloat(dashboardData.kpis?.total_revenue || 0);
   };
 
   const getOutstandingInvoices = () => {
-    return dashboardData.invoices
-      .filter((inv) => inv.status === "pending" || inv.status === "overdue")
-      .reduce((sum, inv) => sum + (parseFloat(inv.total_amount) || 0), 0);
+    return parseFloat(dashboardData.kpis?.ar_outstanding || 0);
   };
 
   const getActiveEmployees = () => {
-    return dashboardData.employees.filter((emp) => emp.status === "active")
-      .length;
+    return parseInt(dashboardData.kpis?.active_employees || 0);
   };
 
   const getTotalHoursThisWeek = () => {
-    const thisWeek = dashboardData.timesheets.filter((ts) => {
-      const weekStart = new Date();
-      weekStart.setDate(weekStart.getDate() - weekStart.getDay());
-      return new Date(ts.weekStart) >= weekStart;
-    });
-
-    return thisWeek.reduce((sum, ts) => sum + (ts.totalHours || 0), 0);
+    // For employee scope, use the total hours from KPIs
+    if (scope === "employee") {
+      return parseFloat(dashboardData.kpis?.total_hours || 0);
+    }
+    // For company scope, we'd need to calculate from timesheets
+    // For now, return 0 as this would require additional API call
+    return 0;
   };
 
   const getPendingTimesheets = () => {
-    return dashboardData.timesheets.filter((ts) => ts.status === "pending")
-      .length;
+    return parseInt(dashboardData.kpis?.ts_pending || 0);
   };
 
   const getApprovedTimesheets = () => {
-    return dashboardData.timesheets.filter((ts) => ts.status === "approved")
-      .length;
+    return parseInt(dashboardData.kpis?.ts_approved || 0);
   };
 
   const getEmployeeUtilization = () => {
@@ -294,6 +301,29 @@ const ModernDashboard = () => {
                 year: "numeric",
               })}
             </span>
+            <span className="scope-indicator">
+              {scope === "company" ? (
+                <>
+                  <i className="fas fa-building"></i>
+                  Company Overview
+                </>
+              ) : (
+                <>
+                  <i className="fas fa-user"></i>
+                  {selectedEmployeeId
+                    ? `Employee: ${
+                        dashboardData.employees.find(
+                          (emp) => emp.id === selectedEmployeeId
+                        )?.firstName || "Selected"
+                      } ${
+                        dashboardData.employees.find(
+                          (emp) => emp.id === selectedEmployeeId
+                        )?.lastName || ""
+                      }`
+                    : "Employee View"}
+                </>
+              )}
+            </span>
             <span className="refresh-indicator">Refreshed: Now</span>
           </div>
         </div>
@@ -313,6 +343,23 @@ const ModernDashboard = () => {
               Employee
             </button>
           </div>
+
+          {scope === "employee" && (
+            <div className="employee-selector">
+              <select
+                className="employee-dropdown"
+                value={selectedEmployeeId || ""}
+                onChange={(e) => setSelectedEmployeeId(e.target.value || null)}
+              >
+                <option value="">Select Employee</option>
+                {dashboardData.employees.map((emp) => (
+                  <option key={emp.id} value={emp.id}>
+                    {emp.firstName} {emp.lastName}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           <div className="search-container">
             <i className="fas fa-search search-icon"></i>

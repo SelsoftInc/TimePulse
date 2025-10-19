@@ -1,73 +1,75 @@
-import React, { useState } from 'react';
-import './Auth.css';
+import React, { useState } from "react";
+import "./Auth.css";
 
 const SimpleLogin = () => {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   const handleSimpleLogin = () => {
     setIsLoggingIn(true);
-    console.log('Simple login button clicked');
-    
+    console.log("Simple login button clicked");
+
     try {
       // Clear any existing data first
       localStorage.clear();
-      
+
       // Set token
-      localStorage.setItem('token', 'mock-jwt-token');
-      
+      localStorage.setItem("token", "mock-jwt-token");
+
       // Set user info
       const userInfo = {
-        id: 'user-123',
-        email: 'demo@timepulse.com',
-        name: 'Demo User'
+        id: "user-123",
+        email: "demo@timepulse.com",
+        name: "Demo User",
+        role: "admin",
+        tenantId: "c92fe40d-af85-4c8b-8053-71df10680804",
       };
-      localStorage.setItem('user', JSON.stringify(userInfo));
-      localStorage.setItem('userInfo', JSON.stringify(userInfo));
-      
+      localStorage.setItem("user", JSON.stringify(userInfo));
+      localStorage.setItem("userInfo", JSON.stringify(userInfo));
+
       // Create a default tenant
       const defaultTenant = {
-        id: 'tenant-123',
-        name: 'Selsoft',
-        subdomain: 'selsoft',
-        status: 'active',
-        role: 'admin'
+        id: "c92fe40d-af85-4c8b-8053-71df10680804",
+        name: "Selsoft",
+        subdomain: "selsoft",
+        status: "active",
+        role: "admin",
       };
-      
+
       // Create mock workspaces/tenants
       const mockWorkspaces = [
         {
-          id: 'tenant-123',
-          name: 'Selsoft',
-          subdomain: 'selsoft',
-          status: 'active',
-          role: 'admin',
-          industry: 'Technology',
-          createdAt: '2025-01-15',
-          lastAccessed: '2025-07-05'
+          id: "c92fe40d-af85-4c8b-8053-71df10680804",
+          name: "Selsoft",
+          subdomain: "selsoft",
+          status: "active",
+          role: "admin",
+          industry: "Technology",
+          createdAt: "2025-01-15",
+          lastAccessed: "2025-07-05",
         },
         {
-          id: 'tenant-456',
-          name: 'Test Organization',
-          subdomain: 'test-org',
-          status: 'trial',
-          role: 'admin',
-          industry: 'Consulting',
-          createdAt: '2025-06-10',
-          lastAccessed: '2025-07-03'
-        }
+          id: "tenant-456",
+          name: "Test Organization",
+          subdomain: "test-org",
+          status: "trial",
+          role: "admin",
+          industry: "Consulting",
+          createdAt: "2025-06-10",
+          lastAccessed: "2025-07-03",
+        },
       ];
-      
+
       // Store tenant and current tenant
-      localStorage.setItem('tenants', JSON.stringify(mockWorkspaces));
-      localStorage.setItem('currentTenant', JSON.stringify(defaultTenant));
-      localStorage.setItem('currentEmployer', JSON.stringify(defaultTenant));
-      
-      console.log('Authentication data set, navigating to workspaces');
-      
+      localStorage.setItem("tenants", JSON.stringify(mockWorkspaces));
+      localStorage.setItem("currentTenant", JSON.stringify(defaultTenant));
+      localStorage.setItem("currentEmployer", JSON.stringify(defaultTenant));
+
+      console.log("Authentication data set, navigating to workspaces");
+
       // Use window.location for a full page reload to ensure app state is reset
-      window.location.href = '/workspaces';
+      window.location.href = "/workspaces";
     } catch (error) {
-      console.error('Error during login:', error);
+      console.error("Error during login:", error);
       setIsLoggingIn(false);
     }
   };
@@ -80,20 +82,25 @@ const SimpleLogin = () => {
           <p>One-click access to the demo account</p>
         </div>
 
-        
         <div className="simple-login-content">
-          <p>Click the button below to instantly access the TimePulse demo with pre-configured settings.</p>
-          
-          <button 
-            onClick={handleSimpleLogin} 
+          <p>
+            Click the button below to instantly access the TimePulse demo with
+            pre-configured settings.
+          </p>
+
+          <button
+            onClick={handleSimpleLogin}
             className="btn-primary btn-block btn-lg"
             disabled={isLoggingIn}
           >
-            {isLoggingIn ? 'Logging in...' : 'Access Demo Account'}
+            {isLoggingIn ? "Logging in..." : "Access Demo Account"}
           </button>
-          
+
           <div className="simple-login-info">
-            <p><strong>Note:</strong> This is a simplified login for demonstration purposes.</p>
+            <p>
+              <strong>Note:</strong> This is a simplified login for
+              demonstration purposes.
+            </p>
           </div>
         </div>
       </div>

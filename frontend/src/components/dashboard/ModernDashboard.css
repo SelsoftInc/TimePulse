@@ -65,6 +65,23 @@
   color: #6c757d !important;
   font-size: 0.95rem;
   font-weight: 500;
+  flex-wrap: wrap;
+}
+
+.scope-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(0, 123, 255, 0.1);
+  color: #007bff !important;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-weight: 500;
+  font-size: 0.85rem;
+}
+
+.scope-indicator i {
+  font-size: 0.8rem;
 }
 
 .dashboard-subtitle i {
@@ -116,6 +133,42 @@
 
 .toggle-btn:hover:not(.active) {
   color: rgba(255, 255, 255, 0.9);
+}
+
+/* Employee Selector */
+.employee-selector {
+  margin-left: 16px;
+}
+
+.employee-dropdown {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 6px;
+  padding: 8px 12px;
+  color: #2c3e50;
+  font-weight: 500;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 200px;
+  backdrop-filter: blur(10px);
+}
+
+.employee-dropdown:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+.employee-dropdown:hover {
+  background: rgba(255, 255, 255, 1);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.employee-dropdown option {
+  background: white;
+  color: #2c3e50;
+  padding: 8px;
 }
 
 .search-container {
@@ -652,6 +705,25 @@
 @media (max-width: 1200px) {
   .widgets-grid {
     grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .dashboard-controls {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+  
+  .scope-toggle {
+    justify-content: center;
+  }
+  
+  .employee-selector {
+    margin-left: 0;
+    margin-top: 8px;
+  }
+  
+  .employee-dropdown {
+    min-width: 100%;
   }
 }
 

@@ -86,14 +86,14 @@ const Login = () => {
             formData.email === "test" ? "test@example.com" : formData.email,
           name: "Demo User",
           role: "admin",
-          tenantId: "6d872133-6fab-4804-9abf-187ece5d7d40",
+          tenantId: "c92fe40d-af85-4c8b-8053-71df10680804",
         };
         localStorage.setItem("user", JSON.stringify(userInfo));
         localStorage.setItem("userInfo", JSON.stringify(userInfo)); // App.js uses userInfo key
 
         // Create a default tenant for testing using real tenant ID
         const defaultTenant = {
-          id: "6d872133-6fab-4804-9abf-187ece5d7d40",
+          id: "c92fe40d-af85-4c8b-8053-71df10680804",
           name: "Selsoft",
           subdomain: "selsoft",
           status: "active",

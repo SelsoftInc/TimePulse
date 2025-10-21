@@ -42,17 +42,7 @@ const dashboardRoutes = require("./routes/dashboard");
 const dashboardPrismaRoutes = require("./routes/dashboard-prisma");
 
 // Middleware
-app.use(
-  cors({
-    origin: [
-      "http://localhost:3000",
-      "http://127.0.0.1:3000",
-      "http://localhost:3001",
-      "http://127.0.0.1:3001",
-    ],
-    credentials: true,
-  })
-);
+app.use(cors()); // Completely open CORS for debugging
 
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ extended: true, limit: "50mb" }));

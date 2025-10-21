@@ -48,9 +48,11 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   // Login function
-  const login = (userData, employerData) => {
+  const login = (userData, employerData, token) => {
     // Store user data in localStorage
-    localStorage.setItem("token", "mock-jwt-token");
+    if (token) {
+      localStorage.setItem("token", token);
+    }
     localStorage.setItem("userInfo", JSON.stringify(userData));
 
     if (employerData) {

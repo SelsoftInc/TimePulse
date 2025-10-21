@@ -53,6 +53,5 @@
     "@pmmmwh/react-refresh-webpack-plugin": "^0.6.1",
     "react-scripts": "^5.0.1",
     "source-map-loader": "^5.0.0"
-  },
-  "proxy": "http://localhost:5000"
+  }
 }

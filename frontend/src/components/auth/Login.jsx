@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import "./Auth.css";
-import { API_BASE } from "../../config/api";
+import { API_BASE, apiFetch } from "../../config/api";
 import logo2 from "../../assets/images/jsTree/TimePulseLogoAuth.png";
 
 const Login = () => {
@@ -70,42 +70,82 @@ const Login = () => {
     try {
       // Check for demo credentials first
       if (
-        (formData.email === "test" || formData.email === "test@example.com") &&
-        formData.password === "test"
+        (formData.email === "test" ||
+          formData.email === "test@example.com" ||
+          formData.email === "pushban@selsoftinc.com") &&
+        (formData.password === "password" || formData.password === "test123#")
       ) {
-        // Simulate API call for login
-        await new Promise((resolve) => setTimeout(resolve, 800));
+        // Use real authentication for test user
+        console.log("=== DEBUGGING LOGIN ===");
+        console.log("Making request to: http://localhost:5001/api/auth/login");
 
-        // Mock successful login
-        localStorage.setItem("token", "mock-jwt-token");
+        let response, data;
+        try {
+          response = await fetch("http://localhost:5001/api/auth/login", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              email:
+                formData.email === "test"
+                  ? "pushban@selsoftinc.com"
+                  : formData.email,
+              password:
+                formData.password === "password"
+                  ? "test123#"
+                  : formData.password,
+            }),
+          });
 
-        // Store user info
-        const userInfo = {
-          id: "user-123",
-          email:
-            formData.email === "test" ? "test@example.com" : formData.email,
-          name: "Demo User",
-          role: "admin",
-          tenantId: "c92fe40d-af85-4c8b-8053-71df10680804",
-        };
-        localStorage.setItem("user", JSON.stringify(userInfo));
-        localStorage.setItem("userInfo", JSON.stringify(userInfo)); // App.js uses userInfo key
+          console.log("Response status:", response.status);
+          console.log("Response ok:", response.ok);
 
-        // Create a default tenant for testing using real tenant ID
-        const defaultTenant = {
-          id: "c92fe40d-af85-4c8b-8053-71df10680804",
-          name: "Selsoft",
-          subdomain: "selsoft",
-          status: "active",
-          role: "admin",
-        };
+          data = await response.json();
+          console.log("Response data:", data);
+        } catch (fetchError) {
+          console.error("Fetch error:", fetchError);
+          setError("Network error: " + fetchError.message);
+          return;
+        }
 
-        // Store the tenant info but don't set as current tenant yet
-        // This will direct the user to the workspace selection screen
-        localStorage.setItem("tenants", JSON.stringify([defaultTenant]));
+        if (response.ok && data.success) {
+          // Store authentication token
+          localStorage.setItem("token", data.token);
 
-        // Use window.location for full page reload to ensure proper state initialization
-        window.location.href = "/workspaces";
+          // Store user info
+          const userInfo = {
+            id: data.user.id,
+            email: data.user.email,
+            name: `${data.user.firstName} ${data.user.lastName}`,
+            firstName: data.user.firstName,
+            lastName: data.user.lastName,
+            role: data.user.role,
+            tenantId: data.user.tenantId,
+            employeeId: data.user.employeeId,
+          };
+          localStorage.setItem("user", JSON.stringify(userInfo));
+          localStorage.setItem("userInfo", JSON.stringify(userInfo));
+
+          // Store tenant info
+          if (data.tenant) {
+            const tenantInfo = {
+              id: data.tenant.id,
+              name: data.tenant.tenantName,
+              subdomain: data.tenant.subdomain,
+              status: "active",
+              role: data.user.role,
+            };
+            localStorage.setItem("tenants", JSON.stringify([tenantInfo]));
+            localStorage.setItem("currentTenant", JSON.stringify(tenantInfo));
+            localStorage.setItem("currentEmployer", JSON.stringify(tenantInfo));
+          }
+
+          // Use window.location for full page reload to ensure proper state initialization
+          window.location.href = "/workspaces";
+        } else {
+          setError(data.message || "Login failed");
+        }
       } else {
         // Try real authentication with backend
         const response = await fetch(`${API_BASE}/api/auth/login`, {

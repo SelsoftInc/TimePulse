@@ -1,10 +1,11 @@
 import React, { useState } from "react";
 import "./Auth.css";
+import { API_BASE, apiFetch } from "../../config/api";
 
 const SimpleLogin = () => {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
-  const handleSimpleLogin = () => {
+  const handleSimpleLogin = async () => {
     setIsLoggingIn(true);
     console.log("Simple login button clicked");
 
@@ -12,62 +13,60 @@ const SimpleLogin = () => {
       // Clear any existing data first
       localStorage.clear();
 
-      // Set token
-      localStorage.setItem("token", "mock-jwt-token");
-
-      // Set user info
-      const userInfo = {
-        id: "user-123",
-        email: "demo@timepulse.com",
-        name: "Demo User",
-        role: "admin",
-        tenantId: "c92fe40d-af85-4c8b-8053-71df10680804",
-      };
-      localStorage.setItem("user", JSON.stringify(userInfo));
-      localStorage.setItem("userInfo", JSON.stringify(userInfo));
-
-      // Create a default tenant
-      const defaultTenant = {
-        id: "c92fe40d-af85-4c8b-8053-71df10680804",
-        name: "Selsoft",
-        subdomain: "selsoft",
-        status: "active",
-        role: "admin",
-      };
-
-      // Create mock workspaces/tenants
-      const mockWorkspaces = [
-        {
-          id: "c92fe40d-af85-4c8b-8053-71df10680804",
-          name: "Selsoft",
-          subdomain: "selsoft",
-          status: "active",
-          role: "admin",
-          industry: "Technology",
-          createdAt: "2025-01-15",
-          lastAccessed: "2025-07-05",
+      // Use real authentication
+      const response = await fetch(`${API_BASE}/api/auth/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
         },
-        {
-          id: "tenant-456",
-          name: "Test Organization",
-          subdomain: "test-org",
-          status: "trial",
-          role: "admin",
-          industry: "Consulting",
-          createdAt: "2025-06-10",
-          lastAccessed: "2025-07-03",
-        },
-      ];
+        body: JSON.stringify({
+          email: "pushban@selsoftinc.com",
+          password: "test123#",
+        }),
+      });
 
-      // Store tenant and current tenant
-      localStorage.setItem("tenants", JSON.stringify(mockWorkspaces));
-      localStorage.setItem("currentTenant", JSON.stringify(defaultTenant));
-      localStorage.setItem("currentEmployer", JSON.stringify(defaultTenant));
+      const data = await response.json();
 
-      console.log("Authentication data set, navigating to workspaces");
+      if (response.ok && data.success) {
+        // Store authentication token
+        localStorage.setItem("token", data.token);
 
-      // Use window.location for a full page reload to ensure app state is reset
-      window.location.href = "/workspaces";
+        // Store user info
+        const userInfo = {
+          id: data.user.id,
+          email: data.user.email,
+          name: `${data.user.firstName} ${data.user.lastName}`,
+          firstName: data.user.firstName,
+          lastName: data.user.lastName,
+          role: data.user.role,
+          tenantId: data.user.tenantId,
+          employeeId: data.user.employeeId,
+        };
+        localStorage.setItem("user", JSON.stringify(userInfo));
+        localStorage.setItem("userInfo", JSON.stringify(userInfo));
+
+        // Store tenant info
+        if (data.tenant) {
+          const tenantInfo = {
+            id: data.tenant.id,
+            name: data.tenant.tenantName,
+            subdomain: data.tenant.subdomain,
+            status: "active",
+            role: data.user.role,
+          };
+          localStorage.setItem("tenants", JSON.stringify([tenantInfo]));
+          localStorage.setItem("currentTenant", JSON.stringify(tenantInfo));
+          localStorage.setItem("currentEmployer", JSON.stringify(tenantInfo));
+        }
+
+        console.log("Authentication data set, navigating to workspaces");
+
+        // Use window.location for a full page reload to ensure app state is reset
+        window.location.href = "/workspaces";
+      } else {
+        console.error("Login failed:", data.message);
+        setIsLoggingIn(false);
+      }
     } catch (error) {
       console.error("Error during login:", error);
       setIsLoggingIn(false);

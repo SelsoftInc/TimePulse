@@ -141,8 +141,9 @@ const Login = () => {
             localStorage.setItem("currentEmployer", JSON.stringify(tenantInfo));
           }
 
-          // Use window.location for full page reload to ensure proper state initialization
-          window.location.href = "/workspaces";
+          // Redirect directly to dashboard
+          const subdomain = data.tenant?.subdomain || "selsoft";
+          window.location.href = `/${subdomain}/dashboard`;
         } else {
           setError(data.message || "Login failed");
         }
@@ -193,13 +194,9 @@ const Login = () => {
             localStorage.setItem("currentEmployer", JSON.stringify(tenantInfo));
           }
 
-          // Redirect based on user role
+          // Redirect directly to dashboard
           const subdomain = data.tenant?.subdomain || "selsoft";
-          if (data.user.role === "employee") {
-            window.location.href = `/${subdomain}/dashboard`;
-          } else {
-            window.location.href = `/${subdomain}/dashboard`;
-          }
+          window.location.href = `/${subdomain}/dashboard`;
         } else {
           setError(
             data.message ||

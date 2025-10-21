@@ -59,10 +59,11 @@ const SimpleLogin = () => {
           localStorage.setItem("currentEmployer", JSON.stringify(tenantInfo));
         }
 
-        console.log("Authentication data set, navigating to workspaces");
+        console.log("Authentication data set, navigating to dashboard");
 
-        // Use window.location for a full page reload to ensure app state is reset
-        window.location.href = "/workspaces";
+        // Redirect directly to dashboard
+        const subdomain = data.tenant?.subdomain || "selsoft";
+        window.location.href = `/${subdomain}/dashboard`;
       } else {
         console.error("Login failed:", data.message);
         setIsLoggingIn(false);

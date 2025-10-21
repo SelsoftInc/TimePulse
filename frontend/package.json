@@ -10,13 +10,20 @@
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^13.5.0",
     "axios": "^1.6.0",
+    "file-saver": "^2.0.5",
     "libphonenumber-js": "^1.12.12",
+    "mammoth": "^1.11.0",
+    "pdf-parse": "^2.2.2",
+    "pdfjs-dist": "^3.11.174",
     "react": "^19.1.0",
     "react-circular-progressbar": "^2.2.0",
     "react-dom": "^19.1.0",
     "react-icons": "^5.5.0",
     "react-router-dom": "^6.30.1",
-    "web-vitals": "^2.1.4"
+    "socket.io-client": "^4.8.1",
+    "tesseract.js": "^4.1.4",
+    "web-vitals": "^2.1.4",
+    "xlsx": "^0.18.5"
   },
   "scripts": {
     "start": "react-scripts start",

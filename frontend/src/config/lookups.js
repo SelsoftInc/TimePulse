@@ -64,11 +64,36 @@ export const getPostalPlaceholder = (country) => {
 };
 
 // Standard payment terms used across the app
+// NOTE: This is now loaded dynamically from the database
+// This is kept as fallback only
 export const PAYMENT_TERMS_OPTIONS = [
+  { value: 'due_on_receipt', label: 'Due on Receipt' },
+  { value: 'net15', label: 'Net 15' },
   { value: 'net30', label: 'Net 30' },
+  { value: 'net45', label: 'Net 45' },
   { value: 'net60', label: 'Net 60' },
   { value: 'net90', label: 'Net 90' }
 ];
+
+// Fetch payment terms from API
+export const fetchPaymentTerms = async () => {
+  try {
+    const response = await fetch(`${process.env.REACT_APP_API_BASE || 'http://localhost:5001'}/api/lookups/payment_terms`);
+    if (response.ok) {
+      const data = await response.json();
+      if (data.success) {
+        return data.lookups.map(lookup => ({
+          value: lookup.code,
+          label: lookup.label
+        }));
+      }
+    }
+  } catch (error) {
+    console.error('Error fetching payment terms:', error);
+  }
+  // Return fallback if API fails
+  return PAYMENT_TERMS_OPTIONS;
+};
 
 // Basic tax id validation per country
 export function validateCountryTaxId(country, value) {

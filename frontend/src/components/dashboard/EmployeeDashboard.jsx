@@ -1,236 +1,348 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useParams } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
-import './Dashboard.css';
+import React, { useState, useEffect } from "react";
+import { Link, useParams } from "react-router-dom";
+import { useAuth } from "../../contexts/AuthContext";
+import { useToast } from "../../contexts/ToastContext";
+import { apiFetch } from "../../config/api";
+import "./EmployeeDashboard.css";
 
-// TimeCard component - Shows weekly timesheet status
-const TimeCard = ({ week, status, hours, dueDate, onSubmit }) => {
-  const getStatusClass = (status) => {
-    switch(status) {
-      case "Approved": return "success";
-      case "Pending": return "warning";
-      case "Rejected": return "danger";
-      case "Draft": return "gray";
-      case "Missing": return "danger";
-      case "Overdue": return "danger";
-      default: return "gray";
+// Modern TimeCard component with beautiful design
+const TimeCard = ({ week, status, hours, dueDate }) => {
+  const getStatusConfig = (status) => {
+    switch (status) {
+      case "Approved":
+        return {
+          class: "success",
+          icon: "✓",
+          color: "#10b981",
+          bgColor: "rgba(16, 185, 129, 0.1)",
+        };
+      case "Pending":
+        return {
+          class: "warning",
+          icon: "⏳",
+          color: "#f59e0b",
+          bgColor: "rgba(245, 158, 11, 0.1)",
+        };
+      case "Rejected":
+        return {
+          class: "danger",
+          icon: "✗",
+          color: "#ef4444",
+          bgColor: "rgba(239, 68, 68, 0.1)",
+        };
+      case "Draft":
+        return {
+          class: "info",
+          icon: "📝",
+          color: "#3b82f6",
+          bgColor: "rgba(59, 130, 246, 0.1)",
+        };
+      case "Missing":
+        return {
+          class: "danger",
+          icon: "⚠",
+          color: "#ef4444",
+          bgColor: "rgba(239, 68, 68, 0.1)",
+        };
+      default:
+        return {
+          class: "gray",
+          icon: "○",
+          color: "#6b7280",
+          bgColor: "rgba(107, 114, 128, 0.1)",
+        };
     }
   };
 
-  const isActionable = status === 'Missing' || status === 'Draft' || status === 'Overdue';
-  const isPastDue = new Date(dueDate) < new Date();
-  
+  const statusConfig = getStatusConfig(status);
+  const isActionable = status === "Missing" || status === "Draft";
+
   return (
-    <div className="card card-bordered h-100">
-      <div className="card-inner">
-        <div className="card-title-group align-start mb-2">
-          <div className="card-title">
-            <h6 className="title">Week of {week}</h6>
-            {isPastDue && status !== 'Approved' && status !== 'Pending' && (
-              <span className="badge badge-dim badge-danger ms-1">Past Due</span>
-            )}
-          </div>
-          <div className="card-tools">
-            <span className={`badge badge-dot badge-${getStatusClass(status)}`}>{status}</span>
-          </div>
+    <div className="modern-timecard">
+      <div className="timecard-header">
+        <div className="timecard-week">
+          <h4>Week of {week}</h4>
+          <p className="timecard-due">Due: {dueDate}</p>
         </div>
-        
-        <div className="align-end flex-sm-wrap g-4 flex-md-nowrap">
-          <div className="nk-sale-data">
-            <span className="amount">{hours} hrs</span>
-          </div>
+        <div
+          className="timecard-status"
+          style={{
+            backgroundColor: statusConfig.bgColor,
+            color: statusConfig.color,
+          }}
+        >
+          <span className="status-icon">{statusConfig.icon}</span>
+          <span className="status-text">{status}</span>
         </div>
-        
-        <div className="mt-3">
-          <div className="d-flex justify-content-between align-items-center">
-            <span className="text-soft">Due: {dueDate}</span>
-            {isActionable && (
-              <Link to={`/timesheets/submit/${week}`} className="btn btn-sm btn-primary">
-                {status === 'Draft' ? 'Continue' : 'Submit'}
-              </Link>
-            )}
-          </div>
+      </div>
+
+      <div className="timecard-hours">
+        <div className="hours-display">
+          <span className="hours-number">{hours}</span>
+          <span className="hours-label">hours</span>
         </div>
+
+        <div className="hours-progress">
+          <div
+            className="progress-bar"
+            style={{
+              width: `${Math.min((hours / 40) * 100, 100)}%`,
+              backgroundColor: statusConfig.color,
+            }}
+          ></div>
+        </div>
+      </div>
+
+      {isActionable && (
+        <div className="timecard-action">
+          <Link
+            to={`/timesheets/submit/${week}`}
+            className="btn-modern btn-primary"
+          >
+            {status === "Draft" ? "Continue Editing" : "Submit Timesheet"}
+          </Link>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Modern Statistics Cards
+const StatsCard = ({ title, value, subtitle, icon, color, trend }) => {
+  return (
+    <div className="stats-card">
+      <div className="stats-header">
+        <div
+          className="stats-icon"
+          style={{ backgroundColor: `${color}20`, color: color }}
+        >
+          {icon}
+        </div>
+        {trend && (
+          <div className={`stats-trend ${trend.type}`}>
+            <span className="trend-icon">
+              {trend.type === "up" ? "↗" : "↘"}
+            </span>
+            <span className="trend-value">{trend.value}%</span>
+          </div>
+        )}
+      </div>
+      <div className="stats-content">
+        <h3 className="stats-value">{value}</h3>
+        <p className="stats-title">{title}</p>
+        {subtitle && <p className="stats-subtitle">{subtitle}</p>}
       </div>
     </div>
   );
 };
 
-// HoursChart component - Shows hours breakdown
+// Modern Hours Chart component
 const HoursChart = ({ regularHours, overtimeHours, leaveHours }) => {
   const totalHours = regularHours + overtimeHours + leaveHours;
-  const regularPercent = totalHours > 0 ? (regularHours / totalHours) * 100 : 0;
-  const overtimePercent = totalHours > 0 ? (overtimeHours / totalHours) * 100 : 0;
-  const leavePercent = totalHours > 0 ? (leaveHours / totalHours) * 100 : 0;
-  
+
+  const chartData = [
+    {
+      label: "Regular Hours",
+      value: regularHours,
+      color: "#3b82f6",
+      icon: "🕒",
+    },
+    { label: "Overtime", value: overtimeHours, color: "#f59e0b", icon: "⏰" },
+    { label: "Leave Hours", value: leaveHours, color: "#10b981", icon: "🏖️" },
+  ];
+
   return (
-    <div className="card card-bordered h-100">
-      <div className="card-inner">
-        <div className="card-title-group align-start mb-3">
-          <div className="card-title">
-            <h6 className="title">Hours Breakdown</h6>
-            <p className="text-soft">Current Month</p>
+    <div className="modern-chart-card">
+      <div className="chart-header">
+        <h3>Hours Breakdown</h3>
+        <p>Current Month • {totalHours} total hours</p>
+      </div>
+
+      <div className="chart-content">
+        <div className="chart-visual">
+          <div className="donut-chart">
+            <div className="donut-center">
+              <span className="donut-total">{totalHours}</span>
+              <span className="donut-label">Hours</span>
+            </div>
           </div>
         </div>
-        
-        <div className="nk-ck-sm">
-          {/* Simple chart visualization */}
-          <div className="hours-chart">
-            <div className="progress mb-4" style={{ height: '20px' }}>
-              <div 
-                className="progress-bar bg-primary" 
-                role="progressbar" 
-                style={{ width: `${regularPercent}%` }} 
-                aria-valuenow={regularPercent} 
-                aria-valuemin="0" 
-                aria-valuemax="100"
-              >
-                {regularHours}h
+
+        <div className="chart-legend-modern">
+          {chartData.map((item, index) => (
+            <div key={index} className="legend-item-modern">
+              <div className="legend-indicator">
+                <span className="legend-icon">{item.icon}</span>
+                <div
+                  className="legend-dot"
+                  style={{ backgroundColor: item.color }}
+                ></div>
               </div>
-              <div 
-                className="progress-bar bg-warning" 
-                role="progressbar" 
-                style={{ width: `${overtimePercent}%` }} 
-                aria-valuenow={overtimePercent} 
-                aria-valuemin="0" 
-                aria-valuemax="100"
-              >
-                {overtimeHours}h
+              <div className="legend-details">
+                <span className="legend-label">{item.label}</span>
+                <span className="legend-value">{item.value}h</span>
               </div>
-              <div 
-                className="progress-bar bg-info" 
-                role="progressbar" 
-                style={{ width: `${leavePercent}%` }} 
-                aria-valuenow={leavePercent} 
-                aria-valuemin="0" 
-                aria-valuemax="100"
-              >
-                {leaveHours}h
+              <div className="legend-percentage">
+                {totalHours > 0
+                  ? Math.round((item.value / totalHours) * 100)
+                  : 0}
+                %
               </div>
             </div>
-            
-            <div className="chart-legend">
-              <div className="legend-item">
-                <div className="legend-color bg-primary"></div>
-                <div className="legend-text">Regular: {regularHours} hrs</div>
-              </div>
-              <div className="legend-item">
-                <div className="legend-color bg-warning"></div>
-                <div className="legend-text">Overtime: {overtimeHours} hrs</div>
-              </div>
-              <div className="legend-item">
-                <div className="legend-color bg-info"></div>
-                <div className="legend-text">Leave: {leaveHours} hrs</div>
-              </div>
-            </div>
-          </div>
+          ))}
         </div>
       </div>
     </div>
   );
 };
 
-// NotificationList component - Shows alerts and reminders
+// Modern NotificationList component
 const NotificationList = ({ notifications }) => {
+  const getNotificationIcon = (priority) => {
+    switch (priority) {
+      case "Critical":
+        return "🚨";
+      case "High":
+        return "⚠️";
+      case "Info":
+        return "ℹ️";
+      case "Success":
+        return "✅";
+      default:
+        return "📢";
+    }
+  };
+
   return (
-    <div className="card card-bordered h-100">
-      <div className="card-inner border-bottom">
-        <div className="card-title-group">
-          <div className="card-title">
-            <h6 className="title">Notifications & Alerts</h6>
-          </div>
-        </div>
+    <div className="modern-notifications-card">
+      <div className="notifications-header">
+        <h3>Recent Activity</h3>
+        <span className="notifications-count">{notifications.length}</span>
       </div>
-      <div className="card-inner">
-        <div className="timeline">
-          {notifications.length > 0 ? (
-            notifications.map((notification, index) => (
-              <div 
-                key={index} 
-                className="timeline-item" 
-                style={{ 
-                  borderLeft: `4px solid ${notification.color}`, 
-                  padding: '10px 15px', 
-                  marginBottom: '15px', 
-                  backgroundColor: notification.bgColor, 
-                  borderRadius: '4px', 
-                  display: 'flex',
-                  position: 'relative',
-                  overflow: 'hidden'
-                }}
-              >
-                <div style={{ width: '75%' }}>
-                  <h6 className="timeline-title" style={{ margin: '0 0 5px 0', fontWeight: 'bold' }}>
-                    {notification.title}
-                  </h6>
-                  <p style={{ margin: '0' }}>{notification.message}</p>
+
+      <div className="notifications-conten">
+        {notifications.length > 0 ? (
+          <div className="notifications-list">
+            {notifications.map((notification, index) => (
+              <div key={index} className="notification-item">
+                <div className="notification-icon">
+                  {getNotificationIcon(notification.priority)}
                 </div>
-                <div style={{ 
-                  position: 'absolute', 
-                  right: '15px', 
-                  top: '10px', 
-                  textAlign: 'right',
-                  width: '25%'
-                }}>
-                  <div className="timeline-date" style={{ marginBottom: '5px' }}>{notification.date}</div>
-                  <div className="timeline-status" style={{ color: notification.color, fontWeight: 'bold' }}>
-                    {notification.priority}
+                <div className="notification-content">
+                  <h4 className="notification-title">{notification.title}</h4>
+                  <p className="notification-message">{notification.message}</p>
+                  <div className="notification-meta">
+                    <span className="notification-date">
+                      {notification.date}
+                    </span>
+                    <span
+                      className={`notification-priority priority-${notification.priority.toLowerCase()}`}
+                    >
+                      {notification.priority}
+                    </span>
                   </div>
                 </div>
               </div>
-            ))
-          ) : (
-            <div className="text-center py-4">
-              <em className="icon ni ni-check-circle-fill text-success" style={{ fontSize: '2rem' }}></em>
-              <p className="mt-2">You're all caught up!</p>
-            </div>
-          )}
-        </div>
+            ))}
+          </div>
+        ) : (
+          <div className="notifications-empty">
+            <div className="empty-icon">🎉</div>
+            <h4>All caught up!</h4>
+            <p>No new notifications</p>
+          </div>
+        )}
       </div>
     </div>
   );
 };
 
-// UpcomingLeave component - Shows upcoming leave/vacation
-const UpcomingLeave = ({ leaveRequests }) => {
+// Modern UpcomingLeave component
+const UpcomingLeave = ({
+  leaveRequests,
+  user,
+  checkPermission,
+  currentEmployer,
+}) => {
+  const getLeaveIcon = (type) => {
+    switch (type.toLowerCase()) {
+      case "vacation":
+        return "🏖️";
+      case "sick leave":
+        return "🏥";
+      case "personal":
+        return "👤";
+      case "holiday":
+        return "🎉";
+      default:
+        return "📅";
+    }
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case "Approved":
+        return "#10b981";
+      case "Pending":
+        return "#f59e0b";
+      case "Rejected":
+        return "#ef4444";
+      default:
+        return "#6b7280";
+    }
+  };
+
   return (
-    <div className="card card-bordered h-100">
-      <div className="card-inner border-bottom">
-        <div className="card-title-group">
-          <div className="card-title">
-            <h6 className="title">Upcoming Leave</h6>
-          </div>
-          <div className="card-tools">
-            <Link to={`/${useParams().subdomain}/leave`} className="link">Manage Leave</Link>
-          </div>
-        </div>
+    <div className="modern-leave-car">
+      <div className="leave-header">
+        <h3>Upcoming Leave</h3>
+        {/* Only show Request Leave button for employees, not admins */}
+        {!(
+          checkPermission("admin") ||
+          user?.role === "admin" ||
+          currentEmployer?.role === "admin" ||
+          checkPermission("approver") ||
+          user?.role === "approver" ||
+          currentEmployer?.role === "approver"
+        ) && (
+          <Link to="/dashboard" className="btn-modern btn-outline">
+            + Request Leave
+          </Link>
+        )}
       </div>
-      <div className="card-inner">
+
+      <div className="leave-content">
         {leaveRequests.length > 0 ? (
-          <ul className="nk-schedule">
+          <div className="leave-list">
             {leaveRequests.map((leave, index) => (
-              <li key={index} className="nk-schedule-item">
-                <div className="nk-schedule-item-inner">
-                  <div className={`nk-schedule-symbol bg-${leave.status === 'Approved' ? 'success' : leave.status === 'Pending' ? 'warning' : 'danger'}`}></div>
-                  <div className="nk-schedule-content">
-                    <div className="nk-schedule-title">{leave.type}</div>
-                    <div className="nk-schedule-date">{leave.startDate} to {leave.endDate}</div>
-                    <div className="nk-schedule-status">
-                      <span className={`badge badge-dim badge-${leave.status === 'Approved' ? 'success' : leave.status === 'Pending' ? 'warning' : 'danger'}`}>
-                        {leave.status}
-                      </span>
-                    </div>
+              <div key={index} className="leave-item">
+                <div className="leave-icon">{getLeaveIcon(leave.type)}</div>
+                <div className="leave-details">
+                  <h4 className="leave-type">{leave.type}</h4>
+                  <p className="leave-dates">
+                    {leave.startDate} - {leave.endDate}
+                  </p>
+                  <div className="leave-meta">
+                    <span className="leave-days">{leave.days} days</span>
+                    <span
+                      className="leave-status"
+                      style={{
+                        color: getStatusColor(leave.status),
+                        backgroundColor: `${getStatusColor(leave.status)}20`,
+                      }}
+                    >
+                      {leave.status}
+                    </span>
                   </div>
                 </div>
-              </li>
+              </div>
             ))}
-          </ul>
+          </div>
         ) : (
-          <div className="text-center py-4">
-            <p>No upcoming leave requests</p>
-            <Link to="/leave/request" className="btn btn-outline-primary btn-sm">
-              Request Leave
-            </Link>
+          <div className="leave-empty">
+            <div className="empty-icon">🌴</div>
+            <h4>No upcoming leave</h4>
+            <p>Plan your time off</p>
           </div>
         )}
       </div>
@@ -241,128 +353,165 @@ const UpcomingLeave = ({ leaveRequests }) => {
 // Main EmployeeDashboard component
 const EmployeeDashboard = () => {
   const { subdomain } = useParams();
-  const { user } = useAuth();
+  const { user, checkPermission, currentEmployer } = useAuth();
+  const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [timesheets, setTimesheets] = useState([]);
-  const [hoursData, setHoursData] = useState({ regular: 0, overtime: 0, leave: 0 });
+  const [hoursData, setHoursData] = useState({
+    regular: 0,
+    overtime: 0,
+    leave: 0,
+  });
   const [notifications, setNotifications] = useState([]);
   const [leaveRequests, setLeaveRequests] = useState([]);
-  
+
   useEffect(() => {
-    // In a real app, fetch data from API
-    // For now, using mock data
     const loadDashboardData = async () => {
+      if (!user?.tenantId || !user?.employeeId) {
+        console.warn("Missing tenant ID or employee ID");
+        setLoading(false);
+        return;
+      }
+
       try {
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Mock timesheet data
-        const mockTimesheets = [
-          { 
-            week: 'Jul 3, 2025', 
-            status: 'Approved', 
-            hours: 40, 
-            dueDate: '2025-07-03'
-          },
-          { 
-            week: 'Jul 10, 2025', 
-            status: 'Pending', 
-            hours: 42, 
-            dueDate: '2025-07-10'
-          },
-          { 
-            week: 'Jul 17, 2025', 
-            status: 'Missing', 
-            hours: 0, 
-            dueDate: '2025-07-17'
-          },
-          { 
-            week: 'Jul 24, 2025', 
-            status: 'Draft', 
-            hours: 16, 
-            dueDate: '2025-07-24'
+        setLoading(true);
+
+        // Fetch dashboard data from new API endpoint
+        const dashboardResponse = await apiFetch(
+          `/api/employee-dashboard?employeeId=${user.employeeId}&tenantId=${user.tenantId}`,
+          {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
           }
-        ];
-        
-        // Mock hours data
-        const mockHoursData = {
-          regular: 160,
-          overtime: 12,
-          leave: 8
-        };
-        
-        // Mock notifications
-        const mockNotifications = [
-          {
-            title: 'Missing Timesheet',
-            message: 'You have not submitted your timesheet for the week of Jul 17, 2025',
-            date: 'Jul 17, 2025',
-            priority: 'Critical',
-            color: '#f44336',
-            bgColor: '#ffebee'
-          },
-          {
-            title: 'Timesheet Approved',
-            message: 'Your timesheet for the week of Jul 3, 2025 has been approved',
-            date: 'Jul 5, 2025',
-            priority: 'Info',
-            color: '#4caf50',
-            bgColor: '#e8f5e9'
-          },
-          {
-            title: 'Upcoming Holiday',
-            message: 'Independence Day (July 4) is an upcoming company holiday',
-            date: 'Jul 4, 2025',
-            priority: 'Info',
-            color: '#2196f3',
-            bgColor: '#e3f2fd'
-          }
-        ];
-        
-        // Mock leave requests
-        const mockLeaveRequests = [
-          {
-            type: 'Vacation',
-            startDate: 'Jul 20, 2025',
-            endDate: 'Jul 24, 2025',
-            status: 'Approved',
-            days: 5
-          },
-          {
-            type: 'Sick Leave',
-            startDate: 'Aug 5, 2025',
-            endDate: 'Aug 5, 2025',
-            status: 'Pending',
-            days: 1
-          }
-        ];
-        
-        setTimesheets(mockTimesheets);
-        setHoursData(mockHoursData);
-        setNotifications(mockNotifications);
-        setLeaveRequests(mockLeaveRequests);
+        );
+
+        if (!dashboardResponse.ok) {
+          throw new Error("Failed to fetch dashboard data");
+        }
+
+        const dashboardData = await dashboardResponse.json();
+
+        if (!dashboardData.success) {
+          throw new Error(dashboardData.error || "Failed to load dashboard");
+        }
+
+        const { data } = dashboardData;
+
+        // Transform timesheet data to match component expectations
+        const transformedTimesheets = data.timesheets.recent.map((ts) => ({
+          week: new Date(ts.weekStartDate).toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+          }),
+          status: ts.status.charAt(0).toUpperCase() + ts.status.slice(1),
+          hours: parseFloat(ts.totalHours) || 0,
+          dueDate: new Date(ts.weekEndDate).toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+          }),
+          weekStart: ts.weekStartDate,
+          id: ts.id,
+        }));
+
+        setTimesheets(transformedTimesheets);
+
+        // Set hours data from dashboard
+        setHoursData({
+          regular: data.summary.hoursThisMonth || 0,
+          overtime: 0, // Can be enhanced later
+          leave: 0, // Can be enhanced later
+        });
+
+        // Generate notifications based on timesheet and invoice status
+        const generatedNotifications = [];
+
+        if (data.timesheets.pending > 0) {
+          generatedNotifications.push({
+            title: "Pending Timesheets",
+            message: `You have ${data.timesheets.pending} timesheet(s) pending approval`,
+            date: new Date().toLocaleDateString("en-US", {
+              month: "short",
+              day: "numeric",
+              year: "numeric",
+            }),
+            priority: "High",
+          });
+        }
+
+        if (data.timesheets.approved > 0) {
+          generatedNotifications.push({
+            title: "Timesheets Approved",
+            message: `${data.timesheets.approved} timesheet(s) have been approved this month`,
+            date: new Date().toLocaleDateString("en-US", {
+              month: "short",
+              day: "numeric",
+              year: "numeric",
+            }),
+            priority: "Success",
+          });
+        }
+
+        if (data.invoices.overdue > 0) {
+          generatedNotifications.push({
+            title: "Overdue Invoices",
+            message: `You have ${data.invoices.overdue} overdue invoice(s)`,
+            date: new Date().toLocaleDateString("en-US", {
+              month: "short",
+              day: "numeric",
+              year: "numeric",
+            }),
+            priority: "Critical",
+          });
+        }
+
+        if (data.invoices.paid > 0) {
+          generatedNotifications.push({
+            title: "Invoices Paid",
+            message: `${
+              data.invoices.paid
+            } invoice(s) paid this month - $${data.invoices.totalEarningsThisMonth.toFixed(
+              2
+            )}`,
+            date: new Date().toLocaleDateString("en-US", {
+              month: "short",
+              day: "numeric",
+              year: "numeric",
+            }),
+            priority: "Success",
+          });
+        }
+
+        setNotifications(generatedNotifications);
+
+        // Leave requests placeholder - can be implemented later
+        setLeaveRequests([]);
       } catch (error) {
-        console.error('Error loading dashboard data:', error);
+        console.error("Error loading dashboard data:", error);
+        toast?.error("Failed to load dashboard data");
       } finally {
         setLoading(false);
       }
     };
-    
+
     loadDashboardData();
-  }, []);
-  
+  }, [user?.tenantId, user?.employeeId]); // eslint-disable-line react-hooks/exhaustive-deps
+
   if (loading) {
     return (
-      <div className="nk-content">
-        <div className="container-fluid">
-          <div className="nk-content-inner">
-            <div className="nk-content-body">
-              <div className="nk-block">
-                <div className="text-center p-5">
-                  <div className="spinner-border text-primary" role="status">
-                    <span className="visually-hidden">Loading...</span>
+      <div className="employee-dashboard">
+        <div className="nk-content">
+          <div className="container-fluid">
+            <div className="nk-content-inner">
+              <div className="nk-content-body">
+                <div className="nk-block">
+                  <div className="text-center p-5">
+                    <div className="spinner-border text-primary" role="status">
+                      <span className="visually-hidden">Loading...</span>
+                    </div>
+                    <p className="mt-3">Loading your dashboard...</p>
                   </div>
-                  <p className="mt-3">Loading your dashboard...</p>
                 </div>
               </div>
             </div>
@@ -371,129 +520,203 @@ const EmployeeDashboard = () => {
       </div>
     );
   }
-  
+
+  // Get Quick Actions based on user role
+  const getQuickActions = () => {
+    // Check role from multiple sources
+    const userRole = user?.role || currentEmployer?.role;
+    const isAdmin = checkPermission("admin") || userRole === "admin";
+    const isApprover = checkPermission("approver") || userRole === "approver";
+
+    if (isAdmin || isApprover) {
+      // Admin/Approver Quick Actions
+      return [
+        {
+          to: `/${subdomain}/timesheets/approval`,
+          icon: "✅",
+          title: "Approve Timesheet",
+          description: "Review pending timesheets",
+        },
+        {
+          to: `/${subdomain}/leave-management`,
+          icon: "📋",
+          title: "Approve Leave",
+          description: "Review leave requests",
+        },
+        {
+          to: `/${subdomain}/leave`,
+          icon: "📅",
+          title: "Upcoming Leaves",
+          description: "View employee leave calendar",
+        },
+        {
+          to: `/${subdomain}/employees`,
+          icon: "👥",
+          title: "Manage Employees",
+          description: "Add or edit team members",
+        },
+      ];
+    } else {
+      // Employee Quick Actions
+      return [
+        {
+          to: `/${subdomain}/timesheets/submit`,
+          icon: "📝",
+          title: "Submit Timesheet",
+          description: "Log your hours",
+        },
+        {
+          to: `/${subdomain}/timesheets/mobile-upload`,
+          icon: "📱",
+          title: "Mobile Upload",
+          description: "Quick photo upload",
+        },
+        {
+          to: `/${subdomain}/leave`,
+          icon: "🏖️",
+          title: "Request Leave",
+          description: "Plan time off",
+        },
+        {
+          to: `/${subdomain}/profile`,
+          icon: "👤",
+          title: "Update Profile",
+          description: "Manage account",
+        },
+      ];
+    }
+  };
+
   return (
-    <div className="nk-content">
-      <div className="container-fluid">
-        <div className="nk-content-inner">
-          <div className="nk-content-body">
-            <div className="nk-block-head nk-block-head-sm">
-              <div className="nk-block-between">
-                <div className="nk-block-head-content">
-                  <h3 className="nk-block-title page-title">Employee Dashboard</h3>
-                  <div className="nk-block-des text-soft">
-                    <p>Welcome back, {user?.name || 'Employee'}</p>
-                  </div>
-                </div>
-                <div className="nk-block-head-content">
-                  <div className="toggle-wrap nk-block-tools-toggle">
-                    <div className="toggle-expand-content">
-                      <ul className="nk-block-tools g-3">
-                        <li className="nk-block-tools-opt">
-                          <Link to={`/${subdomain}/timesheets/submit`} className="btn btn-primary">
-                            <em className="icon ni ni-plus"></em>
-                            <span>Submit Timesheet</span>
-                          </Link>
-                        </li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
+    <div className="modern-employee-dashboard">
+      {/* Header Section */}
+      <div className="dashboard-heade">
+        <div className="header-content">
+          <div className="header-info">
+            <h1 className="dashboard-title">
+              Welcome back, {user?.name || "Employee"}! 👋
+            </h1>
+            <p className="dashboard-subtitle">
+              Here's what's happening with your work today
+            </p>
+          </div>
+          <div className="header-actions">
+            {/* Only show Submit Timesheet button for employees, not admins */}
+            {!(
+              checkPermission("admin") ||
+              user?.role === "admin" ||
+              currentEmployer?.role === "admin" ||
+              checkPermission("approver") ||
+              user?.role === "approver" ||
+              currentEmployer?.role === "approver"
+            ) && (
+              <Link
+                to={`/${subdomain}/timesheets/submit`}
+                className="btn-modern btn-primary"
+              >
+                <span className="btn-icon">⏰</span>
+                Submit Timesheet
+              </Link>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Statistics Cards */}
+      <div className="stats-grid">
+        <StatsCard
+          title="This Week"
+          value={`${
+            timesheets.find((t) => t.week === "Jul 24, 2025")?.hours || 0
+          }h`}
+          subtitle="Current week progress"
+          icon="📊"
+          color="#3b82f6"
+          trend={{ type: "up", value: 12 }}
+        />
+        <StatsCard
+          title="This Month"
+          value={`${hoursData.regular + hoursData.overtime}h`}
+          subtitle="Total hours logged"
+          icon="📈"
+          color="#10b981"
+          trend={{ type: "up", value: 8 }}
+        />
+        <StatsCard
+          title="Pending"
+          value={timesheets.filter((t) => t.status === "Pending").length}
+          subtitle="Awaiting approval"
+          icon="⏳"
+          color="#f59e0b"
+        />
+        <StatsCard
+          title="Approved"
+          value={timesheets.filter((t) => t.status === "Approved").length}
+          subtitle="This month"
+          icon="✅"
+          color="#10b981"
+        />
+      </div>
+
+      {/* Main Content Grid */}
+      <div className="dashboard-grid">
+        {/* Timesheet Status Section */}
+        <div className="dashboard-section timesheet-section">
+          <div className="section-header">
+            <h2>Recent Timesheets</h2>
+            <Link to={`/${subdomain}/dashboard`} className="section-link">
+              View All →
+            </Link>
+          </div>
+          <div className="timesheets-grid">
+            {timesheets.map((timesheet, index) => (
+              <TimeCard key={index} {...timesheet} />
+            ))}
+          </div>
+        </div>
+
+        {/* Right Sidebar */}
+        <div className="dashboard-sidebar">
+          {/* Hours Chart */}
+          <HoursChart
+            regularHours={hoursData.regular}
+            overtimeHours={hoursData.overtime}
+            leaveHours={hoursData.leave}
+          />
+
+          {/* Notifications */}
+          <NotificationList notifications={notifications} />
+        </div>
+
+        {/* Bottom Section */}
+        <div className="dashboard-bottom">
+          {/* Upcoming Leave */}
+          <div className="bottom-card">
+            <UpcomingLeave
+              leaveRequests={leaveRequests}
+              user={user}
+              checkPermission={checkPermission}
+              currentEmployer={currentEmployer}
+            />
+          </div>
+
+          {/* Quick Actions */}
+          <div className="bottom-card">
+            <div className="quick-actions-card">
+              <div className="actions-header">
+                <h3>Quick Actions</h3>
+                <p>Frequently used features</p>
               </div>
-            </div>
-            
-            <div className="nk-block">
-              <div className="row g-gs">
-                <div className="col-lg-8">
-                  <div className="card card-bordered h-100">
-                    <div className="card-inner">
-                      <div className="card-title-group align-start mb-3">
-                        <div className="card-title">
-                          <h6 className="title">Timesheet Status</h6>
-                        </div>
-                      </div>
-                      
-                      <div className="row g-3">
-                        {timesheets.map((timesheet, index) => (
-                          <div key={index} className="col-md-6">
-                            <TimeCard {...timesheet} />
-                          </div>
-                        ))}
-                      </div>
+              <div className="actions-grid">
+                {getQuickActions().map((action, index) => (
+                  <Link key={index} to={action.to} className="action-item">
+                    <div className="action-icon">{action.icon}</div>
+                    <div className="action-content">
+                      <h4>{action.title}</h4>
+                      <p>{action.description}</p>
                     </div>
-                  </div>
-                </div>
-                
-                <div className="col-lg-4">
-                  <NotificationList notifications={notifications} />
-                </div>
-                
-                <div className="col-lg-8">
-                  <div className="row g-gs">
-                    <div className="col-md-6">
-                      <HoursChart 
-                        regularHours={hoursData.regular} 
-                        overtimeHours={hoursData.overtime} 
-                        leaveHours={hoursData.leave} 
-                      />
-                    </div>
-                    <div className="col-md-6">
-                      <UpcomingLeave leaveRequests={leaveRequests} />
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="col-lg-4">
-                  <div className="card card-bordered h-100">
-                    <div className="card-inner border-bottom">
-                      <div className="card-title-group">
-                        <div className="card-title">
-                          <h6 className="title">Quick Actions</h6>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="card-inner">
-                      <ul className="link-list-menu">
-                        <li>
-                          <Link to={`/${subdomain}/timesheets/submit`}>
-                            <em className="icon ni ni-file-text"></em>
-                            <span>Submit Timesheet</span>
-                          </Link>
-                        </li>
-                        <li>
-                          <Link to={`/${subdomain}/timesheets/mobile-upload`}>
-                            <em className="icon ni ni-mobile"></em>
-                            <span>Quick Upload (Mobile)</span>
-                          </Link>
-                        </li>
-                        <li>
-                          <Link to={`/${subdomain}/timesheets/history`}>
-                            <em className="icon ni ni-history"></em>
-                            <span>View Timesheet History</span>
-                          </Link>
-                        </li>
-                        <li>
-                          <Link to={`/${subdomain}/leave`}>
-                            <em className="icon ni ni-calendar"></em>
-                            <span>Leave Management</span>
-                          </Link>
-                        </li>
-                        <li>
-                          <Link to={`/${subdomain}/profile`}>
-                            <em className="icon ni ni-user"></em>
-                            <span>Update Profile</span>
-                          </Link>
-                        </li>
-                        <li>
-                          <Link to={`/${subdomain}/documents`}>
-                            <em className="icon ni ni-files"></em>
-                            <span>My Documents</span>
-                          </Link>
-                        </li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
+                  </Link>
+                ))}
               </div>
             </div>
           </div>

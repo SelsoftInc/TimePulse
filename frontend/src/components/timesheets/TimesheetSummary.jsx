@@ -3,15 +3,19 @@ import { useParams, useNavigate } from "react-router-dom";
 import { PERMISSIONS } from "../../utils/roles";
 import PermissionGuard from "../common/PermissionGuard";
 import DataGridFilter from "../common/DataGridFilter";
+import { useAuth } from "../../contexts/AuthContext";
+import axios from "axios";
 import {
   uploadAndProcessTimesheet,
   transformTimesheetToInvoice,
 } from "../../services/engineService";
 import "./TimesheetSummary.css";
+import "../common/Pagination.css";
 
 const TimesheetSummary = () => {
   const { subdomain } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [timesheets, setTimesheets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [clientType, setClientType] = useState("internal");
@@ -23,96 +27,146 @@ const TimesheetSummary = () => {
   const [generatingInvoice, setGeneratingInvoice] = useState(false);
   const [invoiceSuccess, setInvoiceSuccess] = useState("");
   const [invoiceError, setInvoiceError] = useState("");
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
 
   useEffect(() => {
-    loadTimesheetData();
-  }, []);
+    if (user?.tenantId) {
+      loadTimesheetData();
+    }
+  }, [user]);
 
   const loadTimesheetData = async () => {
     setLoading(true);
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 800));
+      const tenantId = user?.tenantId;
+      const userEmail = user?.email;
+      const userRole = user?.role;
 
-      // Mock timesheet data matching Cognizant format
-      const mockTimesheets = [
-        {
-          id: 1,
-          weekRange: "12-JUL-2025 To 18-JUL-2025",
-          status: "Pending",
-          billableProjectHrs: "0.00",
-          timeOffHolidayHrs: "0.00",
-          totalTimeHours: "N/A",
-        },
-        {
-          id: 2,
-          weekRange: "05-JUL-2025 To 11-JUL-2025",
-          status: "Submitted for Approval",
-          billableProjectHrs: "40.00",
-          timeOffHolidayHrs: "0.00",
-          totalTimeHours: "N/A",
-        },
-        {
-          id: 3,
-          weekRange: "28-JUN-2025 To 04-JUL-2025",
-          status: "Submitted for Approval",
-          billableProjectHrs: "32.00",
-          timeOffHolidayHrs: "0.00",
-          totalTimeHours: "N/A",
-        },
-        {
-          id: 4,
-          weekRange: "21-JUN-2025 To 27-JUN-2025",
-          status: "Approved",
-          billableProjectHrs: "40.00",
-          timeOffHolidayHrs: "0.00",
-          totalTimeHours: "N/A",
-        },
-        {
-          id: 5,
-          weekRange: "14-JUN-2025 To 20-JUN-2025",
-          status: "Approved",
-          billableProjectHrs: "24.00",
-          nonBillableProjectHrs: "0.00",
-          timeOffHolidayHrs: "0.00",
-          totalTimeHours: "N/A",
-        },
-        {
-          id: 6,
-          weekRange: "07-JUN-2025 To 13-JUN-2025",
-          status: "Approved",
-          billableProjectHrs: "40.00",
-          timeOffHolidayHrs: "0.00",
-          totalTimeHours: "N/A",
-        },
-        {
-          id: 7,
-          weekRange: "31-MAY-2025 To 06-JUN-2025",
-          status: "Approved",
-          billableProjectHrs: "40.00",
-          timeOffHolidayHrs: "0.00",
-          totalTimeHours: "N/A",
-        },
-        {
-          id: 8,
-          weekRange: "24-MAY-2025 To 30-MAY-2025",
-          status: "Approved",
-          billableProjectHrs: "32.00",
-          timeOffHolidayHrs: "0.00",
-          totalTimeHours: "N/A",
-        },
-      ];
+      console.log('🔍 Loading timesheets...', { tenantId, userEmail, userRole, user });
 
-      setTimesheets(mockTimesheets);
+      if (!tenantId || !userEmail) {
+        console.error('❌ No tenant ID or email found', { tenantId, userEmail });
+        setLoading(false);
+        return;
+      }
 
-      // Determine client type based on user's assigned clients or company settings
-      // In a real app, this would come from user profile or API
-      // For demo, we'll simulate this - you can change this logic based on your needs
-      const userClientType =
-        localStorage.getItem("userClientType") || "internal";
+      // For admin/manager, use a different approach since they don't have employee records
+      if (userRole === 'admin' || userRole === 'manager') {
+        console.log('👑 Admin/Manager detected - using pending-approval API for all timesheets');
+
+        // Use the pending-approval endpoint but without reviewerId to get all timesheets
+        const response = await axios.get(`/api/timesheets/pending-approval`, {
+          params: { tenantId }
+        });
+
+        console.log('✅ API Response:', response.data);
+
+        if (response.data.success) {
+          // Also get approved and rejected timesheets separately
+          const approvedResponse = await axios.get(`/api/timesheets/employee/approved`, {
+            params: { tenantId }
+          });
+
+          const rejectedResponse = await axios.get(`/api/timesheets/employee/rejected`, {
+            params: { tenantId }
+          });
+
+          // Combine all timesheets
+          const allTimesheets = [
+            ...(response.data.timesheets || []),
+            ...(approvedResponse.data?.timesheets || []),
+            ...(rejectedResponse.data?.timesheets || [])
+          ];
+
+          // Format timesheets to match UI expectations
+          const formattedTimesheets = allTimesheets.map(ts => ({
+            id: ts.id,
+            weekRange: ts.weekRange || `${new Date(ts.weekStart).toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' })} To ${new Date(ts.weekEnd).toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' })}`,
+            employeeName: ts.employeeName || 'Unknown',
+            status: ts.status === 'submitted' ? 'Submitted for Approval' :
+                    ts.status === 'approved' ? 'Approved' :
+                    ts.status === 'rejected' ? 'Rejected' :
+                    ts.status === 'draft' ? 'Pending' : ts.status,
+            billableProjectHrs: ts.billableProjectHrs || ts.totalTimeHours || '0.00',
+            timeOffHolidayHrs: ts.timeOffHolidayHrs || '0.00',
+            totalTimeHours: ts.totalTimeHours || ts.billableProjectHrs || '0.00',
+            weekStart: ts.weekStart,
+            weekEnd: ts.weekEnd,
+            dailyHours: ts.dailyHours || {},
+            notes: ts.notes || '',
+            attachments: ts.attachments || [],
+            reviewer: ts.reviewer
+          }));
+
+          console.log('📊 Formatted timesheets:', formattedTimesheets);
+          setTimesheets(formattedTimesheets);
+        } else {
+          console.error('❌ API returned success: false');
+          setTimesheets([]);
+        }
+      } else {
+        // Regular employee - get their own timesheets
+        console.log('👤 Employee detected - loading personal timesheets');
+
+        // First, get the employee ID from email
+        console.log('📡 Fetching employee by email...');
+        const empResponse = await axios.get(`/api/timesheets/employees/by-email/${encodeURIComponent(userEmail)}?tenantId=${tenantId}`);
+
+        if (!empResponse.data.success || !empResponse.data.employee) {
+          console.error('❌ Employee not found for email:', userEmail);
+          console.error('This user may not have an employee record.');
+          setTimesheets([]);
+          setLoading(false);
+          return;
+        }
+
+        const employeeId = empResponse.data.employee.id;
+        console.log('✅ Got employeeId:', employeeId);
+
+        // Fetch all timesheets for the employee from API
+        const apiUrl = `/api/timesheets/employee/${employeeId}/all?tenantId=${tenantId}`;
+        console.log('📡 Calling API:', apiUrl);
+
+        const response = await axios.get(apiUrl);
+        console.log('✅ API Response:', response.data);
+
+        if (response.data.success) {
+          // Format timesheets to match UI expectations
+          const formattedTimesheets = response.data.timesheets.map(ts => ({
+            id: ts.id,
+            weekRange: ts.week,
+            status: ts.status.label === 'SUBMITTED' ? 'Submitted for Approval' :
+                    ts.status.label === 'APPROVED' ? 'Approved' :
+                    ts.status.label === 'REJECTED' ? 'Rejected' :
+                    ts.status.label === 'DRAFT' ? 'Pending' : ts.status.label,
+            billableProjectHrs: ts.hours,
+            timeOffHolidayHrs: "0.00",
+            totalTimeHours: ts.hours,
+            weekStart: ts.weekStart,
+            weekEnd: ts.weekEnd,
+            dailyHours: ts.dailyHours,
+            notes: ts.notes,
+            attachments: ts.attachments || [],
+            reviewer: ts.reviewer
+          }));
+
+          console.log('📊 Formatted timesheets:', formattedTimesheets);
+          setTimesheets(formattedTimesheets);
+        } else {
+          console.error('❌ API returned success: false');
+          setTimesheets([]);
+        }
+      }
+
+      // Determine client type
+      const userClientType = localStorage.getItem("userClientType") || "internal";
       setClientType(userClientType);
     } catch (error) {
-      console.error("Error loading timesheet data:", error);
+      console.error("❌ Error loading timesheet data:", error);
+      console.error("Error details:", error.response?.data || error.message);
     } finally {
       setLoading(false);
     }
@@ -211,6 +265,21 @@ const TimesheetSummary = () => {
     },
   ];
 
+  // Calculate pagination
+  const totalPages = Math.ceil(filteredTimesheets.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedTimesheets = filteredTimesheets.slice(startIndex, endIndex);
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filters]);
+
   const getStatusBadge = (status) => {
     switch (status.toLowerCase()) {
       case "pending":
@@ -295,9 +364,9 @@ const TimesheetSummary = () => {
 
   if (loading) {
     return (
-      <div className="nk-content">
+      <div className="nk-conten">
         <div className="container-fluid">
-          <div className="nk-content-inner">
+          <div className="nk-content-inne">
             <div className="nk-content-body">
               <div className="nk-block-head nk-block-head-sm">
                 <div className="nk-block-between">
@@ -306,9 +375,9 @@ const TimesheetSummary = () => {
                   </div>
                 </div>
               </div>
-              <div className="nk-block">
+              <div className="nk-bloc">
                 <div className="card card-bordered">
-                  <div className="card-inner">
+                  <div className="card-inne">
                     <div className="text-center">
                       <div className="spinner-border" role="status">
                         <span className="visually-hidden">Loading...</span>
@@ -326,9 +395,9 @@ const TimesheetSummary = () => {
   }
 
   return (
-    <div className="container">
+    <div className="containe">
       <div className="container-fluid">
-        <div className="nk-content-inner">
+        <div className="nk-content-inne">
           <div className="nk-content-body">
             <div className="nk-block-head nk-block-head-sm">
               <div className="nk-block-between">
@@ -539,7 +608,7 @@ const TimesheetSummary = () => {
           <div className="nk-block">
             <div className="card card-bordered card-stretch">
               <div className="card-inner-group">
-                <div className="card-inner">
+                <div className="card-inne">
                   <div className="card-title-group">
                     <div className="card-title">
                       <h6 className="title">
@@ -578,7 +647,7 @@ const TimesheetSummary = () => {
                         </tr>
                       </thead>
                       <tbody>
-                        {filteredTimesheets.map((timesheet) => (
+                        {paginatedTimesheets.map((timesheet) => (
                           <tr key={timesheet.id} className="timesheet-row">
                             <td>
                               <div className="timesheet-week">
@@ -662,6 +731,47 @@ const TimesheetSummary = () => {
                     </table>
                   </div>
                 </div>
+
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <div className="card-inner border-top">
+                    <div className="d-flex justify-content-between align-items-center">
+                      <div className="text-muted">
+                        Showing {startIndex + 1} to {Math.min(endIndex, filteredTimesheets.length)} of {filteredTimesheets.length} entries
+                      </div>
+                      <ul className="pagination pagination-sm">
+                        <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
+                          <button 
+                            className="page-link" 
+                            onClick={() => handlePageChange(currentPage - 1)}
+                            disabled={currentPage === 1}
+                          >
+                            <em className="icon ni ni-chevron-left"></em>
+                          </button>
+                        </li>
+                        {[...Array(totalPages)].map((_, i) => (
+                          <li key={i} className={`page-item ${currentPage === i + 1 ? 'active' : ''}`}>
+                            <button 
+                              className="page-link" 
+                              onClick={() => handlePageChange(i + 1)}
+                            >
+                              {i + 1}
+                            </button>
+                          </li>
+                        ))}
+                        <li className={`page-item ${currentPage === totalPages ? 'disabled' : ''}`}>
+                          <button 
+                            className="page-link" 
+                            onClick={() => handlePageChange(currentPage + 1)}
+                            disabled={currentPage === totalPages}
+                          >
+                            <em className="icon ni ni-chevron-right"></em>
+                          </button>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>

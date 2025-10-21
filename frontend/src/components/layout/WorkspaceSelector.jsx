@@ -11,19 +11,43 @@ const WorkspaceSelector = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Get current tenant from localStorage
+    // Get user info from localStorage
+    const userInfo = localStorage.getItem('userInfo') || localStorage.getItem('user');
     const currentTenant = localStorage.getItem('currentTenant');
-    if (currentTenant) {
+    
+    if (userInfo) {
+      const user = JSON.parse(userInfo);
+      
+      // Generate initials from user's first and last name
+      const generateInitials = (name) => {
+        if (!name) return 'U';
+        const nameParts = name.trim().split(/\s+/);
+        if (nameParts.length >= 2) {
+          // First letter of first name and last name
+          return (nameParts[0][0] + nameParts[nameParts.length - 1][0]).toUpperCase();
+        } else {
+          // First letter of name
+          return name.substring(0, 1).toUpperCase();
+        }
+      };
+      
+      const userName = user.name || `${user.firstName || ''} ${user.lastName || ''}`.trim();
+      const tenant = currentTenant ? JSON.parse(currentTenant) : null;
+      
+      setWorkspace({
+        id: generateInitials(userName),
+        name: userName || 'User',
+        tagline: tenant?.subdomain || 'Workspace'
+      });
+    } else if (currentTenant) {
+      // Fallback to tenant name if no user info
       const tenant = JSON.parse(currentTenant);
-      // Generate abbreviation from company name instead of tenant ID
       const generateAbbreviation = (name) => {
         if (!name) return 'WS';
         const words = name.trim().split(/\s+/);
         if (words.length >= 2) {
-          // Use first letter of first two words
           return (words[0][0] + words[1][0]).toUpperCase();
         } else {
-          // Use first two letters of single word
           return name.substring(0, 2).toUpperCase();
         }
       };
@@ -37,7 +61,15 @@ const WorkspaceSelector = () => {
   }, []);
 
   const handleClick = () => {
-    navigate('/workspaces');
+    // Navigate to the current workspace dashboard instead of workspaces page
+    const currentTenant = localStorage.getItem('currentTenant');
+    if (currentTenant) {
+      const tenant = JSON.parse(currentTenant);
+      navigate(`/${tenant.subdomain}/dashboard`);
+    } else {
+      // Fallback to workspaces if no current tenant
+      navigate('/workspaces');
+    }
   };
 
   return (

@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
+import { API_BASE } from '../../config/api';
 import { PERMISSIONS } from '../../utils/roles';
 import PermissionGuard from '../common/PermissionGuard';
 import './Employees.css';
@@ -7,10 +9,11 @@ import './Employees.css';
 const EmployeeSettings = () => {
   const { subdomain, id } = useParams();
   const navigate = useNavigate();
-  // No need for checkPermission in this component
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [employee, setEmployee] = useState(null);
+  const [approvers, setApprovers] = useState([]);
   const [formData, setFormData] = useState({
     client: '',
     clientType: 'internal',
@@ -29,14 +32,31 @@ const EmployeeSettings = () => {
     { id: 5, name: 'Virtusa', type: 'internal' }
   ];
   
-  // Sample approver list - in a real app, this would come from an API
-  const approvers = [
-    { id: 1, name: 'John Smith', email: 'john.smith@company.com', department: 'Engineering' },
-    { id: 2, name: 'Sarah Johnson', email: 'sarah.johnson@company.com', department: 'Design' },
-    { id: 3, name: 'Mike Wilson', email: 'mike.wilson@company.com', department: 'Operations' },
-    { id: 4, name: 'Lisa Brown', email: 'lisa.brown@company.com', department: 'Management' },
-    { id: 5, name: 'David Lee', email: 'david.lee@company.com', department: 'HR' }
-  ];
+  // Fetch approvers from API
+  useEffect(() => {
+    const fetchApprovers = async () => {
+      if (!user?.tenantId) return;
+      
+      try {
+        const response = await fetch(`${API_BASE}/api/approvers?tenantId=${user.tenantId}`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success) {
+            setApprovers(data.approvers);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching approvers:', error);
+      }
+    };
+    
+    fetchApprovers();
+  }, [user?.tenantId]);
 
   // Use useCallback to memoize the function and avoid dependency issues in useEffect
   const loadEmployeeData = useCallback(async () => {

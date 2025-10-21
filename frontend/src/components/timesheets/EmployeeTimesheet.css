@@ -8,9 +8,10 @@
 .form-label {
   font-size: 0.875rem;
   font-weight: 500;
-  color: #526484;
+  color: var(--text-secondary);
   margin-bottom: 0.5rem;
   display: block;
+  transition: color 0.3s ease;
 }
 
 .form-control {
@@ -21,25 +22,27 @@
   font-size: 0.875rem;
   font-weight: 400;
   line-height: 1.25rem;
-  color: #3c4d62;
-  background-color: #fff;
+  color: var(--text-color);
+  background-color: var(--form-bg);
   background-clip: padding-box;
-  border: 1px solid #dbdfea;
+  border: 1px solid var(--form-border);
   border-radius: 4px;
-  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out, background-color 0.3s ease, color 0.3s ease;
 }
 
 .form-control:focus {
-  color: #3c4d62;
-  background-color: #fff;
-  border-color: #6576ff;
+  color: var(--text-color);
+  background-color: var(--form-bg);
+  border-color: var(--form-focus-border);
   outline: 0;
-  box-shadow: 0 0 0 3px rgba(101, 118, 255, 0.1);
+  box-shadow: 0 0 0 3px var(--form-focus-shadow);
 }
 
 .form-control[readonly] {
-  background-color: #f5f6fa;
+  background-color: var(--form-disabled-bg);
   opacity: 1;
+  color: var(--form-disabled-text);
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 textarea.form-control {
@@ -92,13 +95,14 @@ textarea.form-control {
 .timesheet-total {
   display: flex;
   flex-direction: column;
-  background-color: #f7f7f7;
+  background-color: var(--timesheet-total-bg);
   border-radius: 4px;
   padding: 0 15px;
   height: calc(2.125rem + 2px);
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: background-color 0.3s ease;
 }
 
 .total-hours {
@@ -317,13 +321,16 @@ textarea.form-control {
   flex-direction: column;
   min-width: 0;
   word-wrap: break-word;
-  background-color: #fff;
+  background-color: var(--timesheet-card-bg);
   background-clip: border-box;
+  transition: background-color 0.3s ease;
+  color: var(--text-color);
 }
 
 .card-bordered {
-  border: 1px solid #dbdfea;
+  border: 1px solid var(--timesheet-border);
   border-radius: 4px;
+  transition: border-color 0.3s ease;
 }
 
 .card-inner {
@@ -337,12 +344,121 @@ textarea.form-control {
   justify-content: space-between;
   margin: -0.25rem -0.75rem 1rem;
   padding: 0 0.75rem 1rem;
-  border-bottom: 1px solid #e5e9f2;
+  border-bottom: 1px solid var(--timesheet-border);
+  transition: border-color 0.3s ease;
 }
 
-.card-title {
-  font-size: 1rem;
-  margin-bottom: 0;
-  color: #364a63;
-  font-weight: 700;
+/* Drag and Drop File Upload Area */
+.file-drop-area {
+  position: relative;
+  border: 2px dashed var(--timesheet-border);
+  border-radius: 8px;
+  padding: 40px 20px;
+  text-align: center;
+  background-color: var(--timesheet-card-bg);
+  transition: all 0.3s ease;
+  cursor: pointer;
+  min-height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.file-drop-area:hover {
+  border-color: var(--timesheet-search-focus);
+  background-color: rgba(59, 130, 246, 0.02);
+}
+
+.file-drop-area.has-files {
+  border-color: var(--timesheet-stat-approved);
+  background-color: rgba(16, 185, 129, 0.02);
+}
+
+.file-drop-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.file-drop-icon {
+  font-size: 48px;
+  color: var(--text-secondary);
+  transition: color 0.3s ease;
+}
+
+.file-drop-area:hover .file-drop-icon {
+  color: var(--timesheet-search-focus);
+}
+
+.file-drop-text h4 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-color);
+  transition: color 0.3s ease;
+}
+
+.file-drop-text p {
+  margin: 8px 0 0 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+  transition: color 0.3s ease;
+}
+
+.file-drop-text .file-types {
+  font-size: 12px;
+  color: var(--text-muted);
+  background-color: var(--background-secondary);
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+}
+
+.file-input-hidden {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 2;
+}
+
+/* Dark mode styling for drag and drop */
+body.dark-mode .file-drop-area {
+  background-color: var(--timesheet-card-bg);
+  border-color: var(--timesheet-border);
+}
+
+body.dark-mode .file-drop-area:hover {
+  border-color: var(--timesheet-search-focus);
+  background-color: rgba(59, 130, 246, 0.05);
+}
+
+body.dark-mode .file-drop-area.has-files {
+  border-color: var(--timesheet-stat-approved);
+  background-color: rgba(16, 185, 129, 0.05);
+}
+
+body.dark-mode .file-drop-icon {
+  color: var(--text-secondary);
+}
+
+body.dark-mode .file-drop-area:hover .file-drop-icon {
+  color: var(--timesheet-search-focus);
+}
+
+body.dark-mode .file-drop-text h4 {
+  color: var(--text-color);
+}
+
+body.dark-mode .file-drop-text p {
+  color: var(--text-secondary);
+}
+
+body.dark-mode .file-drop-text .file-types {
+  background-color: var(--background-secondary);
+  color: var(--text-muted);
 }

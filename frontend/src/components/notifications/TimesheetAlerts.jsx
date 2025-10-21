@@ -1,10 +1,14 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
+import { useWebSocket } from "../../contexts/WebSocketContext";
+import { apiFetch } from "../../config/api";
 import "./TimesheetAlert.css";
 
 const TimesheetAlerts = ({ subdomain }) => {
-  useAuth();
+  const { user, currentEmployer } = useAuth();
+  const { notifications, unreadCount, markNotificationAsRead, markAllAsRead } =
+    useWebSocket();
   const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -13,46 +17,26 @@ const TimesheetAlerts = ({ subdomain }) => {
 
   useEffect(() => {
     const fetchAlerts = async () => {
+      if (!user || !currentEmployer) return;
+
       try {
         setLoading(true);
-        await new Promise((resolve) => setTimeout(resolve, 800));
 
-        const mockAlerts = [
+        const response = await apiFetch(
+          `/api/notifications?tenantId=${currentEmployer.id}&userId=${user.id}&limit=20`,
           {
-            id: "1",
-            type: "missing",
-            week: "Jul 17, 2025",
-            dueDate: "2025-07-17",
-            message: "Your timesheet for the week of Jul 17, 2025 is missing",
-            priority: "high",
-            read: false,
-            createdAt: "2025-07-18T10:00:00Z",
-          },
-          {
-            id: "2",
-            type: "reminder",
-            week: "Jul 24, 2025",
-            dueDate: "2025-07-24",
-            message:
-              "Reminder: Your timesheet for the week of Jul 24, 2025 is due tomorrow",
-            priority: "medium",
-            read: false,
-            createdAt: "2025-07-23T10:00:00Z",
-          },
-          {
-            id: "3",
-            type: "approval",
-            week: "Jul 3, 2025",
-            dueDate: "2025-07-03",
-            message:
-              "Your timesheet for the week of Jul 3, 2025 has been approved",
-            priority: "low",
-            read: true,
-            createdAt: "2025-07-05T14:30:00Z",
-          },
-        ];
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
+        );
 
-        setAlerts(mockAlerts);
+        if (response.success) {
+          setAlerts(response.notifications);
+        } else {
+          console.error("Error fetching notifications:", response.error);
+        }
       } catch (error) {
         console.error("Error fetching alerts:", error);
       } finally {
@@ -61,13 +45,7 @@ const TimesheetAlerts = ({ subdomain }) => {
     };
 
     fetchAlerts();
-
-    const alertInterval = setInterval(() => {
-      fetchAlerts();
-    }, 60000);
-
-    return () => clearInterval(alertInterval);
-  }, []);
+  }, [user, currentEmployer]);
 
   // Close dropdown if clicked outside
   useEffect(() => {
@@ -87,10 +65,23 @@ const TimesheetAlerts = ({ subdomain }) => {
 
   const markAsRead = async (alertId) => {
     try {
-      await new Promise((resolve) => setTimeout(resolve, 300));
+      await apiFetch(`/api/notifications/${alertId}/read`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify({
+          tenantId: currentEmployer?.id,
+          userId: user?.id,
+        }),
+      });
+
       setAlerts((prev) =>
         prev.map((alert) =>
-          alert.id === alertId ? { ...alert, read: true } : alert
+          alert.id === alertId
+            ? { ...alert, readAt: new Date().toISOString() }
+            : alert
         )
       );
     } catch (error) {
@@ -100,7 +91,18 @@ const TimesheetAlerts = ({ subdomain }) => {
 
   const dismissAlert = async (alertId) => {
     try {
-      await new Promise((resolve) => setTimeout(resolve, 300));
+      await apiFetch(`/api/notifications/${alertId}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify({
+          tenantId: currentEmployer?.id,
+          userId: user?.id,
+        }),
+      });
+
       setAlerts((prev) => prev.filter((alert) => alert.id !== alertId));
     } catch (error) {
       console.error("Error dismissing alert:", error);
@@ -110,6 +112,7 @@ const TimesheetAlerts = ({ subdomain }) => {
   const getAlertClass = (priority) => {
     switch (priority) {
       case "high":
+      case "urgent":
         return "#f8d7da";
       case "medium":
         return "#fff3cd";
@@ -123,6 +126,7 @@ const TimesheetAlerts = ({ subdomain }) => {
   const getAlertTextColor = (priority) => {
     switch (priority) {
       case "high":
+      case "urgent":
         return "#721c24";
       case "medium":
         return "#856404";
@@ -141,12 +145,20 @@ const TimesheetAlerts = ({ subdomain }) => {
         return "⏰";
       case "approval":
         return "✅";
+      case "error":
+        return "❌";
+      case "warning":
+        return "⚠️";
+      case "success":
+        return "✅";
+      case "info":
+        return "ℹ️";
       default:
         return "ℹ️";
     }
   };
 
-  const unreadCount = alerts.filter((alert) => !alert.read).length;
+  // unreadCount is already provided by useWebSocket context
 
   const toggleDropdown = () => setDropdownOpen((prev) => !prev);
 
@@ -194,19 +206,29 @@ const TimesheetAlerts = ({ subdomain }) => {
         >
           <div className="dropdown-head">
             <span className="dropdown-title">Notifications</span>
-            {unreadCount > 0 && (
-              <span className="badge-unread">{unreadCount} Unread</span>
-            )}
+            <div className="dropdown-head-actions">
+              {unreadCount > 0 && (
+                <span className="badge-unread">{unreadCount} Unread</span>
+              )}
+              <Link
+                to={`/${subdomain}/settings?tab=notifications`}
+                className="settings-link"
+                onClick={() => setDropdownOpen(false)}
+              >
+                <i className="fas fa-cog"></i>
+                Settings
+              </Link>
+            </div>
           </div>
 
           <div className="dropdown-body">
             {loading ? (
-              <div className="loading">Loading alerts...</div>
+              <div className="loading">Loading notifications...</div>
             ) : alerts.length > 0 ? (
               alerts.map((alert) => (
                 <div
                   key={alert.id}
-                  className={`alert-item ${alert.read ? "" : "unread"}`}
+                  className={`alert-item ${alert.readAt ? "" : "unread"}`}
                   onClick={() => markAsRead(alert.id)}
                   role="button"
                   tabIndex={0}

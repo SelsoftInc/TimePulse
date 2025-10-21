@@ -18,55 +18,67 @@ const EmployeeDetail = () => {
   const {
     data: clientsData = [],
     isLoading: clientsLoading,
-  } = useQuery(['clients', tenantId], async () => {
-    if (!tenantId) return [];
-    const resp = await fetch(`${API_BASE}/api/clients?tenantId=${tenantId}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
-      }
-    });
-    if (!resp.ok) throw new Error(`HTTP error! status: ${resp.status}`);
-    const payload = await resp.json();
-    return payload.success && payload.clients ? payload.clients : [];
-  }, { enabled: !!tenantId });
+  } = useQuery({
+    queryKey: ['clients', tenantId],
+    queryFn: async () => {
+      if (!tenantId) return [];
+      const resp = await fetch(`${API_BASE}/api/clients?tenantId=${tenantId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      if (!resp.ok) throw new Error(`HTTP error! status: ${resp.status}`);
+      const payload = await resp.json();
+      return payload.success && payload.clients ? payload.clients : [];
+    },
+    enabled: !!tenantId
+  });
 
   const {
     data: vendorsData = [],
     isLoading: vendorsLoading,
-  } = useQuery(['vendors', tenantId], async () => {
-    if (!tenantId) return [];
-    const resp = await fetch(`${API_BASE}/api/vendors?tenantId=${tenantId}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
-      }
-    });
-    if (!resp.ok) throw new Error(`HTTP error! status: ${resp.status}`);
-    const payload = await resp.json();
-    return payload.success && payload.vendors ? payload.vendors : [];
-  }, { enabled: !!tenantId });
+  } = useQuery({
+    queryKey: ['vendors', tenantId],
+    queryFn: async () => {
+      if (!tenantId) return [];
+      const resp = await fetch(`${API_BASE}/api/vendors?tenantId=${tenantId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      if (!resp.ok) throw new Error(`HTTP error! status: ${resp.status}`);
+      const payload = await resp.json();
+      return payload.success && payload.vendors ? payload.vendors : [];
+    },
+    enabled: !!tenantId
+  });
   const [formValues, setFormValues] = useState({ joinDate: '', clientId: '', vendorId: '', implPartnerId: '' });
 
   // React Query: fetch employee
   const {
     data: employeeData,
     isLoading: employeeLoading,
-  } = useQuery(['employee', tenantId, id], async () => {
-    if (!tenantId || !id) return null;
-    const response = await fetch(`${API_BASE}/api/employees/${id}?tenantId=${tenantId}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
-      }
-    });
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-    const data = await response.json();
-    return data.employee || data;
-  }, { enabled: !!tenantId && !!id });
+  } = useQuery({
+    queryKey: ['employee', tenantId, id],
+    queryFn: async () => {
+      if (!tenantId || !id) return null;
+      const response = await fetch(`${API_BASE}/api/employees/${id}?tenantId=${tenantId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      const data = await response.json();
+      return data.employee || data;
+    },
+    enabled: !!tenantId && !!id
+  });
 
   // When employee query resolves, normalize and sync local state for display and form
   useEffect(() => {

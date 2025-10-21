@@ -4,11 +4,11 @@
 export const API_BASE = (() => {
   const envBase = process.env.REACT_APP_API_BASE;
   if (envBase) return envBase;
-  const fallback = 'http://localhost:5001';
+  const fallback = "http://localhost:5001";
   // Surface a helpful hint in dev
-  if (typeof window !== 'undefined' && process.env.NODE_ENV !== 'production') {
+  if (typeof window !== "undefined" && process.env.NODE_ENV !== "production") {
     // eslint-disable-next-line no-console
-    console.warn('[api] REACT_APP_API_BASE not set; using fallback:', fallback);
+    console.warn("[api] REACT_APP_API_BASE not set; using fallback:", fallback);
   }
   return fallback;
 })();
@@ -23,13 +23,17 @@ export async function apiFetch(path, options = {}, config = {}) {
   const { timeoutMs = 15000 } = config;
   const url = `${API_BASE}${path}`;
   const headers = {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
     ...(options.headers || {}),
   };
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort('timeout'), timeoutMs);
+  const timer = setTimeout(() => controller.abort("timeout"), timeoutMs);
   try {
-    const res = await fetch(url, { ...options, headers, signal: controller.signal });
+    const res = await fetch(url, {
+      ...options,
+      headers,
+      signal: controller.signal,
+    });
     return res;
   } finally {
     clearTimeout(timer);

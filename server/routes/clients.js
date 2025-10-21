@@ -116,22 +116,32 @@ router.get('/', async (req, res) => {
     }
 
     // Aggregate: employees assigned to each client for this tenant
-    const employeeCounts = await sequelize.query(
-      `SELECT client_id, COUNT(*) AS employee_count
-       FROM employees
-       WHERE tenant_id = :tenantId AND client_id IS NOT NULL
-       GROUP BY client_id`,
-      { replacements: { tenantId }, type: sequelize.QueryTypes.SELECT }
-    );
+    let employeeCounts = [];
+    try {
+      employeeCounts = await sequelize.query(
+        `SELECT client_id, COUNT(*) AS employee_count
+         FROM employees
+         WHERE tenant_id = :tenantId AND client_id IS NOT NULL
+         GROUP BY client_id`,
+        { replacements: { tenantId }, type: sequelize.QueryTypes.SELECT }
+      );
+    } catch (err) {
+      console.warn('clients: employee count query failed:', err.message);
+    }
 
     // Aggregate: total billed from invoices per client for this tenant
-    const invoiceTotals = await sequelize.query(
-      `SELECT client_id, COALESCE(SUM(total_amount), 0) AS total_billed
-       FROM invoices
-       WHERE tenant_id = :tenantId AND client_id IS NOT NULL
-       GROUP BY client_id`,
-      { replacements: { tenantId }, type: sequelize.QueryTypes.SELECT }
-    );
+    let invoiceTotals = [];
+    try {
+      invoiceTotals = await sequelize.query(
+        `SELECT client_id, COALESCE(SUM(total_amount), 0) AS total_billed
+         FROM invoices
+         WHERE tenant_id = :tenantId AND client_id IS NOT NULL
+         GROUP BY client_id`,
+        { replacements: { tenantId }, type: sequelize.QueryTypes.SELECT }
+      );
+    } catch (err) {
+      console.warn('clients: invoice totals query failed:', err.message);
+    }
 
     const employeeCountMap = Object.fromEntries(
       employeeCounts.map(r => [String(r.client_id), Number(r.employee_count)])

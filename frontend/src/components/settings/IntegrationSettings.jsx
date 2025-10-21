@@ -96,7 +96,7 @@ const IntegrationSettings = () => {
         <div className="integration-list">
           {integrations.map(integration => (
             <div key={integration.id} className="card mb-4 integration-card">
-              <div className="card-inner">
+              <div className="card-inne">
                 <div className="integration-header">
                   <div className="integration-icon">
                     <i className={integration.icon}></i>
@@ -141,7 +141,7 @@ const IntegrationSettings = () => {
         </div>
         
         <div className="card mt-4">
-          <div className="card-inner">
+          <div className="card-inne">
             <h3>API Access</h3>
             <p>Use the TimePulse API to build custom integrations with your internal tools.</p>
             

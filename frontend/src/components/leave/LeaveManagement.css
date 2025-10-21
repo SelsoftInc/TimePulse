@@ -1,0 +1,803 @@
+/* Leave Management Component Styles */
+
+/* Ensure cards stay in single row on larger screens */
+.leave-management-cards {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+/* Row spacing for leave cards */
+.leave-cards-row {
+  margin-bottom: 24px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+/* Remove default Bootstrap padding for custom gap */
+.leave-cards-row > .col-lg-5,
+.leave-cards-row > .col-lg-7 {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+/* Leave Balance Card Styling */
+.leave-balance-item {
+  padding: 16px;
+  background: var(--bg-secondary, #f8f9fa);
+  border-radius: 8px;
+  border: 1px solid var(--border-color, #e0e0e0);
+  transition: all 0.3s ease;
+}
+
+.leave-balance-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border-color: #6576ff;
+}
+
+.leave-balance-title h6 {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary, #1a1a1a);
+  margin: 0;
+}
+
+.leave-balance-title .badge {
+  font-size: 11px;
+  padding: 4px 10px;
+  font-weight: 500;
+}
+
+/* Progress Bar Styling */
+.leave-balance-item .progress {
+  height: 10px;
+  border-radius: 10px;
+  background-color: #e9ecef;
+  margin: 12px 0 8px 0;
+  overflow: visible;
+  display: flex;
+  position: relative;
+}
+
+.leave-balance-item .progress-bar {
+  border-radius: 10px;
+  transition: width 0.6s ease;
+  position: relative;
+}
+
+/* Specific colors for each leave type */
+.leave-balance-item .progress-bar.bg-primary {
+  background: linear-gradient(90deg, #6576ff 0%, #8c9eff 100%) !important;
+}
+
+.leave-balance-item .progress-bar.bg-warning {
+  background: linear-gradient(90deg, #ffc107 0%, #ffdb4d 100%) !important;
+}
+
+/* Vacation leave - Purple/Blue */
+.leave-balance-item:nth-child(1) .progress-bar.bg-primary {
+  background: linear-gradient(90deg, #6576ff 0%, #8c9eff 100%) !important;
+}
+
+/* Sick leave - Pink/Red */
+.leave-balance-item:nth-child(2) .progress-bar.bg-primary {
+  background: linear-gradient(90deg, #ff6b9d 0%, #ff8fb3 100%) !important;
+}
+
+/* Personal leave - Orange/Yellow */
+.leave-balance-item:nth-child(3) .progress-bar.bg-primary {
+  background: linear-gradient(90deg, #ffa726 0%, #ffb74d 100%) !important;
+}
+
+/* Card Enhancements */
+.card.card-bordered {
+  border: 1px solid var(--border-color, #d0d0d0);
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  transition: all 0.3s ease;
+}
+
+.card.card-bordered:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  border-color: #6576ff;
+}
+
+.card-inner {
+  padding: 24px;
+}
+
+.card-title .title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary, #1a1a1a);
+  margin: 0;
+}
+
+/* Form Styling */
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary, #1a1a1a);
+  margin-bottom: 8px;
+  display: block;
+}
+
+.form-control,
+.form-select {
+  border: 1px solid var(--border-color, #d0d0d0);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+.form-control:focus,
+.form-select:focus {
+  border-color: #6576ff;
+  box-shadow: 0 0 0 3px rgba(101, 118, 255, 0.1);
+  outline: none;
+}
+
+/* Button Styling */
+.btn-primary {
+  background: linear-gradient(135deg, #6576ff 0%, #8c9eff 100%);
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 15px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(101, 118, 255, 0.3);
+}
+
+.btn-primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(101, 118, 255, 0.4);
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Dark Theme Support */
+body.dark-mode .leave-balance-item {
+  background: var(--bg-secondary, #0f172a);
+  border-color: var(--border-color, #334155);
+}
+
+body.dark-mode .leave-balance-title h6 {
+  color: var(--text-primary, #f1f5f9);
+}
+
+body.dark-mode .card.card-bordered {
+  background: var(--card-bg, #1e293b);
+  border-color: var(--border-color, #475569);
+}
+
+body.dark-mode .card-title .title {
+  color: var(--text-primary, #f1f5f9);
+}
+
+body.dark-mode .form-label {
+  color: var(--text-primary, #f1f5f9);
+}
+
+body.dark-mode .form-control,
+body.dark-mode .form-select {
+  background: var(--input-bg, #0f172a);
+  border-color: var(--border-color, #475569);
+  color: var(--text-primary, #f1f5f9);
+}
+
+body.dark-mode .leave-balance-item .progress {
+  background-color: var(--bg-tertiary, #334155);
+}
+
+/* Responsive Design */
+@media (min-width: 992px) {
+  /* On LG screens and above, ensure cards are side by side */
+  .leave-cards-row > .col-lg-5 {
+    flex: 0 0 calc(41.666667% - 10px);
+    max-width: calc(41.666667% - 10px);
+  }
+  
+  .leave-cards-row > .col-lg-7 {
+    flex: 0 0 calc(58.333333% - 10px);
+    max-width: calc(58.333333% - 10px);
+  }
+}
+
+@media (max-width: 991px) {
+  /* On screens smaller than LG, cards stack */
+  .leave-cards-row {
+    gap: 20px;
+  }
+  
+  .leave-cards-row > .col-lg-5,
+  .leave-cards-row > .col-lg-7 {
+    flex: 0 0 100%;
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .card-inner {
+    padding: 16px;
+  }
+  
+  .card-title .title {
+    font-size: 16px;
+  }
+  
+  .leave-balance-item {
+    padding: 12px;
+  }
+}
+
+/* Table Styling for Leave History */
+.table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.table thead th {
+  background: var(--bg-secondary, #f8f9fa);
+  border-bottom: 2px solid var(--border-color, #d0d0d0);
+  font-weight: 600;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 12px 16px;
+}
+
+.table tbody td {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border-color, #e0e0e0);
+  font-size: 14px;
+}
+
+.table tbody tr:hover {
+  background: var(--bg-secondary, #f8f9fa);
+}
+
+body.dark-mode .table thead th {
+  background: var(--bg-secondary, #0f172a);
+  border-bottom-color: var(--border-color, #334155);
+}
+
+body.dark-mode .table tbody td {
+  border-bottom-color: var(--border-color, #334155);
+}
+
+body.dark-mode .table tbody tr:hover {
+  background: var(--bg-secondary, #0f172a);
+}
+
+/* Badge Styling */
+.badge {
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.badge-warning {
+  background: rgba(255, 193, 7, 0.2);
+  color: #ff9800;
+}
+
+.badge-success {
+  background: rgba(76, 175, 80, 0.2);
+  color: #4caf50;
+}
+
+.badge-danger {
+  background: rgba(244, 67, 54, 0.2);
+  color: #f44336;
+}
+
+/* Leave Approvals Section Styles */
+.leave-approvals-section {
+  width: 100%;
+  transition: all 0.3s ease;
+}
+
+/* Ensure content expands when sidebar is collapsed */
+.nk-content {
+  transition: margin-left 0.3s ease, width 0.3s ease;
+}
+
+/* Leave Request Card Styling */
+.leave-request-card {
+  background: var(--card-bg, #ffffff);
+  border: 1px solid var(--border-color, #e5e9f2) !important;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.leave-request-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border-color: #6576ff !important;
+}
+
+/* User Avatar in Leave Request Card */
+.leave-request-card .user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 16px;
+}
+
+/* Leave Request Actions - Button Styling */
+.leave-request-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 100px;
+}
+
+.leave-request-actions .btn {
+  width: 100%;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.3s ease;
+  border: none;
+}
+
+.leave-request-actions .btn-success {
+  background: #10b981;
+  color: #ffffff;
+}
+
+.leave-request-actions .btn-success:hover {
+  background: #059669;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.leave-request-actions .btn-danger {
+  
+  background: #ef4444;
+  color: #ffffff;
+}
+
+.leave-request-actions .btn-danger:hover {
+  background: #dc2626;
+  transform: translateY(-2px);
+  box-shadow: 0 2px 2px rgba(239, 68, 68, 0.3);
+}
+
+/* Leave Requests Table Styling */
+.leave-requests-table {
+  overflow-x: hidden;
+  width: 100%;
+}
+
+.leave-requests-table .table {
+  width: 100%;
+  margin-bottom: 0;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.leave-requests-table .table thead th {
+  background: var(--bg-secondary, #f8f9fa);
+  border-bottom: 2px solid var(--border-color, #d0d0d0);
+  font-weight: 600;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 10px 12px;
+  white-space: nowrap;
+  color: var(--text-primary, #364a63);
+}
+
+.leave-requests-table .table tbody td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border-color, #e5e9f2);
+  font-size: 13px;
+  vertical-align: middle;
+  color: var(--text-primary, #364a63);
+}
+
+.leave-requests-table .table tbody tr:hover {
+  background: var(--bg-secondary, #f8f9fa);
+}
+
+.leave-requests-table .table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Badge styling in table */
+.leave-requests-table .badge {
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.leave-requests-table .badge-dim.badge-outline-primary {
+  background: rgba(101, 118, 255, 0.1);
+  color: #6576ff;
+  border: 1px solid rgba(101, 118, 255, 0.3);
+}
+
+/* Dark mode support for leave approvals */
+body.dark-mode .leave-request-card {
+  background: var(--card-bg, #1e293b);
+  border-color: var(--border-color, #475569) !important;
+}
+
+body.dark-mode .leave-requests-table .table thead th {
+  background: var(--bg-secondary, #0f172a);
+  border-bottom-color: var(--border-color, #334155);
+  color: var(--text-primary, #f1f5f9);
+}
+
+body.dark-mode .leave-requests-table .table tbody td {
+  border-bottom-color: var(--border-color, #334155);
+  color: var(--text-primary, #f1f5f9);
+}
+
+body.dark-mode .leave-requests-table .table tbody tr:hover {
+  background: var(--bg-secondary, #0f172a);
+}
+
+/* Action buttons in table */
+.leave-requests-table .btn-sm {
+  padding: 8px 14px;
+  font-size: 13px;
+  border-radius: 6px;
+  border: none;
+  transition: all 0.3s ease;
+  font-weight: 600;
+  min-width: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.leave-requests-table .btn-success {
+  background: #10b981;
+  color: #ffffff;
+}
+
+.leave-requests-table .btn-success:hover {
+  background: #059669;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+}
+
+.leave-requests-table .btn-danger {
+  background: #ef4444;
+  color: #ffffff;
+}
+
+.leave-requests-table .btn-danger:hover {
+  background: #dc2626;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+}
+
+.leave-requests-table .d-flex.gap-2 {
+  gap: 10px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Action column styling */
+.leave-requests-table tbody td:last-child {
+  text-align: center;
+  white-space: nowrap;
+  min-width: 200px;
+}
+
+/* Button icon spacing */
+.leave-requests-table .btn .mr-1 {
+  margin-right: 6px;
+}
+
+/* Ensure buttons don't wrap */
+.leave-requests-table .btn-sm {
+  white-space: nowrap;
+}
+
+/* Modern Leave Balance Cards */
+.leave-balance-vertical {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.leave-card-modern {
+  padding: 18px 20px;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  transition: all 0.3s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.leave-card-modern:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+/* Modern Leave Badge */
+/* .leave-badge-modern {
+  min-width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  font-size: 22px;
+  font-weight: 700;
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.total-badge {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
+
+.vacation-badge {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+}
+
+.sick-badge {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+} */
+
+/* Card specific styling */
+.leave-card-modern h6 {
+  font-size: 15px;
+  margin: 0;
+}
+
+.leave-card-modern .progress {
+  overflow: visible;
+}
+
+.leave-card-modern .progress-bar {
+  transition: width 0.6s ease;
+}
+
+/* Dark mode support */
+body.dark-mode .leave-card-modern {
+  background: #1e293b;
+  border-color: #475569;
+}
+
+body.dark-mode .leave-card-modern h6 {
+  color: #f1f5f9;
+}
+
+body.dark-mode .leave-card-modern .progress {
+  background-color: #334155;
+}
+
+/* Cancel button styling */
+.leave-requests-table .btn-danger {
+  background: #ef4444;
+  color: #ffffff;
+  border: none;
+  padding: 8px 16px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.leave-requests-table .btn-danger:hover {
+  background: #dc2626;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+}
+
+.leave-requests-table .btn-danger i {
+  margin-right: 6px;
+}
+
+/* Modern Pagination Styling */
+.pagination-wrapper {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 20px;
+  padding: 16px 20px;
+  /* background: #f8f9fa; */
+  border-radius: 8px;
+  /* border: 1px solid #e5e7eb; */
+}
+
+.pagination-info {
+  font-size: 14px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.pagination-btn {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  color: #374151;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 14px;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  background: #007bff;
+  border-color: #007bff;
+  color: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0, 123, 255, 0.25);
+}
+
+.pagination-btn:disabled {
+  background: #f3f4f6;
+  border-color: #e5e7eb;
+  color: #9ca3af;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.pagination-btn i {
+  font-size: 12px;
+}
+
+.pagination-pages {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 8px;
+  min-width: 80px;
+  justify-content: center;
+}
+
+.current-page {
+  font-size: 15px;
+  font-weight: 700;
+  color: #007bff;
+  min-width: 24px;
+  text-align: center;
+}
+
+.page-separator {
+  font-size: 14px;
+  color: #9ca3af;
+  font-weight: 400;
+}
+
+.total-pages {
+  font-size: 15px;
+  font-weight: 600;
+  color: #6b7280;
+  min-width: 24px;
+  text-align: center;
+}
+
+/* Dark mode pagination */
+body.dark-mode .pagination-wrapper {
+  background: #1e293b;
+  border-color: #334155;
+}
+
+body.dark-mode .pagination-info {
+  color: #94a3b8;
+}
+
+body.dark-mode .pagination-btn {
+  background: #334155;
+  border-color: #475569;
+  color: #e2e8f0;
+}
+
+body.dark-mode .pagination-btn:hover:not(:disabled) {
+  background: #3b82f6;
+  border-color: #3b82f6;
+  color: #ffffff;
+}
+
+body.dark-mode .pagination-btn:disabled {
+  background: #1e293b;
+  border-color: #334155;
+  color: #64748b;
+}
+
+body.dark-mode .current-page {
+  color: #60a5fa;
+}
+
+body.dark-mode .total-pages {
+  color: #94a3b8;
+}
+
+body.dark-mode .page-separator {
+  color: #64748b;
+}
+
+/* Responsive pagination */
+@media (max-width: 768px) {
+  .pagination-wrapper {
+    flex-direction: column;
+    gap: 12px;
+    padding: 12px 16px;
+  }
+  
+  .pagination-info {
+    font-size: 13px;
+  }
+  
+  .pagination-btn {
+    width: 32px;
+    height: 32px;
+  }
+  
+  .pagination-pages {
+    min-width: 70px;
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .leave-request-card {
+    padding: 12px !important;
+  }
+  
+  .leave-request-actions {
+    flex-direction: row;
+    width: 100%;
+    margin-top: 12px;
+  }
+  
+  .leave-request-card .d-flex {
+    flex-direction: column;
+  }
+  
+  .leave-requests-table {
+    font-size: 12px;
+  }
+  
+  .leave-requests-table .table thead th,
+  .leave-requests-table .table tbody td {
+    padding: 10px 12px;
+  }
+  
+  .leave-type-card {
+    margin-bottom: 12px;
+  }
+  
+  .leave-balance-item-new {
+    padding: 16px;
+  }
+}

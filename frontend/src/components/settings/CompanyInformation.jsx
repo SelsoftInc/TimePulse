@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../../contexts/AuthContext";
+import { useToast } from "../../contexts/ToastContext";
+import { apiFetch } from "../../config/api";
 import "./CompanyInformation.css";
 
 const CompanyInformation = () => {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [companyInfo, setCompanyInfo] = useState({
     tenantName: "",
     address: "",
@@ -44,8 +47,8 @@ const CompanyInformation = () => {
         return;
       }
 
-      const response = await fetch(
-        `http://localhost:5001/api/tenants/${tenantId}`,
+      const response = await apiFetch(
+        `/api/tenants/${tenantId}`,
         {
           method: "GET",
           headers: {
@@ -203,12 +206,13 @@ const CompanyInformation = () => {
         console.log("📏 Logo length:", companyInfo.logo.length);
       }
 
+      const apiBase = process.env.REACT_APP_API_BASE || 'http://localhost:5001';
       console.log(
-        `🌐 Making API call to: http://localhost:5001/api/tenants/${tenantId}`
+        `🌐 Making API call to: ${apiBase}/api/tenants/${tenantId}`
       );
 
       const response = await fetch(
-        `http://localhost:5001/api/tenants/${tenantId}`,
+        `${apiBase}/api/tenants/${tenantId}`,
         {
           method: "PUT",
           headers: {
@@ -230,10 +234,15 @@ const CompanyInformation = () => {
 
       if (data.success) {
         console.log("🎉 Save successful!");
-        alert("Company information saved successfully!");
+        toast.success("Your company information has been saved.", {
+          title: "Company Information Saved"
+        });
       } else {
         console.log("❌ Save failed:", data.error);
         setError(data.error || "Failed to save company information");
+        toast.error(data.error || "Failed to save company information", {
+          title: "Save Failed"
+        });
       }
     } catch (error) {
       console.error("Error saving company info:", error);
@@ -315,7 +324,9 @@ const CompanyInformation = () => {
       {error && (
         <div className="alert alert-danger" role="alert">
           <div className="alert-content">
-            <strong>Error: </strong> {error}
+            <span>
+              <strong>Error: </strong> {error}
+            </span>
             <button
               className="btn-retry"
               onClick={fetchTenantInfo}

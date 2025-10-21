@@ -7,15 +7,15 @@
 
 .settings-sidebar {
   width: 250px;
-  background-color: #f8f9fa;
-  border-right: 1px solid #e9ecef;
+  background-color: var(--settings-sidebar-bg);
+  border-right: 1px solid var(--card-border);
   padding: 1.5rem 0;
 }
 
 .settings-content {
   flex: 1;
   padding: 1.5rem 2rem;
-  background-color: #fff;
+  background-color: var(--settings-content-bg);
 }
 
 .settings-menu {
@@ -33,12 +33,12 @@
 }
 
 .settings-menu-item:hover {
-  background-color: #e9ecef;
+  background-color: var(--settings-menu-hover);
 }
 
 .settings-menu-item.active {
-  background-color: #e9ecef;
-  border-left: 3px solid #007bff;
+  background-color: var(--settings-menu-active);
+  border-left: 3px solid var(--settings-menu-border);
   font-weight: 500;
 }
 
@@ -52,11 +52,12 @@
   font-size: 1.5rem;
   margin-bottom: 1.5rem;
   padding-bottom: 1rem;
-  border-bottom: 1px solid #e9ecef;
+  border-bottom: 1px solid var(--card-border);
+  color: var(--text-color);
 } 
 
 .settings-description {
-  color: #6c757d;
+  color: var(--text-secondary);
   margin-bottom: 1.5rem;
 }
 
@@ -73,21 +74,23 @@
 }
 
 .plan-option {
-  border: 1px solid #dee2e6;
+  border: 1px solid var(--plan-border);
   border-radius: 0.25rem;
   padding: 1.25rem;
   cursor: pointer;
   transition: border-color 0.2s, transform 0.2s;
   position: relative;
+  background-color: var(--card-bg);
+  color: var(--text-color);
 }
 
 .plan-option:hover {
-  border-color: #adb5bd;
+  border-color: var(--plan-hover-border);
   transform: translateY(-2px);
 }
 
 .plan-option.active {
-  border-color: grey;
+  border-color: var(--plan-active-border);
   border-width: 2px;
 }
 
@@ -110,8 +113,21 @@
 }
 
 .plan-price .period {
-  color: #6c757d;
+  color: var(--text-secondary) !important;
   font-size: 0.875rem;
+  opacity: 1;
+}
+
+/* Ensure plan pricing text is visible */
+.plan-price .amount {
+  font-weight: bold;
+  color: var(--text-color) !important;
+}
+
+.plan-price .period {
+  color: var(--text-secondary) !important;
+  font-size: 0.875rem;
+  opacity: 1;
 }
 
 .plan-features {
@@ -136,8 +152,8 @@
   position: absolute;
   top: 0.5rem;
   right: 0.5rem;
-  background-color: darkblue ;
-  color: white;
+  background-color: var(--plan-current-bg);
+  color: var(--plan-current-text);
   font-size: 0.75rem;
   padding: 0.25rem 0.5rem;
   border-radius: 0.25rem;
@@ -167,10 +183,11 @@
   display: flex;
   align-items: center;
   padding: 1rem;
-  border: 1px solid #dee2e6;
+  border: 1px solid var(--plan-border);
   border-radius: 0.5rem;
   margin-bottom: 1rem;
-
+  background-color: var(--card-bg);
+  color: var(--text-color);
 }
 
 .payment-icon {
@@ -187,7 +204,7 @@
 }
 
 .payment-expiry {
-  color: #6c757d;
+  color: var(--text-secondary);
   font-size: 0.875rem;
 }
 
@@ -205,7 +222,8 @@
   justify-content: space-between;
   align-items: center;
   padding: 1rem 0;
-  border-bottom: 1px solid #e9ecef;
+  border-bottom: 1px solid var(--card-border);
+  background-color: transparent;
 }
 
 .notification-item:last-child {
@@ -214,12 +232,27 @@
 
 .notification-info h5 {
   margin-bottom: 0.25rem;
+  color: var(--text-color);
+  font-weight: 500;
 }
 
 .notification-info p {
-  color: #6c757d;
+  color: var(--text-secondary);
   margin-bottom: 0;
   font-size: 0.875rem;
+}
+
+/* Dark mode notification styling */
+body.dark-mode .notification-item {
+  background-color: transparent;
+}
+
+body.dark-mode .notification-info h5 {
+  color: var(--text-light);
+}
+
+body.dark-mode .notification-info p {
+  color: var(--text-secondary);
 }
 
 /* Integration Settings */
@@ -253,13 +286,13 @@
 
 .integration-info p {
   margin-bottom: 0;
-  color: #6c757d;
+  color: var(--text-secondary);
 }
 
 .integration-details {
   margin-top: 1.5rem;
   padding-top: 1.5rem;
-  border-top: 1px solid #e9ecef;
+  border-top: 1px solid var(--card-border);
 }
 
 .integration-detail-item {
@@ -277,8 +310,10 @@
   justify-content: space-between;
   align-items: center;
   padding: 1rem;
-  border: 1px solid #dee2e6;
+  border: 1px solid var(--plan-border);
   border-radius: 0.25rem;
+  background-color: var(--card-bg);
+  color: var(--text-color);
 }
 
 .api-key-name {
@@ -287,15 +322,16 @@
 
 .api-key-value {
   font-family: monospace;
-  color: #6c757d;
+  color: var(--text-secondary);
 }
 
 /* Card Container */
 .card {
-  border: 1.5px solid #ddd;
+  border: 1.5px solid var(--card-border);
   border-radius: 8px;
   padding: 20px;
-  background-color: #fff;
+  background-color: var(--card-bg);
+  color: var(--text-color);
   /* box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); */
 }
 
@@ -305,7 +341,7 @@
   font-size: 1.5rem;
   font-weight: 600;
   margin-bottom: 15px;
-  color: #333;
+  color: var(--text-color);
 }
 
 /* Table */
@@ -315,7 +351,7 @@
 }
 
 .table thead {
-  background-color: #f7f7f7;
+  background-color: var(--table-header-bg);
 }
 
 .table th,
@@ -323,13 +359,13 @@
   padding: 12px 16px;
   text-align: left;
   font-size: 1rem;
-  color: #555;
-  border-bottom: 1px solid #eaeaea;
+  color: var(--text-color);
+  border-bottom: 1px solid var(--table-border);
 }
 
 .table th {
   font-weight: 600;
-  color: #333;
+  color: var(--table-header-text);
 }
 
 /* Badge styles */
@@ -337,29 +373,29 @@
   padding: 5px 10px;
   border-radius: 12px;
   font-size: 0.875rem;
-  border: 1.2px solid #004905;
+  border: 1.2px solid var(--badge-outline-success-border);
   font-weight: 500;
   text-transform: capitalize;
 }
 
 .badge-success {
-  background-color: whitesmoke;
-  color: green;
+  background-color: var(--badge-outline-success-bg);
+  color: var(--badge-outline-success-text);
 }
 
 .badge-warning {
-  background-color: #ffc107;
-  color: #333;
+  background-color: var(--badge-warning-bg);
+  color: var(--badge-warning-text);
 }
 
 /* Button */
 .btn {
   display: inline-block;
   padding: 6px 12px;
-  border: 1px solid #007bff;
+  border: 1px solid var(--btn-outline-border);
   border-radius: 4px;
-  color: #007bff;
-  background-color: #fff;
+  color: var(--btn-outline-text);
+  background-color: var(--btn-outline-bg);
   font-size: 0.875rem;
   text-align: center;
   cursor: pointer;
@@ -367,12 +403,12 @@
 }
 
 .btn:hover {
-  background-color: #f0f8ff;
+  background-color: var(--btn-outline-hover);
 }
 
 .btn-outline-primary {
-  border-color: #007bff;
-  color: #007bff;
+  border-color: var(--btn-outline-border);
+  color: var(--btn-outline-text);
 }
 
 .btn-sm {
@@ -394,13 +430,13 @@
   max-width: 1200px;
   margin: 0 auto;
   border-collapse: collapse;
-  border: 1px solid #ddd;
-  background-color: #fff;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--card-border);
+  background-color: var(--table-bg);
+  box-shadow: var(--shadow-md);
 }
 
 .table-payment thead {
-  background-color: #f7f7f7;
+  background-color: var(--table-header-bg);
 }
 
 .table-payment th,
@@ -408,13 +444,13 @@
   padding: 12px 16px;
   text-align: left;
   font-size: 1rem;
-  color: #555;
-  border-bottom: 1px solid #eaeaea;
+  color: var(--text-color);
+  border-bottom: 1px solid var(--table-border);
 }
 
 .table-payment th {
   font-weight: 600;
-  color: #333;
+  color: var(--table-header-text);
 }
 
 /* Badge styles */
@@ -427,23 +463,23 @@
 }
 
 .badge-success {
-  background-color: #28a745;
-  color: #fff;
+  background-color: var(--badge-success-bg);
+  color: var(--badge-success-text);
 }
 
 .badge-warning {
-  background-color: #ffc107;
-  color: #333;
+  background-color: var(--badge-warning-bg);
+  color: var(--badge-warning-text);
 }
 
 /* Button */
 .btn {
   display: inline-block;
   padding: 6px 12px;
-  border: 1px solid #007bff;
+  border: 1px solid var(--btn-outline-border);
   border-radius: 4px;
-  color: #007bff;
-  background-color: #fff;
+  color: var(--btn-outline-text);
+  background-color: var(--btn-outline-bg);
   font-size: 0.875rem;
   text-align: center;
   cursor: pointer;
@@ -451,12 +487,12 @@
 }
 
 .btn:hover {
-  background-color: #f0f8ff;
+  background-color: var(--btn-outline-hover);
 }
 
 .btn-outline-primary {
-  border-color: #007bff;
-  color: #007bff;
+  border-color: var(--btn-outline-border);
+  color: var(--btn-outline-text);
 }
 
 .btn-sm {

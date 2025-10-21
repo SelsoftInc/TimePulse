@@ -3,9 +3,11 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { PERMISSIONS } from '../../utils/roles';
 import PermissionGuard from '../common/PermissionGuard';
 import { useAuth } from '../../contexts/AuthContext';
+import { useToast } from '../../contexts/ToastContext';
 import './Clients.css';
 import { PAYMENT_METHODS, CURRENCIES, CLIENT_TYPES } from '../../constants/lookups';
-import { formatPhoneInput, validatePhoneDigits } from '../../utils/validation';
+import { formatPhoneInput } from '../../utils/validation';
+import { validatePhoneNumber, validateZipCode, validateEmail, validateName } from '../../utils/validations';
 import { apiFetch } from '../../config/api';
 import {
   COUNTRY_OPTIONS,
@@ -13,6 +15,7 @@ import {
   TAX_ID_LABELS,
   TAX_ID_PLACEHOLDERS,
   PAYMENT_TERMS_OPTIONS,
+  fetchPaymentTerms,
   getPostalLabel,
   getPostalPlaceholder,
   validateCountryTaxId
@@ -22,10 +25,12 @@ const ClientForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
   const navigate = useNavigate();
   const { subdomain } = useParams();
   const { user } = useAuth();
+  const { toast } = useToast();
   const addressInputRef = useRef(null);
   const autocompleteRef = useRef(null);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({ phone: '', taxId: '' });
+  const [paymentTermsOptions, setPaymentTermsOptions] = useState(PAYMENT_TERMS_OPTIONS);
   const [formData, setFormData] = useState({
     name: '',
     contactPerson: '',
@@ -79,6 +84,15 @@ const ClientForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
       }));
     }
   }, [initialData]);
+
+  // Load payment terms from API
+  useEffect(() => {
+    const loadPaymentTerms = async () => {
+      const terms = await fetchPaymentTerms();
+      setPaymentTermsOptions(terms);
+    };
+    loadPaymentTerms();
+  }, []);
 
   // Load Google Places script and wire Autocomplete to address field
   useEffect(() => {
@@ -165,11 +179,20 @@ const ClientForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
   const handleBlur = (e) => {
     const { name, value } = e.target;
     if (name === 'phone') {
-      const msg = validatePhoneDigits(value);
-      setErrors(prev => ({ ...prev, phone: msg }));
+      const validation = validatePhoneNumber(value);
+      setErrors(prev => ({ ...prev, phone: validation.isValid ? '' : validation.message }));
     } else if (name === 'taxId') {
       const msg = validateCountryTaxId(formData.country, value);
       setErrors(prev => ({ ...prev, taxId: msg }));
+    } else if (name === 'zip') {
+      const validation = validateZipCode(value);
+      setErrors(prev => ({ ...prev, zip: validation.isValid ? '' : validation.message }));
+    } else if (name === 'email') {
+      const validation = validateEmail(value);
+      setErrors(prev => ({ ...prev, email: validation.isValid ? '' : validation.message }));
+    } else if (name === 'clientName') {
+      const validation = validateName(value, 'Client Name');
+      setErrors(prev => ({ ...prev, clientName: validation.isValid ? '' : validation.message }));
     }
   };
 
@@ -181,10 +204,21 @@ const ClientForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
       if (!tenantId) throw new Error('No tenant information');
 
       // Validate critical fields
-      const phoneErr = validatePhoneDigits(formData.phone);
+      const phoneValidation = validatePhoneNumber(formData.phone);
       const taxErr = validateCountryTaxId(formData.country, formData.taxId);
-      if (phoneErr || taxErr) {
-        setErrors({ phone: phoneErr, taxId: taxErr });
+      const zipValidation = validateZipCode(formData.zip);
+      const emailValidation = validateEmail(formData.email);
+      const nameValidation = validateName(formData.clientName, 'Client Name');
+      
+      const newErrors = {};
+      if (!phoneValidation.isValid) newErrors.phone = phoneValidation.message;
+      if (taxErr) newErrors.taxId = taxErr;
+      if (!zipValidation.isValid) newErrors.zip = zipValidation.message;
+      if (!emailValidation.isValid) newErrors.email = emailValidation.message;
+      if (!nameValidation.isValid) newErrors.clientName = nameValidation.message;
+      
+      if (Object.keys(newErrors).length > 0) {
+        setErrors(newErrors);
         setLoading(false);
         return;
       }
@@ -240,7 +274,9 @@ const ClientForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
       }
     } catch (err) {
       console.error(`Failed to ${mode === 'edit' ? 'update' : 'create'} client:`, err);
-      alert(`Failed to ${mode === 'edit' ? 'update' : 'create'} client: ${err.message}`);
+      toast.error(err.message, {
+        title: `Failed to ${mode === 'edit' ? 'Update' : 'Create'} Client`
+      });
     } finally {
       setLoading(false);
     }
@@ -248,7 +284,7 @@ const ClientForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
 
   return (
     <PermissionGuard requiredPermission={mode === 'edit' ? PERMISSIONS.EDIT_CLIENT : PERMISSIONS.CREATE_CLIENT}>
-      <div className="nk-content">
+      <div className="nk-conten">
         <div className="container-fluid">
           <div className="nk-block-head">
             <div className="nk-block-between">
@@ -261,7 +297,7 @@ const ClientForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
 
           <div className="nk-block">
             <div className="card card-bordered">
-              <div className="card-inner">
+              <div className="card-inne">
                 <form onSubmit={handleSubmit}>
                   <div className="row g-4">
                     <div className="col-lg-6">
@@ -403,8 +439,13 @@ const ClientForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
                           name="zip"
                           value={formData.zip}
                           onChange={handleChange}
+                          onBlur={handleBlur}
                           placeholder={getPostalPlaceholder(formData.country)}
+                          maxLength={formData.country === 'United States' ? 5 : 10}
                         />
+                        {errors.zip && (
+                          <div className="mt-1"><small className="text-danger">{errors.zip}</small></div>
+                        )}
                       </div>
                     </div>
                     <div className="col-lg-6">
@@ -477,7 +518,7 @@ const ClientForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
                     
                     <div className="col-lg-6">
                       <div className="form-group">
-                        <label className="form-label" htmlFor="paymentTerms">Invoice Cycle*</label>
+                        <label className="form-label" htmlFor="paymentTerms">Payment Term*</label>
                         <select
                           className="form-select"
                           id="paymentTerms"
@@ -486,7 +527,7 @@ const ClientForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
                           onChange={handleChange}
                           required
                         >
-                          {PAYMENT_TERMS_OPTIONS.map(pt => (
+                          {paymentTermsOptions.map(pt => (
                             <option key={pt.value} value={pt.value}>{pt.label}</option>
                           ))}
                         </select>
@@ -638,7 +679,7 @@ const ClientForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
                     </div>
                     <div className="col-12">
                       <div className="form-group">
-                        <button type="submit" className="btn btn-primary" disabled={loading}>
+                        <button type="submit" className="btn btn-primary btn-create-client" disabled={loading}>
                           {loading ? (
                             <>
                               <span className="spinner-border spinner-border-sm mr-1" role="status" aria-hidden="true"></span>

@@ -1,118 +1,130 @@
 // src/components/reports/ReportsDashboard.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "./ReportsDashboard.css";
 
 const ReportsDashboard = () => {
   const [activeTab, setActiveTab] = useState("client");
-  const [selectedMonth, setSelectedMonth] = useState("July");
-  const [selectedYear, setSelectedYear] = useState("2023");
+  const [selectedMonth, setSelectedMonth] = useState(new Date().toLocaleDateString('en-US', { month: 'long' }));
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  // Sample client report data - in a real app, this would come from an API
-  const clientReportData = [
-    {
-      id: 1,
-      name: "JPMC",
-      totalHours: 800,
-      totalEmployees: 7,
-      totalBilled: 80000,
-      projects: [
-        { name: "TimePulse Development", hours: 400, employees: 3 },
-        { name: "API Integration", hours: 650, employees: 2 },
-        { name: "Client Portal Redesign", hours: 150, employees: 2 },
-      ],
-    },
-    {
-      id: 2,
-      name: "Accenture",
-      totalHours: 500,
-      totalEmployees: 5,
-      totalBilled: 50000,
-      projects: [
-        { name: "Data Migration", hours: 300, employees: 3 },
-        { name: "Cloud Infrastructure", hours: 100, employees: 2 },
-      ],
-    },
-    {
-      id: 3,
-      name: "Virtusa",
-      totalHours: 300,
-      totalEmployees: 3,
-      totalBilled: 30000,
-      projects: [{ name: "Mobile App Development", hours: 300, employees: 3 }],
-    },
-    {
-      id: 4,
-      name: "Cognizant",
-      totalHours: 450,
-      totalEmployees: 5,
-      totalBilled: 45000,
-      projects: [
-        { name: "UI/UX Redesign", hours: 250, employees: 3 },
-        { name: "Testing Automation", hours: 200, employees: 2 },
-      ],
-    },
-    {
-      id: 5,
-      name: "IBM",
-      totalHours: 900,
-      totalEmployees: 10,
-      totalBilled: 90000,
-      projects: [
-        { name: "AI Integration", hours: 750, employees: 4 },
-        { name: "Data Analytics", hours: 520, employees: 3 },
-        { name: "Security Implementation", hours: 200, employees: 3 },
-      ],
-    },
-  ];
+  // Real data from API
+  const [clientReportData, setClientReportData] = useState([]);
+  const [employeeReportData, setEmployeeReportData] = useState([]);
+  const [invoiceReportData, setInvoiceReportData] = useState([]);
+  const [analyticsData, setAnalyticsData] = useState(null);
 
-  // Sample employee report data - in a real app, this would come from an API
-  const employeeReportData = [
-    {
-      id: 1,
-      name: "John Doe",
-      totalHours: 160,
-      utilization: 100,
-      clientName: "JPMC",
-      projectName: "TimePulse Development",
-      weeklyBreakdown: [40, 40, 40, 40],
-    },
-    {
-      id: 2,
-      name: "Jane Smith",
-      totalHours: 152,
-      utilization: 95,
-      clientName: "JPMC",
-      projectName: "API Integration",
-      weeklyBreakdown: [40, 40, 36, 36],
-    },
-    {
-      id: 3,
-      name: "Robert Johnson",
-      totalHours: 168,
-      utilization: 105,
-      clientName: "Accenture",
-      projectName: "Data Migration",
-      weeklyBreakdown: [42, 42, 42, 42],
-    },
-    {
-      id: 4,
-      name: "Emily Davis",
-      totalHours: 144,
-      utilization: 90,
-      clientName: "IBM",
-      projectName: "AI Integration",
-      weeklyBreakdown: [36, 36, 36, 36],
-    },
-    {
-      id: 5,
-      name: "Michael Brown",
-      totalHours: 160,
-      utilization: 100,
-      clientName: "Cognizant",
-      projectName: "UI/UX Redesign",
-      weeklyBreakdown: [40, 40, 40, 40],
-    },
-  ];
+  // Fetch data from API
+  useEffect(() => {
+    fetchReportsData();
+  }, [selectedMonth, selectedYear]);
+
+  const fetchReportsData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const userInfo = JSON.parse(localStorage.getItem("user") || "{}");
+      if (!userInfo.tenantId) {
+        throw new Error("No tenant information available");
+      }
+
+      // Calculate date range based on selected month/year
+      const year = parseInt(selectedYear);
+      const monthIndex = new Date(`${selectedMonth} 1, ${year}`).getMonth();
+      const startDate = new Date(year, monthIndex, 1);
+      const endDate = new Date(year, monthIndex + 1, 0);
+
+      const headers = {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      };
+
+      // Fetch all report data in parallel
+      console.log('🔍 Fetching reports with:', {
+        tenantId: userInfo.tenantId,
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString()
+      });
+
+      const [clientsRes, employeesRes, invoicesRes, analyticsRes] =
+        await Promise.all([
+           fetch(
+             `http://localhost:5001/api/reports/clients?tenantId=${
+               userInfo.tenantId
+             }&startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`,
+             { headers }
+           ).catch(err => {
+             console.error('❌ Client reports fetch failed:', err);
+             throw err;
+           }),
+           fetch(
+             `http://localhost:5001/api/reports/employees?tenantId=${
+               userInfo.tenantId
+             }&startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`,
+             { headers }
+           ).catch(err => {
+             console.error('❌ Employee reports fetch failed:', err);
+             throw err;
+           }),
+           fetch(
+             `http://localhost:5001/api/reports/invoices?tenantId=${
+               userInfo.tenantId
+             }&startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`,
+             { headers }
+           ).catch(err => {
+             console.error('❌ Invoice reports fetch failed:', err);
+             throw err;
+           }),
+           fetch(
+             `http://localhost:5001/api/reports/analytics?tenantId=${userInfo.tenantId}&period=month`,
+             { headers }
+           ).catch(err => {
+             console.error('❌ Analytics fetch failed:', err);
+             throw err;
+           }),
+        ]);
+
+      // Process responses
+      const [clientsData, employeesData, invoicesData, analyticsData] =
+        await Promise.all([
+          clientsRes.json(),
+          employeesRes.json(),
+          invoicesRes.json(),
+          analyticsRes.json(),
+        ]);
+
+      if (clientsData.success) {
+        setClientReportData(clientsData.data || []);
+      } else {
+        console.error("Failed to fetch client reports:", clientsData.error);
+      }
+
+      if (employeesData.success) {
+        setEmployeeReportData(employeesData.data || []);
+      } else {
+        console.error("Failed to fetch employee reports:", employeesData.error);
+      }
+
+      if (invoicesData.success) {
+        setInvoiceReportData(invoicesData.data || []);
+      } else {
+        console.error("Failed to fetch invoice reports:", invoicesData.error);
+      }
+
+      if (analyticsData.success) {
+        setAnalyticsData(analyticsData.data || null);
+      } else {
+        console.error("Failed to fetch analytics:", analyticsData.error);
+      }
+    } catch (error) {
+      console.error("Error fetching reports data:", error);
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Calculate total hours and amount for all clients
   const totalHours = clientReportData.reduce(
@@ -537,6 +549,232 @@ const ReportsDashboard = () => {
     );
   };
 
+  // Function to render invoice report
+  const renderInvoiceReport = () => {
+    return (
+      <div className="nk-block">
+        <div className="card card-bordered card-stretch">
+          <div className="card-inner-group">
+            <div className="card-inne position-relative">
+              <div className="card-title-group">
+                <div className="card-title">
+                  <h5 className="title">Invoice Report</h5>
+                </div>
+              </div>
+              <div className="nk-tb-list nk-tb-orders">
+                <div className="nk-tb-item nk-tb-head">
+                  <div className="nk-tb-col">
+                    <span>Invoice ID</span>
+                  </div>
+                  <div className="nk-tb-col tb-col-md">
+                    <span>Client</span>
+                  </div>
+                  <div className="nk-tb-col tb-col-md">
+                    <span>Month</span>
+                  </div>
+                  <div className="nk-tb-col tb-col-md">
+                    <span>Hours</span>
+                  </div>
+                  <div className="nk-tb-col">
+                    <span>Amount</span>
+                  </div>
+                  <div className="nk-tb-col">
+                    <span>Status</span>
+                  </div>
+                </div>
+                {invoiceReportData.map((invoice) => (
+                  <div key={invoice.id} className="nk-tb-item">
+                    <div className="nk-tb-col">
+                      <span className="tb-lead">{invoice.id}</span>
+                    </div>
+                    <div className="nk-tb-col tb-col-md">
+                      <span>{invoice.clientName}</span>
+                    </div>
+                    <div className="nk-tb-col tb-col-md">
+                      <span>
+                        {invoice.month} {invoice.year}
+                      </span>
+                    </div>
+                    <div className="nk-tb-col tb-col-md">
+                      <span>{invoice.totalHours}</span>
+                    </div>
+                    <div className="nk-tb-col">
+                      <span className="tb-amount">
+                        ${invoice.amount.toLocaleString()}
+                      </span>
+                    </div>
+                    <div className="nk-tb-col">
+                      <span
+                        className={`badge bg-outline-${
+                          invoice.status === "Paid"
+                            ? "success"
+                            : invoice.status === "Pending"
+                            ? "warning"
+                            : "danger"
+                        }`}
+                      >
+                        {invoice.status}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Function to render analytics report
+  const renderAnalyticsReport = () => {
+    if (!analyticsData) {
+      return (
+        <div className="nk-block">
+          <div className="card">
+            <div className="card-inner text-center p-4">
+              <p className="text-muted">No analytics data available</p>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="nk-block">
+        <div className="row g-gs">
+          {/* Summary Cards */}
+          <div className="col-md-3 col-sm-6">
+            <div className="card card-bordered">
+              <div className="card-inner">
+                <div className="card-title-group align-start mb-2">
+                  <div className="card-title">
+                    <h6 className="title">Total Hours</h6>
+                  </div>
+                </div>
+                <div className="amount">{analyticsData.summary.totalHours}</div>
+                <div className="change up text-success">
+                  <em className="icon ni ni-arrow-long-up"></em>
+                  <span>vs last period</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="col-md-3 col-sm-6">
+            <div className="card card-bordered">
+              <div className="card-inner">
+                <div className="card-title-group align-start mb-2">
+                  <div className="card-title">
+                    <h6 className="title">Total Revenue</h6>
+                  </div>
+                </div>
+                <div className="amount">
+                  ${analyticsData.summary.totalRevenue.toLocaleString()}
+                </div>
+                <div className="change up text-success">
+                  <em className="icon ni ni-arrow-long-up"></em>
+                  <span>vs last period</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="col-md-3 col-sm-6">
+            <div className="card card-bordered">
+              <div className="card-inner">
+                <div className="card-title-group align-start mb-2">
+                  <div className="card-title">
+                    <h6 className="title">Active Employees</h6>
+                  </div>
+                </div>
+                <div className="amount">
+                  {analyticsData.summary.totalEmployees}
+                </div>
+                <div className="change up text-success">
+                  <em className="icon ni ni-arrow-long-up"></em>
+                  <span>vs last period</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="col-md-3 col-sm-6">
+            <div className="card card-bordered">
+              <div className="card-inner">
+                <div className="card-title-group align-start mb-2">
+                  <div className="card-title">
+                    <h6 className="title">Active Clients</h6>
+                  </div>
+                </div>
+                <div className="amount">
+                  {analyticsData.summary.totalClients}
+                </div>
+                <div className="change up text-success">
+                  <em className="icon ni ni-arrow-long-up"></em>
+                  <span>vs last period</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Hours by Client */}
+          <div className="col-md-6">
+            <div className="card card-bordered">
+              <div className="card-inner">
+                <div className="card-title-group align-start mb-2">
+                  <div className="card-title">
+                    <h6 className="title">Hours by Client</h6>
+                  </div>
+                </div>
+                <div className="nk-tb-list nk-tb-orders">
+                  {analyticsData.hoursByClient
+                    .slice(0, 5)
+                    .map((client, index) => (
+                      <div key={index} className="nk-tb-item">
+                        <div className="nk-tb-col">
+                          <span className="tb-lead">{client.name}</span>
+                        </div>
+                        <div className="nk-tb-col">
+                          <span className="tb-amount">{client.hours} hrs</span>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Hours by Employee */}
+          <div className="col-md-6">
+            <div className="card card-bordered">
+              <div className="card-inner">
+                <div className="card-title-group align-start mb-2">
+                  <div className="card-title">
+                    <h6 className="title">Hours by Employee</h6>
+                  </div>
+                </div>
+                <div className="nk-tb-list nk-tb-orders">
+                  {analyticsData.hoursByEmployee
+                    .slice(0, 5)
+                    .map((employee, index) => (
+                      <div key={index} className="nk-tb-item">
+                        <div className="nk-tb-col">
+                          <span className="tb-lead">{employee.name}</span>
+                        </div>
+                        <div className="nk-tb-col">
+                          <span className="tb-amount">
+                            {employee.hours} hrs
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="nk-conten">
       <div className="container-fluid">
@@ -564,9 +802,15 @@ const ReportsDashboard = () => {
                           value={selectedMonth}
                           onChange={(e) => setSelectedMonth(e.target.value)}
                         >
-                          <option value="July">July</option>
-                          <option value="June">June</option>
-                          <option value="May">May</option>
+                          {Array.from({ length: 12 }, (_, i) => {
+                            const date = new Date(0, i);
+                            const monthName = date.toLocaleDateString('en-US', { month: 'long' });
+                            return (
+                              <option key={monthName} value={monthName}>
+                                {monthName}
+                              </option>
+                            );
+                          })}
                         </select>
                       </div>
                       <div className="form-wrap w-100px">
@@ -575,12 +819,18 @@ const ReportsDashboard = () => {
                           value={selectedYear}
                           onChange={(e) => setSelectedYear(e.target.value)}
                         >
-                          <option value="2023">2023</option>
-                          <option value="2022">2022</option>
+                          {Array.from({ length: 5 }, (_, i) => {
+                            const year = new Date().getFullYear() - i;
+                            return (
+                              <option key={year} value={year.toString()}>
+                                {year}
+                              </option>
+                            );
+                          })}
                         </select>
                       </div>
                       <div className="btn-wrap">
-                        <button className="btn btn-dim btn-outline-light">
+                        <button className="btn btn-dim btn-outline-light btn-export">
                           <em className="icon ni ni-download-cloud"></em>
                           <span>Export</span>
                         </button>
@@ -590,40 +840,102 @@ const ReportsDashboard = () => {
                 </div>
               </div>
             </div>
-            <div className="report-toggle-container">
-              <div className="toggle-pill">
-                <div
-                  className={`pill-option ${
-                    activeTab === "client" ? "active" : ""
-                  }`}
-                  onClick={() => setActiveTab("client")}
-                >
-                  Client
+            {/* Loading State */}
+            {loading && (
+              <div className="nk-block">
+                <div className="card">
+                  <div className="card-inner text-center p-4">
+                    <div className="spinner-border text-primary" role="status">
+                      <span className="visually-hidden">Loading...</span>
+                    </div>
+                    <p className="mt-3 mb-0">Loading reports data...</p>
+                  </div>
                 </div>
-                <div
-                  className={`pill-option ${
-                    activeTab === "employee" ? "active" : ""
-                  }`}
-                  onClick={() => setActiveTab("employee")}
-                >
-                  Employee
+              </div>
+            )}
+
+            {/* Error State */}
+            {error && (
+              <div className="nk-block">
+                <div className="card">
+                  <div className="card-inner text-center p-4">
+                    <div className="text-danger mb-3">
+                      <em className="icon ni ni-alert-circle fs-2x"></em>
+                    </div>
+                    <h5 className="text-danger">Error Loading Reports</h5>
+                    <p className="text-muted">{error}</p>
+                    <button
+                      className="btn btn-primary"
+                      onClick={fetchReportsData}
+                    >
+                      <em className="icon ni ni-reload"></em>
+                      <span>Retry</span>
+                    </button>
+                  </div>
                 </div>
-                <div className={`pill-slider ${activeTab}`}></div>
               </div>
+            )}
 
-              <div className="toggle-status">
-                Viewing:{" "}
-                <strong>
-                  {activeTab === "client"
-                    ? "Client-wise Report"
-                    : "Employee-wise Report"}
-                </strong>
-              </div>
-            </div>
+            {/* Reports Content */}
+            {!loading && !error && (
+              <>
+                <div className="report-toggle-container">
+                  <div className="toggle-pill">
+                    <div
+                      className={`pill-option ${
+                        activeTab === "client" ? "active" : ""
+                      }`}
+                      onClick={() => setActiveTab("client")}
+                    >
+                      Client
+                    </div>
+                    <div
+                      className={`pill-option ${
+                        activeTab === "employee" ? "active" : ""
+                      }`}
+                      onClick={() => setActiveTab("employee")}
+                    >
+                      Employee
+                    </div>
+                    <div
+                      className={`pill-option ${
+                        activeTab === "invoice" ? "active" : ""
+                      }`}
+                      onClick={() => setActiveTab("invoice")}
+                    >
+                      Invoice
+                    </div>
+                    <div
+                      className={`pill-option ${
+                        activeTab === "analytics" ? "active" : ""
+                      }`}
+                      onClick={() => setActiveTab("analytics")}
+                    >
+                      Analytics
+                    </div>
+                    <div className={`pill-slider ${activeTab}`}></div>
+                  </div>
 
-            {activeTab === "client"
-              ? renderClientReport()
-              : renderEmployeeReport()}
+                  <div className="toggle-status">
+                    Viewing:{" "}
+                    <strong>
+                      {activeTab === "client"
+                        ? "Client-wise Report"
+                        : activeTab === "employee"
+                        ? "Employee-wise Report"
+                        : activeTab === "invoice"
+                        ? "Invoice Report"
+                        : "Analytics Dashboard"}
+                    </strong>
+                  </div>
+                </div>
+
+                {activeTab === "client" && renderClientReport()}
+                {activeTab === "employee" && renderEmployeeReport()}
+                {activeTab === "invoice" && renderInvoiceReport()}
+                {activeTab === "analytics" && renderAnalyticsReport()}
+              </>
+            )}
           </div>
         </div>
       </div>

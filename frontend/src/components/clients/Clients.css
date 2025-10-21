@@ -8,31 +8,41 @@
 .table-clients thead th {
   background-color: #f5f6fa;
   font-weight: 600;
-  color: #526484;
-  font-size: 12px;
+  color: #8094ae;
+  font-size: 0.875rem;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  padding: 10px 15px;
+  padding: 12px 15px;
   border-bottom: 1px solid #e5e9f2;
+  white-space: nowrap;
 }
 
 .table-clients tbody td {
   padding: 15px;
   vertical-align: middle;
   border-bottom: 1px solid #e5e9f2;
-  color: #526484;
-  font-size: 14px;
+  color: #3c4d62;
+  font-size: 0.9375rem;
 }
 
-.client-name {
-  font-weight: 600;
-  color: #364a63;
+.table-clients tbody tr:hover {
+  background-color: #f9fafc;
+}
+
+.table-clients tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.table-clients .client-name {
+  font-size: 0.9375rem !important;
+  font-weight: 500 !important;
+  color: #6576ff !important;
+  text-decoration: none;
   transition: color 0.3s;
 }
 
-.client-name:hover {
-  color: #1976d2;
-  text-decoration: none;
+.table-clients .client-name:hover {
+  text-decoration: underline;
 }
 
 .badge {
@@ -123,12 +133,12 @@
   color: #b7c2d0;
 }
 
-.dark-mode .client-name {
-  color: #e5e9f2;
+.dark-mode .table-clients .client-name {
+  color: #6576ff !important;
 }
 
-.dark-mode .client-name:hover {
-  color: #1976d2;
+.dark-mode .table-clients .client-name:hover {
+  text-decoration: underline;
 }
 
 .dark-mode .btn-trigger:hover {
@@ -148,4 +158,25 @@
 .dark-mode .dropdown-item:hover {
   background-color: #2e3a59;
   color: #e5e9f2;
+}
+
+.btn-retry {
+  padding: 6px 12px;
+  font: 1em monospace;
+  border: none;
+  color: darkred ;
+  background-color: transparent;
+  font-size: 1rem;
+  text-align: center;
+  cursor: pointer;
+  font-weight: bold;
+  text-decoration: underline;
+}
+
+.btn-retry:hover {
+  color: green;
+}
+
+.btn-create-client {
+  margin-bottom: 1rem;
 }

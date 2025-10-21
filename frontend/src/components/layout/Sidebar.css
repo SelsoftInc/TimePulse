@@ -1,6 +1,6 @@
 .app-sidebar {
   width: 240px;
-  background-color: #1976d2;
+  background-color: var(--sidebar-bg, #1976d2);
   height: 100vh;
   position: fixed;
   top: 0;
@@ -24,6 +24,9 @@
 .sidebar-collapse-button {
   width: 30px;
   height: 30px;
+  min-width: 30px;
+  min-height: 30px;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -119,21 +122,21 @@
   display: flex;
   align-items: center;
   padding: 12px 20px;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--sidebar-text, rgba(255, 255, 255, 0.8)) !important;
   text-decoration: none;
   transition: all 0.2s ease;
   border-left: 3px solid transparent;
 }
 
 .sidebar-link:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-  color: #ffffff;
+  background-color: var(--sidebar-hover, rgba(255, 255, 255, 0.1));
+  color: var(--sidebar-text, #ffffff) !important;
 }
 
 .sidebar-link.active {
-  background-color: rgba(255, 255, 255, 0.15);
-  color: #ffffff;
-  border-left: 3px solid #ffffff;
+  background-color: var(--sidebar-hover, rgba(255, 255, 255, 0.15));
+  color: var(--sidebar-text, #ffffff) !important;
+  border-left: 3px solid var(--sidebar-text, #ffffff);
 }
 
 .sidebar-icon {
@@ -152,7 +155,7 @@
 
 .sidebar-text {
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 500 !important;
 }
 
 /* Removed old footer since collapse button moved to top */

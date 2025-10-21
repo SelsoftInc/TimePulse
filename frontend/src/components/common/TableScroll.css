@@ -1,0 +1,54 @@
+/* Horizontal scrollbar for tables */
+.table-responsive {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.table-responsive table {
+  min-width: 100%;
+  margin-bottom: 0;
+}
+
+/* Custom scrollbar styling */
+.table-responsive::-webkit-scrollbar {
+  height: 8px;
+}
+
+.table-responsive::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Dark mode scrollbar */
+.dark-mode .table-responsive::-webkit-scrollbar-track {
+  background: #2c3e50;
+}
+
+.dark-mode .table-responsive::-webkit-scrollbar-thumb {
+  background: #4a5568;
+}
+
+.dark-mode .table-responsive::-webkit-scrollbar-thumb:hover {
+  background: #5a6578;
+}
+
+/* Firefox scrollbar */
+.table-responsive {
+  scrollbar-width: thin;
+  scrollbar-color: #c1c1c1 #f1f1f1;
+}
+
+.dark-mode .table-responsive {
+  scrollbar-color: #4a5568 #2c3e50;
+}

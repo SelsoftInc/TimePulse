@@ -1,7 +1,7 @@
 /* TenantSettings.css */
 .tenant-settings-container {
   padding: 20px;
-  background-color: #f5f6fa;
+  background-color: var(--background-tertiary);
   min-height: calc(100vh - 60px);
 }
 
@@ -18,31 +18,32 @@
 }
 
 .settings-card {
-  background-color: #fff;
+  background-color: var(--card-bg);
   border-radius: 4px;
   padding: 15px;
   margin-bottom: 10px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-sm);
   cursor: pointer;
   display: flex;
   align-items: center;
   transition: all 0.2s ease;
+  color: var(--text-color);
 }
 
 .settings-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-md);
 }
 
 .settings-card.active {
-  border-left: 3px solid #6576ff;
-  background-color: #f7f8fc;
+  border-left: 3px solid var(--settings-menu-border);
+  background-color: var(--active-bg);
 }
 
 .settings-card-icon {
   width: 36px;
   height: 36px;
-  background-color: #f5f6fa;
+  background-color: var(--background-secondary);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -51,32 +52,33 @@
 }
 
 .settings-card.active .settings-card-icon {
-  background-color: #ebeef9;
-  color: #6576ff;
+  background-color: var(--hover-bg);
+  color: var(--settings-menu-border);
 }
 
 .settings-card-icon i {
   font-size: 16px;
-  color: #526484;
+  color: var(--text-secondary);
 }
 
 .settings-card.active .settings-card-icon i {
-  color: #6576ff;
+  color: var(--settings-menu-border);
 }
 
 .settings-card-title {
   font-size: 14px;
   font-weight: 500;
-  color: #364a63;
+  color: var(--text-dark);
 }
 
 /* Settings Detail Styles */
 .settings-detail {
   flex: 1;
-  background-color: #fff;
+  background-color: var(--card-bg);
   border-radius: 4px;
   padding: 25px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-sm);
+  color: var(--text-color);
 }
 
 .settings-section {
@@ -86,10 +88,10 @@
 .settings-section-title {
   font-size: 16px;
   font-weight: 600;
-  color: #364a63;
+  color: var(--text-dark);
   margin-bottom: 20px;
   padding-bottom: 10px;
-  border-bottom: 1px solid #e5e9f2;
+  border-bottom: 1px solid var(--card-border);
 }
 
 .form-group {
@@ -100,7 +102,7 @@
   display: block;
   font-size: 14px;
   font-weight: 500;
-  color: #526484;
+  color: var(--text-secondary);
   margin-bottom: 8px;
 }
 
@@ -108,16 +110,16 @@
   width: 100%;
   padding: 10px 15px;
   font-size: 14px;
-  color: #364a63;
-  background-color: #fff;
-  border: 1px solid #dbdfea;
+  color: var(--text-color);
+  background-color: var(--form-bg);
+  border: 1px solid var(--form-border);
   border-radius: 4px;
   transition: all 0.2s ease;
 }
 
 .form-control:focus {
-  border-color: #6576ff;
-  box-shadow: 0 0 0 3px rgba(101, 118, 255, 0.1);
+  border-color: var(--form-focus-border);
+  box-shadow: 0 0 0 3px var(--form-focus-shadow);
   outline: none;
 }
 
@@ -130,9 +132,9 @@ textarea.form-control {
   width: 100%;
   padding: 10px 15px;
   font-size: 14px;
-  color: #364a63;
-  background-color: #fff;
-  border: 1px solid #dbdfea;
+  color: var(--text-color);
+  background-color: var(--form-bg);
+  border: 1px solid var(--form-border);
   border-radius: 4px;
   appearance: none;
   background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
@@ -181,7 +183,7 @@ textarea.form-control {
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: #e5e9f2;
+  background-color: var(--border-light);
   transition: .4s;
   border-radius: 24px;
 }
@@ -199,11 +201,11 @@ textarea.form-control {
 }
 
 input:checked + .slider {
-  background-color: #6576ff;
+  background-color: var(--settings-menu-border);
 }
 
 input:focus + .slider {
-  box-shadow: 0 0 1px #6576ff;
+  box-shadow: 0 0 1px var(--settings-menu-border);
 }
 
 input:checked + .slider:before {
@@ -212,7 +214,7 @@ input:checked + .slider:before {
 
 .switch-label {
   font-size: 14px;
-  color: #526484;
+  color: var(--text-secondary);
 }
 
 /* File upload */

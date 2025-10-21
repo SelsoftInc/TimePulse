@@ -2,6 +2,8 @@
   max-width: 1200px;
   margin: 0 auto;
   padding: 2rem;
+  background-color: var(--settings-content-bg);
+  color: var(--text-color);
 }
 
 .invoice-settings-loading {
@@ -15,7 +17,7 @@
 
 .invoice-settings-loading p {
   margin-top: 1rem;
-  color: #8094ae;
+  color: var(--text-muted);
 }
 
 /* .settings-header {
@@ -27,7 +29,7 @@
 .settings-title {
   font-size: 1.5rem;
   font-weight: 600;
-  color: #364a63;
+  color: var(--text-dark);
   /* margin-bottom: 0.5rem; */
   display: flex;
   align-items: space-between;
@@ -40,7 +42,7 @@
 }
 
 .settings-subtitle {
-  color: #8094ae;
+  color: var(--text-muted);
   font-size: 1rem;
 /* margin: 1rem; */
   margin-bottom: 1.5rem;
@@ -49,10 +51,10 @@
 
 .settings-tabs {
   margin-bottom: 2.5rem;
-  background: #f8f9fa;
+  background: var(--background-secondary);
   border-radius: 12px;
   padding: 10px 0px 10px 0px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  box-shadow: var(--shadow-sm);
   display: flex;
   align-items: space-between;
   justify-content: space-between;
@@ -112,7 +114,7 @@
   background: transparent;
   border: none;
   padding: 0.875rem 1.25rem;
-  color: #6c757d;
+  color: var(--text-secondary);
   text-decoration: none;
   border-radius: 8px;
   font-weight: 500;
@@ -132,19 +134,19 @@
 }
 
 .nav-link:hover {
-  color: #495057;
+  color: var(--text-color);
   background-color: transparent;
   transform: translateY(-1px);
 }
 
 .nav-link.active {
-  color: #8f5ec2;
-  border: 1px solid rgba(9, 113, 241, 0.2);
+  color: var(--settings-menu-border);
+  border: 1px solid var(--form-focus-shadow);
   font-weight: 600;
 }
 
 .nav-link.active i {
-  color: #8f5ec2;
+  color: var(--settings-menu-border);
   font-weight: 600;
 }
 
@@ -156,7 +158,7 @@
   transform: translateX(-50%);
   width: 100%;
   height: 2px;
-  background: #364a63;
+  background: var(--text-dark);
   border-radius: 0%;
   animation: fadeInScale 0.3s ease-out;
 }
@@ -174,12 +176,13 @@
 
 
 .settings-content {
-  background: white;
+  background: var(--card-bg);
   border-radius: 8px;
   padding: 2rem;
-  border: 1px solid #dee2e6;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--card-border);
+  box-shadow: var(--shadow-sm);
   margin-bottom: 2rem;
+  color: var(--text-color);
 }
 
 .settings-section {
@@ -190,12 +193,12 @@
 .section-title {
   font-size: 1.25rem;
   font-weight: 600;
-  color: #364a63;
+  color: var(--text-dark);
   margin-bottom: 0.5rem;
 }
 
 .section-description {
-  color: #8094ae;
+  color: var(--text-muted);
   margin-bottom: 2rem;
 }
 
@@ -217,7 +220,7 @@
 
 .form-label {
   font-weight: 500;
-  color: #364a63;
+  color: var(--text-dark);
   margin-bottom: 0.5rem;
   font-size: 0.9375rem;
 }
@@ -225,22 +228,23 @@
 .form-control,
 .form-select {
   padding: 0.75rem;
-  border: 1px solid #dbdfea;
+  border: 1px solid var(--form-border);
   border-radius: 6px;
   font-size: 0.9375rem;
   transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
-  background-color: white;
+  background-color: var(--form-bg);
+  color: var(--text-color);
 }
 
 .form-control:focus,
 .form-select:focus {
   outline: none;
-  border-color: #0971f1;
-  box-shadow: 0 0 0 0.2rem rgba(9, 113, 241, 0.25);
+  border-color: var(--form-focus-border);
+  box-shadow: 0 0 0 0.2rem var(--form-focus-shadow);
 }
 
 .form-control::placeholder {
-  color: #8094ae;
+  color: var(--form-placeholder);
 }
 
 .form-check {
@@ -258,7 +262,7 @@
 }
 
 .form-check-label {
-  color: #364a63;
+  color: var(--text-dark);
   font-weight: 500;
   cursor: pointer;
   margin: 0;
@@ -269,9 +273,9 @@
   justify-content: flex-start;
   align-items: center;
   padding: 1.5rem 2rem;
-  background: #f8f9fa;
+  background: var(--background-secondary);
   border-radius: 8px;
-  border: 1px solid #e3e7f1;
+  border: 1px solid var(--card-border);
 }
 
 .btn {

@@ -20,35 +20,43 @@ const EmployeeEdit = () => {
   const {
     data: clientsData = [],
     isLoading: clientsLoading,
-  } = useQuery(['clients', tenantId], async () => {
-    if (!tenantId) return [];
-    const resp = await fetch(`${API_BASE}/api/clients?tenantId=${tenantId}`, {
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
-      }
-    });
-    if (!resp.ok) throw new Error(`Failed to fetch clients (${resp.status})`);
-    const data = await resp.json();
-    return data.clients || [];
-  }, { enabled: !!tenantId });
+  } = useQuery({
+    queryKey: ['clients', tenantId],
+    queryFn: async () => {
+      if (!tenantId) return [];
+      const resp = await fetch(`${API_BASE}/api/clients?tenantId=${tenantId}`, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      if (!resp.ok) throw new Error(`Failed to fetch clients (${resp.status})`);
+      const data = await resp.json();
+      return data.clients || [];
+    },
+    enabled: !!tenantId
+  });
 
   // React Query: fetch vendors (also used for impl partners)
   const {
     data: vendorsData = [],
     isLoading: vendorsLoading,
-  } = useQuery(['vendors', tenantId], async () => {
-    if (!tenantId) return [];
-    const resp = await fetch(`${API_BASE}/api/vendors?tenantId=${tenantId}`, {
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
-      }
-    });
-    if (!resp.ok) throw new Error(`Failed to fetch vendors (${resp.status})`);
-    const data = await resp.json();
-    return data.vendors || [];
-  }, { enabled: !!tenantId });
+  } = useQuery({
+    queryKey: ['vendors', tenantId],
+    queryFn: async () => {
+      if (!tenantId) return [];
+      const resp = await fetch(`${API_BASE}/api/vendors?tenantId=${tenantId}`, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      if (!resp.ok) throw new Error(`Failed to fetch vendors (${resp.status})`);
+      const data = await resp.json();
+      return data.vendors || [];
+    },
+    enabled: !!tenantId
+  });
 
   const [form, setForm] = useState({
     joinDate: '',
@@ -58,9 +66,9 @@ const EmployeeEdit = () => {
   });
 
   // React Query: fetch employee
-  const { data: employeeData, isLoading: employeeLoading } = useQuery(
-    ['employee', tenantId, id],
-    async () => {
+  const { data: employeeData, isLoading: employeeLoading } = useQuery({
+    queryKey: ['employee', tenantId, id],
+    queryFn: async () => {
       if (!tenantId || !id) return null;
       const resp = await fetch(`${API_BASE}/api/employees/${id}?tenantId=${tenantId}`, {
         headers: {
@@ -72,8 +80,8 @@ const EmployeeEdit = () => {
       const data = await resp.json();
       return data.employee || data;
     },
-    { enabled: !!tenantId && !!id }
-  );
+    enabled: !!tenantId && !!id
+  });
 
   // Sync local state when employee query resolves
   useEffect(() => {

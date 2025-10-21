@@ -191,15 +191,14 @@ const Sidebar = ({ collapsed, toggleSidebar, className = "" }) => {
           </PermissionGuard>
 
           <PermissionGuard
-            requiredPermission={PERMISSIONS.VIEW_VENDOR}
+            requiredPermission={PERMISSIONS.VIEW_IMPLEMENTATION_PARTNER}
             fallback={null}
           >
             <li className="sidebar-item">
               <Link
-                to={`/${currentSubdomain}/vendors?implPartner=1`}
+                to={`/${currentSubdomain}/implementation-partners`}
                 className={`sidebar-link ${
-                  currentPath.includes(`/${currentSubdomain}/vendors`) &&
-                  new URLSearchParams(window.location.search).get("implPartner")
+                  currentPath.includes(`/${currentSubdomain}/implementation-partners`)
                     ? "active"
                     : ""
                 }`}
@@ -213,6 +212,22 @@ const Sidebar = ({ collapsed, toggleSidebar, className = "" }) => {
               </Link>
             </li>
           </PermissionGuard>
+
+          <li className="sidebar-item">
+            <Link
+              to={`/${currentSubdomain}/leave-management`}
+              className={`sidebar-link ${
+                currentPath.includes(`/${currentSubdomain}/leave-management`)
+                  ? "active"
+                  : ""
+              }`}
+            >
+              <div className="sidebar-icon">
+                <i className="fa fa-calendar-alt"></i>
+              </div>
+              {!collapsed && <span className="sidebar-text">Leave Management</span>}
+            </Link>
+          </li>
 
           <PermissionGuard
             requiredPermission={PERMISSIONS.VIEW_REPORTS}

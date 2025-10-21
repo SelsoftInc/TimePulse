@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useToast } from '../../contexts/ToastContext';
+import { API_BASE } from '../../config/api';
 import './ProfileSettings.css';
 
 const ProfileSettings = () => {
   const { user, isAdmin, isEmployee, isApprover } = useAuth();
+  const { toast } = useToast();
   const [profileData, setProfileData] = useState({
     firstName: '',
     lastName: '',
@@ -44,7 +47,7 @@ const ProfileSettings = () => {
       }
 
       // Fetch real user data from employees API
-      const response = await fetch(`http://localhost:5001/api/employees?tenantId=${user.tenantId}`, {
+      const response = await fetch(`${API_BASE}/api/employees?tenantId=${user.tenantId}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -145,7 +148,7 @@ const ProfileSettings = () => {
       }
 
       // Find the current employee first to get the employee ID
-      const employeesResponse = await fetch(`http://localhost:5001/api/employees?tenantId=${user.tenantId}`, {
+      const employeesResponse = await fetch(`${API_BASE}/api/employees?tenantId=${user.tenantId}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -168,19 +171,20 @@ const ProfileSettings = () => {
 
       // Prepare update payload
       const updatePayload = {
-        name: `${profileData.firstName} ${profileData.lastName}`.trim(),
+        firstName: profileData.firstName,
+        lastName: profileData.lastName,
         email: profileData.email,
         phone: profileData.phone,
         department: profileData.department,
-        position: profileData.position,
+        title: profileData.position, // Map position to title field
         employeeId: profileData.employeeId,
-        joinDate: profileData.startDate ? new Date(profileData.startDate).toISOString() : null
+        startDate: profileData.startDate ? new Date(profileData.startDate).toISOString() : null
       };
 
       console.log('💾 Saving profile data:', updatePayload);
 
-      // Save profile data to backend
-      const response = await fetch(`http://localhost:5001/api/employees/${currentEmployee.id}`, {
+      // Save profile data to backend - include tenantId as query parameter
+      const response = await fetch(`${API_BASE}/api/employees/${currentEmployee.id}?tenantId=${user.tenantId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -201,7 +205,9 @@ const ProfileSettings = () => {
       setLoading(false);
       
       // Show success message
-      alert('Profile updated successfully!');
+      toast.success('Your profile has been updated successfully!', {
+        title: 'Profile Updated'
+      });
       
       // Reload the profile data to reflect changes
       await loadProfileData();
@@ -209,7 +215,9 @@ const ProfileSettings = () => {
     } catch (error) {
       console.error('Error saving profile:', error);
       setLoading(false);
-      alert(`Error saving profile: ${error.message}`);
+      toast.error(error.message, {
+        title: 'Error Saving Profile'
+      });
     }
   };
 
@@ -231,6 +239,7 @@ const ProfileSettings = () => {
     if (isEmployee()) return 'Can create and manage own timesheets';
     return 'Standard user access';
   };
+
 
   const getRoleName = () => {
     if (isAdmin()) return 'ADMIN';

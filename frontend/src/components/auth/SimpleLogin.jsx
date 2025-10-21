@@ -1,72 +1,75 @@
-import React, { useState } from 'react';
-import './Auth.css';
+import React, { useState } from "react";
+import "./Auth.css";
+import { API_BASE, apiFetch } from "../../config/api";
 
 const SimpleLogin = () => {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
-  const handleSimpleLogin = () => {
+  const handleSimpleLogin = async () => {
     setIsLoggingIn(true);
-    console.log('Simple login button clicked');
-    
+    console.log("Simple login button clicked");
+
     try {
       // Clear any existing data first
       localStorage.clear();
-      
-      // Set token
-      localStorage.setItem('token', 'mock-jwt-token');
-      
-      // Set user info
-      const userInfo = {
-        id: 'user-123',
-        email: 'demo@timepulse.com',
-        name: 'Demo User'
-      };
-      localStorage.setItem('user', JSON.stringify(userInfo));
-      localStorage.setItem('userInfo', JSON.stringify(userInfo));
-      
-      // Create a default tenant
-      const defaultTenant = {
-        id: 'tenant-123',
-        name: 'Selsoft',
-        subdomain: 'selsoft',
-        status: 'active',
-        role: 'employee'
-      };
-      
-      // Create mock workspaces/tenants
-      const mockWorkspaces = [
-        {
-          id: 'tenant-123',
-          name: 'Selsoft',
-          subdomain: 'selsoft',
-          status: 'active',
-          role: 'employee',
-          industry: 'Technology',
-          createdAt: '2025-01-15',
-          lastAccessed: '2025-07-05'
+
+      // Use real authentication
+      const response = await fetch(`${API_BASE}/api/auth/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
         },
-        {
-          id: 'tenant-456',
-          name: 'Test Organization',
-          subdomain: 'test-org',
-          status: 'trial',
-          role: 'admin',
-          industry: 'Consulting',
-          createdAt: '2025-06-10',
-          lastAccessed: '2025-07-03'
+        body: JSON.stringify({
+          email: "pushban@selsoftinc.com",
+          password: "test123#",
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        // Store authentication token
+        localStorage.setItem("token", data.token);
+
+        // Store user info
+        const userInfo = {
+          id: data.user.id,
+          email: data.user.email,
+          name: `${data.user.firstName} ${data.user.lastName}`,
+          firstName: data.user.firstName,
+          lastName: data.user.lastName,
+          role: data.user.role,
+          tenantId: data.user.tenantId,
+          employeeId: data.user.employeeId,
+        };
+        localStorage.setItem("user", JSON.stringify(userInfo));
+        localStorage.setItem("userInfo", JSON.stringify(userInfo));
+
+        // Store tenant info
+        if (data.tenant) {
+          const tenantInfo = {
+            id: data.tenant.id,
+            name: data.tenant.tenantName,
+            subdomain: data.tenant.subdomain,
+            status: "active",
+            role: data.user.role,
+          };
+          localStorage.setItem("tenants", JSON.stringify([tenantInfo]));
+          localStorage.setItem("currentTenant", JSON.stringify(tenantInfo));
+          localStorage.setItem("currentEmployer", JSON.stringify(tenantInfo));
         }
-      ];
-      
-      // Store tenant and current tenant
-      localStorage.setItem('tenants', JSON.stringify(mockWorkspaces));
-      localStorage.setItem('currentTenant', JSON.stringify(defaultTenant));
-      
-      console.log('Authentication data set, navigating to workspaces');
-      
-      // Use window.location for a full page reload to ensure app state is reset
-      window.location.href = '/workspaces';
+
+        console.log("Authentication data set, navigating to dashboard");
+
+        // Redirect directly to dashboard
+        const subdomain = data.tenant?.subdomain || "selsoft";
+        window.location.href = `/${subdomain}/dashboard`;
+      } else {
+        console.error("Login failed:", data.message);
+        setIsLoggingIn(false);
+      }
     } catch (error) {
-      console.error('Error during login:', error);
+      console.error("Error during login:", error);
       setIsLoggingIn(false);
     }
   };
@@ -79,20 +82,25 @@ const SimpleLogin = () => {
           <p>One-click access to the demo account</p>
         </div>
 
-        
         <div className="simple-login-content">
-          <p>Click the button below to instantly access the TimePulse demo with pre-configured settings.</p>
-          
-          <button 
-            onClick={handleSimpleLogin} 
+          <p>
+            Click the button below to instantly access the TimePulse demo with
+            pre-configured settings.
+          </p>
+
+          <button
+            onClick={handleSimpleLogin}
             className="btn-primary btn-block btn-lg"
             disabled={isLoggingIn}
           >
-            {isLoggingIn ? 'Logging in...' : 'Access Demo Account'}
+            {isLoggingIn ? "Logging in..." : "Access Demo Account"}
           </button>
-          
+
           <div className="simple-login-info">
-            <p><strong>Note:</strong> This is a simplified login for demonstration purposes.</p>
+            <p>
+              <strong>Note:</strong> This is a simplified login for
+              demonstration purposes.
+            </p>
           </div>
         </div>
       </div>

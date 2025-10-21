@@ -76,6 +76,20 @@ router.post('/login', async (req, res) => {
     // Update last login
     await user.update({ lastLogin: new Date() });
 
+    // Find employee record if user is an employee
+    let employeeId = null;
+    if (user.role === 'employee') {
+      const employee = await models.Employee.findOne({
+        where: {
+          email: user.email,
+          tenantId: user.tenantId
+        }
+      });
+      if (employee) {
+        employeeId = employee.id;
+      }
+    }
+
     // Return success response
     res.json({
       success: true,
@@ -90,6 +104,7 @@ router.post('/login', async (req, res) => {
         department: user.department,
         title: user.title,
         tenantId: user.tenantId,
+        employeeId: employeeId,
         mustChangePassword: user.mustChangePassword
       },
       tenant: user.tenant ? {

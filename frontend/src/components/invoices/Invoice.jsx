@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import InvoiceSettingsModal from '../common/InvoiceSettingsModal';
+import axios from 'axios';
 import "./Invoice.css";
 
 // Utility function for status display
@@ -133,7 +134,7 @@ const InvoiceDetailModal = ({ invoice, onClose, onApprove, onReject }) => {
           
           <div className="invoice-attachments">
             <h5>Attachments</h5>
-            {invoice.attachments && invoice.attachments.length > 0 ? (
+            {Array.isArray(invoice.attachments) && invoice.attachments.length > 0 ? (
               <ul className="attachment-list">
                 {invoice.attachments.map((attachment, index) => (
                   <li key={index} className="attachment-item">
@@ -185,60 +186,195 @@ const InvoiceDetailModal = ({ invoice, onClose, onApprove, onReject }) => {
 const InvoiceUploadModal = ({ onClose, onUpload }) => {
   const [formData, setFormData] = useState({
     vendor: "",
-    week: "",
+    weekStart: "",
+    weekEnd: "",
     employee: "",
-    sow: "",
+    timesheetId: "",
     useTimesheet: true,
     total: "",
     file: null,
     quickbooksSync: false
   });
   
-  const [employees] = useState([
-    { id: "emp1", name: "John Doe" },
-    { id: "emp2", name: "Jane Smith" },
-    { id: "emp3", name: "Robert Johnson" }
-  ]);
-  
-  const [sows] = useState([
-    { id: "sow1", name: "Developer - ABC Inc", rate: 40 },
-    { id: "sow2", name: "Designer - XYZ Corp", rate: 35 },
-    { id: "sow3", name: "Project Manager - 123 LLC", rate: 50 }
-  ]);
+  const [employees, setEmployees] = useState([]);
+  const [approvedTimesheets, setApprovedTimesheets] = useState([]);
+  const [vendors, setVendors] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedTimesheet, setSelectedTimesheet] = useState(null);
+
+  useEffect(() => {
+    fetchEmployees();
+    fetchVendors();
+  }, []);
+
+  useEffect(() => {
+    if (formData.employee && formData.weekStart && formData.weekEnd) {
+      fetchApprovedTimesheets(formData.employee, formData.weekStart, formData.weekEnd);
+    } else {
+      setApprovedTimesheets([]);
+    }
+  }, [formData.employee, formData.weekStart, formData.weekEnd]);
+
+  const fetchEmployees = async () => {
+    try {
+      const tenantId = localStorage.getItem('tenantId');
+      console.log('Fetching employees for tenantId:', tenantId);
+      
+      if (!tenantId) {
+        console.error('No tenantId found in localStorage');
+        return;
+      }
+      
+      const response = await axios.get(`http://localhost:5000/api/employees`, {
+        params: { tenantId }
+      });
+      
+      console.log('Employees API response:', response.data);
+      
+      if (response.data.success && response.data.employees) {
+        console.log('Setting employees:', response.data.employees.length, 'employees');
+        setEmployees(response.data.employees);
+      } else {
+        console.warn('No employees data in response');
+        setEmployees([]);
+      }
+    } catch (error) {
+      console.error('Error fetching employees:', error);
+      console.error('Error details:', error.response?.data || error.message);
+      setEmployees([]);
+    }
+  };
+
+  const fetchVendors = async () => {
+    try {
+      const tenantId = localStorage.getItem('tenantId');
+      console.log('Fetching vendors for tenantId:', tenantId);
+      
+      if (!tenantId) {
+        console.error('No tenantId found in localStorage');
+        setLoading(false);
+        return;
+      }
+      
+      const response = await axios.get(`http://localhost:5000/api/vendors`, {
+        params: { tenantId }
+      });
+      
+      console.log('Vendors API response:', response.data);
+      
+      if (response.data.success && response.data.vendors) {
+        console.log('Setting vendors:', response.data.vendors.length, 'vendors');
+        setVendors(response.data.vendors);
+      } else {
+        console.warn('No vendors data in response');
+        setVendors([]);
+      }
+      setLoading(false);
+    } catch (error) {
+      console.error('Error fetching vendors:', error);
+      console.error('Error details:', error.response?.data || error.message);
+      setVendors([]);
+      setLoading(false);
+    }
+  };
+
+  const fetchApprovedTimesheets = async (employeeId, weekStart, weekEnd) => {
+    try {
+      const tenantId = localStorage.getItem('tenantId');
+      const response = await axios.get(`http://localhost:5000/api/timesheets/employee/${employeeId}/approved`, {
+        params: { tenantId }
+      });
+      
+      if (response.data.success) {
+        // Filter timesheets by week range
+        const filtered = response.data.timesheets.filter(ts => {
+          return ts.weekStart === weekStart && ts.weekEnd === weekEnd;
+        });
+        setApprovedTimesheets(filtered);
+      }
+    } catch (error) {
+      console.error('Error fetching approved timesheets:', error);
+      setApprovedTimesheets([]);
+    }
+  };
   
   const handleChange = (e) => {
     const { name, value, type, checked, files } = e.target;
+    
+    if (name === 'timesheetId' && value) {
+      const timesheet = approvedTimesheets.find(ts => ts.id === value);
+      setSelectedTimesheet(timesheet);
+    }
+    
     setFormData({
       ...formData,
       [name]: type === "checkbox" ? checked : type === "file" ? files[0] : value
     });
   };
   
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Create new invoice object
-    const newInvoice = {
-      id: `inv-${Math.floor(Math.random() * 10000)}`,
-      invoiceNumber: `INV-${Math.floor(1000 + Math.random() * 9000)}`,
-      vendor: formData.vendor,
-      week: formData.week,
-      total: parseFloat(formData.total) || 0,
-      status: "Draft",
-      employee: employees.find(emp => emp.id === formData.employee)?.name,
-      sow: sows.find(s => s.id === formData.sow)?.name,
-      lineItems: [
-        {
-          description: sows.find(s => s.id === formData.sow)?.name || "Services",
-          hours: formData.useTimesheet ? 40 : Math.floor(parseFloat(formData.total) / (sows.find(s => s.id === formData.sow)?.rate || 40)),
-          rate: sows.find(s => s.id === formData.sow)?.rate || 40
-        }
-      ],
-      attachments: formData.file ? [{ name: formData.file.name }] : [],
-      quickbooksSync: formData.quickbooksSync
-    };
-    
-    onUpload(newInvoice);
+    try {
+      const tenantId = localStorage.getItem('tenantId');
+      
+      // Calculate invoice details from timesheet if selected
+      let lineItems = [];
+      let total = 0;
+      let weekStart = formData.weekStart;
+      let weekEnd = formData.weekEnd;
+      
+      if (formData.useTimesheet && selectedTimesheet) {
+        const hours = selectedTimesheet.totalHours || 0;
+        const rate = selectedTimesheet.hourlyRate || 0;
+        total = hours * rate;
+        
+        lineItems = [{
+          description: `Professional Services - ${selectedTimesheet.client?.clientName || 'Services'}`,
+          hours: hours,
+          rate: rate,
+          amount: total
+        }];
+      } else {
+        total = parseFloat(formData.total) || 0;
+        lineItems = [{
+          description: 'Professional Services',
+          hours: 0,
+          rate: 0,
+          amount: total
+        }];
+      }
+      
+      const invoiceData = {
+        tenantId,
+        vendorId: formData.vendor || null,
+        clientId: selectedTimesheet?.clientId || null,
+        employeeId: formData.employee || null,
+        timesheetId: formData.timesheetId || null,
+        weekStart,
+        weekEnd,
+        lineItems,
+        subtotal: total,
+        tax: 0,
+        total: total,
+        dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        notes: '',
+        attachments: formData.file ? [{ name: formData.file.name }] : [],
+        quickbooksSync: formData.quickbooksSync
+      };
+
+      console.log('Submitting invoice data:', invoiceData);
+      
+      const response = await axios.post('http://localhost:5000/api/invoices', invoiceData);
+      
+      if (response.data.success) {
+        alert('Invoice created successfully!');
+        onUpload(); // Refresh the invoice list
+      }
+    } catch (error) {
+      console.error('Error creating invoice:', error);
+      alert('Failed to create invoice: ' + (error.response?.data?.message || error.message));
+    }
   };
   
   return (
@@ -250,68 +386,112 @@ const InvoiceUploadModal = ({ onClose, onUpload }) => {
         </div>
         
         <div className="modal-body">
-          <form onSubmit={handleSubmit}>
+          {loading ? (
+            <div style={{ textAlign: 'center', padding: '20px' }}>
+              <p>Loading data...</p>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit}>
+              <div className="form-group">
+                <label htmlFor="vendor">Vendor</label>
+                <select
+                  id="vendor"
+                  name="vendor"
+                  className="form-control"
+                  value={formData.vendor}
+                  onChange={handleChange}
+                >
+                  <option value="">Select Vendor (Optional)</option>
+                  {vendors.length === 0 ? (
+                    <option disabled>No vendors available</option>
+                  ) : (
+                    vendors.map(vendor => (
+                      <option key={vendor.id} value={vendor.id}>
+                        {vendor.name}
+                      </option>
+                    ))
+                  )}
+                </select>
+                {vendors.length === 0 && !loading && (
+                  <small className="form-text text-muted">No vendors found. Add vendors first.</small>
+                )}
+              </div>
+              
+              <div className="form-group">
+                <label htmlFor="employee">Employee</label>
+                <select
+                  id="employee"
+                  name="employee"
+                  className="form-control"
+                  value={formData.employee}
+                  onChange={handleChange}
+                  required
+                >
+                  <option value="">Select Employee</option>
+                  {employees.length === 0 ? (
+                    <option disabled>No employees available</option>
+                  ) : (
+                    employees.map(emp => (
+                      <option key={emp.id} value={emp.id}>
+                        {emp.firstName} {emp.lastName}
+                      </option>
+                    ))
+                  )}
+                </select>
+                {employees.length === 0 && !loading && (
+                  <small className="form-text text-danger">No employees found. Add employees first.</small>
+                )}
+              </div>
+
             <div className="form-group">
-              <label htmlFor="vendor">Vendor</label>
+              <label htmlFor="weekStart">Week Start Date</label>
               <input
-                type="text"
-                id="vendor"
-                name="vendor"
+                type="date"
+                id="weekStart"
+                name="weekStart"
                 className="form-control"
-                value={formData.vendor}
+                value={formData.weekStart}
                 onChange={handleChange}
                 required
-                placeholder="Enter vendor name"
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="weekEnd">Week End Date</label>
+              <input
+                type="date"
+                id="weekEnd"
+                name="weekEnd"
+                className="form-control"
+                value={formData.weekEnd}
+                onChange={handleChange}
+                required
               />
             </div>
             
             <div className="form-group">
-              <label htmlFor="week">Week</label>
-              <input
-                type="week"
-                id="week"
-                name="week"
-                className="form-control"
-                value={formData.week}
-                onChange={handleChange}
-                required
-              />
-            </div>
-            
-            <div className="form-group">
-              <label htmlFor="employee">Employee</label>
+              <label htmlFor="timesheetId">Statement of Work (Approved Timesheets)</label>
               <select
-                id="employee"
-                name="employee"
+                id="timesheetId"
+                name="timesheetId"
                 className="form-control"
-                value={formData.employee}
+                value={formData.timesheetId}
                 onChange={handleChange}
-                required
+                disabled={!formData.employee || !formData.weekStart || !formData.weekEnd || !formData.useTimesheet}
               >
-                <option value="">Select Employee</option>
-                {employees.map(emp => (
-                  <option key={emp.id} value={emp.id}>{emp.name}</option>
-                ))}
-              </select>
-            </div>
-            
-            <div className="form-group">
-              <label htmlFor="sow">Statement of Work</label>
-              <select
-                id="sow"
-                name="sow"
-                className="form-control"
-                value={formData.sow}
-                onChange={handleChange}
-                required
-              >
-                <option value="">Select SOW</option>
-                {sows.map(sow => (
-                  <option key={sow.id} value={sow.id}>
-                    {sow.name} (${sow.rate}/hr)
+                <option value="">Select Approved Timesheet</option>
+                {approvedTimesheets.map(ts => (
+                  <option key={ts.id} value={ts.id}>
+                    {ts.client?.clientName || 'N/A'} - {ts.totalHours}hrs @ ${ts.hourlyRate}/hr = ${(ts.totalHours * ts.hourlyRate).toFixed(2)}
                   </option>
                 ))}
               </select>
+              {formData.employee && formData.weekStart && formData.weekEnd && approvedTimesheets.length === 0 && (
+                <small className="form-text text-muted">No approved timesheets found for this employee in the selected week range</small>
+              )}
+              {(!formData.employee || !formData.weekStart || !formData.weekEnd) && (
+                <small className="form-text text-muted">Please select employee and week range first</small>
+              )}
             </div>
             
             <div className="form-check mb-3">
@@ -373,6 +553,7 @@ const InvoiceUploadModal = ({ onClose, onUpload }) => {
               </label>
             </div>
           </form>
+          )}
         </div>
         
         <div className="modal-footer">
@@ -458,78 +639,38 @@ const Invoice = () => {
     }
   };
 
-  // Simulate fetching invoices from API
+  // Fetch invoices from API
   const fetchInvoices = async () => {
     try {
-      // Mock data
-      const mockInvoices = [
-        {
-          id: "inv-1023",
-          invoiceNumber: "INV-1023",
-          vendor: "AcmeCo",
-          week: "6/17",
-          total: 1600,
-          status: "Draft",
-          lineItems: [
-            { description: "Developer Services", hours: 40, rate: 40 }
-          ],
-          attachments: [
-            { name: "invoice-1023.pdf" }
-          ],
-          discrepancies: {
-            "Timesheet": { hours: 38, notes: "Submitted by John Doe", mismatch: true },
-            "Invoice": { hours: 40, notes: "Uploaded by Vendor", mismatch: false },
-            "Client": { hours: 36, notes: "From SAP dump", mismatch: true },
-            "mismatch": true
-          }
-        },
-        {
-          id: "inv-1022",
-          invoiceNumber: "INV-1022",
-          vendor: "AcmeCo",
-          week: "6/10",
-          total: 1500,
-          status: "Sent",
-          lineItems: [
-            { description: "Developer Services", hours: 37.5, rate: 40 }
-          ],
-          attachments: [
-            { name: "invoice-1022.pdf" }
-          ]
-        },
-        {
-          id: "inv-1021",
-          invoiceNumber: "INV-1021",
-          vendor: "TechPro",
-          week: "6/10",
-          total: 2000,
-          status: "Paid",
-          lineItems: [
-            { description: "Project Management", hours: 40, rate: 50 }
-          ],
-          attachments: [
-            { name: "invoice-1021.pdf" }
-          ]
-        },
-        {
-          id: "inv-1020",
-          invoiceNumber: "INV-1020",
-          vendor: "DesignHub",
-          week: "6/3",
-          total: 1400,
-          status: "Pending",
-          lineItems: [
-            { description: "UI/UX Design", hours: 40, rate: 35 }
-          ],
-          attachments: [
-            { name: "invoice-1020.pdf" }
-          ]
-        }
-      ];
-      
-      setInvoices(mockInvoices);
+      const tenantId = localStorage.getItem('tenantId');
+      if (!tenantId) {
+        console.error('No tenantId found');
+        return;
+      }
+
+      const response = await axios.get(`http://localhost:5000/api/invoices`, {
+        params: { tenantId, status: filterStatus }
+      });
+
+      if (response.data.success) {
+        const formattedInvoices = response.data.invoices.map(inv => ({
+          id: inv.id,
+          invoiceNumber: inv.invoiceNumber,
+          vendor: inv.vendor,
+          week: inv.week,
+          total: inv.total,
+          status: inv.status.charAt(0).toUpperCase() + inv.status.slice(1),
+          lineItems: inv.lineItems || [],
+          attachments: inv.attachments || [],
+          discrepancies: inv.discrepancies,
+          notes: inv.notes
+        }));
+        setInvoices(formattedInvoices);
+      }
     } catch (error) {
       console.error('Error fetching invoices:', error);
+      // Fallback to empty array on error
+      setInvoices([]);
     }
   };
   
@@ -561,8 +702,9 @@ const Invoice = () => {
     setShowDetailModal(false);
   };
   
-  const handleUploadInvoice = (newInvoice) => {
-    setInvoices([newInvoice, ...invoices]);
+  const handleUploadInvoice = () => {
+    // Refresh invoice list after upload
+    fetchInvoices();
     setShowUploadModal(false);
   };
 
@@ -735,7 +877,7 @@ const Invoice = () => {
                                 })()}
                               </div>
                               <div className="nk-tb-col nk-tb-col-tools">
-                                <ul className="nk-tb-actions gx-1">
+                                <ul className="">
                                   <li>
                                     <button 
                                       className="btn btn-sm btn-icon btn-trigger"
@@ -754,7 +896,7 @@ const Invoice = () => {
                           ))
                         ) : (
                           <div className="nk-tb-item">
-                            <div className="nk-tb-col" colSpan="6">
+                            <div className="" colSpan="">
                               <div className="empty-state">
                                 <p>No invoices found matching your criteria.</p>
                               </div>

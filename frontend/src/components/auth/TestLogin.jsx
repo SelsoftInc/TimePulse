@@ -1,46 +1,48 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import './Auth.css';
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import "./Auth.css";
 
 const TestLogin = () => {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
   const navigate = useNavigate();
 
   const handleLogin = (e) => {
     e.preventDefault();
-    
+
     // Simple check for test credentials
-    if (username === 'test' && password === 'test') {
+    if (username === "test" && password === "test") {
       // Set token
-      localStorage.setItem('token', 'mock-jwt-token');
-      
+      localStorage.setItem("token", "mock-jwt-token");
+
       // Set user info
       const userInfo = {
-        id: 'user-123',
-        email: 'test@example.com',
-        name: 'Demo User'
+        id: "user-123",
+        email: "test@example.com",
+        name: "Demo User",
+        role: "admin",
+        tenantId: "c92fe40d-af85-4c8b-8053-71df10680804",
       };
-      localStorage.setItem('user', JSON.stringify(userInfo));
-      localStorage.setItem('userInfo', JSON.stringify(userInfo));
-      
+      localStorage.setItem("user", JSON.stringify(userInfo));
+      localStorage.setItem("userInfo", JSON.stringify(userInfo));
+
       // Create a default tenant
       const defaultTenant = {
-        id: 'tenant-123',
-        name: 'Selsoft',
-        subdomain: 'selsoft',
-        status: 'active',
-        role: 'admin'
+        id: "c92fe40d-af85-4c8b-8053-71df10680804",
+        name: "Selsoft",
+        subdomain: "selsoft",
+        status: "active",
+        role: "admin",
       };
-      
+
       // Store tenants
-      localStorage.setItem('tenants', JSON.stringify([defaultTenant]));
-      
+      localStorage.setItem("tenants", JSON.stringify([defaultTenant]));
+
       // Navigate to workspaces
-      navigate('/workspaces');
+      navigate("/workspaces");
     } else {
-      setError('Invalid credentials. Use username: test, password: test');
+      setError("Invalid credentials. Use username: test, password: test");
     }
   };
 
@@ -51,13 +53,16 @@ const TestLogin = () => {
           <h2>TimePulse Test Login</h2>
           <p>Use the test credentials to login</p>
         </div>
-        
+
         <div className="demo-credentials">
-          <p><strong>Demo Access:</strong> Use username: <code>test</code> and password: <code>test</code></p>
+          <p>
+            <strong>Demo Access:</strong> Use username: <code>test</code> and
+            password: <code>test</code>
+          </p>
         </div>
-        
+
         {error && <div className="auth-error">{error}</div>}
-        
+
         <form onSubmit={handleLogin} className="auth-form">
           <div className="form-group">
             <label htmlFor="username">Username</label>
@@ -70,7 +75,7 @@ const TestLogin = () => {
               className="form-control"
             />
           </div>
-          
+
           <div className="form-group">
             <label htmlFor="password">Password</label>
             <input
@@ -82,7 +87,7 @@ const TestLogin = () => {
               className="form-control"
             />
           </div>
-          
+
           <button type="submit" className="btn-primary btn-block">
             Sign In
           </button>

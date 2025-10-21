@@ -1,9 +1,10 @@
 .data-grid-filter {
-  background: #f8f9fa;
-  border: 1px solid #e3e7f1;
+  background: var(--timesheet-card-bg);
+  border: 1px solid var(--timesheet-border);
   border-radius: 6px;
   padding: 1rem;
   margin-bottom: 1.5rem;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .filter-header {
@@ -12,18 +13,21 @@
   align-items: center;
   margin-bottom: 1rem;
   padding-bottom: 0.75rem;
-  border-bottom: 1px solid #e3e7f1;
+  border-bottom: 1px solid var(--timesheet-border);
+  transition: border-color 0.3s ease;
 }
 
 .filter-title {
   font-weight: 600;
-  color: #364a63;
+  color: var(--text-color);
   display: flex;
   align-items: center;
+  transition: color 0.3s ease;
 }
 
 .filter-title i {
-  color: #8094ae;
+  color: var(--text-secondary);
+  transition: color 0.3s ease;
 }
 
 .active-filters-count {
@@ -37,10 +41,11 @@
 }
 
 .result-count {
-  color: #8094ae;
+  color: var(--text-secondary);
   font-size: 0.875rem;
   display: flex;
   align-items: center;
+  transition: color 0.3s ease;
 }
 
 .filter-controls {
@@ -58,18 +63,20 @@
 .filter-label {
   font-size: 0.875rem;
   font-weight: 500;
-  color: #364a63;
+  color: var(--text-color);
   margin-bottom: 0.5rem;
+  transition: color 0.3s ease;
 }
 
 .filter-select,
 .filter-input {
   font-size: 0.875rem;
-  border: 1px solid #dbdfea;
+  border: 1px solid var(--timesheet-border);
   border-radius: 4px;
   padding: 0.5rem 0.75rem;
-  background: white;
-  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+  background: var(--timesheet-card-bg);
+  color: var(--text-color);
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out, background-color 0.3s ease, color 0.3s ease;
 }
 
 .filter-select:focus,
@@ -90,9 +97,10 @@
 }
 
 .date-separator {
-  color: #8094ae;
+  color: var(--text-secondary);
   font-size: 0.875rem;
   white-space: nowrap;
+  transition: color 0.3s ease;
 }
 
 @media (max-width: 768px) {
@@ -126,14 +134,16 @@
 }
 
 .btn-outline-secondary {
-  border-color: #dbdfea;
-  color: #8094ae;
+  border-color: var(--timesheet-border);
+  color: var(--text-secondary);
+  transition: border-color 0.3s ease, color 0.3s ease;
 }
 
 .btn-outline-secondary:hover {
-  background-color: #e3e7f1;
-  border-color: #c4c8d1;
-  color: #526484;
+  background-color: var(--timesheet-row-hover);
+  border-color: var(--timesheet-border);
+  color: var(--text-color);
+  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
 }
 
 .btn-outline-secondary-clear-all {

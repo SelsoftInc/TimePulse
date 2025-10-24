@@ -51,3 +51,5 @@ echo "🌐 After deployment, update your Amplify environment variables:"
 echo "   REACT_APP_API_BASE = https://your-eb-app.region.elasticbeanstalk.com"
 echo ""
 echo "📖 For detailed instructions, see: AWS_BACKEND_DEPLOYMENT_GUIDE.md"
+
+

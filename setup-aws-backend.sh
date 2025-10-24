@@ -64,3 +64,5 @@ echo "   cd server && eb init && eb create production && eb deploy"
 echo ""
 
 echo "📖 For detailed instructions, see: AWS_BACKEND_DEPLOYMENT_GUIDE.md"
+
+

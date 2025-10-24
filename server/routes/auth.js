@@ -82,7 +82,7 @@ router.post('/login', async (req, res) => {
       const employee = await models.Employee.findOne({
         where: {
           email: user.email,
-          tenantId: user.tenantId
+          tenantId: user.tenant_id || user.tenantId
         }
       });
       if (employee) {
@@ -97,19 +97,19 @@ router.post('/login', async (req, res) => {
       token,
       user: {
         id: user.id,
-        firstName: user.firstName,
-        lastName: user.lastName,
+        firstName: user.firstName || user.first_name,
+        lastName: user.lastName || user.last_name,
         email: user.email,
         role: user.role,
         department: user.department,
         title: user.title,
-        tenantId: user.tenantId,
+        tenantId: user.tenantId || user.tenant_id,
         employeeId: employeeId,
-        mustChangePassword: user.mustChangePassword
+        mustChangePassword: user.mustChangePassword || user.must_change_password
       },
       tenant: user.tenant ? {
         id: user.tenant.id,
-        tenantName: user.tenant.tenant_name,
+        tenantName: user.tenant.tenantName || user.tenant.tenant_name,
         subdomain: user.tenant.subdomain,
         status: user.tenant.status
       } : null
@@ -117,9 +117,12 @@ router.post('/login', async (req, res) => {
 
   } catch (error) {
     console.error('Login error:', error);
+    console.error('Error stack:', error.stack);
+    console.error('Error message:', error.message);
     res.status(500).json({
       success: false,
-      message: 'Internal server error'
+      message: 'Internal server error',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 });

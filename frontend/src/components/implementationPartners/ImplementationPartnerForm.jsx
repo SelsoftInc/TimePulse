@@ -119,35 +119,35 @@ const ImplementationPartnerForm = ({
 
   const handleBlur = (e) => {
     const { name, value } = e.target;
-    let error = "";
+    let validation = null;
 
     switch (name) {
       case "name":
-        error = validateName(value, "Implementation Partner name");
+        validation = validateName(value, "Implementation Partner name");
         break;
       case "email":
         if (value) {
-          error = validateEmail(value);
+          validation = validateEmail(value);
         }
         break;
       case "phone":
         if (value) {
-          error = validatePhoneNumber(value);
+          validation = validatePhoneNumber(value);
         }
         break;
       case "zip":
         if (value) {
-          error = validateZipCode(value, formData.country);
+          validation = validateZipCode(value);
         }
         break;
       default:
         break;
     }
 
-    if (error && error !== null) {
+    if (validation && !validation.isValid) {
       setErrors((prev) => ({
         ...prev,
-        [name]: error,
+        [name]: validation.message,
       }));
     } else {
       setErrors((prev) => {
@@ -165,27 +165,27 @@ const ImplementationPartnerForm = ({
     if (!formData.name.trim()) {
       newErrors.name = "Implementation Partner name is required";
     } else {
-      const nameError = validateName(
+      const nameValidation = validateName(
         formData.name,
         "Implementation Partner name"
       );
-      if (nameError) newErrors.name = nameError;
+      if (!nameValidation.isValid) newErrors.name = nameValidation.message;
     }
 
     // Optional but validated fields
     if (formData.email) {
-      const emailError = validateEmail(formData.email);
-      if (emailError) newErrors.email = emailError;
+      const emailValidation = validateEmail(formData.email);
+      if (!emailValidation.isValid) newErrors.email = emailValidation.message;
     }
 
     if (formData.phone) {
-      const phoneError = validatePhoneNumber(formData.phone);
-      if (phoneError) newErrors.phone = phoneError;
+      const phoneValidation = validatePhoneNumber(formData.phone);
+      if (!phoneValidation.isValid) newErrors.phone = phoneValidation.message;
     }
 
     if (formData.zip) {
-      const zipError = validateZipCode(formData.zip, formData.country);
-      if (zipError) newErrors.zip = zipError;
+      const zipValidation = validateZipCode(formData.zip);
+      if (!zipValidation.isValid) newErrors.zip = zipValidation.message;
     }
 
     setErrors(newErrors);

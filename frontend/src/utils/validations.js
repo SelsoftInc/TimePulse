@@ -4,21 +4,23 @@
 
 // Phone number validation (exactly 10 digits)
 export const validatePhoneNumber = (phone) => {
-  if (!phone) return "Phone number is required";
+  if (!phone) {
+    return { isValid: false, message: "Phone number is required" };
+  }
 
   // Remove all non-digit characters
   const cleanPhone = phone.replace(/\D/g, "");
 
   if (cleanPhone.length !== 10) {
-    return "Phone number must be exactly 10 digits";
+    return { isValid: false, message: "Phone number must be exactly 10 digits" };
   }
 
   // Check if it's all the same digit (like 1111111111)
   if (/^(\d)\1{9}$/.test(cleanPhone)) {
-    return "Phone number cannot be all the same digits";
+    return { isValid: false, message: "Phone number cannot be all the same digits" };
   }
 
-  return null; // Valid
+  return { isValid: true, message: "Valid phone number" };
 };
 
 // Format phone number for display (XXX) XXX-XXXX
@@ -35,48 +37,54 @@ export const formatPhoneNumber = (phone) => {
 
 // Zip code validation (exactly 5 digits)
 export const validateZipCode = (zipCode) => {
-  if (!zipCode) return "Zip code is required";
+  if (!zipCode) {
+    return { isValid: false, message: "Zip code is required" };
+  }
 
   const cleanZip = zipCode.replace(/\D/g, "");
 
   if (cleanZip.length !== 5) {
-    return "Zip code must be exactly 5 digits";
+    return { isValid: false, message: "Zip code must be exactly 5 digits" };
   }
 
-  return null; // Valid
+  return { isValid: true, message: "Valid zip code" };
 };
 
 // Email validation
 export const validateEmail = (email) => {
-  if (!email) return "Email is required";
+  if (!email) {
+    return { isValid: false, message: "Email is required" };
+  }
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
   if (!emailRegex.test(email)) {
-    return "Please enter a valid email address";
+    return { isValid: false, message: "Please enter a valid email address" };
   }
 
-  return null; // Valid
+  return { isValid: true, message: "Valid email" };
 };
 
 // Name validation (first name, last name, etc.)
 export const validateName = (name, fieldName = "Name") => {
-  if (!name) return `${fieldName} is required`;
+  if (!name) {
+    return { isValid: false, message: `${fieldName} is required` };
+  }
 
   if (name.trim().length < 2) {
-    return `${fieldName} must be at least 2 characters long`;
+    return { isValid: false, message: `${fieldName} must be at least 2 characters long` };
   }
 
   if (name.trim().length > 50) {
-    return `${fieldName} must be less than 50 characters`;
+    return { isValid: false, message: `${fieldName} must be less than 50 characters` };
   }
 
-  // Check for valid characters (letters, spaces, hyphens, apostrophes)
-  if (!/^[a-zA-Z\s\-']+$/.test(name.trim())) {
-    return `${fieldName} can only contain letters, spaces, hyphens, and apostrophes`;
+  // Check for valid characters (letters, spaces, hyphens, apostrophes, numbers, periods, commas)
+  if (!/^[a-zA-Z0-9\s\-'.,&]+$/.test(name.trim())) {
+    return { isValid: false, message: `${fieldName} contains invalid characters` };
   }
 
-  return null; // Valid
+  return { isValid: true, message: "Valid name" };
 };
 
 // Password validation
@@ -182,19 +190,19 @@ export const validateWeekdays = (startDate, endDate) => {
   };
 
   if (isWeekend(start) || isWeekend(end)) {
-    return "Dates cannot be weekends (Saturday/Sunday)";
+    return { isValid: false, message: "Dates cannot be weekends (Saturday/Sunday)" };
   }
 
   // Check if any date in the range is a weekend
   let currentDate = new Date(start);
   while (currentDate <= end) {
     if (isWeekend(currentDate)) {
-      return "Date range cannot include weekends (Saturday/Sunday)";
+      return { isValid: false, message: "Date range cannot include weekends (Saturday/Sunday)" };
     }
     currentDate.setDate(currentDate.getDate() + 1);
   }
 
-  return null; // Valid
+  return { isValid: true, message: "Valid weekdays" };
 };
 
 // Required field validation

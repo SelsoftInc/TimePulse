@@ -8,8 +8,7 @@ import "./BillingSettings.css";
 const BillingSettings = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [billingPlan, setBillingPlan] = useState("professional");
-  const [billingCycle, setBillingCycle] = useState("monthly");
+  const [billingPlan, setBillingPlan] = useState(null);
   const [loading, setLoading] = useState(false);
   const [subscription, setSubscription] = useState(null);
 
@@ -17,53 +16,57 @@ const BillingSettings = () => {
     {
       id: "starter",
       name: "Starter",
-      price: 49,
-      users: 5,
-      features: ["Basic time tracking", "Project management", "Invoicing"],
+      price: 1.99,
+      period: "user/month",
+      description: "Perfect for small teams getting started",
+      features: [
+        "AI-powered uploads",
+        "MSA/SOW mapping",
+        "Auto invoicing to QuickBooks/NetSuite",
+        "1-level approval workflow",
+        "Basic timesheet digitization",
+        "Email support",
+      ],
     },
     {
       id: "professional",
       name: "Professional",
-      price: 99,
-      users: 15,
+      price: 3.99,
+      period: "user/month",
+      description: "Advanced automation for growing teams",
+      badge: "Most Popular",
       features: [
-        "Advanced time tracking",
-        "Resource planning",
-        "Client portal",
-        "Expense tracking",
+        "Everything in Starter",
+        "Multi-level approvals",
+        "Real-time analytics dashboard",
+        "Priority support",
       ],
     },
     {
       id: "enterprise",
       name: "Enterprise",
-      price: 199,
-      users: "Unlimited",
+      price: "Custom",
+      period: "pricing",
+      description: "Tailored solutions for large organizations",
       features: [
-        "Custom workflows",
-        "API access",
-        "Dedicated support",
-        "Advanced analytics",
-        "SSO integration",
+        "Everything in Professional",
+        "Custom API integrations",
+        "SLA support",
+        "Dedicated account manager",
+        "Advanced security features",
       ],
     },
   ];
 
-  // Calculate annual pricing with 10% discount
-  const getPrice = (plan) => {
-    const basePrice = plan.price;
-    return billingCycle === "annual" ? Math.round(basePrice * 0.9) : basePrice;
+  // Format price display
+  const formatPrice = (price) => {
+    if (typeof price === "string") return price;
+    return `$${price.toFixed(2)}`;
   };
 
   // Mock payment methods
   const paymentMethods = [
     { id: "credit_card", last4: "4242", brand: "Visa", expiry: "12/26" },
-  ];
-
-  // Mock invoice history
-  const invoices = [
-    { id: "INV-2025-001", date: "2025-06-01", amount: 99, status: "paid" },
-    { id: "INV-2025-002", date: "2025-05-01", amount: 99, status: "paid" },
-    { id: "INV-2025-003", date: "2025-04-01", amount: 99, status: "paid" },
   ];
 
   // Fetch current subscription status
@@ -88,9 +91,6 @@ const BillingSettings = () => {
           if (data.plan && data.plan !== "none") {
             setBillingPlan(data.plan);
           }
-          if (data.interval) {
-            setBillingCycle(data.interval);
-          }
         }
       } catch (error) {
         console.error("Error fetching subscription:", error);
@@ -105,7 +105,7 @@ const BillingSettings = () => {
 
     // If no subscription exists, start checkout
     if (!subscription || subscription.status === "none") {
-      await startCheckout(planId, billingCycle);
+      await startCheckout(planId, "monthly");
       return;
     }
 
@@ -121,7 +121,7 @@ const BillingSettings = () => {
         body: JSON.stringify({
           tenantId: user.tenantId,
           plan: planId,
-          interval: billingCycle,
+          interval: "monthly",
         }),
       });
 
@@ -146,57 +146,6 @@ const BillingSettings = () => {
     } catch (error) {
       console.error("Error updating subscription:", error);
       toast.error("Failed to update subscription plan");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleCycleChange = async (cycle) => {
-    if (cycle === billingCycle) return;
-
-    // If no subscription exists, start checkout
-    if (!subscription || subscription.status === "none") {
-      await startCheckout(billingPlan, cycle);
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(`${API_BASE}/api/billing/change-plan`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          tenantId: user.tenantId,
-          plan: billingPlan,
-          interval: cycle,
-        }),
-      });
-
-      if (response.ok) {
-        setBillingCycle(cycle);
-        toast.success("Billing cycle updated successfully");
-        // Refresh subscription data
-        const statusResponse = await fetch(
-          `${API_BASE}/api/billing/status?tenantId=${user.tenantId}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
-        if (statusResponse.ok) {
-          const data = await statusResponse.json();
-          setSubscription(data);
-        }
-      } else {
-        const error = await response.json();
-        toast.error(error.error || "Failed to update billing cycle");
-      }
-    } catch (error) {
-      console.error("Error updating billing cycle:", error);
-      toast.error("Failed to update billing cycle");
     } finally {
       setLoading(false);
     }
@@ -263,45 +212,21 @@ const BillingSettings = () => {
   };
 
   return (
-    <div className="billing-settings">
+    <div className="billing-setting">
       <div className="billing-header">
         <h1 className="billing-title">Billing & Subscription</h1>
         <div className="current-plan-section">
-          <h3 className="current-plan-title">Current Plan</h3>
+          <span className="current-plan-label">Current Plan</span>
           {subscription && subscription.status !== "none" && (
             <button
-              className="btn btn-outline-primary manage-billing-btn"
+              className="manage-billing-btn"
               onClick={openPortal}
               disabled={loading}
             >
-              <i className="fas fa-cog mr-1"></i>
+              <i className="fas fa-cog"></i>
               Manage Billing
             </button>
           )}
-        </div>
-      </div>
-
-      {/* Pricing Toggle */}
-      <div className="pricing-toggle-container">
-        <div className="pricing-toggle">
-          <button
-            className={`toggle-option ${
-              billingCycle === "monthly" ? "active" : ""
-            }`}
-            onClick={() => handleCycleChange("monthly")}
-            disabled={loading}
-          >
-            Monthly
-          </button>
-          <button
-            className={`toggle-option ${
-              billingCycle === "annual" ? "active" : ""
-            }`}
-            onClick={() => handleCycleChange("annual")}
-            disabled={loading}
-          >
-            Annual (Save 10%)
-          </button>
         </div>
       </div>
 
@@ -312,32 +237,40 @@ const BillingSettings = () => {
             key={plan.id}
             className={`pricing-card ${
               plan.id === billingPlan ? "current-plan" : ""
-            } ${loading ? "loading" : ""}`}
-            onClick={() => !loading && handlePlanChange(plan.id)}
+            } ${plan.id === "professional" && plan.id !== billingPlan ? "featured-plan" : ""} ${
+              loading ? "loading" : ""
+            }`}
+            onClick={() => plan.id !== billingPlan && !loading && handlePlanChange(plan.id)}
+            style={{ cursor: plan.id === billingPlan ? "default" : "pointer" }}
           >
-            {plan.id === billingPlan && (
-              <div className="current-plan-badge">Current Plan</div>
+            {plan.badge && plan.id !== billingPlan && (
+              <div className="plan-badge">{plan.badge}</div>
             )}
+            {plan.id === billingPlan && (
+              <div className="current-plan-badge">CURRENT PLAN</div>
+            )}
+            
             <div className="plan-header">
               <h3 className="plan-name">{plan.name}</h3>
               <div className="plan-price">
-                <span className="price-amount">${getPrice(plan)}</span>
-                <span className="price-period">/ month</span>
+                <span className="price-amount">{formatPrice(plan.price)}</span>
+                <span className="price-period">/{plan.period}</span>
               </div>
-              <div className="plan-users">Up to {plan.users} users</div>
+              <p className="plan-description">{plan.description}</p>
             </div>
+            
             <div className="plan-features">
               <ul className="features-list">
                 {plan.features.map((feature, index) => (
                   <li key={index} className="feature-item">
                     <svg
                       className="check-icon"
-                      width="16"
-                      height="16"
+                      width="18"
+                      height="18"
                       viewBox="0 0 24 24"
                       fill="none"
                       stroke="currentColor"
-                      strokeWidth="2"
+                      strokeWidth="2.5"
                       strokeLinecap="round"
                       strokeLinejoin="round"
                     >
@@ -347,6 +280,29 @@ const BillingSettings = () => {
                   </li>
                 ))}
               </ul>
+            </div>
+            
+            <div className="plan-action">
+              {plan.id === billingPlan ? (
+                <button className="plan-btn current" disabled>
+                  Current Plan
+                </button>
+              ) : plan.id === "enterprise" ? (
+                <button
+                  className="plan-btn"
+                  onClick={() => window.location.href = "mailto:sales@timepulse.com"}
+                >
+                  Contact Sales
+                </button>
+              ) : (
+                <button
+                  className="plan-btn"
+                  onClick={() => !loading && handlePlanChange(plan.id)}
+                  disabled={loading}
+                >
+                  Start Free Trial
+                </button>
+              )}
             </div>
           </div>
         ))}

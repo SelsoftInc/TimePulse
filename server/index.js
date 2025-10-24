@@ -39,7 +39,7 @@ const notificationRoutes = require("./routes/notifications");
 const subscriptionRoutes = require("./routes/subscriptions");
 const billingRoutes = require("./routes/billing");
 const dashboardRoutes = require("./routes/dashboard");
-const dashboardPrismaRoutes = require("./routes/dashboard-prisma");
+// const dashboardPrismaRoutes = require("./routes/dashboard-prisma"); // Disabled - requires Prisma setup
 
 // Middleware
 app.use(cors()); // Completely open CORS for debugging
@@ -107,7 +107,7 @@ app.use("/api/notifications", notificationRoutes);
 app.use("/api/subscriptions", subscriptionRoutes);
 app.use("/api/billing", billingRoutes);
 app.use("/api/dashboard", dashboardRoutes);
-app.use("/api/dashboard-prisma", dashboardPrismaRoutes);
+// app.use("/api/dashboard-prisma", dashboardPrismaRoutes); // Disabled - requires Prisma setup
 app.use("/api/auth", require("./routes/auth"));
 
 // Error handling middleware

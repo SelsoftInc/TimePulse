@@ -905,14 +905,14 @@ const ReportsDashboard = () => {
                     >
                       Invoice
                     </div>
-                    <div
+                    {/* <div
                       className={`pill-option ${
                         activeTab === "analytics" ? "active" : ""
                       }`}
                       onClick={() => setActiveTab("analytics")}
                     >
                       Analytics
-                    </div>
+                    </div> */}
                     <div className={`pill-slider ${activeTab}`}></div>
                   </div>
 
@@ -925,7 +925,8 @@ const ReportsDashboard = () => {
                         ? "Employee-wise Report"
                         : activeTab === "invoice"
                         ? "Invoice Report"
-                        : "Analytics Dashboard"}
+                        : "Analytics Dashboard"
+                        }
                     </strong>
                   </div>
                 </div>
@@ -933,7 +934,7 @@ const ReportsDashboard = () => {
                 {activeTab === "client" && renderClientReport()}
                 {activeTab === "employee" && renderEmployeeReport()}
                 {activeTab === "invoice" && renderInvoiceReport()}
-                {activeTab === "analytics" && renderAnalyticsReport()}
+                {/* {activeTab === "analytics" && renderAnalyticsReport()} */}
               </>
             )}
           </div>

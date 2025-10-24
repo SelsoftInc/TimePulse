@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { useAuth } from "../../contexts/AuthContext";
 import { useToast } from "../../contexts/ToastContext";
 import "./InvoiceSettings.css";
 
@@ -12,7 +11,7 @@ const InvoiceSettings = () => {
     companyCity: "",
     companyState: "",
     companyZip: "",
-    companyCountry: "United States",
+    companyCountry: "US",
     companyPhone: "",
     companyEmail: "",
     companyWebsite: "",
@@ -100,12 +99,47 @@ const InvoiceSettings = () => {
     }
   };
 
+  // Country data with codes and flags
+  const countries = [
+    { code: "US", name: "United States", flag: "🇺🇸", phoneCode: "+1" },
+    { code: "IN", name: "India", flag: "🇮🇳", phoneCode: "+91" },
+  ];
+
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
     setInvoiceSettings((prev) => ({
       ...prev,
       [name]: type === "checkbox" ? checked : value,
     }));
+  };
+
+  const handleCountryChange = (e) => {
+    const selectedCountryCode = e.target.value;
+    const selectedCountry = countries.find(c => c.code === selectedCountryCode);
+    
+    if (selectedCountry) {
+      // Update country and automatically set phone code
+      setInvoiceSettings((prev) => {
+        // Get the current phone number without country code
+        let phoneWithoutCode = prev.companyPhone;
+        
+        // Remove existing country code if present
+        countries.forEach(country => {
+          if (phoneWithoutCode.startsWith(country.phoneCode)) {
+            phoneWithoutCode = phoneWithoutCode.substring(country.phoneCode.length).trim();
+          }
+        });
+        
+        // Add new country code
+        const newPhone = phoneWithoutCode ? `${selectedCountry.phoneCode} ${phoneWithoutCode}` : selectedCountry.phoneCode;
+        
+        return {
+          ...prev,
+          companyCountry: selectedCountryCode,
+          companyPhone: newPhone,
+        };
+      });
+    }
   };
 
   const handleSave = async () => {
@@ -332,18 +366,48 @@ const InvoiceSettings = () => {
               </div>
 
               <div className="form-group">
+                <label className="form-label" htmlFor="companyCountry">
+                  Country *
+                </label>
+                <div className="country-select-wrapper">
+                  <select
+                    className="form-select country-select"
+                    id="companyCountry"
+                    name="companyCountry"
+                    value={invoiceSettings.companyCountry}
+                    onChange={handleCountryChange}
+                    required
+                  >
+                    {countries.map((country) => (
+                      <option key={country.code} value={country.code}>
+                        {country.flag} {country.name} ({country.phoneCode})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="form-group">
                 <label className="form-label" htmlFor="companyPhone">
                   Phone
                 </label>
-                <input
-                  type="tel"
-                  className="form-control"
-                  id="companyPhone"
-                  name="companyPhone"
-                  value={invoiceSettings.companyPhone}
-                  onChange={handleInputChange}
-                  placeholder="(555) 123-4567"
-                />
+                <div className="phone-input-wrapper">
+                  {/* <span className="phone-code-badge">
+                    {countries.find(c => c.code === invoiceSettings.companyCountry)?.phoneCode || "+1"}
+                  </span> */}
+                  <input
+                    type="tel"
+                    className="form-control phone-input"
+                    id="companyPhone"
+                    name="companyPhone"
+                    value={invoiceSettings.companyPhone}
+                    onChange={handleInputChange}
+                    placeholder="123-456-7890"
+                  />
+                </div>
+                {/* <small className="form-hint">
+                  Country code is automatically added based on selected country
+                </small> */}
               </div>
 
               <div className="form-group">

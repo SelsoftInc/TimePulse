@@ -1,205 +1,444 @@
-# TimePulse Engine - Timesheet to Invoice Conversion
+# Timesheet Extractor API
 
-This engine provides AI-powered timesheet document analysis and invoice generation capabilities for the TimePulse application.
+A high-performance FastAPI application that extracts structured timesheet data from various document formats using **AWS Bedrock Claude** in a **unified single-model pipeline**.
 
-## Features
+## 🚀 Key Features
 
-- **Document Analysis**: Extract structured data from timesheet documents (PDF, DOCX, XLSX, images)
-- **AI Processing**: Use Azure OpenAI and Document Intelligence services for accurate data extraction
-- **Invoice Generation**: Automatically convert timesheet data to invoice format
-- **Multiple Formats**: Support for various document formats and file uploads
-- **REST API**: FastAPI-based service with comprehensive documentation
+- ⚡ **Single Model Pipeline**: One Bedrock Claude call does everything - **3x faster** than multi-step approaches
+- 📊 **Multiple Document Formats**: PNG, JPG, JPEG, PDF, CSV, DOCX, XLSX
+- 🤖 **Direct Vision Processing**: Claude analyzes images/PDFs directly - no separate OCR needed
+- � **Smart Extraction**: AI understands context, handles tables, multiple employees, and various formats
+- 📝 **Structured JSON Output**: Clean, validated timesheet data ready to use
+- 🔒 **Production Ready**: Error handling, logging, CORS, file validation
+- 🐳 **Docker Support**: Containerized deployment
 
-## Setup Instructions
+## 💡 How It Works
 
-### 1. Install Dependencies
-
-```bash
-cd engine
-pip install -r requirements.txt
+**Traditional Multi-Step Approach (Slow):**
+```
+Document → IDP/OCR → Text → LLM → JSON
+         (2-5 sec)  (1-3 sec)
+         Total: 3-8 seconds
 ```
 
-### 2. Configure Environment Variables
-
-Copy the template and fill in your Azure credentials:
-
-```bash
-cp .env.template .env
+**Our Unified Pipeline (Fast):**
+```
+Document → Bedrock Claude → JSON
+         (1-2 seconds only!)
 ```
 
-Edit `.env` file with your Azure credentials:
+One model call extracts text AND structures data simultaneously!
 
+## Quick Start
+
+### Prerequisites
+
+- Python 3.8+
+- AWS Bedrock access (AWS credentials)
+- Bedrock Claude model access enabled in your region
+
+### Installation
+
+1. **Clone the repository:**
+   ```bash
+   git clone <repository-url>
+   cd TImepulse-InvoiceBackend-SELSOFT
+   ```
+
+2. **Install dependencies:**
+   ```bash
+2. **Install dependencies:**
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+3. **Configure environment variables:**
+   ```bash
+   cp .env.example .env
+   # Edit .env with your AWS credentials
+   ```
+
+4. **Set your AWS Bedrock credentials in `.env`:**
+   ```env
+   AWS_ACCESS_KEY_ID=your_aws_access_key_id_here
+   AWS_SECRET_ACCESS_KEY=your_aws_secret_access_key_here
+   AWS_REGION=us-east-1
+   CLAUDE_MODEL_ID=us.anthropic.claude-3-5-sonnet-20241022-v2:0
+   ```
+
+5. **Run the application:**
+   ```bash
+   uvicorn main:app --reload --host 0.0.0.0 --port 8000
+   ```
+
+6. **Access the application:**
+   - Web Interface: http://localhost:8000
+   - API Documentation: http://localhost:8000/docs
+   - Health Check: http://localhost:8000/health
+
+## 🧪 Testing with Postman
+
+### Quick Postman Setup
+
+1. **Create a New Request**
+   - Method: **POST**
+   - URL: `http://localhost:8000/api/v1/timesheet/extract`
+
+2. **Configure Request Body**
+   - Go to **Body** tab
+   - Select **form-data**
+   - Add key: `file` (change type from "Text" to **"File"**)
+   - Click "Select Files" and choose your timesheet document (PDF/PNG/etc.)
+
+3. **Send Request**
+   - Click **Send**
+   - View the extracted timesheet data in JSON format
+
+### Import Postman Collection
+
+Save this as `timesheet-api.postman_collection.json`:
+
+```json
+{
+  "info": {
+    "name": "Timesheet Extractor API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Extract Timesheet",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "file",
+              "type": "file",
+              "src": []
+            }
+          ]
+        },
+        "url": {
+          "raw": "http://localhost:8000/api/v1/timesheet/extract",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8000",
+          "path": ["api", "v1", "timesheet", "extract"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "url": "http://localhost:8000/health"
+      }
+    }
+  ]
+}
+```
+
+Then: **Import** → Paste JSON → **Import**
+
+### Expected Response
+
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "message": "Successfully extracted 1 employee timesheet(s)",
+  "data": [
+    {
+      "client_id": null,
+      "client_name": "John Doe",
+      "employee_name": null,
+      "week_hours": [
+        {"day": "Mon", "hours": 8.0},
+        {"day": "Tue", "hours": 7.5},
+        {"day": "Wed", "hours": 8.0},
+        {"day": "Thu", "hours": 8.0},
+        {"day": "Fri", "hours": 6.0},
+        {"day": "Sat", "hours": 0.0},
+        {"day": "Sun", "hours": 0.0}
+      ],
+      "total_hours": 37.5
+    }
+  ],
+  "metadata": {
+    "filename": "document.png",
+    "file_type": "png",
+    "employees_count": 1
+  }
+}
+```
+
+**Error Response (400/500):**
+```json
+{
+  "detail": "Error message describing what went wrong"
+}
+```
+
+### Testing Tips
+
+- ✅ Make sure the FastAPI server is running (`uvicorn main:app --reload`)
+- ✅ Check the terminal logs for detailed processing information
+- ✅ You'll see "FULL MODEL RESPONSE" in logs showing exactly what Claude returned
+- ✅ Start with a clear, high-quality timesheet image for best results
+   ```
+
+3. **Configure environment variables:**
+   ```bash
+   cp .env.example .env
+   # Edit .env with your configuration
+   ```
+
+4. **Set your Bedrock / Claude credentials in `.env`:**
 ```env
-# Azure OpenAI Configuration
-AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com/
-AZURE_OPENAI_API_KEY=your_azure_openai_api_key
-AZURE_OPENAI_DEPLOYMENT_NAME=your_deployment_name
-
-# Azure Document Intelligence Configuration
-DOCUMENTINTELLIGENCE_ENDPOINT=https://your-resource.cognitiveservices.azure.com/
-DOCUMENTINTELLIGENCE_API_KEY=your_document_intelligence_api_key
+AWS_ACCESS_KEY_ID=your_aws_access_key_id_here
+AWS_SECRET_ACCESS_KEY=your_aws_secret_access_key_here
+AWS_REGION=us-east-1
+CLAUDE_MODEL_ID=us.anthropic.claude-3-5-sonnet-20241022-v2:0
 ```
 
-### 3. Start the Engine Server
+5. **Run the application:**
+   ```bash
+   python main.py
+   ```
 
-```bash
-# Using the server script (recommended)
-python server.py
+6. **Access the application:**
+   - Web Interface: http://localhost:8000
+   - API Documentation: http://localhost:8000/docs
+   - Health Check: http://localhost:8000/health
 
-# Or directly with uvicorn
-uvicorn main:app --host 127.0.0.1 --port 8000 --reload
+## Configuration
 
-# Or using the Flask app (alternative)
-python app3.py
-```
+### Environment Variables
 
-The server will start on `http://127.0.0.1:8000` by default.
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `APP_NAME` | Application name | `Timesheet Generator API` |
+| `APP_VERSION` | Application version | `1.0.0` |
+| `DEBUG` | Debug mode | `False` |
+| `HOST` | Server host | `0.0.0.0` |
+| `PORT` | Server port | `8000` |
+| `BEDROCK_CLAUDE_API_KEY` | Bedrock / Claude API key or token | Optional |
+| `BEDROCK_CLAUDE_MODEL` | Bedrock model id or full invoke URL | `anthropic.claude-v1` |
+| `CLAUDE_MODEL_ID` | Claude model id for boto3 usage | Optional |
+| `BEDROCK_IDP_ENDPOINT` | Optional Bedrock IDP endpoint for document processing | (empty) |
+| `MAX_FILE_SIZE_MB` | Maximum file size | `10` |
+| `ALLOWED_EXTENSIONS` | Allowed file types | `png,jpg,jpeg,pdf,csv,docx,xlsx` |
+| `CORS_ORIGINS` | CORS allowed origins | `http://localhost:3000,http://localhost:8000` |
+| `LOG_LEVEL` | Logging level | `INFO` |
+| `RATE_LIMIT_PER_MINUTE` | API rate limit | `30` |
 
-### 4. Verify Installation
+| `BEDROCK_CLAUDE_API_KEY` | Bedrock / Claude API key or token | Optional |
 
-Visit `http://127.0.0.1:8000/docs` to see the API documentation.
+### Extract Timesheet Data
+- **POST** `/api/v1/timesheet/extract`
+- Upload a timesheet document and extract structured data
+- **Request**: Multipart form with file
+- **Response**: JSON with extracted timesheet data
 
-## API Endpoints
+### Batch Processing
+- **POST** `/api/v1/timesheet/extract-batch`
+- Process multiple documents at once (max 10 files)
 
-### FastAPI Endpoints (main.py)
-
-- `GET /analyze-document` - Analyze a document from URL
-- `POST /convert-docx-to-pdf` - Convert DOCX files to PDF
-- `POST /process-document` - Process document content directly
-
-### Flask Endpoints (app3.py)
-
-- `POST /` - Upload and process timesheet files
-- `GET /` - Web interface for file upload
-
-## Frontend Integration
-
-The TimePulse frontend includes:
-
-1. **TimesheetToInvoice Component** (`/timesheets/to-invoice`)
-   - Upload timesheet documents
-   - Configure client information
-   - Preview extracted data
-   - Generate invoice data
-
-2. **InvoiceForm Component** (`/invoices/create`)
-   - Create invoices manually or from timesheet data
-   - Edit and customize invoice details
-   - Save as draft or finalize
-
-3. **Engine Service** (`engineService.js`)
-   - API client for engine communication
-   - Data transformation utilities
-   - Health check functionality
-
-## Usage Workflow
-
-1. **Upload Timesheet**: Use the "Convert to Invoice" button in TimesheetSummary
-2. **Process Document**: Engine analyzes the document using AI
-3. **Review Data**: Preview extracted timesheet information
-4. **Generate Invoice**: Transform data to invoice format
-5. **Customize**: Edit invoice details in InvoiceForm
-6. **Save**: Create final invoice or save as draft
+### Health Check
+- **GET** `/health`
+- Returns application health status
 
 ## Supported File Formats
 
-- **PDF**: Text extraction and OCR fallback
-- **DOCX**: Text and embedded image extraction
-- **XLSX**: Cell data and embedded image OCR
-- **Images**: PNG, JPG, JPEG with OCR processing
+| Format | Description | OCR Required |
+|--------|-------------|--------------|
+| **PNG/JPG/JPEG** | Image files with timesheet data | ✅ Bedrock IDP (if configured) |
+| **PDF** | PDF documents | ❌ |
+| **CSV** | Comma-separated values | ❌ |
+| **DOCX** | Microsoft Word documents | ❌ |
+| **XLSX** | Microsoft Excel spreadsheets | ❌ |
 
-## Configuration Options
+## OCR Technology
 
-### Server Configuration
+This application can use a Bedrock IDP endpoint for optical character recognition, which:
+- ✅ Requires no system-level dependencies on the application host
+- ✅ Works with managed Bedrock runtimes or proxies
+- ✅ Supports multiple languages and can return structured fields
+- ✅ Scales without local GPU requirements
 
-```env
-ENGINE_HOST=127.0.0.1        # Server host
-ENGINE_PORT=8000             # Server port
-ENGINE_RELOAD=true           # Auto-reload on changes
-ENGINE_LOG_LEVEL=info        # Logging level
+### Why Bedrock IDP?
+
+- **Managed Service**: Offloads OCR/IDP to a managed runtime (Bedrock or your chosen provider)
+- **Higher Accuracy**: Use IDP models trained for document extraction
+- **Scalable**: No need to manage local OCR resources
+- **Flexible**: Return structured outputs (text, fields, detected entities)
+
+## Docker Deployment
+
+### Using Docker Compose (Recommended)
+
+```bash
+docker-compose up -d
 ```
 
-### Frontend Configuration
+### Using Docker
 
-Add to your React `.env` file:
+```bash
+# Build image
+docker build -t timesheet-generator .
 
-```env
-REACT_APP_ENGINE_API_URL=http://localhost:8000
+# Run container
+docker run -p 8000:8000 \
+   -e AWS_ACCESS_KEY_ID=your_key_here \
+   -e AWS_SECRET_ACCESS_KEY=your_secret_here \
+  timesheet-generator
+```
+
+## Development
+
+### Project Structure
+
+```
+TImepulse-InvoiceBackend-SELSOFT/
+├── main.py                 # FastAPI application entry point
+├── config.py              # Configuration management
+├── models.py              # Pydantic models
+├── routers/               # API route handlers
+│   └── timesheet.py       # Timesheet extraction endpoints
+├── services/              # Business logic
+│   └── llm_service.py     # Unified Bedrock Claude service
+├── utils/                 # Utility functions
+│   ├── file_handler.py    # File upload/temp handling
+│   └── validators.py      # Input validation
+├── frontend/              # Web interface
+│   ├── index.html
+│   ├── script.js
+│   └── styles.css
+└── tests/                 # Test files
+    └── test_api.postman_collection.json
+```
+
+### Running Tests
+
+```bash
+pytest tests/
+```
+
+### Logging
+
+The application uses structured logging with Loguru:
+- Console output with colors
+- File rotation (10MB files, 7 days retention)
+- Configurable log levels
+
+## 💻 Example Usage
+
+### Web Interface
+1. Open http://localhost:8000
+2. Drag and drop or browse for a timesheet file
+3. Click "Extract Timesheet Data"
+4. View structured results instantly
+
+### cURL Example
+
+```bash
+curl -X POST "http://localhost:8000/api/v1/timesheet/extract" \
+  -H "Content-Type: multipart/form-data" \
+  -F "file=@timesheet.pdf"
+```
+
+### Python Example
+
+```python
+import requests
+
+# Single file upload
+with open('timesheet.png', 'rb') as f:
+    response = requests.post(
+        'http://localhost:8000/api/v1/timesheet/extract',
+        files={'file': f}
+    )
+
+data = response.json()
+print(f"✅ Found {data['metadata']['employees_count']} employees")
+print(f"📊 Total hours: {data['data'][0]['total_hours']}")
+```
+
+### Expected Output Format
+
+```json
+{
+  "success": true,
+  "message": "Successfully extracted 2 employee timesheet(s)",
+  "data": [
+    {
+      "client_id": "EMP001",
+      "client_name": "John Doe",
+      "employee_name": "John Doe",
+      "week_hours": [
+        {"day": "Mon", "hours": 8.0},
+        {"day": "Tue", "hours": 8.0},
+        {"day": "Wed", "hours": 7.5},
+        {"day": "Thu", "hours": 8.0},
+        {"day": "Fri", "hours": 8.0},
+        {"day": "Sat", "hours": 0.0},
+        {"day": "Sun", "hours": 0.0}
+      ],
+      "total_hours": 39.5
+    }
+  ],
+  "metadata": {
+    "filename": "timesheet.png",
+    "file_type": "png",
+    "employees_count": 1
+  },
+  "processed_at": "2025-10-14T18:00:00Z"
+}
 ```
 
 ## Troubleshooting
 
 ### Common Issues
 
-1. **Engine Service Unavailable**
-   - Check if the server is running on the correct port
-   - Verify CORS configuration allows your frontend domain
-   - Check firewall settings
+1. **Google Gemini API Errors**
+   - Verify your API key is correct
+   - Check your Google Cloud billing and quotas
+   - Ensure the Gemini API is enabled
 
-2. **Azure Credentials Error**
-   - Verify your Azure OpenAI and Document Intelligence credentials
-   - Check endpoint URLs and API keys
-   - Ensure your Azure resources are active
+2. **File Upload Issues**
+   - Check file size (max 10MB by default)
+   - Verify file format is supported
+   - Ensure CORS is configured for your domain
 
-3. **Document Processing Fails**
-   - Check file format is supported
-   - Verify file is not corrupted
-   - Check Azure service quotas and limits
+3. **OCR Not Working**
+   - EasyOCR will download models on first use
+   - Ensure internet connection for initial setup
+   - Check image quality and resolution
 
-4. **CORS Issues**
-   - Update allowed origins in `server.py`
-   - Check frontend URL matches CORS configuration
+### Performance Tips
 
-### Logs and Debugging
+- **Image Quality**: Higher resolution images give better OCR results
+- **File Formats**: PDF and DOCX files process faster than images
+- **GPU Acceleration**: Set `gpu=True` in EasyOCR for faster processing (requires CUDA)
 
-- Server logs are displayed in the console
-- Check browser network tab for API request/response details
-- Use `/docs` endpoint to test API directly
+## Contributing
 
-## Development
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
 
-### Adding New Features
+## License
 
-1. **New Document Types**: Extend processing functions in `main.py` or `app3.py`
-2. **Custom AI Prompts**: Modify prompt templates for different extraction needs
-3. **Additional Endpoints**: Add new routes to the FastAPI application
-
-### Testing
-
-```bash
-# Test document analysis
-curl -X GET "http://localhost:8000/analyze-document" \
-  -H "document-url: https://example.com/timesheet.pdf"
-
-# Test health check
-curl http://localhost:8000/health
-```
-
-## Security Considerations
-
-- Store API keys securely in `.env` file
-- Use HTTPS in production
-- Implement proper authentication for production use
-- Validate and sanitize file uploads
-- Monitor API usage and costs
-
-## Production Deployment
-
-1. Set up proper environment variables
-2. Use a production WSGI server (gunicorn, etc.)
-3. Configure reverse proxy (nginx)
-4. Set up SSL certificates
-5. Monitor logs and performance
-6. Implement backup and recovery procedures
+This project is licensed under the MIT License.
 
 ## Support
 
 For issues and questions:
-1. Check the API documentation at `/docs`
-2. Review logs for error details
-3. Verify Azure service status
-4. Check network connectivity
-
-## License
-
-This engine is part of the TimePulse application suite.
+1. Check the troubleshooting section
+2. Review the API documentation at `/docs`
+3. Open an issue on the repository

@@ -737,12 +737,12 @@ models.Timesheet = sequelize.define(
     weekStart: {
       type: DataTypes.DATEONLY,
       allowNull: false,
-      field: "week_start_date",
+      field: "week_start",
     },
     weekEnd: {
       type: DataTypes.DATEONLY,
       allowNull: false,
-      field: "week_end_date",
+      field: "week_end",
     },
     timeEntries: {
       // Array of time entries
@@ -754,6 +754,29 @@ models.Timesheet = sequelize.define(
       type: DataTypes.DECIMAL(5, 2),
       defaultValue: 0,
       field: "total_hours",
+    },
+    dailyHours: {
+      type: DataTypes.JSONB,
+      defaultValue: {
+        mon: 0,
+        tue: 0,
+        wed: 0,
+        thu: 0,
+        fri: 0,
+        sat: 0,
+        sun: 0,
+      },
+      field: "daily_hours",
+    },
+    notes: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
+    reviewerId: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      field: "reviewer_id",
+      references: { model: "users", key: "id" },
     },
     status: {
       type: DataTypes.ENUM(

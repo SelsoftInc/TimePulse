@@ -3,11 +3,11 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { useToast } from "../../contexts/ToastContext";
 import {
+  extractTimesheetData,
   uploadAndProcessTimesheet,
   transformTimesheetToInvoice,
 } from "../../services/engineService";
 import {
-  extractTimesheetData,
   validateExtractedData,
 } from "../../services/timesheetExtractor";
 import { API_BASE } from "../../config/api";
@@ -23,8 +23,6 @@ const TimesheetSubmit = () => {
   const cameraInputRef = useRef(null);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
   const [showCamera, setShowCamera] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
@@ -111,49 +109,48 @@ const TimesheetSubmit = () => {
           const response = await axios.get(
             `${API_BASE}/api/clients?tenantId=${tenantId}`
           );
-          console.log("📥 Clients API response:", response.data);
+          console.log(" Clients API response:", response.data);
 
           if (response.data.success && response.data.clients) {
-            // For Selvakumar, show only Cognizant
-            // Since clientId field doesn't exist in Employee model, we'll filter by client name
-            console.log("🔍 User email:", user.email);
+            // Map clients from API response
+            // Backend returns 'name' field, we need to map it to 'clientName' for display
+            console.log(" User email:", user.email);
 
             let clientData = [];
 
-            // Check if user is Selvakumar
+            // Check if user is Selvakumar - show only Cognizant
             if (
               user.email === "selvakumar@selsoftinc.com" ||
               user.email.includes("selvakumar")
             ) {
               // Show only Cognizant
-              // Backend returns 'name' not 'clientName'
               const cognizant = response.data.clients.find(
                 (c) => c.name === "Cognizant" || c.clientName === "Cognizant"
               );
               if (cognizant) {
-                const clientName = cognizant.name || cognizant.clientName;
+                // Use 'name' field from API and map to 'clientName'
                 clientData = [
                   {
                     id: cognizant.id,
-                    clientName: clientName,
-                    project: clientName + " Project",
+                    clientName: cognizant.name || "Cognizant", // Fixed: use 'name' from API
+                    project: (cognizant.name || "Cognizant") + " Project",
                     hourlyRate: cognizant.hourlyRate || 0,
                     clientType: cognizant.clientType || "internal",
                     hours: Array(7).fill(0),
                   },
                 ];
                 console.log(
-                  "✅ Showing only Cognizant for Selvakumar:",
+                  " Showing only Cognizant for Selvakumar:",
                   clientData
                 );
               } else {
-                console.error("❌ Cognizant not found in clients list");
+                console.error(" Cognizant not found in clients list");
                 console.error("Available clients:", response.data.clients);
                 // Fallback to all clients
                 clientData = response.data.clients.map((client) => ({
                   id: client.id,
-                  clientName: client.name || client.clientName,
-                  project: (client.name || client.clientName) + " Project",
+                  clientName: client.name || "Unknown Client", // Fixed: use 'name' from API
+                  project: (client.name || "Unknown") + " Project",
                   hourlyRate: client.hourlyRate || 0,
                   clientType: client.clientType || "internal",
                   hours: Array(7).fill(0),
@@ -161,21 +158,21 @@ const TimesheetSubmit = () => {
               }
             } else {
               // For other users, show all clients
-              console.log("⚠️ Showing all clients for other users");
+              console.log(" Showing all clients for other users");
               clientData = response.data.clients.map((client) => ({
                 id: client.id,
-                clientName: client.name || client.clientName,
-                project: (client.name || client.clientName) + " Project",
+                clientName: client.name || "Unknown Client", // Fixed: use 'name' from API
+                project: (client.name || "Unknown") + " Project",
                 hourlyRate: client.hourlyRate || 0,
                 clientType: client.clientType || "internal",
                 hours: Array(7).fill(0),
               }));
             }
 
-            console.log("📊 Final clientHours to be set:", clientData);
+            console.log(" Final clientHours to be set:", clientData);
             setClientHours(clientData);
           } else {
-            console.error("❌ Clients API returned no data");
+            console.error(" Clients API returned no data");
           }
         } catch (error) {
           console.error("❌ Error fetching clients:", error);
@@ -357,11 +354,11 @@ const TimesheetSubmit = () => {
               }
             } else {
               console.error('❌ Failed to load timesheet');
-              setError('Failed to load timesheet data');
+              toast.error('Failed to load timesheet data');
             }
           } catch (error) {
             console.error('❌ Error loading timesheet:', error);
-            setError('Failed to load timesheet data');
+            toast.error('Failed to load timesheet data');
           }
         } else {
           // Find and set current week from available weeks
@@ -405,14 +402,15 @@ const TimesheetSubmit = () => {
         }
       } catch (error) {
         console.error("Error loading timesheet data:", error);
-        setError("Failed to load timesheet data. Please try again.");
+        toast.error("Failed to load timesheet data. Please try again.");
       } finally {
         setLoading(false);
       }
     };
 
     loadTimesheetData();
-  }, [weekId, isEmployee, user]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [weekId]); // Fixed: Only depend on weekId to avoid infinite loops
 
   const handleWeekChange = (selectedWeekValue) => {
     setSelectedWeek(selectedWeekValue);
@@ -513,7 +511,7 @@ const TimesheetSubmit = () => {
     Array.from(files).forEach((file) => {
       if (file.size > 10 * 1024 * 1024) {
         // 10MB limit
-        setError("File size must be less than 10MB");
+        toast.error("File size must be less than 10MB");
         return;
       }
 
@@ -527,7 +525,7 @@ const TimesheetSubmit = () => {
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
       ];
       if (!allowedTypes.includes(file.type)) {
-        setError(
+        toast.error(
           "Invalid file type. Please upload images (JPG, PNG, HEIC) or documents (PDF, DOC, DOCX)."
         );
         return;
@@ -558,7 +556,6 @@ const TimesheetSubmit = () => {
     });
 
     setAttachments((prev) => [...prev, ...newAttachments]);
-    setError("");
 
     // Auto-convert to invoice if enabled and file is an image or document
     if (autoConvertToInvoice && files.length > 0) {
@@ -638,7 +635,7 @@ const TimesheetSubmit = () => {
 
     // Validate approver selection
     if (!selectedApprover) {
-      showToast(
+      toast.error(
         "Please select an approver/reviewer before submitting",
         "error"
       );
@@ -651,7 +648,7 @@ const TimesheetSubmit = () => {
       // For internal clients, validate hours entry
       const totalClientHours = getGrandTotal();
       if (totalClientHours === 0) {
-        showToast(
+        toast.error(
           "Please enter at least one hour for any client or holiday/time off",
           "error"
         );
@@ -660,19 +657,18 @@ const TimesheetSubmit = () => {
     } else {
       // For external clients, validate file upload
       if (!externalTimesheetFile) {
-        showToast("Please upload the client submitted timesheet file", "error");
+        toast.error("Please upload the client submitted timesheet file", "error");
         return;
       }
     }
 
     // Validate employee selection for non-employee roles
     if (!isEmployee() && !selectedEmployee) {
-      showToast("Please select an employee before submitting", "error");
+      toast.error("Please select an employee before submitting", "error");
       return;
     }
 
     setSubmitting(true);
-    setError("");
 
     try {
       console.log("📤 Submitting timesheet with approver:", selectedApprover);
@@ -681,7 +677,7 @@ const TimesheetSubmit = () => {
       const employeeId = !isEmployee() ? selectedEmployee : user.employeeId;
 
       if (!employeeId) {
-        showToast(
+        toast.error(
           "Employee ID not found. Please try logging in again.",
           "error"
         );
@@ -729,7 +725,7 @@ const TimesheetSubmit = () => {
 
       // Submit to backend API
       const response = await axios.post(
-        "/api/timesheets/submit",
+        `${API_BASE}/api/timesheets/submit`,
         submissionData
       );
 
@@ -745,7 +741,7 @@ const TimesheetSubmit = () => {
           : "Selected Approver";
 
         // Show success toast
-        showToast(
+        toast.success(
           `Timesheet submitted successfully! An approval request has been sent to ${approverName}.`,
           "success"
         );
@@ -754,7 +750,7 @@ const TimesheetSubmit = () => {
         console.log("🔄 Navigating to timesheet summary...");
         navigate(`/${subdomain}/timesheets`, { replace: true });
       } else {
-        showToast(
+        toast.error(
           response.data.message || "Failed to submit timesheet",
           "error"
         );
@@ -776,7 +772,7 @@ const TimesheetSubmit = () => {
         errorMessage = error.response.data.message;
       }
 
-      showToast(errorMessage, "error");
+      toast.error(errorMessage, "error");
     } finally {
       setSubmitting(false);
     }
@@ -784,7 +780,6 @@ const TimesheetSubmit = () => {
 
   const handleSaveDraft = async () => {
     setSubmitting(true);
-    setError("");
 
     try {
       // Simulate API call
@@ -799,7 +794,7 @@ const TimesheetSubmit = () => {
         attachments: attachments.map((file) => file.name),
       });
 
-      setSuccess("Draft saved successfully!");
+      toast.success("Draft saved successfully!");
 
       // Redirect after a short delay
       setTimeout(() => {
@@ -807,7 +802,7 @@ const TimesheetSubmit = () => {
       }, 2000);
     } catch (error) {
       console.error("Error saving draft:", error);
-      setError("Failed to save draft. Please try again.");
+      toast.error("Failed to save draft. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -895,11 +890,9 @@ const TimesheetSubmit = () => {
     );
 
     if (file.size > 10 * 1024 * 1024) {
-      setError("File size must be less than 10MB");
+      toast.error("File size must be less than 10MB");
       return;
     }
-
-    setError("");
     setAiProcessing(true);
     setUploadedAiFile(file); // Store the uploaded file
 
@@ -937,7 +930,6 @@ const TimesheetSubmit = () => {
       toast.error(errorMessage, {
         title: "AI Extraction Failed",
       });
-      setError(errorMessage);
     } finally {
       setAiProcessing(false);
     }
@@ -1101,9 +1093,20 @@ const TimesheetSubmit = () => {
       totalHours: aiProcessedData.originalExtraction?.totalHours,
     };
 
-    // Clear AI processed data and hide upload section
+    // Clear AI processed data and reset upload state
     setAiProcessedData(null);
-    setShowAiUpload(false);
+    setUploadedAiFile(null);
+    setAiProcessing(false);
+    
+    // Reset file input
+    const fileInput = document.getElementById("aiFileUpload");
+    if (fileInput) {
+      fileInput.value = "";
+    }
+    
+    // Keep the upload section open so user can upload another document
+    // setShowAiUpload(false); // Commented out to keep section open
+    
     showToast(
       "AI extracted data has been applied to your timesheet. Please review and submit.",
       "success"
@@ -1112,8 +1115,17 @@ const TimesheetSubmit = () => {
 
   const discardAiProcessedData = () => {
     setAiProcessedData(null);
-    setShowAiUpload(false);
-    setSuccess("");
+    setUploadedAiFile(null);
+    setAiProcessing(false);
+    
+    // Reset file input
+    const fileInput = document.getElementById("aiFileUpload");
+    if (fileInput) {
+      fileInput.value = "";
+    }
+    
+    // Keep the upload section open
+    // setShowAiUpload(false); // Commented out to keep section open
   };
 
   const removeUploadedAiFile = () => {
@@ -1143,19 +1155,18 @@ const TimesheetSubmit = () => {
     ];
 
     if (!allowedTypes.includes(file.type)) {
-      setError("Please upload a valid file (Image, PDF, or Word document)");
+      toast.error("Please upload a valid file (Image, PDF, or Word document)");
       return;
     }
 
     // Check file size (max 10MB)
     if (file.size > 10 * 1024 * 1024) {
-      setError("File size must be less than 10MB");
+      toast.error("File size must be less than 10MB");
       return;
     }
 
     setExternalTimesheetFile(file);
-    setError("");
-    setSuccess(`External timesheet file "${file.name}" uploaded successfully`);
+    toast.success(`External timesheet file "${file.name}" uploaded successfully`);
   };
 
   const removeExternalTimesheetFile = () => {
@@ -1165,19 +1176,18 @@ const TimesheetSubmit = () => {
   // Auto-conversion function
   const processTimesheetAndConvertToInvoice = async (file) => {
     setConversionProcessing(true);
-    setError("");
     setConversionSuccess(false);
 
     try {
       // Step 1: Process timesheet with AI engine
       console.log("Processing timesheet with AI engine...");
-      setSuccess("🔄 Processing timesheet with AI engine...");
+      toast.info("🔄 Processing timesheet with AI engine...");
 
       const engineResponse = await uploadAndProcessTimesheet(file);
 
       // Step 2: Transform to invoice format
       console.log("Converting to invoice format...");
-      setSuccess("🔄 Converting to invoice format...");
+      toast.info("🔄 Converting to invoice format...");
 
       const clientInfo = {
         name:
@@ -1197,7 +1207,7 @@ const TimesheetSubmit = () => {
 
       // Step 3: Show success and offer to navigate to invoice creation
       setConversionSuccess(true);
-      setSuccess("✅ Timesheet processed successfully! Invoice data is ready.");
+      toast.success("✅ Timesheet processed successfully! Invoice data is ready.");
 
       // Auto-navigate to invoice creation after 3 seconds
       setTimeout(() => {
@@ -1219,7 +1229,7 @@ const TimesheetSubmit = () => {
       }, 3000);
     } catch (error) {
       console.error("Error in auto-conversion:", error);
-      setError(`❌ Auto-conversion failed: ${error.message}`);
+      toast.error(`❌ Auto-conversion failed: ${error.message}`);
     } finally {
       setConversionProcessing(false);
     }

@@ -656,7 +656,19 @@ router.post("/submit", async (req, res, next) => {
     });
   } catch (err) {
     console.error("❌ Error submitting timesheet:", err);
-    next(err);
+    console.error("❌ Error details:", {
+      message: err.message,
+      stack: err.stack,
+      name: err.name,
+      sql: err.sql,
+      parameters: err.parameters
+    });
+    res.status(500).json({
+      success: false,
+      error: "Timesheet submission failed",
+      message: err.message,
+      details: err.toString()
+    });
   }
 });
 

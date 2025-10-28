@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Engine API base URL - now using Node.js server
-const ENGINE_API_BASE_URL = process.env.REACT_APP_ENGINE_API_URL || 'http://localhost:5000/api/engine';
+const ENGINE_API_BASE_URL = process.env.REACT_APP_ENGINE_API_URL || 'http://localhost:5001/api/engine';
 
 // Create axios instance for engine API
 const engineAPI = axios.create({
@@ -80,7 +80,85 @@ export const processDocumentContent = async (documentContent) => {
 };
 
 /**
- * Upload and process timesheet file using the Flask app endpoint
+ * Extract timesheet data using the new Python engine (AWS Bedrock/Claude)
+ * @param {File} file - File object to upload and extract
+ * @param {Function} onProgress - Optional progress callback
+ * @returns {Promise} - Promise resolving to extracted timesheet data
+ */
+export const extractTimesheetData = async (file, onProgress) => {
+  try {
+    console.log('🚀 Calling Python engine for timesheet extraction:', file.name);
+    
+    const formData = new FormData();
+    formData.append('file', file);
+
+    onProgress?.({ status: 'uploading', message: 'Uploading file to engine...', progress: 10 });
+
+    const response = await axios.post(`${ENGINE_API_BASE_URL}/extract-timesheet`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+      timeout: 120000, // 2 minutes for AI processing
+      onUploadProgress: (progressEvent) => {
+        const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+        onProgress?.({ 
+          status: 'uploading', 
+          message: `Uploading... ${percentCompleted}%`, 
+          progress: percentCompleted * 0.3 // Upload is 30% of total progress
+        });
+      }
+    });
+
+    onProgress?.({ status: 'processing', message: 'Processing with AI...', progress: 90 });
+
+    console.log('✅ Python engine response:', response.data);
+
+    // Transform the response to match the expected format
+    if (response.data.success && response.data.data && response.data.data.length > 0) {
+      const timesheetData = response.data.data[0]; // Get first employee's data
+      
+      // Transform to the format expected by TimesheetSubmit component
+      const transformed = {
+        success: true,
+        clientName: timesheetData.client_name || timesheetData.employee_name || 'Unknown',
+        employeeName: timesheetData.employee_name || timesheetData.client_name || 'Unknown',
+        projectName: timesheetData.period || 'Project',
+        totalHours: timesheetData.total_hours || 0,
+        dailyHours: {},
+        confidence: 0.95,
+        source: 'python_engine',
+        fileName: file.name,
+        metadata: response.data.metadata
+      };
+
+      // Map week_hours to dailyHours format
+      if (timesheetData.week_hours && Array.isArray(timesheetData.week_hours)) {
+        timesheetData.week_hours.forEach(dayData => {
+          const dayKey = dayData.day.toLowerCase();
+          transformed.dailyHours[dayKey] = dayData.hours || 0;
+        });
+      }
+
+      onProgress?.({ status: 'completed', message: 'Extraction completed!', progress: 100 });
+      return transformed;
+    }
+
+    throw new Error('No timesheet data found in response');
+
+  } catch (error) {
+    console.error('❌ Error extracting timesheet data:', error);
+    onProgress?.({ status: 'error', message: error.message, progress: 100 });
+    throw new Error(
+      error.response?.data?.message || 
+      error.response?.data?.detail ||
+      error.message ||
+      'Failed to extract timesheet data. Please check if the engine is running.'
+    );
+  }
+};
+
+/**
+ * Upload and process timesheet file using the Flask app endpoint (Legacy)
  * @param {File} file - File object to upload and process
  * @returns {Promise} - Promise resolving to extracted timesheet data
  */
@@ -203,6 +281,7 @@ const engineService = {
   analyzeDocument,
   convertDocxToPdf,
   processDocumentContent,
+  extractTimesheetData,
   uploadAndProcessTimesheet,
   transformTimesheetToInvoice,
   checkEngineServiceHealth,

@@ -962,6 +962,10 @@ models.Timesheet.belongsTo(models.User, {
   foreignKey: "approvedBy",
   as: "approver",
 });
+models.Timesheet.belongsTo(models.User, {
+  foreignKey: "reviewerId",
+  as: "reviewer",
+});
 
 // Leave Request associations
 models.Tenant.hasMany(models.LeaveRequest, {

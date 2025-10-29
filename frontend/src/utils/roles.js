@@ -116,7 +116,8 @@ export const ROLE_PERMISSIONS = {
     PERMISSIONS.VIEW_TIMESHEET,
     PERMISSIONS.EDIT_TIMESHEET,
 
-    // No settings access for employees
+    // Settings - view only (for profile and account settings)
+    PERMISSIONS.VIEW_SETTINGS,
   ],
 };
 

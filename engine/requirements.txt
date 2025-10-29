@@ -26,15 +26,13 @@ PyMuPDF
 openpyxl
 pandas
 python-magic
+python-docx
+reportlab
+xlrd
 
-# CORS and security
-python-jose[cryptography]
-passlib[bcrypt]
-
-# Logging and monitoring
-loguru
-
-# Testing
-pytest
-pytest-asyncio
-httpx
+# Image processing and upscaling
+opencv-python
+pdf2image
+Pillow
+pypdf
+PyMuPDF

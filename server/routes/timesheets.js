@@ -83,7 +83,7 @@ router.get("/", async (req, res, next) => {
         model: models.Employee,
         as: "employee",
         attributes: ["id", "firstName", "lastName", "email"],
-        required: true,
+        required: false, // Make it optional in case Employee record doesn't exist
       },
       {
         model: models.Client,
@@ -112,19 +112,31 @@ router.get("/", async (req, res, next) => {
     });
 
     // Transform data for frontend
-    const transformedTimesheets = timesheets.map((ts) => ({
-      id: ts.id,
-      employeeId: ts.employeeId,
-      employeeName: ts.employee
-        ? `${ts.employee.firstName} ${ts.employee.lastName}`
-        : "Unknown",
-      client: ts.client ? ts.client.clientName : "No Client",
-      weekEnding: ts.weekEnd,
-      hours: ts.totalHours || 0,
-      overtimeHours: 0, // Calculate if needed
-      billRate: ts.billRate || 0,
-      payRate: ts.payRate || 0,
-      approved: ts.status === "approved",
+    const transformedTimesheets = await Promise.all(timesheets.map(async (ts) => {
+      // Get employee name - fallback to User if Employee doesn't exist
+      let employeeName = "Unknown";
+      if (ts.employee) {
+        employeeName = `${ts.employee.firstName} ${ts.employee.lastName}`;
+      } else {
+        // Try to get user directly if employee record doesn't exist
+        const user = await models.User.findByPk(ts.employeeId);
+        if (user) {
+          employeeName = `${user.firstName} ${user.lastName}`;
+        }
+      }
+
+      return {
+        id: ts.id,
+        employeeId: ts.employeeId,
+        employeeName: employeeName,
+        client: ts.client ? ts.client.clientName : "No Client",
+        weekEnding: ts.weekEnd,
+        hours: ts.totalHours || 0,
+        overtimeHours: 0, // Calculate if needed
+        billRate: ts.billRate || 0,
+        payRate: ts.payRate || 0,
+        approved: ts.status === "approved",
+      };
     }));
 
     res.json({
@@ -179,6 +191,138 @@ router.get("/employees/by-email/:email", async (req, res, next) => {
     });
   } catch (err) {
     next(err);
+  }
+});
+
+// GET /api/timesheets/employee/:id/all?tenantId=...
+// Get all timesheets for a specific employee
+router.get("/employee/:id/all", async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { tenantId } = req.query;
+
+    console.log("📡 /api/timesheets/employee/:id/all called");
+    console.log("  Employee ID:", id);
+    console.log("  Tenant ID:", tenantId);
+
+    if (!tenantId || !id) {
+      return res.status(400).json({
+        success: false,
+        message: "tenantId and employee id are required",
+      });
+    }
+
+    // Fetch all timesheets for the employee
+    const timesheets = await models.Timesheet.findAll({
+      where: {
+        tenantId,
+        employeeId: id,
+      },
+      include: [
+        {
+          model: models.Employee,
+          as: "employee",
+          attributes: ["id", "firstName", "lastName", "email"],
+          required: false,
+        },
+        {
+          model: models.Client,
+          as: "client",
+          attributes: ["id", "clientName", "clientType"],
+          required: false,
+        },
+        {
+          model: models.User,
+          as: "reviewer",
+          attributes: ["id", "firstName", "lastName", "email", "role"],
+          required: false,
+        },
+      ],
+      order: [["weekStart", "DESC"]],
+    });
+
+    console.log(`  Found ${timesheets.length} timesheets for employee ${id}`);
+
+    // Format timesheets for frontend
+    const formattedTimesheets = timesheets.map((ts) => {
+      // Parse attachments if it's a string
+      let attachments = [];
+      if (ts.attachments) {
+        if (typeof ts.attachments === "string") {
+          try {
+            attachments = JSON.parse(ts.attachments);
+          } catch (e) {
+            console.error("Error parsing attachments:", e);
+            attachments = [];
+          }
+        } else if (Array.isArray(ts.attachments)) {
+          attachments = ts.attachments;
+        }
+      }
+
+      // Format week range
+      const weekStart = new Date(ts.weekStart);
+      const weekEnd = new Date(ts.weekEnd);
+      const weekRange = `${weekStart.toLocaleDateString("en-US", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      })} To ${weekEnd.toLocaleDateString("en-US", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      })}`;
+
+      // Format status
+      let statusLabel = ts.status.toUpperCase();
+      if (ts.status === "submitted") statusLabel = "SUBMITTED";
+      else if (ts.status === "approved") statusLabel = "APPROVED";
+      else if (ts.status === "rejected") statusLabel = "REJECTED";
+      else if (ts.status === "draft") statusLabel = "DRAFT";
+
+      return {
+        id: ts.id,
+        week: weekRange,
+        weekStart: ts.weekStart,
+        weekEnd: ts.weekEnd,
+        hours: Number(ts.totalHours).toFixed(2),
+        status: {
+          label: statusLabel,
+          value: ts.status,
+        },
+        dailyHours: ts.dailyHours || {},
+        notes: ts.notes || "",
+        attachments: attachments,
+        reviewer: ts.reviewer
+          ? {
+              name: `${ts.reviewer.firstName} ${ts.reviewer.lastName}`,
+              email: ts.reviewer.email,
+              role: ts.reviewer.role,
+            }
+          : null,
+        client: ts.client
+          ? {
+              id: ts.client.id,
+              name: ts.client.clientName,
+              type: ts.client.clientType,
+            }
+          : null,
+      };
+    });
+
+    console.log(`  Returning ${formattedTimesheets.length} formatted timesheets`);
+    res.json({ success: true, timesheets: formattedTimesheets });
+  } catch (err) {
+    console.error("❌ Error in /api/timesheets/employee/:id/all:", err);
+    console.error("Error details:", err.message);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch employee timesheets",
+      error:
+        process.env.NODE_ENV === "development"
+          ? err.message
+          : "Internal server error",
+    });
   }
 });
 
@@ -353,6 +497,7 @@ router.get("/pending-approval", async (req, res, next) => {
             "department",
             "title",
           ],
+          required: false, // Make it optional in case Employee record doesn't exist
         },
         {
           model: models.Client,
@@ -374,7 +519,7 @@ router.get("/pending-approval", async (req, res, next) => {
       `  Found ${timesheets.length} timesheets with status 'submitted'`
     );
 
-    const formattedTimesheets = timesheets.map((ts) => {
+    const formattedTimesheets = await Promise.all(timesheets.map(async (ts) => {
       // Parse attachments if it's a string (SQLite stores JSONB as string)
       let attachments = [];
       if (ts.attachments) {
@@ -390,13 +535,29 @@ router.get("/pending-approval", async (req, res, next) => {
         }
       }
 
+      // Get employee info - fallback to User if Employee doesn't exist
+      let employeeName = "Unknown Employee";
+      let employeeEmail = "N/A";
+      let department = "N/A";
+
+      if (ts.employee) {
+        employeeName = `${ts.employee.firstName || ""} ${ts.employee.lastName || ""}`.trim();
+        employeeEmail = ts.employee.email || "N/A";
+        department = ts.employee.department || "N/A";
+      } else {
+        // Try to get user directly if employee record doesn't exist
+        const user = await models.User.findByPk(ts.employeeId);
+        if (user) {
+          employeeName = `${user.firstName} ${user.lastName}`;
+          employeeEmail = user.email;
+        }
+      }
+
       return {
         id: ts.id,
-        employeeName: `${ts.employee?.firstName || ""} ${
-          ts.employee?.lastName || ""
-        }`.trim(),
-        employeeEmail: ts.employee?.email,
-        department: ts.employee?.department,
+        employeeName: employeeName,
+        employeeEmail: employeeEmail,
+        department: department,
         weekRange: `${new Date(ts.weekStart).toLocaleDateString("en-US", {
           day: "2-digit",
           month: "short",
@@ -431,7 +592,7 @@ router.get("/pending-approval", async (req, res, next) => {
             }
           : null,
       };
-    });
+    }));
 
     console.log(
       `  Returning ${formattedTimesheets.length} formatted timesheets`
@@ -598,6 +759,31 @@ router.post("/submit", async (req, res, next) => {
 
     // Create notification for timesheet submission
     try {
+      // Try to get employee info for notifications
+      const employee = await models.Employee.findByPk(employeeId, {
+        include: [
+          {
+            model: models.User,
+            as: "user",
+            attributes: ["firstName", "lastName"],
+            required: false,
+          },
+        ],
+      });
+
+      // If employee not found, try to get user directly
+      let employeeName = "Employee";
+      if (employee && employee.user) {
+        employeeName = `${employee.user.firstName} ${employee.user.lastName}`;
+      } else {
+        // Try to get user directly if employee record doesn't exist
+        const user = await models.User.findByPk(employeeId);
+        if (user) {
+          employeeName = `${user.firstName} ${user.lastName}`;
+        }
+      }
+
+      // Create timesheet notification
       await NotificationService.createTimesheetNotification(
         tenantId,
         employeeId,
@@ -610,27 +796,15 @@ router.post("/submit", async (req, res, next) => {
       );
 
       // Create approval notification for managers/admins
-      const employee = await models.Employee.findByPk(employeeId, {
-        include: [
-          {
-            model: models.User,
-            as: "user",
-            attributes: ["firstName", "lastName"],
-          },
-        ],
-      });
-
-      if (employee && employee.user) {
-        await NotificationService.createApprovalNotification(
-          tenantId,
-          "timesheet",
-          {
-            employeeName: `${employee.user.firstName} ${employee.user.lastName}`,
-            weekStartDate: weekStart,
-            weekEndDate: weekEnd,
-          }
-        );
-      }
+      await NotificationService.createApprovalNotification(
+        tenantId,
+        "timesheet",
+        {
+          employeeName: employeeName,
+          weekStartDate: weekStart,
+          weekEndDate: weekEnd,
+        }
+      );
 
       // Send real-time notification via WebSocket
       if (global.wsService) {
@@ -668,6 +842,100 @@ router.post("/submit", async (req, res, next) => {
       error: "Timesheet submission failed",
       message: err.message,
       details: err.toString()
+    });
+  }
+});
+
+// GET /api/timesheets/approved-today?tenantId=...&date=...
+// Get count of timesheets approved today
+router.get("/approved-today", async (req, res, next) => {
+  try {
+    const { tenantId, date } = req.query;
+
+    if (!tenantId || !date) {
+      return res
+        .status(400)
+        .json({ success: false, message: "tenantId and date are required" });
+    }
+
+    const startOfDay = new Date(date);
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const endOfDay = new Date(date);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const count = await models.Timesheet.count({
+      where: {
+        tenantId,
+        status: "approved",
+        approved_at: {
+          [Op.between]: [startOfDay, endOfDay],
+        },
+      },
+    });
+
+    res.json({ success: true, count });
+  } catch (err) {
+    console.error("❌ Error getting approved count:", err);
+    console.error("Error name:", err.name);
+    console.error("Error message:", err.message);
+    if (err.original) {
+      console.error("Database error:", err.original);
+    }
+    res.status(500).json({
+      success: false,
+      message: "Failed to get approved count",
+      error:
+        process.env.NODE_ENV === "development"
+          ? err.message
+          : "Internal server error",
+    });
+  }
+});
+
+// GET /api/timesheets/rejected-today?tenantId=...&date=...
+// Get count of timesheets rejected today
+router.get("/rejected-today", async (req, res, next) => {
+  try {
+    const { tenantId, date } = req.query;
+
+    if (!tenantId || !date) {
+      return res
+        .status(400)
+        .json({ success: false, message: "tenantId and date are required" });
+    }
+
+    const startOfDay = new Date(date);
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const endOfDay = new Date(date);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const count = await models.Timesheet.count({
+      where: {
+        tenantId,
+        status: "rejected",
+        updated_at: {
+          [Op.between]: [startOfDay, endOfDay],
+        },
+      },
+    });
+
+    res.json({ success: true, count });
+  } catch (err) {
+    console.error("❌ Error getting rejected count:", err);
+    console.error("Error name:", err.name);
+    console.error("Error message:", err.message);
+    if (err.original) {
+      console.error("Database error:", err.original);
+    }
+    res.status(500).json({
+      success: false,
+      message: "Failed to get rejected count",
+      error:
+        process.env.NODE_ENV === "development"
+          ? err.message
+          : "Internal server error",
     });
   }
 });
@@ -1376,100 +1644,6 @@ router.get("/employees/by-email/:email", async (req, res, next) => {
     });
   } catch (err) {
     next(err);
-  }
-});
-
-// GET /api/timesheets/approved-today?tenantId=...&date=...
-// Get count of timesheets approved today
-router.get("/approved-today", async (req, res, next) => {
-  try {
-    const { tenantId, date } = req.query;
-
-    if (!tenantId || !date) {
-      return res
-        .status(400)
-        .json({ success: false, message: "tenantId and date are required" });
-    }
-
-    const startOfDay = new Date(date);
-    startOfDay.setHours(0, 0, 0, 0);
-
-    const endOfDay = new Date(date);
-    endOfDay.setHours(23, 59, 59, 999);
-
-    const count = await models.Timesheet.count({
-      where: {
-        tenantId,
-        status: "approved",
-        approved_at: {
-          [Op.between]: [startOfDay, endOfDay],
-        },
-      },
-    });
-
-    res.json({ success: true, count });
-  } catch (err) {
-    console.error("❌ Error getting approved count:", err);
-    console.error("Error name:", err.name);
-    console.error("Error message:", err.message);
-    if (err.original) {
-      console.error("Database error:", err.original);
-    }
-    res.status(500).json({
-      success: false,
-      message: "Failed to get approved count",
-      error:
-        process.env.NODE_ENV === "development"
-          ? err.message
-          : "Internal server error",
-    });
-  }
-});
-
-// GET /api/timesheets/rejected-today?tenantId=...&date=...
-// Get count of timesheets rejected today
-router.get("/rejected-today", async (req, res, next) => {
-  try {
-    const { tenantId, date } = req.query;
-
-    if (!tenantId || !date) {
-      return res
-        .status(400)
-        .json({ success: false, message: "tenantId and date are required" });
-    }
-
-    const startOfDay = new Date(date);
-    startOfDay.setHours(0, 0, 0, 0);
-
-    const endOfDay = new Date(date);
-    endOfDay.setHours(23, 59, 59, 999);
-
-    const count = await models.Timesheet.count({
-      where: {
-        tenantId,
-        status: "rejected",
-        updated_at: {
-          [Op.between]: [startOfDay, endOfDay],
-        },
-      },
-    });
-
-    res.json({ success: true, count });
-  } catch (err) {
-    console.error("❌ Error getting rejected count:", err);
-    console.error("Error name:", err.name);
-    console.error("Error message:", err.message);
-    if (err.original) {
-      console.error("Database error:", err.original);
-    }
-    res.status(500).json({
-      success: false,
-      message: "Failed to get rejected count",
-      error:
-        process.env.NODE_ENV === "development"
-          ? err.message
-          : "Internal server error",
-    });
   }
 });
 

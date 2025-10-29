@@ -188,7 +188,7 @@ RULES:
             '.txt': 'txt',
             '.md': 'md',
             '.png': 'png',
-            '.jpg': 'jpg',
+            '.jpg': 'jpeg',
             '.jpeg': 'jpeg',
             '.gif': 'gif',
             '.webp': 'webp'

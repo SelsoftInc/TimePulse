@@ -17,7 +17,13 @@ class Settings(BaseSettings):
     
     # File Upload
     MAX_FILE_SIZE_MB: int = 10
-    ALLOWED_EXTENSIONS: str = "png,jpg,jpeg,pdf,csv,docx,xlsx"
+    ALLOWED_EXTENSIONS: str = "png,jpg,jpeg,pdf,csv,docx,xlsx,xls,doc,html,htm,txt,md,gif,webp"
+    
+    # Image Processing and Upscaling
+    ENABLE_IMAGE_UPSCALING: bool = True
+    UPSCALING_METHOD: str = "lanczos"  # Options: lanczos, cubic, linear, bicubic, bilinear
+    UPSCALING_SCALE_FACTOR: float = 2.0
+    PDF_TO_PNG_DPI: int = 300
     
     # CORS
     CORS_ORIGINS: str = "http://localhost:3000,http://localhost:8000"

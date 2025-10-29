@@ -5,6 +5,7 @@ import PermissionGuard from "../common/PermissionGuard";
 import DataGridFilter from "../common/DataGridFilter";
 import { useAuth } from "../../contexts/AuthContext";
 import axios from "axios";
+import { API_BASE } from "../../config/api";
 import {
   uploadAndProcessTimesheet,
   transformTimesheetToInvoice,
@@ -58,7 +59,7 @@ const TimesheetSummary = () => {
         console.log('👑 Admin/Manager detected - using pending-approval API for all timesheets');
 
         // Use the pending-approval endpoint but without reviewerId to get all timesheets
-        const response = await axios.get(`/api/timesheets/pending-approval`, {
+        const response = await axios.get(`${API_BASE}/api/timesheets/pending-approval`, {
           params: { tenantId }
         });
 
@@ -66,11 +67,11 @@ const TimesheetSummary = () => {
 
         if (response.data.success) {
           // Also get approved and rejected timesheets separately
-          const approvedResponse = await axios.get(`/api/timesheets/employee/approved`, {
+          const approvedResponse = await axios.get(`${API_BASE}/api/timesheets/employee/approved`, {
             params: { tenantId }
           });
 
-          const rejectedResponse = await axios.get(`/api/timesheets/employee/rejected`, {
+          const rejectedResponse = await axios.get(`${API_BASE}/api/timesheets/employee/rejected`, {
             params: { tenantId }
           });
 
@@ -113,7 +114,7 @@ const TimesheetSummary = () => {
 
         // First, get the employee ID from email
         console.log('📡 Fetching employee by email...');
-        const empResponse = await axios.get(`/api/timesheets/employees/by-email/${encodeURIComponent(userEmail)}?tenantId=${tenantId}`);
+        const empResponse = await axios.get(`${API_BASE}/api/timesheets/employees/by-email/${encodeURIComponent(userEmail)}?tenantId=${tenantId}`);
 
         if (!empResponse.data.success || !empResponse.data.employee) {
           console.error('❌ Employee not found for email:', userEmail);
@@ -127,7 +128,7 @@ const TimesheetSummary = () => {
         console.log('✅ Got employeeId:', employeeId);
 
         // Fetch all timesheets for the employee from API
-        const apiUrl = `/api/timesheets/employee/${employeeId}/all?tenantId=${tenantId}`;
+        const apiUrl = `${API_BASE}/api/timesheets/employee/${employeeId}/all?tenantId=${tenantId}`;
         console.log('📡 Calling API:', apiUrl);
 
         const response = await axios.get(apiUrl);

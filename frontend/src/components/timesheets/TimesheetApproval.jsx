@@ -4,6 +4,7 @@ import PermissionGuard from "../common/PermissionGuard";
 import { useAuth } from "../../contexts/AuthContext";
 import { useToast } from "../../contexts/ToastContext";
 import axios from "axios";
+import { API_BASE } from "../../config/api";
 // import { useTheme } from "../../contexts/ThemeContext";
 import "./TimesheetSummary.css";
 import "./TimesheetApproval.css";
@@ -51,7 +52,7 @@ const TimesheetApproval = () => {
       await loadTodaysCounts(tenantId);
 
       // Fetch pending timesheets from API
-      const response = await axios.get(`/api/timesheets/pending-approval`, {
+      const response = await axios.get(`${API_BASE}/api/timesheets/pending-approval`, {
         params: {
           tenantId,
           // If user is a manager, only show timesheets assigned to them
@@ -107,12 +108,12 @@ const TimesheetApproval = () => {
       const todayStr = today.toISOString().split('T')[0];
 
       // Fetch approved timesheets for today
-      const approvedResponse = await axios.get(`/api/timesheets/approved-today`, {
+      const approvedResponse = await axios.get(`${API_BASE}/api/timesheets/approved-today`, {
         params: { tenantId, date: todayStr }
       });
 
       // Fetch rejected timesheets for today
-      const rejectedResponse = await axios.get(`/api/timesheets/rejected-today`, {
+      const rejectedResponse = await axios.get(`${API_BASE}/api/timesheets/rejected-today`, {
         params: { tenantId, date: todayStr }
       });
 
@@ -142,7 +143,7 @@ const TimesheetApproval = () => {
       const timesheet = timesheets.find((ts) => ts.id === timesheetId);
 
       // Update timesheet status via API
-      const response = await axios.put(`/api/timesheets/${timesheetId}`, {
+      const response = await axios.put(`${API_BASE}/api/timesheets/${timesheetId}`, {
         status: action === "approve" ? "approved" : "rejected",
         approvedBy: action === "approve" ? user?.id : undefined,
         rejectionReason: action === "reject" ? comments : undefined

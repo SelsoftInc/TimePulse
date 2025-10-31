@@ -330,26 +330,73 @@ const TimesheetSubmit = () => {
               
               // Load daily hours if available
               if (ts.dailyHours) {
+                console.log('📊 Loading dailyHours:', ts.dailyHours);
+                
                 // Parse dailyHours and populate clientHours
                 const parsedHours = typeof ts.dailyHours === 'string' 
                   ? JSON.parse(ts.dailyHours) 
                   : ts.dailyHours;
                 
-                // Update client hours with loaded data
-                if (clientHours.length > 0) {
-                  const updatedClientHours = clientHours.map(client => {
-                    const clientKey = Object.keys(parsedHours).find(key => 
-                      key.includes(client.clientName) || parsedHours[key].clientId === client.id
-                    );
-                    if (clientKey && parsedHours[clientKey]) {
-                      return {
-                        ...client,
-                        hours: parsedHours[clientKey].hours || Array(7).fill(0)
-                      };
+                console.log('📊 Parsed hours:', parsedHours);
+                
+                // Check if parsedHours is in the format { mon: X, tue: Y, ... }
+                const daysOfWeek = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+                const isDailyFormat = daysOfWeek.some(day => parsedHours.hasOwnProperty(day));
+                
+                if (isDailyFormat) {
+                  // Format: { mon: 8, tue: 8, wed: 8, ... }
+                  // Convert to array format for display
+                  const hoursArray = daysOfWeek.map(day => parseFloat(parsedHours[day] || 0));
+                  console.log('📊 Hours array:', hoursArray);
+                  
+                  // If we have client data, update it; otherwise create a default client entry
+                  if (clientHours.length > 0) {
+                    const updatedClientHours = clientHours.map((client, index) => {
+                      if (index === 0) {
+                        // Update first client with the hours
+                        return { ...client, hours: hoursArray };
+                      }
+                      return client;
+                    });
+                    setClientHours(updatedClientHours);
+                  } else {
+                    // Create a default client entry with the hours
+                    setClientHours([{
+                      id: ts.clientId || 'default',
+                      clientId: ts.clientId || 'default',
+                      clientName: ts.client?.clientName || 'Client',
+                      hours: hoursArray
+                    }]);
+                  }
+                } else {
+                  // Format: { "clientName": { hours: [...], clientId: "..." }, ... }
+                  // Update client hours with loaded data
+                  if (clientHours.length > 0) {
+                    const updatedClientHours = clientHours.map(client => {
+                      const clientKey = Object.keys(parsedHours).find(key => 
+                        key.includes(client.clientName) || parsedHours[key].clientId === client.id
+                      );
+                      if (clientKey && parsedHours[clientKey]) {
+                        return {
+                          ...client,
+                          hours: parsedHours[clientKey].hours || Array(7).fill(0)
+                        };
+                      }
+                      return client;
+                    });
+                    setClientHours(updatedClientHours);
+                  } else {
+                    // Create client entries from parsedHours
+                    const newClientHours = Object.entries(parsedHours).map(([clientName, data]) => ({
+                      id: data.clientId || clientName,
+                      clientId: data.clientId || clientName,
+                      clientName: clientName,
+                      hours: data.hours || Array(7).fill(0)
+                    }));
+                    if (newClientHours.length > 0) {
+                      setClientHours(newClientHours);
                     }
-                    return client;
-                  });
-                  setClientHours(updatedClientHours);
+                  }
                 }
               }
             } else {

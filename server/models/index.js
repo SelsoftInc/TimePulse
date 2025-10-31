@@ -559,6 +559,10 @@ models.User.hasMany(models.User, {
   foreignKey: "managerId",
   as: "subordinates",
 });
+models.User.hasOne(models.Employee, {
+  foreignKey: "userId",
+  as: "employee",
+});
 
 // Employee associations
 models.Employee.belongsTo(models.Tenant, {
@@ -853,6 +857,18 @@ models.Invoice = sequelize.define(
       field: "client_id",
       references: { model: "clients", key: "id" },
     },
+    timesheetId: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      field: "timesheet_id",
+      references: { model: "timesheets", key: "id" },
+    },
+    invoiceHash: {
+      type: DataTypes.STRING(32),
+      allowNull: true,
+      unique: true,
+      field: "invoice_hash",
+    },
     invoiceDate: {
       type: DataTypes.DATEONLY,
       defaultValue: DataTypes.NOW,
@@ -920,9 +936,10 @@ models.Invoice = sequelize.define(
     updatedAt: "updated_at",
     indexes: [
       { unique: true, fields: ["invoice_number"] },
+      { unique: true, fields: ["invoice_hash"] },
       { fields: ["tenant_id", "status"] },
-      { fields: ["vendor_id"] },
       { fields: ["client_id"] },
+      { fields: ["timesheet_id"] },
     ],
   }
 );
@@ -1042,6 +1059,10 @@ models.Client.hasMany(models.Invoice, {
   foreignKey: "clientId",
   as: "invoices",
 });
+models.Timesheet.hasMany(models.Invoice, {
+  foreignKey: "timesheetId",
+  as: "invoices",
+});
 models.Invoice.belongsTo(models.Tenant, {
   foreignKey: "tenantId",
   as: "tenant",
@@ -1049,6 +1070,10 @@ models.Invoice.belongsTo(models.Tenant, {
 models.Invoice.belongsTo(models.Client, {
   foreignKey: "clientId",
   as: "client",
+});
+models.Invoice.belongsTo(models.Timesheet, {
+  foreignKey: "timesheetId",
+  as: "timesheet",
 });
 models.Invoice.belongsTo(models.User, {
   foreignKey: "createdBy",

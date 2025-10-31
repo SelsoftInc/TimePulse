@@ -1647,4 +1647,230 @@ router.get("/employees/by-email/:email", async (req, res, next) => {
   }
 });
 
+// POST /api/timesheets/:timesheetId/generate-invoice
+// Generate invoice from approved timesheet
+router.post("/:timesheetId/generate-invoice", async (req, res) => {
+  try {
+    const { timesheetId } = req.params;
+    const { tenantId, userId } = req.body;
+
+    console.log('📄 Generating invoice for timesheet:', timesheetId);
+
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        message: "tenantId is required",
+      });
+    }
+
+    // Fetch the timesheet with all related data
+    const timesheet = await models.Timesheet.findOne({
+      where: { id: timesheetId, tenantId },
+      include: [
+        {
+          model: models.Employee,
+          as: "employee",
+          attributes: ["id", "firstName", "lastName", "email", "hourlyRate", "vendorId"],
+          include: [
+            {
+              model: models.Vendor,
+              as: "vendor",
+              attributes: ["id", "name", "email", "contactPerson"],
+            },
+          ],
+        },
+        {
+          model: models.Client,
+          as: "client",
+          attributes: ["id", "clientName", "email", "hourlyRate"],
+        },
+        {
+          model: models.Tenant,
+          as: "tenant",
+          attributes: ["id", "tenantName", "legalName"],
+        },
+      ],
+    });
+
+    if (!timesheet) {
+      return res.status(404).json({
+        success: false,
+        message: "Timesheet not found",
+      });
+    }
+
+    // If employee is not loaded via employeeId, try to fetch by userId
+    let employee = timesheet.employee;
+    if (!employee && timesheet.userId) {
+      console.log('🔍 Employee not found via employeeId, trying userId:', timesheet.userId);
+      
+      try {
+        const user = await models.User.findOne({
+          where: { id: timesheet.userId, tenantId },
+          include: [{
+            model: models.Employee,
+            as: 'employee',
+            include: [{
+              model: models.Vendor,
+              as: 'vendor',
+              attributes: ["id", "name", "email", "contactPerson"],
+            }]
+          }]
+        });
+        
+        if (user && user.employee) {
+          employee = user.employee;
+          console.log('✅ Found employee via userId');
+        }
+      } catch (userLookupError) {
+        console.error('❌ Error looking up employee via userId:', userLookupError.message);
+      }
+    }
+
+    if (!employee) {
+      return res.status(400).json({
+        success: false,
+        message: "Timesheet must be associated with an employee to generate invoice",
+      });
+    }
+
+    // Update timesheet reference
+    if (!timesheet.employee && employee) {
+      timesheet.employee = employee;
+    }
+
+    // Verify timesheet is approved
+    if (timesheet.status !== "approved") {
+      return res.status(400).json({
+        success: false,
+        message: "Only approved timesheets can be converted to invoices",
+      });
+    }
+
+    // Check if invoice already exists
+    const existingInvoice = await models.Invoice.findOne({
+      where: { timesheetId: timesheet.id, tenantId },
+    });
+
+    if (existingInvoice) {
+      return res.status(400).json({
+        success: false,
+        message: "Invoice already exists for this timesheet",
+        invoiceId: existingInvoice.id,
+        invoiceNumber: existingInvoice.invoiceNumber,
+      });
+    }
+
+    // Check if employee has vendor
+    if (!employee.vendorId || !employee.vendor) {
+      return res.status(400).json({
+        success: false,
+        message: "Employee must be associated with a vendor to generate invoice",
+      });
+    }
+
+    const vendor = employee.vendor;
+    if (!vendor.email) {
+      return res.status(400).json({
+        success: false,
+        message: "Vendor email is required to send invoice",
+      });
+    }
+
+    // Generate invoice number
+    const invoiceCount = await models.Invoice.count({ where: { tenantId } });
+    const invoiceNumber = `INV-${new Date().getFullYear()}-${String(invoiceCount + 1).padStart(5, '0')}`;
+
+    // Calculate invoice amounts
+    const hourlyRate = employee.hourlyRate || timesheet.client?.hourlyRate || 0;
+    const totalHours = parseFloat(timesheet.totalHours || 0);
+    const subtotal = totalHours * parseFloat(hourlyRate);
+    const taxAmount = 0;
+    const totalAmount = subtotal + taxAmount;
+
+    // Format week range
+    const weekStart = new Date(timesheet.weekStart);
+    const weekEnd = new Date(timesheet.weekEnd);
+    const weekRange = `${weekStart.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })} - ${weekEnd.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })}`;
+
+    // Create line items
+    const lineItems = [
+      {
+        description: `Timesheet for ${employee.firstName} ${employee.lastName} - ${weekRange}`,
+        hours: totalHours,
+        rate: parseFloat(hourlyRate),
+        amount: subtotal,
+      },
+    ];
+
+    // Generate invoice hash for secure link
+    const crypto = require("crypto");
+    const invoiceHash = crypto.createHash('md5').update(`${timesheetId}-${Date.now()}`).digest('hex');
+
+    // Calculate due date (30 days from invoice date)
+    const invoiceDate = new Date();
+    const dueDate = new Date(invoiceDate);
+    dueDate.setDate(dueDate.getDate() + 30);
+
+    // Format dates as YYYY-MM-DD
+    const toDateOnly = (d) => {
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    };
+
+    // Create invoice
+    const invoice = await models.Invoice.create({
+      tenantId,
+      invoiceNumber,
+      clientId: timesheet.clientId,
+      timesheetId: timesheet.id,
+      invoiceHash,
+      invoiceDate: toDateOnly(invoiceDate),
+      dueDate: toDateOnly(dueDate),
+      lineItems,
+      subtotal,
+      taxAmount,
+      totalAmount,
+      paymentStatus: "pending",
+      status: "active",
+      createdBy: userId,
+    });
+
+    console.log('✅ Invoice created:', {
+      invoiceId: invoice.id,
+      invoiceNumber: invoice.invoiceNumber,
+      totalAmount: invoice.totalAmount,
+    });
+
+    // Generate invoice link
+    const baseUrl = process.env.APP_URL || 'http://localhost:3000';
+    const invoiceLink = `${baseUrl}/invoice/${invoice.invoiceHash}`;
+
+    // Return success response
+    res.json({
+      success: true,
+      message: "Invoice generated successfully",
+      invoice: {
+        id: invoice.id,
+        invoiceNumber: invoice.invoiceNumber,
+        totalAmount: parseFloat(invoice.totalAmount),
+        dueDate: invoice.dueDate,
+        invoiceLink,
+        vendorEmail: vendor.email,
+        emailSent: false,
+      },
+    });
+
+  } catch (err) {
+    console.error('❌ Error generating invoice:', err);
+    res.status(500).json({
+      success: false,
+      message: "Failed to generate invoice",
+      error: err.message,
+    });
+  }
+});
+
 module.exports = router;

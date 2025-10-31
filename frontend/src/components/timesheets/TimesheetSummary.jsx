@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { PERMISSIONS } from "../../utils/roles";
 import PermissionGuard from "../common/PermissionGuard";
 import DataGridFilter from "../common/DataGridFilter";
+import Modal from "../common/Modal";
 import { useAuth } from "../../contexts/AuthContext";
 import axios from "axios";
 import { API_BASE } from "../../config/api";
@@ -28,6 +29,36 @@ const TimesheetSummary = () => {
   const [generatingInvoice, setGeneratingInvoice] = useState(false);
   const [invoiceSuccess, setInvoiceSuccess] = useState("");
   const [invoiceError, setInvoiceError] = useState("");
+  const [generatingInvoiceId, setGeneratingInvoiceId] = useState(null);
+  
+  // Modal state
+  const [modalConfig, setModalConfig] = useState({
+    isOpen: false,
+    type: 'info',
+    title: '',
+    message: '',
+    details: null,
+    showCancel: false,
+    onConfirm: null
+  });
+  
+  const closeModal = () => {
+    setModalConfig(prev => ({ ...prev, isOpen: false }));
+  };
+  
+  const showModal = (config) => {
+    setModalConfig({
+      isOpen: true,
+      type: config.type || 'info',
+      title: config.title || '',
+      message: config.message || '',
+      details: config.details || null,
+      showCancel: config.showCancel || false,
+      onConfirm: config.onConfirm || null,
+      confirmText: config.confirmText || 'OK',
+      cancelText: config.cancelText || 'Cancel'
+    });
+  };
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -298,7 +329,119 @@ const TimesheetSummary = () => {
     }
   };
 
-  // Generate invoice from timesheet using engine API
+  // Generate invoice from approved timesheet
+  const handleGenerateInvoiceFromTimesheet = async (timesheet) => {
+    if (timesheet.status.toLowerCase() !== 'approved') {
+      showModal({
+        type: 'warning',
+        title: 'Cannot Generate Invoice',
+        message: 'Only approved timesheets can be converted to invoices.'
+      });
+      return;
+    }
+
+    // Show confirmation modal
+    showModal({
+      type: 'confirm',
+      title: 'Generate Invoice',
+      message: `Generate Invoice for Timesheet: ${timesheet.weekRange}?\n\nHours: ${timesheet.totalTimeHours || timesheet.billableProjectHrs}\n\nThis will create an invoice and send it to the employee's vendor.`,
+      showCancel: true,
+      confirmText: 'Generate Invoice',
+      onConfirm: () => generateInvoice(timesheet)
+    });
+  };
+  
+  const generateInvoice = async (timesheet) => {
+
+    setGeneratingInvoiceId(timesheet.id);
+    setInvoiceError("");
+    setInvoiceSuccess("");
+
+    try {
+      console.log('📄 Generating invoice for timesheet:', timesheet.id);
+
+      const response = await axios.post(
+        `${API_BASE}/api/timesheets/${timesheet.id}/generate-invoice`,
+        {
+          tenantId: user.tenantId,
+          userId: user.id,
+        }
+      );
+
+      console.log('✅ Invoice generated:', response.data);
+
+      if (response.data.success) {
+        const { invoice } = response.data;
+        
+        setInvoiceSuccess(
+          `Invoice ${invoice.invoiceNumber} generated successfully! ${
+            invoice.emailSent 
+              ? `Email sent to ${invoice.vendorEmail}` 
+              : 'Email delivery failed - please send manually'
+          }`
+        );
+
+        // Show success message with invoice details
+        showModal({
+          type: 'success',
+          title: 'Invoice Generated Successfully!',
+          message: invoice.emailSent 
+            ? `Invoice has been generated and sent to ${invoice.vendorEmail}`
+            : 'Invoice has been generated but email delivery failed. Please send manually.',
+          details: {
+            'Invoice Number': invoice.invoiceNumber,
+            'Total Amount': `$${parseFloat(invoice.totalAmount).toFixed(2)}`,
+            'Due Date': new Date(invoice.dueDate).toLocaleDateString(),
+            'Vendor Email': invoice.vendorEmail,
+            'Email Status': invoice.emailSent ? '✓ Sent' : '✗ Failed',
+            'Invoice Link': invoice.invoiceLink
+          }
+        });
+
+        // Reload timesheet data to reflect invoice generation
+        await loadTimesheetData();
+      }
+    } catch (error) {
+      console.error('❌ Invoice generation error:', error);
+      console.error('❌ Error response:', error.response?.data);
+      
+      const errorData = error.response?.data || {};
+      const errorMessage = errorData.error || errorData.message || error.message || 'Unknown error';
+      const errorDetails = errorData.details;
+      
+      setInvoiceError(`Failed to generate invoice: ${errorMessage}`);
+      
+      // Log detailed error for debugging
+      if (errorDetails) {
+        console.error('❌ Error details:', errorDetails);
+      }
+      
+      // Show user-friendly error message with guidance
+      if (errorMessage.includes('vendor') || errorMessage.includes('employee')) {
+        showModal({
+          type: 'error',
+          title: errorMessage.includes('vendor') ? 'Vendor Not Assigned' : 'Employee Not Found',
+          message: `${errorMessage}\n\nAction Required:\n1. Go to Employees menu\n2. Edit the employee record\n3. Assign a vendor with email address\n4. Save and try generating invoice again`
+        });
+      } else if (errorMessage.includes('association') || errorMessage.includes('not associated')) {
+        showModal({
+          type: 'error',
+          title: 'Server Configuration Error',
+          message: `${errorMessage}\n\nThe server needs to be restarted for model changes to take effect.\n\nPlease contact your administrator or:\n1. Restart the backend server\n2. Try generating the invoice again`
+        });
+      } else {
+        showModal({
+          type: 'error',
+          title: 'Invoice Generation Failed',
+          message: `${errorMessage}\n\n${errorDetails ? 'Check the console for more details.' : 'Please try again or contact support if the problem persists.'}`
+        });
+      }
+    } finally {
+      setGeneratingInvoiceId(null);
+    }
+  };
+
+  // Generate invoice from timesheet using engine API (legacy method)
   const handleGenerateInvoice = async (file) => {
     setGeneratingInvoice(true);
     setInvoiceError("");
@@ -648,7 +791,17 @@ const TimesheetSummary = () => {
                         </tr>
                       </thead>
                       <tbody>
-                        {paginatedTimesheets.map((timesheet) => (
+                        {paginatedTimesheets.map((timesheet) => {
+                          // Debug logging
+                          console.log('📋 Timesheet:', {
+                            id: timesheet.id,
+                            status: timesheet.status,
+                            statusLower: timesheet.status?.toLowerCase(),
+                            isApproved: timesheet.status?.toLowerCase() === "approved" || timesheet.status === "Approved",
+                            weekRange: timesheet.weekRange
+                          });
+                          
+                          return (
                           <tr key={timesheet.id} className="timesheet-row">
                             <td>
                               <div className="timesheet-week">
@@ -673,61 +826,54 @@ const TimesheetSummary = () => {
                                 {timesheet.totalTimeHours}
                               </span>
                             </td>
-                            <td className="text-center">
-                              <div
-                                className="btn-group btn-group-sm"
-                                role="group"
-                              >
+                            <td className="text-center actions-column">
+                              <div className="btn-group btn-group-sm" role="group" style={{display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'nowrap'}}>
+                                {/* Edit Button - Always visible */}
                                 <button
                                   className="btn btn-outline-primary btn-sm"
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    navigate(
-                                      `/${subdomain}/timesheets/submit/${timesheet.id}`
-                                    );
+                                    navigate(`/${subdomain}/timesheets/submit/${timesheet.id}`);
                                   }}
                                   title="Edit Timesheet"
+                                  style={{minWidth: '55px', padding: '4px 8px', fontSize: '13px'}}
                                 >
-                                  <em className="icon ni ni-edit"></em>
+                                  Edit
                                 </button>
-                                {timesheet.status ===
-                                  "Submitted for Approval" && (
-                                  <PermissionGuard
-                                    requiredPermission={
-                                      PERMISSIONS.APPROVE_TIMESHEETS
-                                    }
-                                    fallback={null}
+
+                                {/* Generate Invoice Button - Show for Approved status */}
+                                {timesheet.status === "Approved" && (
+                                  <button
+                                    className="btn btn-outline-success btn-sm"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      console.log('🔥 Generate Invoice clicked!', timesheet);
+                                      handleGenerateInvoiceFromTimesheet(timesheet);
+                                    }}
+                                    title="Generate Invoice"
+                                    style={{minWidth: '70px', padding: '4px 8px', fontSize: '13px'}}
                                   >
-                                    <button
-                                      className="btn btn-outline-success btn-sm"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        navigate(
-                                          `/${subdomain}/timesheets/approval`
-                                        );
-                                      }}
-                                      title="Approve Timesheet"
-                                    >
-                                      <em className="icon ni ni-check"></em>
-                                    </button>
-                                  </PermissionGuard>
+                                    Invoice
+                                  </button>
                                 )}
+
+                                {/* View Button - Always visible */}
                                 <button
                                   className="btn btn-outline-info btn-sm"
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    navigate(
-                                      `/${subdomain}/timesheets/submit/${timesheet.id}`
-                                    );
+                                    navigate(`/${subdomain}/timesheets/submit/${timesheet.id}`);
                                   }}
                                   title="View Details"
+                                  style={{minWidth: '55px', padding: '4px 8px', fontSize: '13px'}}
                                 >
-                                  <em className="icon ni ni-eye"></em>
+                                  View
                                 </button>
                               </div>
                             </td>
                           </tr>
-                        ))}
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>
@@ -778,6 +924,20 @@ const TimesheetSummary = () => {
           </div>
         </div>
       </div>
+      
+      {/* Modal for alerts and confirmations */}
+      <Modal
+        isOpen={modalConfig.isOpen}
+        onClose={closeModal}
+        type={modalConfig.type}
+        title={modalConfig.title}
+        message={modalConfig.message}
+        details={modalConfig.details}
+        showCancel={modalConfig.showCancel}
+        onConfirm={modalConfig.onConfirm}
+        confirmText={modalConfig.confirmText}
+        cancelText={modalConfig.cancelText}
+      />
     </div>
   );
 };

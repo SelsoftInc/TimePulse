@@ -88,27 +88,48 @@ app.get("/", (req, res) => {
 });
 
 // API Routes
+console.log('📍 Loading timesheets routes...');
 app.use("/api/timesheets", timesheetRoutes);
+console.log('📍 Loading invoices routes...');
 app.use("/api/invoices", invoiceRoutes);
+console.log('📍 Loading engine routes...');
 app.use("/api/engine", engineRoutes);
+console.log('📍 Loading onboarding routes...');
 app.use("/api/onboarding", onboardingRoutes);
+console.log('📍 Loading employees routes...');
 app.use("/api/employees", employeeRoutes);
+console.log('📍 Loading employee-dashboard routes...');
 app.use("/api/employee-dashboard", employeeDashboardRoutes);
+console.log('📍 Loading approvers routes...');
 app.use("/api/approvers", approverRoutes);
+console.log('📍 Loading lookups routes...');
 app.use("/api/lookups", lookupRoutes);
+console.log('📍 Loading leave-management routes...');
 app.use("/api/leave-management", leaveManagementRoutes);
+console.log('📍 Loading clients routes...');
 app.use("/api/clients", clientRoutes);
+console.log('📍 Loading tenants routes...');
 app.use("/api/tenants", tenantRoutes);
+console.log('📍 Loading vendors routes...');
 app.use("/api/vendors", vendorRoutes);
+console.log('📍 Loading implementation-partners routes...');
 app.use("/api/implementation-partners", implementationPartnerRoutes);
+console.log('📍 Loading users routes...');
 app.use("/api/users", userRoutes);
+console.log('📍 Loading reports routes...');
 app.use("/api/reports", reportRoutes);
+console.log('📍 Loading notifications routes...');
 app.use("/api/notifications", notificationRoutes);
+console.log('📍 Loading subscriptions routes...');
 app.use("/api/subscriptions", subscriptionRoutes);
+console.log('📍 Loading billing routes...');
 app.use("/api/billing", billingRoutes);
+console.log('📍 Loading dashboard routes...');
 app.use("/api/dashboard", dashboardRoutes);
 // app.use("/api/dashboard-prisma", dashboardPrismaRoutes); // Disabled - requires Prisma setup
+console.log('📍 Loading auth routes...');
 app.use("/api/auth", require("./routes/auth"));
+console.log('✅ All routes loaded successfully');
 
 // Error handling middleware
 app.use((err, req, res, next) => {

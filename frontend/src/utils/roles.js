@@ -99,7 +99,8 @@ export const ROLE_PERMISSIONS = {
     PERMISSIONS.APPROVE_TIMESHEET,
     PERMISSIONS.APPROVE_TIMESHEETS,
 
-    // Invoice - view and approve only
+    // Invoice - create, view and approve
+    PERMISSIONS.CREATE_INVOICE,
     PERMISSIONS.VIEW_INVOICE,
     PERMISSIONS.APPROVE_INVOICE,
 

@@ -91,6 +91,26 @@ router.get("/", async (req, res) => {
       };
     }
 
+    // Add Timesheet association to get employee and vendor data
+    includeClause.push({
+      model: models.Timesheet,
+      as: "timesheet",
+      attributes: ["id", "weekStart", "weekEnd", "employeeId"],
+      required: false,
+      include: [{
+        model: models.Employee,
+        as: "employee",
+        attributes: ["id", "firstName", "lastName", "vendorId"],
+        required: false,
+        include: [{
+          model: models.Vendor,
+          as: "vendor",
+          attributes: ["id", "name", "email"],
+          required: false
+        }]
+      }]
+    });
+
     const invoices = await models.Invoice.findAll({
       where: whereClause,
       include: includeClause,
@@ -138,23 +158,33 @@ router.get("/", async (req, res) => {
     // Transform data for frontend dashboard
     const transformedInvoices = invoices.map((inv) => ({
       id: inv.id,
+      invoiceNumber: inv.invoiceNumber,
+      vendor: inv.timesheet?.employee?.vendor?.name || "N/A",
+      vendorEmail: inv.timesheet?.employee?.vendor?.email || "N/A",
       client: inv.client ? inv.client.clientName : "No Client",
-      employeeId: inv.employeeId,
-      employeeName: inv.employee
-        ? `${inv.employee.firstName} ${inv.employee.lastName}`
-        : "Unknown",
-      period:
-        inv.weekStart && inv.weekEnd
-          ? `${inv.weekStart} - ${inv.weekEnd}`
-          : "N/A",
-      issuedOn: inv.createdAt
-        ? new Date(inv.createdAt).toISOString().split("T")[0]
+      employeeId: inv.timesheet?.employeeId || inv.employeeId,
+      employeeName: inv.timesheet?.employee
+        ? `${inv.timesheet.employee.firstName} ${inv.timesheet.employee.lastName}`
+        : (inv.employee ? `${inv.employee.firstName} ${inv.employee.lastName}` : "Unknown"),
+      week: inv.timesheet?.weekStart && inv.timesheet?.weekEnd
+        ? `${new Date(inv.timesheet.weekStart).toLocaleDateString('en-US', { month: 'short', day: '2-digit' })} - ${new Date(inv.timesheet.weekEnd).toLocaleDateString('en-US', { month: 'short', day: '2-digit' })}`
         : "N/A",
+      period:
+        inv.timesheet?.weekStart && inv.timesheet?.weekEnd
+          ? `${inv.timesheet.weekStart} - ${inv.timesheet.weekEnd}`
+          : "N/A",
+      issuedOn: inv.invoiceDate
+        ? new Date(inv.invoiceDate).toISOString().split("T")[0]
+        : (inv.createdAt ? new Date(inv.createdAt).toISOString().split("T")[0] : "N/A"),
       dueOn: inv.dueDate
         ? new Date(inv.dueDate).toISOString().split("T")[0]
         : "N/A",
-      amount: parseFloat(inv.total) || 0,
-      status: inv.status || "draft",
+      total: parseFloat(inv.totalAmount) || 0,
+      amount: parseFloat(inv.totalAmount) || 0,
+      paymentStatus: inv.paymentStatus || "pending",
+      status: inv.status || "active",
+      lineItems: inv.lineItems || [],
+      notes: inv.notes,
     }));
 
     res.json({

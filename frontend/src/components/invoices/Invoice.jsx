@@ -225,7 +225,7 @@ const InvoiceUploadModal = ({ onClose, onUpload }) => {
         return;
       }
       
-      const response = await axios.get(`http://localhost:5000/api/employees`, {
+      const response = await axios.get(`http://localhost:5001/api/employees`, {
         params: { tenantId }
       });
       
@@ -648,8 +648,8 @@ const Invoice = () => {
         return;
       }
 
-      const response = await axios.get(`http://localhost:5000/api/invoices`, {
-        params: { tenantId, status: filterStatus }
+      const response = await axios.get(`http://localhost:5001/api/invoices`, {
+        params: { tenantId, status: filterStatus !== 'all' ? filterStatus : undefined }
       });
 
       if (response.data.success) {

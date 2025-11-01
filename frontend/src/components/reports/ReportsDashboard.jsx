@@ -15,10 +15,40 @@ const ReportsDashboard = () => {
   const [invoiceReportData, setInvoiceReportData] = useState([]);
   const [analyticsData, setAnalyticsData] = useState(null);
 
+  // Dropdown state for Actions
+  const [openActionsId, setOpenActionsId] = useState(null);
+  const [actionsType, setActionsType] = useState(null); // 'client', 'employee', 'invoice'
+
   // Fetch data from API
   useEffect(() => {
     fetchReportsData();
   }, [selectedMonth, selectedYear]);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (!event.target.closest('.actions-dropdown')) {
+        setOpenActionsId(null);
+        setActionsType(null);
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, []);
+
+  // Toggle Actions dropdown
+  const toggleActions = (id, type) => {
+    if (openActionsId === id && actionsType === type) {
+      setOpenActionsId(null);
+      setActionsType(null);
+    } else {
+      setOpenActionsId(id);
+      setActionsType(type);
+    }
+  };
 
   const fetchReportsData = async () => {
     try {
@@ -252,30 +282,44 @@ const ReportsDashboard = () => {
                         </span>
                       </div>
                       <div className="nk-tb-col nk-tb-col-tools">
-                        <ul className="nk-tb-actions gx-1">
-                          <li>
-                            <button
-                              className="btn btn-trigger btn-icon"
-                              title="View Details"
-                              onClick={() =>
-                                alert(`Viewing details for ${client.name}`)
-                              }
-                            >
-                              <em className="icon ni ni-eye"></em>
-                            </button>
-                          </li>
-                          <li>
-                            <button
-                              className="btn btn-trigger btn-icon"
-                              title="Download Report"
-                              onClick={() =>
-                                alert(`Downloading report for ${client.name}`)
-                              }
-                            >
-                              <em className="icon ni ni-download"></em>
-                            </button>
-                          </li>
-                        </ul>
+                        <div className={`actions-dropdown ${openActionsId === client.id && actionsType === 'client' ? 'active' : ''}`}>
+                          <button
+                            className="btn-actions"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleActions(client.id, 'client');
+                            }}
+                          >
+                            Actions
+                            <em className="icon ni ni-chevron-down"></em>
+                          </button>
+                          {openActionsId === client.id && actionsType === 'client' && (
+                            <div className="actions-menu">
+                              <button
+                                className="actions-menu-item"
+                                onClick={() => {
+                                  alert(`Viewing details for ${client.name}`);
+                                  setOpenActionsId(null);
+                                  setActionsType(null);
+                                }}
+                              >
+                                <em className="icon ni ni-eye"></em>
+                                <span>View Details</span>
+                              </button>
+                              <button
+                                className="actions-menu-item"
+                                onClick={() => {
+                                  alert(`Downloading report for ${client.name}`);
+                                  setOpenActionsId(null);
+                                  setActionsType(null);
+                                }}
+                              >
+                                <em className="icon ni ni-download"></em>
+                                <span>Download Report</span>
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -444,30 +488,44 @@ const ReportsDashboard = () => {
                         </div>
                       </div>
                       <div className="nk-tb-col nk-tb-col-tools">
-                        <ul className="nk-tb-actions gx-1">
-                          <li>
-                            <button
-                              className="btn btn-trigger btn-icon"
-                              title="View Details"
-                              onClick={() =>
-                                alert(`Viewing details for ${employee.name}`)
-                              }
-                            >
-                              <em className="icon ni ni-eye"></em>
-                            </button>
-                          </li>
-                          <li>
-                            <button
-                              className="btn btn-trigger btn-icon"
-                              title="Download Report"
-                              onClick={() =>
-                                alert(`Downloading report for ${employee.name}`)
-                              }
-                            >
-                              <em className="icon ni ni-download"></em>
-                            </button>
-                          </li>
-                        </ul>
+                        <div className={`actions-dropdown ${openActionsId === employee.id && actionsType === 'employee' ? 'active' : ''}`}>
+                          <button
+                            className="btn-actions"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleActions(employee.id, 'employee');
+                            }}
+                          >
+                            Actions
+                            <em className="icon ni ni-chevron-down"></em>
+                          </button>
+                          {openActionsId === employee.id && actionsType === 'employee' && (
+                            <div className="actions-menu">
+                              <button
+                                className="actions-menu-item"
+                                onClick={() => {
+                                  alert(`Viewing details for ${employee.name}`);
+                                  setOpenActionsId(null);
+                                  setActionsType(null);
+                                }}
+                              >
+                                <em className="icon ni ni-eye"></em>
+                                <span>View Details</span>
+                              </button>
+                              <button
+                                className="actions-menu-item"
+                                onClick={() => {
+                                  alert(`Downloading report for ${employee.name}`);
+                                  setOpenActionsId(null);
+                                  setActionsType(null);
+                                }}
+                              >
+                                <em className="icon ni ni-download"></em>
+                                <span>Download Report</span>
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -581,6 +639,9 @@ const ReportsDashboard = () => {
                   <div className="nk-tb-col">
                     <span>Status</span>
                   </div>
+                  <div className="nk-tb-col nk-tb-col-tools text-end">
+                    <span className="sub-text">Actions</span>
+                  </div>
                 </div>
                 {invoiceReportData.map((invoice) => (
                   <div key={invoice.id} className="nk-tb-item">
@@ -615,6 +676,46 @@ const ReportsDashboard = () => {
                       >
                         {invoice.status}
                       </span>
+                    </div>
+                    <div className="nk-tb-col nk-tb-col-tools">
+                      <div className={`actions-dropdown ${openActionsId === invoice.id && actionsType === 'invoice' ? 'active' : ''}`}>
+                        <button
+                          className="btn-actions"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleActions(invoice.id, 'invoice');
+                          }}
+                        >
+                          Actions
+                          <em className="icon ni ni-chevron-down"></em>
+                        </button>
+                        {openActionsId === invoice.id && actionsType === 'invoice' && (
+                          <div className="actions-menu">
+                            <button
+                              className="actions-menu-item"
+                              onClick={() => {
+                                alert(`Viewing details for invoice ${invoice.id}`);
+                                setOpenActionsId(null);
+                                setActionsType(null);
+                              }}
+                            >
+                              <em className="icon ni ni-eye"></em>
+                              <span>View Details</span>
+                            </button>
+                            <button
+                              className="actions-menu-item"
+                              onClick={() => {
+                                alert(`Downloading invoice ${invoice.id}`);
+                                setOpenActionsId(null);
+                                setActionsType(null);
+                              }}
+                            >
+                              <em className="icon ni ni-download"></em>
+                              <span>Download Invoice</span>
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))}

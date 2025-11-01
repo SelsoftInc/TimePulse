@@ -531,6 +531,8 @@ body.dark-mode .form-select {
 /* Actions column */
 .nk-tb-col-tools {
   text-align: right;
+  position: relative;
+  z-index: 10;
 }
 
 /* Action buttons */
@@ -985,4 +987,225 @@ body.dark-mode .form-select {
   background-color: var(--reports-btn-hover) !important;
   border-color: var(--reports-btn-hover) !important;
   color: var(--reports-btn-text) !important;
+}
+
+/* Actions Dropdown Button Styles - Hubstaff Design */
+.actions-dropdown {
+  position: relative;
+  display: inline-block;
+  z-index: 10;
+}
+
+.actions-dropdown.active {
+  z-index: 10000;
+}
+
+.btn-actions {
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  padding: 7px 14px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #495057;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  line-height: 1.5;
+  user-select: none;
+}
+
+.btn-actions:hover {
+  background-color: #e9ecef;
+  border-color: #ced4da;
+}
+
+.btn-actions:active {
+  background-color: #dee2e6;
+  border-color: #adb5bd;
+}
+
+.btn-actions .icon {
+  font-size: 11px;
+  color: #6c757d;
+  transition: transform 0.15s ease;
+  margin-left: 2px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-actions:hover .icon {
+  color: #495057;
+}
+
+.btn-actions:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+/* Dark mode support for Actions button */
+body.dark-mode .btn-actions {
+  background-color: #343a40;
+  border-color: #495057;
+  color: #e9ecef;
+}
+
+body.dark-mode .btn-actions:hover {
+  background-color: #495057;
+  border-color: #5a6268;
+}
+
+body.dark-mode .btn-actions:active {
+  background-color: #5a6268;
+}
+
+body.dark-mode .btn-actions .icon {
+  color: #adb5bd;
+}
+
+body.dark-mode .btn-actions:hover .icon {
+  color: #e9ecef;
+}
+
+/* Actions Menu Dropdown - Hubstaff Design */
+.actions-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  background-color: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1), 0 4px 16px rgba(0, 0, 0, 0.08);
+  min-width: 180px;
+  max-width: 220px;
+  z-index: 9999;
+  overflow: hidden;
+  padding: 4px 0;
+  animation: dropdownFadeIn 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  margin-top: 2px;
+}
+
+@keyframes dropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.actions-menu-item {
+  width: 100%;
+  padding: 10px 16px;
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  font-weight: 400;
+  color: #212529;
+  transition: all 0.15s ease;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  line-height: 1.5;
+}
+
+.actions-menu-item:hover {
+  background-color: #f8f9fa;
+  color: #212529;
+}
+
+.actions-menu-item:active {
+  background-color: #e9ecef;
+}
+
+.actions-menu-item .icon {
+  font-size: 16px;
+  color: #6c757d;
+  width: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: color 0.15s ease;
+}
+
+.actions-menu-item span {
+  flex: 1;
+  display: inline-block;
+}
+
+.actions-menu-item:hover .icon {
+  color: #495057;
+}
+
+.actions-menu-item.danger {
+  color: #dc3545;
+}
+
+.actions-menu-item.danger .icon {
+  color: #dc3545;
+}
+
+.actions-menu-item.danger:hover {
+  background-color: #fff5f5;
+  color: #c82333;
+}
+
+.actions-menu-item.danger:hover .icon {
+  color: #c82333;
+}
+
+/* Dark mode support for Actions menu */
+body.dark-mode .actions-menu {
+  background-color: #2d3436;
+  border-color: #495057;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3), 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+body.dark-mode .actions-menu-item {
+  color: #e9ecef;
+}
+
+body.dark-mode .actions-menu-item:hover {
+  background-color: #3d4448;
+  color: #ffffff;
+}
+
+body.dark-mode .actions-menu-item:active {
+  background-color: #495057;
+}
+
+body.dark-mode .actions-menu-item .icon {
+  color: #adb5bd;
+}
+
+body.dark-mode .actions-menu-item:hover .icon {
+  color: #e9ecef;
+}
+
+body.dark-mode .actions-menu-item.danger {
+  color: #ff6b6b;
+}
+
+body.dark-mode .actions-menu-item.danger .icon {
+  color: #ff6b6b;
+}
+
+body.dark-mode .actions-menu-item.danger:hover {
+  background-color: #3d2525;
+  color: #ff5252;
+}
+
+body.dark-mode .actions-menu-item.danger:hover .icon {
+  color: #ff5252;
 }

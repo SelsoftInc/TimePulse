@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { API_BASE } from "../../config/api";
 import "./ManualInvoiceForm.css";
 
 const ManualInvoiceForm = () => {
@@ -68,15 +69,15 @@ const ManualInvoiceForm = () => {
       // Fetch all data in parallel
       const [vendorsRes, employeesRes, clientsRes] = await Promise.all([
         fetch(
-          `http://localhost:5001/api/vendors?tenantId=${userInfo.tenantId}`,
+          `${API_BASE}/api/vendors?tenantId=${userInfo.tenantId}`,
           { headers }
         ),
         fetch(
-          `http://localhost:5001/api/employees?tenantId=${userInfo.tenantId}`,
+          `${API_BASE}/api/employees?tenantId=${userInfo.tenantId}`,
           { headers }
         ),
         fetch(
-          `http://localhost:5001/api/clients?tenantId=${userInfo.tenantId}`,
+          `${API_BASE}/api/clients?tenantId=${userInfo.tenantId}`,
           { headers }
         ),
       ]);
@@ -288,7 +289,7 @@ const ManualInvoiceForm = () => {
         status: "draft",
       };
 
-      const response = await fetch("http://localhost:5001/api/invoices", {
+      const response = await fetch(`${API_BASE}/api/invoices`, {
         method: "POST",
         headers,
         body: JSON.stringify(invoiceData),

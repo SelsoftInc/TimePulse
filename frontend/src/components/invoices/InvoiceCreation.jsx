@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { API_BASE } from "../../config/api";
 import "./InvoiceCreation.css";
 
 const InvoiceCreation = () => {
@@ -37,15 +38,15 @@ const InvoiceCreation = () => {
       // Fetch vendors, employees, and clients in parallel
       const [vendorsRes, employeesRes, clientsRes] = await Promise.all([
         fetch(
-          `http://localhost:5001/api/vendors?tenantId=${userInfo.tenantId}`,
+          `${API_BASE}/api/vendors?tenantId=${userInfo.tenantId}`,
           { headers }
         ),
         fetch(
-          `http://localhost:5001/api/employees?tenantId=${userInfo.tenantId}`,
+          `${API_BASE}/api/employees?tenantId=${userInfo.tenantId}`,
           { headers }
         ),
         fetch(
-          `http://localhost:5001/api/clients?tenantId=${userInfo.tenantId}`,
+          `${API_BASE}/api/clients?tenantId=${userInfo.tenantId}`,
           { headers }
         ),
       ]);

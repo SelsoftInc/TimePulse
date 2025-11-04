@@ -1,8 +1,8 @@
 // src/components/layout/Header.jsx
 import React, { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-// import { PERMISSIONS } from "../../utils/roles";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
+import { API_BASE } from "../../config/api";
 import { useTheme } from "../../contexts/ThemeContext";
 // import PermissionGuard from "../common/PermissionGuard";
 import TimesheetAlerts from "../notifications/TimesheetAlerts";
@@ -45,7 +45,7 @@ const Header = ({ toggleSidebar }) => {
         if (!tenantId) return;
 
         const response = await fetch(
-          `http://localhost:5000/api/tenants/${tenantId}`,
+          `${API_BASE}/api/tenants/${tenantId}`,
           {
             headers: {
               Authorization: `Bearer ${localStorage.getItem("token")}`,

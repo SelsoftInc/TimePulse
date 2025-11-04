@@ -1,0 +1,198 @@
+/* Employee Table - Dedicated Styles */
+
+/* Container */
+.employee-list-container .card {
+  width: 100%;
+  overflow: hidden;
+}
+
+.employee-list-container .card-inner {
+  width: 100%;
+  padding: 0;
+}
+
+.employee-list-container .table-responsive {
+  width: 100%;
+  overflow-x: visible;
+  overflow-y: visible;
+  margin: 0;
+}
+
+/* Table Base */
+.employee-list-container .employee-table {
+  width: 100% !important;
+  max-width: 100% !important;
+  table-layout: fixed !important;
+  border-collapse: collapse !important;
+  margin: 0 !important;
+}
+
+/* Column Widths - Compact & Balanced */
+.employee-list-container .employee-table th:nth-child(1),
+.employee-list-container .employee-table td:nth-child(1) {
+  width: 11% !important;
+  min-width: 100px;
+}
+
+.employee-list-container .employee-table th:nth-child(2),
+.employee-list-container .employee-table td:nth-child(2) {
+  width: 9% !important;
+  min-width: 90px;
+}
+
+.employee-list-container .employee-table th:nth-child(3),
+.employee-list-container .employee-table td:nth-child(3) {
+  width: 9% !important;
+  min-width: 90px;
+}
+
+.employee-list-container .employee-table th:nth-child(4),
+.employee-list-container .employee-table td:nth-child(4) {
+  width: 9% !important;
+  min-width: 90px;
+}
+
+.employee-list-container .employee-table th:nth-child(5),
+.employee-list-container .employee-table td:nth-child(5) {
+  width: 10% !important;
+  min-width: 95px;
+}
+
+.employee-list-container .employee-table th:nth-child(6),
+.employee-list-container .employee-table td:nth-child(6) {
+  width: 8% !important;
+  min-width: 80px;
+}
+
+.employee-list-container .employee-table th:nth-child(7),
+.employee-list-container .employee-table td:nth-child(7) {
+  width: 18% !important;
+  min-width: 150px;
+}
+
+.employee-list-container .employee-table th:nth-child(8),
+.employee-list-container .employee-table td:nth-child(8) {
+  width: 10% !important;
+  min-width: 100px;
+}
+
+.employee-list-container .employee-table th:nth-child(9),
+.employee-list-container .employee-table td:nth-child(9) {
+  width: 8% !important;
+  min-width: 80px;
+}
+
+.employee-list-container .employee-table th:nth-child(10),
+.employee-list-container .employee-table td:nth-child(10) {
+  width: 8% !important;
+  min-width: 85px;
+  text-align: right !important;
+}
+
+/* Table Headers */
+.employee-list-container .employee-table th {
+  padding: 12px 8px !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  color: #8094ae !important;
+  background-color: #f5f6fa !important;
+  border-bottom: 1px solid #dbdfea !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  vertical-align: middle !important;
+}
+
+/* Table Cells */
+.employee-list-container .employee-table td {
+  padding: 12px 8px !important;
+  font-size: 13px !important;
+  color: #364a63 !important;
+  border-bottom: 1px solid #e5e9f2 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  vertical-align: middle !important;
+}
+
+/* Table Rows */
+.employee-list-container .employee-table tbody tr {
+  transition: background-color 0.2s ease;
+}
+
+.employee-list-container .employee-table tbody tr:hover {
+  background-color: #f5f6fa !important;
+}
+
+/* Status Badges */
+.employee-list-container .employee-table .badge {
+  font-size: 11px !important;
+  padding: 4px 8px !important;
+  border-radius: 4px !important;
+  font-weight: 600 !important;
+  white-space: nowrap !important;
+}
+
+/* Employment Type Badges */
+.employee-list-container .employee-table .badge.badge-dim {
+  background-color: #e5f1ff !important;
+  color: #1c7ed6 !important;
+}
+
+/* Actions Column */
+.employee-list-container .employee-table td:last-child {
+  overflow: visible !important;
+  position: relative !important;
+}
+
+.employee-list-container .employee-table .dropdown {
+  position: relative !important;
+}
+
+/* Dropdown Button */
+.employee-list-container .dropdown-toggle {
+  padding: 6px 12px !important;
+  font-size: 12px !important;
+  white-space: nowrap !important;
+}
+
+/* Prevent any overflow on parent containers */
+.employee-list-container {
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+}
+
+/* Ensure no horizontal scroll */
+body .employee-list-container .table-responsive {
+  -webkit-overflow-scrolling: touch;
+  overflow-x: hidden !important;
+}
+
+/* Fix for any conflicting styles */
+.employee-list-container .table {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1400px) {
+  .employee-list-container .employee-table th,
+  .employee-list-container .employee-table td {
+    padding: 10px 6px !important;
+    font-size: 12px !important;
+  }
+  
+  .employee-list-container .employee-table th {
+    font-size: 10px !important;
+  }
+}
+
+@media (max-width: 1200px) {
+  .employee-list-container .employee-table th,
+  .employee-list-container .employee-table td {
+    padding: 8px 4px !important;
+    font-size: 11px !important;
+  }
+}

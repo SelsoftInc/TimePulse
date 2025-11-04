@@ -120,6 +120,11 @@ margin-bottom: 10px;
   border-bottom: 1px solid #e5e9f2;
   color: #3c4d62;
   font-size: 0.9375rem;
+  position: relative;
+}
+
+.table-vendors tbody tr {
+  position: relative;
 }
 
 .table-vendors tbody tr:hover {
@@ -144,13 +149,14 @@ margin-bottom: 10px;
 .table-vendors .dropdown {
   position: relative;
   display: inline-block;
+  z-index: 100;
 }
 
 .table-vendors .dropdown-menu {
   position: absolute;
   top: 100%;
   right: 0;
-  z-index: 1000;
+  z-index: 9999;
   min-width: 160px;
   padding: 0.5rem 0;
   margin: 0.125rem 0 0;
@@ -162,7 +168,7 @@ margin-bottom: 10px;
   background-clip: padding-box;
   border: 1px solid #e5e9f2;
   border-radius: 4px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   display: none;
 }
 

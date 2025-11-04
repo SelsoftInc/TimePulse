@@ -141,12 +141,14 @@
 }
 
 .users-table-container {
-  overflow-x: auto;
+  position: relative;
+  width: 100%;
 }
 
 .users-table {
   width: 100%;
   border-collapse: collapse;
+  table-layout: auto;
 }
 
 .users-table thead {

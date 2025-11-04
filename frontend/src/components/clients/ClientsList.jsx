@@ -8,6 +8,8 @@ import { API_BASE } from "../../config/api";
 import "./Clients.css";
 import "../common/Pagination.css";
 import "../common/TableScroll.css";
+import "../common/ActionsDropdown.css";
+import "../common/DropdownFix.css";
 
 const ClientsList = () => {
   const { subdomain } = useParams();
@@ -280,15 +282,15 @@ const ClientsList = () => {
                         </td>
                         <td>{client.employeeCount}</td>
                         <td className="text-right">
-                          <div className="btn-group">
+                          <div className="dropdown" style={{ position: "relative" }}>
                             <button
                               type="button"
-                              className="btn btn-sm btn-icon btn-trigger"
+                              className="btn btn-sm btn-outline-secondary dropdown-toggle"
                               onClick={() => toggleMenu(client.id)}
                               aria-haspopup="true"
                               aria-expanded={openMenuId === client.id}
                             >
-                              <i className="fas fa-ellipsis-h"></i>
+                              Actions
                             </button>
                             {openMenuId === client.id && (
                               <div

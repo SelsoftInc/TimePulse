@@ -1,7 +1,9 @@
 // src/components/invoices/InvoiceDashboard.jsx
 import React, { useState, useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
+import { API_BASE } from "../../config/api";
 import "./InvoiceDashboard.css";
+import "../common/ActionsDropdown.css";
 
 const InvoiceDashboard = () => {
   const { subdomain } = useParams();
@@ -13,11 +15,28 @@ const InvoiceDashboard = () => {
 
   const [filterStatus, setFilterStatus] = useState("all");
   const [filterMonth, setFilterMonth] = useState("all");
+  const [openMenuId, setOpenMenuId] = useState(null);
 
   // Fetch invoices from API
   useEffect(() => {
     fetchInvoices();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handler = (e) => {
+      if (!e.target.closest('.dropdown')) {
+        setOpenMenuId(null);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const toggleMenu = (id) => {
+    setOpenMenuId(prev => prev === id ? null : id);
+  };
 
   const fetchInvoices = async () => {
     try {
@@ -25,6 +44,8 @@ const InvoiceDashboard = () => {
       setError(null);
 
       const userInfo = JSON.parse(localStorage.getItem("user") || "{}");
+      console.log("User Info:", userInfo);
+      
       if (!userInfo.tenantId) {
         throw new Error("No tenant information available");
       }
@@ -34,13 +55,17 @@ const InvoiceDashboard = () => {
         Authorization: `Bearer ${localStorage.getItem("token")}`,
       };
 
-      const response = await fetch(
-        `http://localhost:5001/api/reports/invoices?tenantId=${userInfo.tenantId}`,
-        { headers }
-      );
+      const url = `${API_BASE}/api/reports/invoices?tenantId=${userInfo.tenantId}`;
+      console.log("Fetching invoices from:", url);
+
+      const response = await fetch(url, { headers });
+      console.log("Response status:", response.status);
 
       const data = await response.json();
+      console.log("Invoice data received:", data);
+      
       if (data.success) {
+        console.log("Setting invoices:", data.data);
         setInvoices(data.data || []);
       } else {
         throw new Error(data.error || "Failed to fetch invoices");
@@ -53,70 +78,28 @@ const InvoiceDashboard = () => {
     }
   };
 
-  // Generate invoice function
-  const generateInvoice = (invoiceId) => {
-    setInvoices(
-      invoices.map((invoice) =>
-        invoice.id === invoiceId ? { ...invoice, status: "Generated" } : invoice
-      )
-    );
-    alert(`Invoice #${invoiceId} has been generated successfully!`);
-  };
-
-  // Send invoice function
-  const sendInvoice = (invoiceId) => {
-    setInvoices(
-      invoices.map((invoice) =>
-        invoice.id === invoiceId ? { ...invoice, status: "Sent" } : invoice
-      )
-    );
-    alert(`Invoice #${invoiceId} has been sent to the client!`);
-  };
-
-  // Mark as paid function
-  const markAsPaid = (invoiceId) => {
-    setInvoices(
-      invoices.map((invoice) =>
-        invoice.id === invoiceId ? { ...invoice, status: "Paid" } : invoice
-      )
-    );
-    alert(`Invoice #${invoiceId} has been marked as paid!`);
-  };
-
   // Filter invoices
   const filteredInvoices = invoices.filter((invoice) => {
-    if (
-      filterStatus !== "all" &&
-      invoice.status.toLowerCase() !== filterStatus
-    ) {
-      return false;
+    if (filterStatus !== "all") {
+      const invoiceStatus = (invoice.status || '').toLowerCase();
+      if (invoiceStatus !== filterStatus.toLowerCase()) {
+        return false;
+      }
     }
-    if (
-      filterMonth !== "all" &&
-      invoice.month.toLowerCase() !== filterMonth.toLowerCase()
-    ) {
-      return false;
+    if (filterMonth !== "all") {
+      const invoiceMonth = (invoice.month || '').toLowerCase();
+      if (invoiceMonth !== filterMonth.toLowerCase()) {
+        return false;
+      }
     }
     return true;
   });
 
-  // Function to render status badge
-  const renderStatusBadge = (status) => {
-    switch (status) {
-      case "Paid":
-        return <span className="badge badge-dot badge-success">Paid</span>;
-      case "Sent":
-        return <span className="badge badge-dot badge-info">Sent</span>;
-      case "Generated":
-        return <span className="badge badge-dot badge-warning">Generated</span>;
-      case "Draft":
-        return <span className="badge badge-dot badge-gray">Draft</span>;
-      default:
-        return (
-          <span className="badge badge-dot badge-secondary">{status}</span>
-        );
-    }
-  };
+  console.log("Total invoices:", invoices.length);
+  console.log("Filtered invoices:", filteredInvoices.length);
+  console.log("Filter status:", filterStatus);
+  console.log("Filter month:", filterMonth);
+
 
   return (
     <div className="nk-content">
@@ -127,12 +110,11 @@ const InvoiceDashboard = () => {
               <div className="nk-block-between">
                 <div className="nk-block-head-content">
                   <h3 className="nk-block-title page-title">
-                    Invoice Dashboard
+                    Invoice Management
                   </h3>
                   <div className="nk-block-des text-soft">
                     <p>
-                      Manage and generate client invoices based on approved
-                      timesheets.
+                      Manage and track all vendor invoices
                     </p>
                   </div>
                 </div>
@@ -203,121 +185,147 @@ const InvoiceDashboard = () => {
                   </div>
 
                   <div className="card-inner p-0">
-                    <div className="nk-tb-list nk-tb-ulist">
+                    <div className="nk-tb-list nk-tb-orders">
                       <div className="nk-tb-item nk-tb-head">
                         <div className="nk-tb-col">
-                          <span className="sub-text">Client Name</span>
+                          <span>Invoice ID</span>
                         </div>
                         <div className="nk-tb-col tb-col-md">
-                          <span className="sub-text">Month</span>
+                          <span>Vendor</span>
                         </div>
                         <div className="nk-tb-col tb-col-md">
-                          <span className="sub-text">Total Hours</span>
+                          <span>Week</span>
+                        </div>
+                        <div className="nk-tb-col tb-col-md">
+                          <span>Hours</span>
                         </div>
                         <div className="nk-tb-col">
-                          <span className="sub-text">Amount ($)</span>
+                          <span>Amount</span>
                         </div>
-                        <div className="nk-tb-col tb-col-md">
-                          <span className="sub-text">Status</span>
+                        <div className="nk-tb-col">
+                          <span>Status</span>
                         </div>
                         <div className="nk-tb-col nk-tb-col-tools text-end">
-                          Actions
+                          <span className="sub-text">Actions</span>
                         </div>
                       </div>
 
-                      {filteredInvoices.map((invoice) => (
+                      {loading ? (
+                        <div className="nk-tb-item">
+                          <div className="nk-tb-col" style={{ textAlign: 'center', padding: '40px' }}>
+                            <span>Loading invoices...</span>
+                          </div>
+                        </div>
+                      ) : error ? (
+                        <div className="nk-tb-item">
+                          <div className="nk-tb-col" style={{ textAlign: 'center', padding: '40px', color: '#e85347' }}>
+                            <span>{error}</span>
+                          </div>
+                        </div>
+                      ) : filteredInvoices.length === 0 ? (
+                        <div className="nk-tb-item">
+                          <div className="nk-tb-col" style={{ textAlign: 'center', padding: '40px' }}>
+                            <span>No invoices found matching your criteria.</span>
+                          </div>
+                        </div>
+                      ) : (
+                        filteredInvoices.map((invoice) => (
                         <div key={invoice.id} className="nk-tb-item">
                           <div className="nk-tb-col">
                             <span className="tb-lead">
-                              {invoice.clientName}
+                              {invoice.invoiceId || invoice.id}
                             </span>
                           </div>
                           <div className="nk-tb-col tb-col-md">
-                            <span>
-                              {invoice.month} {invoice.year}
-                            </span>
+                            <span>{invoice.vendorName || invoice.vendor || 'N/A'}</span>
                           </div>
                           <div className="nk-tb-col tb-col-md">
-                            <span>{invoice.totalHours}</span>
+                            <span>{invoice.week || invoice.month || 'N/A'}</span>
+                          </div>
+                          <div className="nk-tb-col tb-col-md">
+                            <span>{invoice.totalHours || 0}</span>
                           </div>
                           <div className="nk-tb-col">
                             <span className="tb-amount">
-                              ${invoice.amount.toLocaleString()}
+                              ${(invoice.amount || 0).toLocaleString()}
                             </span>
                           </div>
-                          <div className="nk-tb-col tb-col-md">
-                            {renderStatusBadge(invoice.status)}
+                          <div className="nk-tb-col">
+                            <span
+                              className={`badge bg-outline-${
+                                invoice.status === 'Active' || invoice.status === 'Paid'
+                                  ? 'success'
+                                  : invoice.status === 'Pending' || invoice.status === 'Generated'
+                                  ? 'warning'
+                                  : 'danger'
+                              }`}
+                            >
+                              {invoice.status}
+                            </span>
                           </div>
                           <div className="nk-tb-col nk-tb-col-tools">
-                            <ul className="nk-tb-actions gx-1">
-                              {invoice.status === "Draft" && (
-                                <li>
-                                  <button
-                                    className="btn btn-trigger btn-icon"
-                                    onClick={() => generateInvoice(invoice.id)}
-                                    title="Generate Invoice"
+                            <div className="dropdown" style={{ position: 'relative' }}>
+                              <button
+                                className="btn btn-sm btn-outline-secondary dropdown-toggle"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toggleMenu(invoice.id);
+                                }}
+                                type="button"
+                                ref={(el) => {
+                                  if (el && openMenuId === invoice.id) {
+                                    const rect = el.getBoundingClientRect();
+                                    const spaceBelow = window.innerHeight - rect.bottom;
+                                    if (spaceBelow < 200) {
+                                      el.nextElementSibling?.classList.add('dropup');
+                                    }
+                                  }
+                                }}
+                              >
+                                Actions
+                              </button>
+                              {openMenuId === invoice.id && (
+                                <div className="dropdown-menu dropdown-menu-right show" style={{ position: 'absolute' }}>
+                                  <Link
+                                    to={`/invoices/view/${invoice.id}`}
+                                    className="dropdown-item"
+                                    onClick={() => setOpenMenuId(null)}
                                   >
-                                    <em className="icon ni ni-file-text"></em>
-                                  </button>
-                                </li>
-                              )}
-
-                              {invoice.status === "Generated" && (
-                                <li>
+                                    <i className="fas fa-eye mr-1"></i> View Invoice
+                                  </Link>
                                   <button
-                                    className="btn btn-trigger btn-icon"
-                                    onClick={() => sendInvoice(invoice.id)}
-                                    title="Send Invoice"
+                                    className="dropdown-item"
+                                    onClick={() => {
+                                      alert(`Viewing details for invoice ${invoice.invoiceId || invoice.id}`);
+                                      setOpenMenuId(null);
+                                    }}
                                   >
-                                    <em className="icon ni ni-send"></em>
+                                    <i className="fas fa-eye mr-1"></i> View Details
                                   </button>
-                                </li>
-                              )}
-
-                              {invoice.status === "Sent" && (
-                                <li>
                                   <button
-                                    className="btn btn-trigger btn-icon"
-                                    onClick={() => markAsPaid(invoice.id)}
-                                    title="Mark as Paid"
+                                    className="dropdown-item"
+                                    onClick={() => {
+                                      alert(`Downloading invoice ${invoice.invoiceId || invoice.id}`);
+                                      setOpenMenuId(null);
+                                    }}
                                   >
-                                    <em className="icon ni ni-check-circle"></em>
+                                    <i className="fas fa-download mr-1"></i> Download Invoice
                                   </button>
-                                </li>
+                                  <button
+                                    className="dropdown-item"
+                                    onClick={() => {
+                                      alert(`Sending invoice ${invoice.invoiceId || invoice.id}`);
+                                      setOpenMenuId(null);
+                                    }}
+                                  >
+                                    <i className="fas fa-paper-plane mr-1"></i> Send Invoice
+                                  </button>
+                                </div>
                               )}
-
-                              <li>
-                                <Link
-                                  to={`/invoices/view/${invoice.id}`}
-                                  className="btn btn-trigger btn-icon"
-                                  title="View Invoice"
-                                >
-                                  <em className="icon ni ni-eye"></em>
-                                </Link>
-                              </li>
-
-                              <li>
-                                <Link
-                                  to={`/invoices/pdf/${invoice.id}`}
-                                  className="btn btn-trigger btn-icon"
-                                  title="Download PDF"
-                                >
-                                  <em className="icon ni ni-download"></em>
-                                </Link>
-                              </li>
-                            </ul>
-                          </div>
-                        </div>
-                      ))}
-
-                      {filteredInvoices.length === 0 && (
-                        <div className="nk-tb-item">
-                          <div className="nk-tb-col" colSpan="6">
-                            <div className="empty-state">
-                              <p>No invoices found matching your filters.</p>
                             </div>
                           </div>
                         </div>
+                      ))
                       )}
                     </div>
                   </div>

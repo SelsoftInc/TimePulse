@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import InvoiceSettingsModal from '../common/InvoiceSettingsModal';
 import axios from 'axios';
+import { API_BASE } from '../../config/api';
 import "./Invoice.css";
 
 // Utility function for status display
@@ -225,7 +226,7 @@ const InvoiceUploadModal = ({ onClose, onUpload }) => {
         return;
       }
       
-      const response = await axios.get(`http://localhost:5001/api/employees`, {
+      const response = await axios.get(`${API_BASE}/api/employees`, {
         params: { tenantId }
       });
       
@@ -256,7 +257,7 @@ const InvoiceUploadModal = ({ onClose, onUpload }) => {
         return;
       }
       
-      const response = await axios.get(`http://localhost:5000/api/vendors`, {
+      const response = await axios.get(`${API_BASE}/api/vendors`, {
         params: { tenantId }
       });
       
@@ -281,7 +282,7 @@ const InvoiceUploadModal = ({ onClose, onUpload }) => {
   const fetchApprovedTimesheets = async (employeeId, weekStart, weekEnd) => {
     try {
       const tenantId = localStorage.getItem('tenantId');
-      const response = await axios.get(`http://localhost:5000/api/timesheets/employee/${employeeId}/approved`, {
+      const response = await axios.get(`${API_BASE}/api/timesheets/employee/${employeeId}/approved`, {
         params: { tenantId }
       });
       
@@ -365,7 +366,7 @@ const InvoiceUploadModal = ({ onClose, onUpload }) => {
 
       console.log('Submitting invoice data:', invoiceData);
       
-      const response = await axios.post('http://localhost:5000/api/invoices', invoiceData);
+      const response = await axios.post(`${API_BASE}/api/invoices`, invoiceData);
       
       if (response.data.success) {
         alert('Invoice created successfully!');
@@ -648,7 +649,7 @@ const Invoice = () => {
         return;
       }
 
-      const response = await axios.get(`http://localhost:5001/api/invoices`, {
+      const response = await axios.get(`${API_BASE}/api/invoices`, {
         params: { tenantId, status: filterStatus !== 'all' ? filterStatus : undefined }
       });
 

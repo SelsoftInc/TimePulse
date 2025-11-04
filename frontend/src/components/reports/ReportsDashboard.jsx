@@ -1,6 +1,8 @@
 // src/components/reports/ReportsDashboard.jsx
 import React, { useState, useEffect } from "react";
+import { API_BASE } from "../../config/api";
 import "./ReportsDashboard.css";
+import '../common/ActionsDropdown.css';
 
 const ReportsDashboard = () => {
   const [activeTab, setActiveTab] = useState("client");
@@ -81,36 +83,36 @@ const ReportsDashboard = () => {
       const [clientsRes, employeesRes, invoicesRes, analyticsRes] =
         await Promise.all([
            fetch(
-             `http://localhost:5001/api/reports/clients?tenantId=${
-               userInfo.tenantId
-             }&startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`,
-             { headers }
-           ).catch(err => {
+            `${API_BASE}/api/reports/clients?tenantId=${
+              userInfo.tenantId
+            }&startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`,
+            { headers }
+          ).catch(err => {
              console.error('❌ Client reports fetch failed:', err);
              throw err;
            }),
            fetch(
-             `http://localhost:5001/api/reports/employees?tenantId=${
-               userInfo.tenantId
-             }&startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`,
-             { headers }
-           ).catch(err => {
+            `${API_BASE}/api/reports/employees?tenantId=${
+              userInfo.tenantId
+            }&startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`,
+            { headers }
+          ).catch(err => {
              console.error('❌ Employee reports fetch failed:', err);
              throw err;
            }),
            fetch(
-             `http://localhost:5001/api/reports/invoices?tenantId=${
-               userInfo.tenantId
-             }&startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`,
-             { headers }
-           ).catch(err => {
+            `${API_BASE}/api/reports/invoices?tenantId=${
+              userInfo.tenantId
+            }&startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`,
+            { headers }
+          ).catch(err => {
              console.error('❌ Invoice reports fetch failed:', err);
              throw err;
            }),
            fetch(
-             `http://localhost:5001/api/reports/analytics?tenantId=${userInfo.tenantId}&period=month`,
-             { headers }
-           ).catch(err => {
+            `${API_BASE}/api/reports/analytics?tenantId=${userInfo.tenantId}&period=month`,
+            { headers }
+          ).catch(err => {
              console.error('❌ Analytics fetch failed:', err);
              throw err;
            }),
@@ -282,40 +284,38 @@ const ReportsDashboard = () => {
                         </span>
                       </div>
                       <div className="nk-tb-col nk-tb-col-tools">
-                        <div className={`actions-dropdown ${openActionsId === client.id && actionsType === 'client' ? 'active' : ''}`}>
+                        <div className="dropdown" style={{ position: 'relative' }}>
                           <button
-                            className="btn-actions"
+                            className="btn btn-sm btn-outline-secondary dropdown-toggle"
                             onClick={(e) => {
                               e.stopPropagation();
                               toggleActions(client.id, 'client');
                             }}
+                            type="button"
                           >
                             Actions
-                            <em className="icon ni ni-chevron-down"></em>
                           </button>
                           {openActionsId === client.id && actionsType === 'client' && (
-                            <div className="actions-menu">
+                            <div className="dropdown-menu dropdown-menu-right show">
                               <button
-                                className="actions-menu-item"
+                                className="dropdown-item"
                                 onClick={() => {
                                   alert(`Viewing details for ${client.name}`);
                                   setOpenActionsId(null);
                                   setActionsType(null);
                                 }}
                               >
-                                <em className="icon ni ni-eye"></em>
-                                <span>View Details</span>
+                                <i className="fas fa-eye mr-1"></i> View Details
                               </button>
                               <button
-                                className="actions-menu-item"
+                                className="dropdown-item"
                                 onClick={() => {
                                   alert(`Downloading report for ${client.name}`);
                                   setOpenActionsId(null);
                                   setActionsType(null);
                                 }}
                               >
-                                <em className="icon ni ni-download"></em>
-                                <span>Download Report</span>
+                                <i className="fas fa-download mr-1"></i> Download Report
                               </button>
                             </div>
                           )}
@@ -488,40 +488,38 @@ const ReportsDashboard = () => {
                         </div>
                       </div>
                       <div className="nk-tb-col nk-tb-col-tools">
-                        <div className={`actions-dropdown ${openActionsId === employee.id && actionsType === 'employee' ? 'active' : ''}`}>
+                        <div className="dropdown" style={{ position: 'relative' }}>
                           <button
-                            className="btn-actions"
+                            className="btn btn-sm btn-outline-secondary dropdown-toggle"
                             onClick={(e) => {
                               e.stopPropagation();
                               toggleActions(employee.id, 'employee');
                             }}
+                            type="button"
                           >
                             Actions
-                            <em className="icon ni ni-chevron-down"></em>
                           </button>
                           {openActionsId === employee.id && actionsType === 'employee' && (
-                            <div className="actions-menu">
+                            <div className="dropdown-menu dropdown-menu-right show">
                               <button
-                                className="actions-menu-item"
+                                className="dropdown-item"
                                 onClick={() => {
                                   alert(`Viewing details for ${employee.name}`);
                                   setOpenActionsId(null);
                                   setActionsType(null);
                                 }}
                               >
-                                <em className="icon ni ni-eye"></em>
-                                <span>View Details</span>
+                                <i className="fas fa-eye mr-1"></i> View Details
                               </button>
                               <button
-                                className="actions-menu-item"
+                                className="dropdown-item"
                                 onClick={() => {
                                   alert(`Downloading report for ${employee.name}`);
                                   setOpenActionsId(null);
                                   setActionsType(null);
                                 }}
                               >
-                                <em className="icon ni ni-download"></em>
-                                <span>Download Report</span>
+                                <i className="fas fa-download mr-1"></i> Download Report
                               </button>
                             </div>
                           )}
@@ -678,40 +676,47 @@ const ReportsDashboard = () => {
                       </span>
                     </div>
                     <div className="nk-tb-col nk-tb-col-tools">
-                      <div className={`actions-dropdown ${openActionsId === invoice.id && actionsType === 'invoice' ? 'active' : ''}`}>
+                      <div className="dropdown" style={{ position: 'relative' }}>
                         <button
-                          className="btn-actions"
+                          className="btn btn-sm btn-outline-secondary dropdown-toggle"
                           onClick={(e) => {
                             e.stopPropagation();
                             toggleActions(invoice.id, 'invoice');
                           }}
+                          type="button"
+                          ref={(el) => {
+                            if (el && openActionsId === invoice.id) {
+                              const rect = el.getBoundingClientRect();
+                              const spaceBelow = window.innerHeight - rect.bottom;
+                              if (spaceBelow < 200) {
+                                el.nextElementSibling?.classList.add('dropup');
+                              }
+                            }
+                          }}
                         >
                           Actions
-                          <em className="icon ni ni-chevron-down"></em>
                         </button>
                         {openActionsId === invoice.id && actionsType === 'invoice' && (
-                          <div className="actions-menu">
+                          <div className="dropdown-menu dropdown-menu-right show">
                             <button
-                              className="actions-menu-item"
+                              className="dropdown-item"
                               onClick={() => {
                                 alert(`Viewing details for invoice ${invoice.id}`);
                                 setOpenActionsId(null);
                                 setActionsType(null);
                               }}
                             >
-                              <em className="icon ni ni-eye"></em>
-                              <span>View Details</span>
+                              <i className="fas fa-eye mr-1"></i> View Details
                             </button>
                             <button
-                              className="actions-menu-item"
+                              className="dropdown-item"
                               onClick={() => {
                                 alert(`Downloading invoice ${invoice.id}`);
                                 setOpenActionsId(null);
                                 setActionsType(null);
                               }}
                             >
-                              <em className="icon ni ni-download"></em>
-                              <span>Download Invoice</span>
+                              <i className="fas fa-download mr-1"></i> Download Invoice
                             </button>
                           </div>
                         )}

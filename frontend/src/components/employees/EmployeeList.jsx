@@ -9,8 +9,11 @@ import ConfirmationDialog from "../common/ConfirmationDialog";
 import { useConfirmation } from "../../hooks/useConfirmation";
 import "./Employees.css";
 import "./EmployeeManagement.css";
+import "./EmployeeTable.css";
 import "../common/Pagination.css";
 import "../common/TableScroll.css";
+import "../common/ActionsDropdown.css";
+import "../common/DropdownFix.css";
 import { apiFetch } from "../../config/api";
 
 const EmployeeList = () => {
@@ -678,7 +681,7 @@ const EmployeeList = () => {
   ];
 
   return (
-    <div className="">
+    <div className="employee-list-container">
       <div className="container-fluid">
         <div className="nk-block-head">
           <div className="nk-block-between">
@@ -835,8 +838,9 @@ const EmployeeList = () => {
                         </td>
                         <td className="text-right">
                           <div
-                            className="btn-group"
+                            className="dropdown"
                             data-actions-menu={employee.id}
+                            style={{ position: "relative" }}
                           >
                             <button
                               type="button"
@@ -848,6 +852,17 @@ const EmployeeList = () => {
                                     : employee.id
                                 )
                               }
+                              ref={(el) => {
+                                if (el && openMenuFor === employee.id) {
+                                  const rect = el.getBoundingClientRect();
+                                  const spaceBelow = window.innerHeight - rect.bottom;
+                                  if (spaceBelow < 250) {
+                                    el.nextElementSibling?.classList.add('dropup');
+                                  } else {
+                                    el.nextElementSibling?.classList.remove('dropup');
+                                  }
+                                }
+                              }}
                             >
                               Actions
                             </button>

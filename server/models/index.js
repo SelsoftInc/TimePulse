@@ -874,6 +874,11 @@ models.Invoice = sequelize.define(
       defaultValue: DataTypes.NOW,
       field: "invoice_date",
     },
+    issueDate: {
+      type: DataTypes.DATE,
+      defaultValue: DataTypes.NOW,
+      field: "issue_date",
+    },
     dueDate: {
       type: DataTypes.DATEONLY,
       allowNull: true,

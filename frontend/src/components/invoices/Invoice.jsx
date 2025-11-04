@@ -969,6 +969,9 @@ const Invoice = () => {
                             <span className="sub-text">Week</span>
                           </div>
                           <div className="nk-tb-col">
+                            <span className="sub-text">Issue Date</span>
+                          </div>
+                          <div className="nk-tb-col">
                             <span className="sub-text">Total</span>
                           </div>
                           <div className="nk-tb-col">
@@ -992,6 +995,24 @@ const Invoice = () => {
                               </div>
                               <div className="nk-tb-col">
                                 <span className="tb-sub">{invoice.week}</span>
+                              </div>
+                              <div className="nk-tb-col">
+                                <span className="tb-sub">
+                                  {invoice.issueDate 
+                                    ? new Date(invoice.issueDate).toLocaleDateString('en-US', { 
+                                        month: 'short', 
+                                        day: '2-digit',
+                                        year: 'numeric'
+                                      })
+                                    : invoice.createdAt 
+                                      ? new Date(invoice.createdAt).toLocaleDateString('en-US', { 
+                                          month: 'short', 
+                                          day: '2-digit',
+                                          year: 'numeric'
+                                        })
+                                      : 'N/A'
+                                  }
+                                </span>
                               </div>
                               <div className="nk-tb-col">
                                 <span className="tb-lead">

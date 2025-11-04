@@ -173,6 +173,9 @@ router.get("/", async (req, res) => {
         inv.timesheet?.weekStart && inv.timesheet?.weekEnd
           ? `${inv.timesheet.weekStart} - ${inv.timesheet.weekEnd}`
           : "N/A",
+      issueDate: inv.issueDate
+        ? new Date(inv.issueDate).toISOString()
+        : (inv.createdAt ? new Date(inv.createdAt).toISOString() : null),
       issuedOn: inv.invoiceDate
         ? new Date(inv.invoiceDate).toISOString().split("T")[0]
         : (inv.createdAt ? new Date(inv.createdAt).toISOString().split("T")[0] : "N/A"),
@@ -229,18 +232,22 @@ router.post("/", async (req, res) => {
         .json({ success: false, message: "tenantId is required" });
     }
 
-    // Generate invoice number
+    // Generate invoice number in format IN-2025-XXX
+    const currentYear = new Date().getFullYear();
     const lastInvoice = await models.Invoice.findOne({
-      where: { tenantId },
+      where: { 
+        tenantId,
+        invoiceNumber: { [Op.like]: `IN-${currentYear}-%` }
+      },
       order: [["created_at", "DESC"]],
     });
 
     let invoiceNumber;
     if (lastInvoice && lastInvoice.invoiceNumber) {
       const lastNumber = parseInt(lastInvoice.invoiceNumber.split("-").pop());
-      invoiceNumber = `INV-${String(lastNumber + 1).padStart(4, "0")}`;
+      invoiceNumber = `IN-${currentYear}-${String(lastNumber + 1).padStart(3, "0")}`;
     } else {
-      invoiceNumber = "INV-1023";
+      invoiceNumber = `IN-${currentYear}-001`;
     }
 
     const newInvoice = await models.Invoice.create({

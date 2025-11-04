@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { API_BASE } from "../../config/api";
 import "./ReportsDashboard.css";
 import '../common/ActionsDropdown.css';
+import InvoicePDFPreviewModal from '../common/InvoicePDFPreviewModal';
 
 const ReportsDashboard = () => {
   const [activeTab, setActiveTab] = useState("client");
@@ -20,6 +21,14 @@ const ReportsDashboard = () => {
   // Dropdown state for Actions
   const [openActionsId, setOpenActionsId] = useState(null);
   const [actionsType, setActionsType] = useState(null); // 'client', 'employee', 'invoice'
+  
+  // PDF Modal state
+  const [showPDFModal, setShowPDFModal] = useState(false);
+  const [selectedInvoiceForPDF, setSelectedInvoiceForPDF] = useState(null);
+  
+  // Invoice Details Modal state
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [selectedInvoiceForDetails, setSelectedInvoiceForDetails] = useState(null);
 
   // Fetch data from API
   useEffect(() => {
@@ -629,6 +638,9 @@ const ReportsDashboard = () => {
                     <span>Month</span>
                   </div>
                   <div className="nk-tb-col tb-col-md">
+                    <span>Issue Date</span>
+                  </div>
+                  <div className="nk-tb-col tb-col-md">
                     <span>Hours</span>
                   </div>
                   <div className="nk-tb-col">
@@ -644,7 +656,7 @@ const ReportsDashboard = () => {
                 {invoiceReportData.map((invoice) => (
                   <div key={invoice.id} className="nk-tb-item">
                     <div className="nk-tb-col">
-                      <span className="tb-lead">{invoice.id}</span>
+                      <span className="tb-lead">{invoice.invoiceNumber || invoice.id}</span>
                     </div>
                     <div className="nk-tb-col tb-col-md">
                       <span>{invoice.clientName}</span>
@@ -652,6 +664,24 @@ const ReportsDashboard = () => {
                     <div className="nk-tb-col tb-col-md">
                       <span>
                         {invoice.month} {invoice.year}
+                      </span>
+                    </div>
+                    <div className="nk-tb-col tb-col-md">
+                      <span>
+                        {invoice.issueDate 
+                          ? new Date(invoice.issueDate).toLocaleDateString('en-US', { 
+                              month: 'short', 
+                              day: '2-digit',
+                              year: 'numeric'
+                            })
+                          : invoice.createdAt 
+                            ? new Date(invoice.createdAt).toLocaleDateString('en-US', { 
+                                month: 'short', 
+                                day: '2-digit',
+                                year: 'numeric'
+                              })
+                            : 'N/A'
+                        }
                       </span>
                     </div>
                     <div className="nk-tb-col tb-col-md">
@@ -701,7 +731,8 @@ const ReportsDashboard = () => {
                             <button
                               className="dropdown-item"
                               onClick={() => {
-                                alert(`Viewing details for invoice ${invoice.id}`);
+                                setSelectedInvoiceForDetails(invoice);
+                                setShowDetailsModal(true);
                                 setOpenActionsId(null);
                                 setActionsType(null);
                               }}
@@ -711,7 +742,8 @@ const ReportsDashboard = () => {
                             <button
                               className="dropdown-item"
                               onClick={() => {
-                                alert(`Downloading invoice ${invoice.id}`);
+                                setSelectedInvoiceForPDF(invoice);
+                                setShowPDFModal(true);
                                 setOpenActionsId(null);
                                 setActionsType(null);
                               }}
@@ -1046,6 +1078,128 @@ const ReportsDashboard = () => {
           </div>
         </div>
       </div>
+      
+      {/* Invoice PDF Preview Modal */}
+      {showPDFModal && selectedInvoiceForPDF && (
+        <InvoicePDFPreviewModal
+          invoice={selectedInvoiceForPDF}
+          onClose={() => {
+            setShowPDFModal(false);
+            setSelectedInvoiceForPDF(null);
+          }}
+        />
+      )}
+      
+      {/* Invoice Details Modal */}
+      {showDetailsModal && selectedInvoiceForDetails && (
+        <div className="modal-overlay" onClick={() => setShowDetailsModal(false)}>
+          <div className="modal-content invoice-details-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h4>Invoice Details</h4>
+              <button className="modal-close" onClick={() => setShowDetailsModal(false)}>×</button>
+            </div>
+            
+            <div className="modal-body">
+              <div className="details-container">
+                <div className="details-section">
+                  <h5 className="section-title">
+                    <i className="fas fa-file-invoice"></i> Invoice Information
+                  </h5>
+                  <div className="details-grid">
+                    <div className="detail-item">
+                      <label>Invoice ID:</label>
+                      <span>{selectedInvoiceForDetails.invoiceNumber || selectedInvoiceForDetails.id}</span>
+                    </div>
+                    <div className="detail-item">
+                      <label>Client:</label>
+                      <span>{selectedInvoiceForDetails.clientName || 'N/A'}</span>
+                    </div>
+                    <div className="detail-item">
+                      <label>Month:</label>
+                      <span>{selectedInvoiceForDetails.month || 'N/A'}</span>
+                    </div>
+                    <div className="detail-item">
+                      <label>Issue Date:</label>
+                      <span>{selectedInvoiceForDetails.issueDate ? new Date(selectedInvoiceForDetails.issueDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : 'N/A'}</span>
+                    </div>
+                    <div className="detail-item">
+                      <label>Hours:</label>
+                      <span>{selectedInvoiceForDetails.hours || 0}</span>
+                    </div>
+                    <div className="detail-item">
+                      <label>Amount:</label>
+                      <span className="amount">${parseFloat(selectedInvoiceForDetails.amount || 0).toFixed(2)}</span>
+                    </div>
+                    <div className="detail-item">
+                      <label>Status:</label>
+                      <span className={`status-badge ${selectedInvoiceForDetails.status?.toLowerCase()}`}>
+                        {selectedInvoiceForDetails.status || 'N/A'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                
+                {selectedInvoiceForDetails.lineItems && selectedInvoiceForDetails.lineItems.length > 0 && (
+                  <div className="details-section">
+                    <h5 className="section-title">
+                      <i className="fas fa-list"></i> Line Items
+                    </h5>
+                    <div className="line-items-table">
+                      <table>
+                        <thead>
+                          <tr>
+                            <th>Description</th>
+                            <th>Hours</th>
+                            <th>Rate</th>
+                            <th>Amount</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {selectedInvoiceForDetails.lineItems.map((item, index) => (
+                            <tr key={index}>
+                              <td>{item.description || 'N/A'}</td>
+                              <td>{item.hours || 0}</td>
+                              <td>${parseFloat(item.rate || 0).toFixed(2)}</td>
+                              <td>${parseFloat(item.amount || 0).toFixed(2)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+                
+                {selectedInvoiceForDetails.notes && (
+                  <div className="details-section">
+                    <h5 className="section-title">
+                      <i className="fas fa-sticky-note"></i> Notes
+                    </h5>
+                    <div className="notes-content">
+                      {selectedInvoiceForDetails.notes}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            <div className="modal-footer">
+              <button className="btn btn-secondary" onClick={() => setShowDetailsModal(false)}>
+                Close
+              </button>
+              <button 
+                className="btn btn-primary" 
+                onClick={() => {
+                  setSelectedInvoiceForPDF(selectedInvoiceForDetails);
+                  setShowPDFModal(true);
+                  setShowDetailsModal(false);
+                }}
+              >
+                <i className="fas fa-download mr-1"></i> Download PDF
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

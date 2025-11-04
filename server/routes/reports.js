@@ -358,16 +358,25 @@ router.get("/invoices", async (req, res) => {
       const invoiceDate = new Date(invoice.invoiceDate);
       const month = invoiceDate.toLocaleDateString("en-US", { month: "long" });
       const year = invoiceDate.getFullYear();
+      
+      // Calculate total hours from line items
+      const lineItems = invoice.lineItems || [];
+      const totalHours = lineItems.reduce((sum, item) => {
+        return sum + (parseFloat(item.hours) || 0);
+      }, 0);
 
       return {
         id: invoice.id,
+        invoiceNumber: invoice.invoiceNumber,
         clientId: invoice.clientId,
         clientName: invoice.client?.clientName || "Unknown Client",
         month,
         year,
-        totalHours: parseFloat(invoice.totalHours) || 0,
+        totalHours: totalHours,
         amount: parseFloat(invoice.totalAmount) || 0,
         status: invoice.status || "Draft",
+        issueDate: invoice.issueDate || invoice.createdAt,
+        createdAt: invoice.createdAt,
       };
     });
 

@@ -6,13 +6,17 @@ import "./Invoice.css";
 
 // Utility function for status display
 const getStatusDisplay = (status) => {
-  switch(status.toLowerCase()) {
+  switch (status.toLowerCase()) {
     case "draft":
       return { class: "secondary", icon: "fas fa-edit", text: "Draft" };
     case "pending":
       return { class: "warning", icon: "fas fa-clock", text: "Pending" };
     case "approved":
-      return { class: "success", icon: "fas fa-check-circle", text: "Approved" };
+      return {
+        class: "success",
+        icon: "fas fa-check-circle",
+        text: "Approved",
+      };
     case "rejected":
       return { class: "danger", icon: "fas fa-times-circle", text: "Rejected" };
     case "sent":
@@ -20,22 +24,31 @@ const getStatusDisplay = (status) => {
     case "paid":
       return { class: "success", icon: "fas fa-dollar-sign", text: "Paid" };
     default:
-      return { class: "secondary", icon: "fas fa-question-circle", text: status };
+      return {
+        class: "secondary",
+        icon: "fas fa-question-circle",
+        text: status,
+      };
   }
 };
 
 // Invoice Detail Modal Component
 const InvoiceDetailModal = ({ invoice, onClose, onApprove, onReject }) => {
   const [notes, setNotes] = useState("");
-  
+
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content invoice-modal" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="modal-content invoice-modal"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="modal-header">
           <h4>Invoice Details - {invoice.invoiceNumber}</h4>
-          <button className="modal-close" onClick={onClose}>×</button>
+          <button className="modal-close" onClick={onClose}>
+            ×
+          </button>
         </div>
-        
+
         <div className="modal-body">
           <div className="invoice-detail-header">
             <div className="invoice-detail-info">
@@ -52,8 +65,13 @@ const InvoiceDetailModal = ({ invoice, onClose, onApprove, onReject }) => {
                 {(() => {
                   const statusInfo = getStatusDisplay(invoice.status);
                   return (
-                    <span className={`badge badge-${statusInfo.class} d-inline-flex align-items-center`}>
-                      <i className={`${statusInfo.icon} me-1`} style={{ fontSize: '12px' }}></i>
+                    <span
+                      className={`badge badge-${statusInfo.class} d-inline-flex align-items-center`}
+                    >
+                      <i
+                        className={`${statusInfo.icon} me-1`}
+                        style={{ fontSize: "12px" }}
+                      ></i>
                       {statusInfo.text}
                     </span>
                   );
@@ -65,7 +83,7 @@ const InvoiceDetailModal = ({ invoice, onClose, onApprove, onReject }) => {
               <span className="total-value">${invoice.total.toFixed(2)}</span>
             </div>
           </div>
-          
+
           <div className="invoice-line-items">
             <h5>Line Items</h5>
             <table className="table">
@@ -89,21 +107,28 @@ const InvoiceDetailModal = ({ invoice, onClose, onApprove, onReject }) => {
               </tbody>
               <tfoot>
                 <tr>
-                  <td colSpan="3" className="text-right"><strong>Total</strong></td>
-                  <td><strong>${invoice.total.toFixed(2)}</strong></td>
+                  <td colSpan="3" className="text-right">
+                    <strong>Total</strong>
+                  </td>
+                  <td>
+                    <strong>${invoice.total.toFixed(2)}</strong>
+                  </td>
                 </tr>
               </tfoot>
             </table>
           </div>
-          
+
           {invoice.discrepancies && (
             <div className="invoice-discrepancies">
               <h5>Discrepancies Found</h5>
               <div className="alert alert-warning">
                 <i className="fas fa-exclamation-triangle"></i>
-                <span>There are discrepancies between the invoice and timesheet data.</span>
+                <span>
+                  There are discrepancies between the invoice and timesheet
+                  data.
+                </span>
               </div>
-              
+
               <table className="table discrepancy-table">
                 <thead>
                   <tr>
@@ -113,13 +138,18 @@ const InvoiceDetailModal = ({ invoice, onClose, onApprove, onReject }) => {
                   </tr>
                 </thead>
                 <tbody>
-                  {Object.entries(invoice.discrepancies).map(([source, data], index) => (
-                    <tr key={index} className={data.mismatch ? "mismatch-row" : ""}>
-                      <td>{source}</td>
-                      <td>{data.hours}</td>
-                      <td>{data.notes}</td>
-                    </tr>
-                  ))}
+                  {Object.entries(invoice.discrepancies).map(
+                    ([source, data], index) => (
+                      <tr
+                        key={index}
+                        className={data.mismatch ? "mismatch-row" : ""}
+                      >
+                        <td>{source}</td>
+                        <td>{data.hours}</td>
+                        <td>{data.notes}</td>
+                      </tr>
+                    )
+                  )}
                   {invoice.discrepancies.mismatch && (
                     <tr className="mismatch-alert">
                       <td>
@@ -132,10 +162,11 @@ const InvoiceDetailModal = ({ invoice, onClose, onApprove, onReject }) => {
               </table>
             </div>
           )}
-          
+
           <div className="invoice-attachments">
             <h5>Attachments</h5>
-            {Array.isArray(invoice.attachments) && invoice.attachments.length > 0 ? (
+            {Array.isArray(invoice.attachments) &&
+            invoice.attachments.length > 0 ? (
               <ul className="attachment-list">
                 {invoice.attachments.map((attachment, index) => (
                   <li key={index} className="attachment-item">
@@ -151,7 +182,7 @@ const InvoiceDetailModal = ({ invoice, onClose, onApprove, onReject }) => {
               <p className="text-muted">No attachments found</p>
             )}
           </div>
-          
+
           <div className="form-group">
             <label htmlFor="notes">Notes</label>
             <textarea
@@ -164,15 +195,23 @@ const InvoiceDetailModal = ({ invoice, onClose, onApprove, onReject }) => {
             ></textarea>
           </div>
         </div>
-        
+
         <div className="modal-footer">
-          <button className="btn-outline" onClick={onClose}>Close</button>
+          <button className="btn-outline" onClick={onClose}>
+            Close
+          </button>
           {invoice.status === "Draft" || invoice.status === "Pending" ? (
             <>
-              <button className="btn-outline btn-reject" onClick={() => onReject(invoice.id, notes)}>
+              <button
+                className="btn-outline btn-reject"
+                onClick={() => onReject(invoice.id, notes)}
+              >
                 Reject
               </button>
-              <button className="btn-primary" onClick={() => onApprove(invoice.id, notes)}>
+              <button
+                className="btn-primary"
+                onClick={() => onApprove(invoice.id, notes)}
+              >
                 Approve
               </button>
             </>
@@ -194,9 +233,9 @@ const InvoiceUploadModal = ({ onClose, onUpload }) => {
     useTimesheet: true,
     total: "",
     file: null,
-    quickbooksSync: false
+    quickbooksSync: false,
   });
-  
+
   const [employees, setEmployees] = useState([]);
   const [approvedTimesheets, setApprovedTimesheets] = useState([]);
   const [vendors, setVendors] = useState([]);
@@ -210,7 +249,11 @@ const InvoiceUploadModal = ({ onClose, onUpload }) => {
 
   useEffect(() => {
     if (formData.employee && formData.weekStart && formData.weekEnd) {
-      fetchApprovedTimesheets(formData.employee, formData.weekStart, formData.weekEnd);
+      fetchApprovedTimesheets(
+        formData.employee,
+        formData.weekStart,
+        formData.weekEnd
+      );
     } else {
       setApprovedTimesheets([]);
     }
@@ -218,41 +261,45 @@ const InvoiceUploadModal = ({ onClose, onUpload }) => {
 
   const fetchEmployees = async () => {
     try {
-      const tenantId = localStorage.getItem('tenantId');
-      console.log('Fetching employees for tenantId:', tenantId);
-      
+      const tenantId = localStorage.getItem("tenantId");
+      console.log("Fetching employees for tenantId:", tenantId);
+
       if (!tenantId) {
-        console.error('No tenantId found in localStorage');
+        console.error("No tenantId found in localStorage");
         return;
       }
       
       const response = await axios.get(`${API_BASE}/api/employees`, {
         params: { tenantId }
       });
-      
-      console.log('Employees API response:', response.data);
-      
+
+      console.log("Employees API response:", response.data);
+
       if (response.data.success && response.data.employees) {
-        console.log('Setting employees:', response.data.employees.length, 'employees');
+        console.log(
+          "Setting employees:",
+          response.data.employees.length,
+          "employees"
+        );
         setEmployees(response.data.employees);
       } else {
-        console.warn('No employees data in response');
+        console.warn("No employees data in response");
         setEmployees([]);
       }
     } catch (error) {
-      console.error('Error fetching employees:', error);
-      console.error('Error details:', error.response?.data || error.message);
+      console.error("Error fetching employees:", error);
+      console.error("Error details:", error.response?.data || error.message);
       setEmployees([]);
     }
   };
 
   const fetchVendors = async () => {
     try {
-      const tenantId = localStorage.getItem('tenantId');
-      console.log('Fetching vendors for tenantId:', tenantId);
-      
+      const tenantId = localStorage.getItem("tenantId");
+      console.log("Fetching vendors for tenantId:", tenantId);
+
       if (!tenantId) {
-        console.error('No tenantId found in localStorage');
+        console.error("No tenantId found in localStorage");
         setLoading(false);
         return;
       }
@@ -260,20 +307,24 @@ const InvoiceUploadModal = ({ onClose, onUpload }) => {
       const response = await axios.get(`${API_BASE}/api/vendors`, {
         params: { tenantId }
       });
-      
-      console.log('Vendors API response:', response.data);
-      
+
+      console.log("Vendors API response:", response.data);
+
       if (response.data.success && response.data.vendors) {
-        console.log('Setting vendors:', response.data.vendors.length, 'vendors');
+        console.log(
+          "Setting vendors:",
+          response.data.vendors.length,
+          "vendors"
+        );
         setVendors(response.data.vendors);
       } else {
-        console.warn('No vendors data in response');
+        console.warn("No vendors data in response");
         setVendors([]);
       }
       setLoading(false);
     } catch (error) {
-      console.error('Error fetching vendors:', error);
-      console.error('Error details:', error.response?.data || error.message);
+      console.error("Error fetching vendors:", error);
+      console.error("Error details:", error.response?.data || error.message);
       setVendors([]);
       setLoading(false);
     }
@@ -288,64 +339,71 @@ const InvoiceUploadModal = ({ onClose, onUpload }) => {
       
       if (response.data.success) {
         // Filter timesheets by week range
-        const filtered = response.data.timesheets.filter(ts => {
+        const filtered = response.data.timesheets.filter((ts) => {
           return ts.weekStart === weekStart && ts.weekEnd === weekEnd;
         });
         setApprovedTimesheets(filtered);
       }
     } catch (error) {
-      console.error('Error fetching approved timesheets:', error);
+      console.error("Error fetching approved timesheets:", error);
       setApprovedTimesheets([]);
     }
   };
-  
+
   const handleChange = (e) => {
     const { name, value, type, checked, files } = e.target;
-    
-    if (name === 'timesheetId' && value) {
-      const timesheet = approvedTimesheets.find(ts => ts.id === value);
+
+    if (name === "timesheetId" && value) {
+      const timesheet = approvedTimesheets.find((ts) => ts.id === value);
       setSelectedTimesheet(timesheet);
     }
-    
+
     setFormData({
       ...formData,
-      [name]: type === "checkbox" ? checked : type === "file" ? files[0] : value
+      [name]:
+        type === "checkbox" ? checked : type === "file" ? files[0] : value,
     });
   };
-  
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     try {
-      const tenantId = localStorage.getItem('tenantId');
-      
+      const tenantId = localStorage.getItem("tenantId");
+
       // Calculate invoice details from timesheet if selected
       let lineItems = [];
       let total = 0;
       let weekStart = formData.weekStart;
       let weekEnd = formData.weekEnd;
-      
+
       if (formData.useTimesheet && selectedTimesheet) {
         const hours = selectedTimesheet.totalHours || 0;
         const rate = selectedTimesheet.hourlyRate || 0;
         total = hours * rate;
-        
-        lineItems = [{
-          description: `Professional Services - ${selectedTimesheet.client?.clientName || 'Services'}`,
-          hours: hours,
-          rate: rate,
-          amount: total
-        }];
+
+        lineItems = [
+          {
+            description: `Professional Services - ${
+              selectedTimesheet.client?.clientName || "Services"
+            }`,
+            hours: hours,
+            rate: rate,
+            amount: total,
+          },
+        ];
       } else {
         total = parseFloat(formData.total) || 0;
-        lineItems = [{
-          description: 'Professional Services',
-          hours: 0,
-          rate: 0,
-          amount: total
-        }];
+        lineItems = [
+          {
+            description: "Professional Services",
+            hours: 0,
+            rate: 0,
+            amount: total,
+          },
+        ];
       }
-      
+
       const invoiceData = {
         tenantId,
         vendorId: formData.vendor || null,
@@ -358,10 +416,12 @@ const InvoiceUploadModal = ({ onClose, onUpload }) => {
         subtotal: total,
         tax: 0,
         total: total,
-        dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        notes: '',
+        dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+          .toISOString()
+          .split("T")[0],
+        notes: "",
         attachments: formData.file ? [{ name: formData.file.name }] : [],
-        quickbooksSync: formData.quickbooksSync
+        quickbooksSync: formData.quickbooksSync,
       };
 
       console.log('Submitting invoice data:', invoiceData);
@@ -369,26 +429,34 @@ const InvoiceUploadModal = ({ onClose, onUpload }) => {
       const response = await axios.post(`${API_BASE}/api/invoices`, invoiceData);
       
       if (response.data.success) {
-        alert('Invoice created successfully!');
+        alert("Invoice created successfully!");
         onUpload(); // Refresh the invoice list
       }
     } catch (error) {
-      console.error('Error creating invoice:', error);
-      alert('Failed to create invoice: ' + (error.response?.data?.message || error.message));
+      console.error("Error creating invoice:", error);
+      alert(
+        "Failed to create invoice: " +
+          (error.response?.data?.message || error.message)
+      );
     }
   };
-  
+
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content invoice-upload-modal" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="modal-content invoice-upload-modal"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="modal-header">
           <h4>Upload New Invoice</h4>
-          <button className="modal-close" onClick={onClose}>×</button>
+          <button className="modal-close" onClick={onClose}>
+            ×
+          </button>
         </div>
-        
+
         <div className="modal-body">
           {loading ? (
-            <div style={{ textAlign: 'center', padding: '20px' }}>
+            <div style={{ textAlign: "center", padding: "20px" }}>
               <p>Loading data...</p>
             </div>
           ) : (
@@ -406,7 +474,7 @@ const InvoiceUploadModal = ({ onClose, onUpload }) => {
                   {vendors.length === 0 ? (
                     <option disabled>No vendors available</option>
                   ) : (
-                    vendors.map(vendor => (
+                    vendors.map((vendor) => (
                       <option key={vendor.id} value={vendor.id}>
                         {vendor.name}
                       </option>
@@ -414,10 +482,12 @@ const InvoiceUploadModal = ({ onClose, onUpload }) => {
                   )}
                 </select>
                 {vendors.length === 0 && !loading && (
-                  <small className="form-text text-muted">No vendors found. Add vendors first.</small>
+                  <small className="form-text text-muted">
+                    No vendors found. Add vendors first.
+                  </small>
                 )}
               </div>
-              
+
               <div className="form-group">
                 <label htmlFor="employee">Employee</label>
                 <select
@@ -432,7 +502,7 @@ const InvoiceUploadModal = ({ onClose, onUpload }) => {
                   {employees.length === 0 ? (
                     <option disabled>No employees available</option>
                   ) : (
-                    employees.map(emp => (
+                    employees.map((emp) => (
                       <option key={emp.id} value={emp.id}>
                         {emp.firstName} {emp.lastName}
                       </option>
@@ -440,126 +510,153 @@ const InvoiceUploadModal = ({ onClose, onUpload }) => {
                   )}
                 </select>
                 {employees.length === 0 && !loading && (
-                  <small className="form-text text-danger">No employees found. Add employees first.</small>
+                  <small className="form-text text-danger">
+                    No employees found. Add employees first.
+                  </small>
                 )}
               </div>
 
-            <div className="form-group">
-              <label htmlFor="weekStart">Week Start Date</label>
-              <input
-                type="date"
-                id="weekStart"
-                name="weekStart"
-                className="form-control"
-                value={formData.weekStart}
-                onChange={handleChange}
-                required
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="weekEnd">Week End Date</label>
-              <input
-                type="date"
-                id="weekEnd"
-                name="weekEnd"
-                className="form-control"
-                value={formData.weekEnd}
-                onChange={handleChange}
-                required
-              />
-            </div>
-            
-            <div className="form-group">
-              <label htmlFor="timesheetId">Statement of Work (Approved Timesheets)</label>
-              <select
-                id="timesheetId"
-                name="timesheetId"
-                className="form-control"
-                value={formData.timesheetId}
-                onChange={handleChange}
-                disabled={!formData.employee || !formData.weekStart || !formData.weekEnd || !formData.useTimesheet}
-              >
-                <option value="">Select Approved Timesheet</option>
-                {approvedTimesheets.map(ts => (
-                  <option key={ts.id} value={ts.id}>
-                    {ts.client?.clientName || 'N/A'} - {ts.totalHours}hrs @ ${ts.hourlyRate}/hr = ${(ts.totalHours * ts.hourlyRate).toFixed(2)}
-                  </option>
-                ))}
-              </select>
-              {formData.employee && formData.weekStart && formData.weekEnd && approvedTimesheets.length === 0 && (
-                <small className="form-text text-muted">No approved timesheets found for this employee in the selected week range</small>
-              )}
-              {(!formData.employee || !formData.weekStart || !formData.weekEnd) && (
-                <small className="form-text text-muted">Please select employee and week range first</small>
-              )}
-            </div>
-            
-            <div className="form-check mb-3">
-              <input
-                type="checkbox"
-                id="useTimesheet"
-                name="useTimesheet"
-                className="form-check-input"
-                checked={formData.useTimesheet}
-                onChange={handleChange}
-              />
-              <label className="form-check-label" htmlFor="useTimesheet">
-                Auto-pull hours from approved timesheets
-              </label>
-            </div>
-            
-            {!formData.useTimesheet && (
               <div className="form-group">
-                <label htmlFor="total">Total Amount ($)</label>
+                <label htmlFor="weekStart">Week Start Date</label>
                 <input
-                  type="number"
-                  id="total"
-                  name="total"
+                  type="date"
+                  id="weekStart"
+                  name="weekStart"
                   className="form-control"
-                  value={formData.total}
+                  value={formData.weekStart}
                   onChange={handleChange}
-                  required={!formData.useTimesheet}
-                  min="0"
-                  step="0.01"
-                  placeholder="Enter invoice total"
+                  required
                 />
               </div>
-            )}
-            
-            <div className="form-group">
-              <label htmlFor="file">Upload Invoice File (Optional)</label>
-              <input
-                type="file"
-                id="file"
-                name="file"
-                className="form-control"
-                onChange={handleChange}
-                accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.png"
-              />
-              <small className="form-text">Supported formats: PDF, Word, Excel, Images</small>
-            </div>
-            
-            <div className="form-check mb-3">
-              <input
-                type="checkbox"
-                id="quickbooksSync"
-                name="quickbooksSync"
-                className="form-check-input"
-                checked={formData.quickbooksSync}
-                onChange={handleChange}
-              />
-              <label className="form-check-label" htmlFor="quickbooksSync">
-                Sync with QuickBooks
-              </label>
-            </div>
-          </form>
+
+              <div className="form-group">
+                <label htmlFor="weekEnd">Week End Date</label>
+                <input
+                  type="date"
+                  id="weekEnd"
+                  name="weekEnd"
+                  className="form-control"
+                  value={formData.weekEnd}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="timesheetId">
+                  Statement of Work (Approved Timesheets)
+                </label>
+                <select
+                  id="timesheetId"
+                  name="timesheetId"
+                  className="form-control"
+                  value={formData.timesheetId}
+                  onChange={handleChange}
+                  disabled={
+                    !formData.employee ||
+                    !formData.weekStart ||
+                    !formData.weekEnd ||
+                    !formData.useTimesheet
+                  }
+                >
+                  <option value="">Select Approved Timesheet</option>
+                  {approvedTimesheets.map((ts) => (
+                    <option key={ts.id} value={ts.id}>
+                      {ts.client?.clientName || "N/A"} - {ts.totalHours}hrs @ $
+                      {ts.hourlyRate}/hr = $
+                      {(ts.totalHours * ts.hourlyRate).toFixed(2)}
+                    </option>
+                  ))}
+                </select>
+                {formData.employee &&
+                  formData.weekStart &&
+                  formData.weekEnd &&
+                  approvedTimesheets.length === 0 && (
+                    <small className="form-text text-muted">
+                      No approved timesheets found for this employee in the
+                      selected week range
+                    </small>
+                  )}
+                {(!formData.employee ||
+                  !formData.weekStart ||
+                  !formData.weekEnd) && (
+                  <small className="form-text text-muted">
+                    Please select employee and week range first
+                  </small>
+                )}
+              </div>
+
+              <div className="form-check mb-3">
+                <input
+                  type="checkbox"
+                  id="useTimesheet"
+                  name="useTimesheet"
+                  className="form-check-input"
+                  checked={formData.useTimesheet}
+                  onChange={handleChange}
+                />
+                <label className="form-check-label" htmlFor="useTimesheet">
+                  Auto-pull hours from approved timesheets
+                </label>
+              </div>
+
+              {!formData.useTimesheet && (
+                <div className="form-group">
+                  <label htmlFor="total">Total Amount ($)</label>
+                  <input
+                    type="number"
+                    id="total"
+                    name="total"
+                    className="form-control"
+                    value={formData.total}
+                    onChange={handleChange}
+                    required={!formData.useTimesheet}
+                    min="0"
+                    step="0.01"
+                    placeholder="Enter invoice total"
+                  />
+                </div>
+              )}
+
+              <div className="form-group">
+                <label htmlFor="file">Upload Invoice File (Optional)</label>
+                <input
+                  type="file"
+                  id="file"
+                  name="file"
+                  className="form-control"
+                  onChange={handleChange}
+                  accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.png"
+                />
+                <small className="form-text">
+                  Supported formats: PDF, Word, Excel, Images
+                </small>
+              </div>
+
+              <div className="form-check mb-3">
+                <input
+                  type="checkbox"
+                  id="quickbooksSync"
+                  name="quickbooksSync"
+                  className="form-check-input"
+                  checked={formData.quickbooksSync}
+                  onChange={handleChange}
+                />
+                <label className="form-check-label" htmlFor="quickbooksSync">
+                  Sync with QuickBooks
+                </label>
+              </div>
+            </form>
           )}
         </div>
-        
+
         <div className="modal-footer">
-          <button className="btn-outline" onClick={onClose}>Cancel</button>
-          <button className="btn-primary" onClick={handleSubmit}>Upload Invoice</button>
+          <button className="btn-outline" onClick={onClose}>
+            Cancel
+          </button>
+          <button className="btn-primary" onClick={handleSubmit}>
+            Upload Invoice
+          </button>
         </div>
       </div>
     </div>
@@ -587,7 +684,12 @@ const DiscrepancyMatching = ({ discrepancy }) => {
         </thead>
         <tbody>
           {Object.entries(discrepancy.sources).map(([source, data], index) => (
-            <tr key={index} className={source.toLowerCase() === "mismatch" ? "mismatch-row" : ""}>
+            <tr
+              key={index}
+              className={
+                source.toLowerCase() === "mismatch" ? "mismatch-row" : ""
+              }
+            >
               <td>{source}</td>
               <td>{data.hours}</td>
               <td>{data.notes}</td>
@@ -609,20 +711,20 @@ const Invoice = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("invoices");
   const [invoiceSettings, setInvoiceSettings] = useState(null);
-  
+
   // Sample discrepancy data
   const discrepancyData = {
     sowName: "Developer (40 hrs @ $40/hr)",
     hours: 40,
     rate: 40,
     sources: {
-      "Timesheet": { hours: 38, notes: "Submitted by John Doe" },
-      "Invoice": { hours: 40, notes: "Uploaded by Vendor" },
-      "Client": { hours: 36, notes: "From SAP dump" },
-      "Mismatch": { hours: "", notes: "Needs employer review" }
-    }
+      Timesheet: { hours: 38, notes: "Submitted by John Doe" },
+      Invoice: { hours: 40, notes: "Uploaded by Vendor" },
+      Client: { hours: 36, notes: "From SAP dump" },
+      Mismatch: { hours: "", notes: "Needs employer review" },
+    },
   };
-  
+
   useEffect(() => {
     loadInvoiceSettings();
     fetchInvoices();
@@ -631,21 +733,21 @@ const Invoice = () => {
   // Load invoice settings
   const loadInvoiceSettings = async () => {
     try {
-      const savedSettings = localStorage.getItem('invoiceSettings');
+      const savedSettings = localStorage.getItem("invoiceSettings");
       if (savedSettings) {
         setInvoiceSettings(JSON.parse(savedSettings));
       }
     } catch (error) {
-      console.error('Error loading invoice settings:', error);
+      console.error("Error loading invoice settings:", error);
     }
   };
 
   // Fetch invoices from API
   const fetchInvoices = async () => {
     try {
-      const tenantId = localStorage.getItem('tenantId');
+      const tenantId = localStorage.getItem("tenantId");
       if (!tenantId) {
-        console.error('No tenantId found');
+        console.error("No tenantId found");
         return;
       }
 
@@ -654,7 +756,7 @@ const Invoice = () => {
       });
 
       if (response.data.success) {
-        const formattedInvoices = response.data.invoices.map(inv => ({
+        const formattedInvoices = response.data.invoices.map((inv) => ({
           id: inv.id,
           invoiceNumber: inv.invoiceNumber,
           vendor: inv.vendor,
@@ -664,45 +766,51 @@ const Invoice = () => {
           lineItems: inv.lineItems || [],
           attachments: inv.attachments || [],
           discrepancies: inv.discrepancies,
-          notes: inv.notes
+          notes: inv.notes,
         }));
         setInvoices(formattedInvoices);
       }
     } catch (error) {
-      console.error('Error fetching invoices:', error);
+      console.error("Error fetching invoices:", error);
       // Fallback to empty array on error
       setInvoices([]);
     }
   };
-  
-  const filteredInvoices = invoices.filter(invoice => {
-    const matchesStatus = filterStatus === "all" || invoice.status.toLowerCase() === filterStatus.toLowerCase();
-    const matchesSearch = 
+
+  const filteredInvoices = invoices.filter((invoice) => {
+    const matchesStatus =
+      filterStatus === "all" ||
+      invoice.status.toLowerCase() === filterStatus.toLowerCase();
+    const matchesSearch =
       invoice.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
       invoice.vendor.toLowerCase().includes(searchTerm.toLowerCase());
-    
+
     return matchesStatus && matchesSearch;
   });
-  
+
   const handleViewInvoice = (invoice) => {
     setSelectedInvoice(invoice);
     setShowDetailModal(true);
   };
-  
+
   const handleApproveInvoice = (invoiceId, notes) => {
-    setInvoices(invoices.map(inv => 
-      inv.id === invoiceId ? { ...inv, status: "Approved", notes } : inv
-    ));
+    setInvoices(
+      invoices.map((inv) =>
+        inv.id === invoiceId ? { ...inv, status: "Approved", notes } : inv
+      )
+    );
     setShowDetailModal(false);
   };
-  
+
   const handleRejectInvoice = (invoiceId, notes) => {
-    setInvoices(invoices.map(inv => 
-      inv.id === invoiceId ? { ...inv, status: "Rejected", notes } : inv
-    ));
+    setInvoices(
+      invoices.map((inv) =>
+        inv.id === invoiceId ? { ...inv, status: "Rejected", notes } : inv
+      )
+    );
     setShowDetailModal(false);
   };
-  
+
   const handleUploadInvoice = () => {
     // Refresh invoice list after upload
     fetchInvoices();
@@ -712,20 +820,24 @@ const Invoice = () => {
   // Check if invoice settings are configured
   const isInvoiceSettingsConfigured = () => {
     if (!invoiceSettings) return false;
-    
+
     // Check required company info
-    if (!invoiceSettings.companyInfo?.companyName || 
-        !invoiceSettings.companyInfo?.address || 
-        !invoiceSettings.companyInfo?.email) {
+    if (
+      !invoiceSettings.companyInfo?.companyName ||
+      !invoiceSettings.companyInfo?.address ||
+      !invoiceSettings.companyInfo?.email
+    ) {
       return false;
     }
-    
+
     // Check required invoice setup
-    if (!invoiceSettings.invoiceSetup?.invoicePrefix || 
-        !invoiceSettings.invoiceSetup?.defaultPaymentTerms) {
+    if (
+      !invoiceSettings.invoiceSetup?.invoicePrefix ||
+      !invoiceSettings.invoiceSetup?.defaultPaymentTerms
+    ) {
       return false;
     }
-    
+
     return true;
   };
 
@@ -737,11 +849,7 @@ const Invoice = () => {
       setShowUploadModal(true);
     }
   };
-  
 
-
-
-  
   return (
     <div className="nk-conten">
       <div className="container-flui">
@@ -750,18 +858,20 @@ const Invoice = () => {
             <div className="nk-block-head nk-block-head-sm">
               <div className="nk-block-between">
                 <div className="nk-block-head-content">
-                  <h3 className="nk-block-title page-title">Invoice Management</h3>
+                  <h3 className="nk-block-title page-title">
+                    Invoice Management
+                  </h3>
                   <div className="nk-block-des text-soft">
                     <p>Manage and track all vendor invoices</p>
                   </div>
                 </div>
-                
+
                 <div className="nk-block-head-content">
                   <div className="toggle-wrap nk-block-tools-toggle">
                     <ul className="nk-block-tools g-3">
                       <li>
-                        <button 
-                          className="btn btn-primary" 
+                        <button
+                          className="btn btn-primary"
                           onClick={handleCreateInvoice}
                         >
                           <em className="icon ni ni-plus"></em>
@@ -773,7 +883,7 @@ const Invoice = () => {
                 </div>
               </div>
             </div>
-            
+
             <div className="nk-block">
               <div className="card card-bordered card-stretch">
                 <div className="card-inner-group">
@@ -782,24 +892,28 @@ const Invoice = () => {
                       <div className="card-tools">
                         <ul className="nav nav-tabs">
                           <li className="nav-item">
-                            <button 
-                              className={`nav-link ${activeTab === 'invoices' ? 'active' : ''}`}
-                              onClick={() => setActiveTab('invoices')}
+                            <button
+                              className={`nav-link ${
+                                activeTab === "invoices" ? "active" : ""
+                              }`}
+                              onClick={() => setActiveTab("invoices")}
                             >
                               Invoices
                             </button>
                           </li>
                           <li className="nav-item">
-                            <button 
-                              className={`nav-link ${activeTab === 'discrepancies' ? 'active' : ''}`}
-                              onClick={() => setActiveTab('discrepancies')}
+                            <button
+                              className={`nav-link ${
+                                activeTab === "discrepancies" ? "active" : ""
+                              }`}
+                              onClick={() => setActiveTab("discrepancies")}
                             >
                               Discrepancies
                             </button>
                           </li>
                         </ul>
                       </div>
-                      
+
                       <div className="card-tools mr-n1">
                         <ul className="btn-toolbar gx-1">
                           <li>
@@ -810,7 +924,9 @@ const Invoice = () => {
                                   className="form-control form-control-sm"
                                   placeholder="Search..."
                                   value={searchTerm}
-                                  onChange={(e) => setSearchTerm(e.target.value)}
+                                  onChange={(e) =>
+                                    setSearchTerm(e.target.value)
+                                  }
                                 />
                               </div>
                             </div>
@@ -820,7 +936,9 @@ const Invoice = () => {
                               <select
                                 className="form-select form-select-sm"
                                 value={filterStatus}
-                                onChange={(e) => setFilterStatus(e.target.value)}
+                                onChange={(e) =>
+                                  setFilterStatus(e.target.value)
+                                }
                               >
                                 <option value="all">All Status</option>
                                 <option value="draft">Draft</option>
@@ -836,26 +954,38 @@ const Invoice = () => {
                       </div>
                     </div>
                   </div>
-                  
-                  {activeTab === 'invoices' ? (
+
+                  {activeTab === "invoices" ? (
                     <div className="card-inner p-0">
                       <div className="nk-tb-list nk-tb-ulist">
                         <div className="nk-tb-item nk-tb-head">
-                          <div className="nk-tb-col"><span className="sub-text">Invoice #</span></div>
-                          <div className="nk-tb-col"><span className="sub-text">Vendor</span></div>
-                          <div className="nk-tb-col"><span className="sub-text">Week</span></div>
-                          <div className="nk-tb-col"><span className="sub-text">Total</span></div>
-                          <div className="nk-tb-col"><span className="sub-text">Status</span></div>
+                          <div className="nk-tb-col">
+                            <span className="sub-text">Invoice #</span>
+                          </div>
+                          <div className="nk-tb-col">
+                            <span className="sub-text">Vendor</span>
+                          </div>
+                          <div className="nk-tb-col">
+                            <span className="sub-text">Week</span>
+                          </div>
+                          <div className="nk-tb-col">
+                            <span className="sub-text">Total</span>
+                          </div>
+                          <div className="nk-tb-col">
+                            <span className="sub-text">Status</span>
+                          </div>
                           <div className="nk-tb-col nk-tb-col-tools text-right">
                             <span className="sub-text">Actions</span>
                           </div>
                         </div>
-                        
+
                         {filteredInvoices.length > 0 ? (
-                          filteredInvoices.map(invoice => (
+                          filteredInvoices.map((invoice) => (
                             <div key={invoice.id} className="nk-tb-item">
                               <div className="nk-tb-col">
-                                <span className="tb-lead">{invoice.invoiceNumber}</span>
+                                <span className="tb-lead">
+                                  {invoice.invoiceNumber}
+                                </span>
                               </div>
                               <div className="nk-tb-col">
                                 <span className="tb-sub">{invoice.vendor}</span>
@@ -864,14 +994,23 @@ const Invoice = () => {
                                 <span className="tb-sub">{invoice.week}</span>
                               </div>
                               <div className="nk-tb-col">
-                                <span className="tb-lead">${invoice.total.toFixed(2)}</span>
+                                <span className="tb-lead">
+                                  ${invoice.total.toFixed(2)}
+                                </span>
                               </div>
                               <div className="nk-tb-col">
                                 {(() => {
-                                  const statusInfo = getStatusDisplay(invoice.status);
+                                  const statusInfo = getStatusDisplay(
+                                    invoice.status
+                                  );
                                   return (
-                                    <span className={`badge badge-${statusInfo.class} d-inline-flex align-items-center`}>
-                                      <i className={`${statusInfo.icon} me-1`} style={{ fontSize: '12px' }}></i>
+                                    <span
+                                      className={`badge badge-${statusInfo.class} d-inline-flex align-items-center`}
+                                    >
+                                      <i
+                                        className={`${statusInfo.icon} me-1`}
+                                        style={{ fontSize: "12px" }}
+                                      ></i>
                                       {statusInfo.text}
                                     </span>
                                   );
@@ -880,7 +1019,7 @@ const Invoice = () => {
                               <div className="nk-tb-col nk-tb-col-tools">
                                 <ul className="">
                                   <li>
-                                    <button 
+                                    <button
                                       className="btn btn-sm btn-icon btn-trigger"
                                       onClick={() => handleViewInvoice(invoice)}
                                     >
@@ -921,28 +1060,28 @@ const Invoice = () => {
           </div>
         </div>
       </div>
-      
+
       {/* Invoice Detail Modal */}
       {showDetailModal && selectedInvoice && (
-        <InvoiceDetailModal 
+        <InvoiceDetailModal
           invoice={selectedInvoice}
           onClose={() => setShowDetailModal(false)}
           onApprove={handleApproveInvoice}
           onReject={handleRejectInvoice}
         />
       )}
-      
+
       {/* Invoice Upload Modal */}
       {showUploadModal && (
-        <InvoiceUploadModal 
+        <InvoiceUploadModal
           onClose={() => setShowUploadModal(false)}
           onUpload={handleUploadInvoice}
         />
       )}
-      
+
       {/* Invoice Settings Modal */}
       {showSettingsModal && (
-        <InvoiceSettingsModal 
+        <InvoiceSettingsModal
           onClose={() => setShowSettingsModal(false)}
           onCreateAnyway={() => {
             setShowSettingsModal(false);

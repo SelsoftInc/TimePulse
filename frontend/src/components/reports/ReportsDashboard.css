@@ -541,6 +541,8 @@ body.dark-mode .form-select {
   position: relative;
   z-index: 10;
   overflow: visible;
+  width: auto;
+  min-width: 120px;
 }
 
 /* Action buttons */
@@ -1000,8 +1002,10 @@ body.dark-mode .form-select {
 /* Actions Dropdown Button Styles - Hubstaff Design */
 .actions-dropdown {
   position: relative;
-  display: inline-block;
+  display: inline-flex;
+  justify-content: flex-end;
   z-index: 10;
+  width: auto;
 }
 
 .actions-dropdown.active {
@@ -1012,19 +1016,22 @@ body.dark-mode .form-select {
   background-color: #f8f9fa;
   border: 1px solid #dee2e6;
   border-radius: 6px;
-  padding: 7px 14px;
+  padding: 6px 12px;
   font-size: 14px;
   font-weight: 500;
   color: #495057;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   transition: all 0.15s ease;
   white-space: nowrap;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  line-height: 1.5;
+  line-height: 1.4;
   user-select: none;
+  width: fit-content;
+  min-width: fit-content;
+  box-sizing: border-box;
 }
 
 .btn-actions:hover {

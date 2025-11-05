@@ -4,8 +4,19 @@
 table tbody tr,
 table tbody tr td:last-child,
 .table tbody tr,
-.table tbody tr td:last-child {
+.table tbody tr td:last-child,
+.nk-tb-item,
+.nk-tb-col-tools {
   position: relative;
+  overflow: visible !important;
+}
+
+/* Ensure table wrappers don't clip dropdowns */
+.nk-tb-list,
+.nk-tb-orders,
+.card-inner,
+.card-inner-group {
+  overflow: visible !important;
 }
 
 /* Dropdown container */
@@ -47,13 +58,13 @@ table tbody tr td:last-child,
 /* Dropdown menu */
 .dropdown-menu {
   position: absolute;
-  top: 100%;
+  top: calc(100% + 4px);
   right: 0;
-  z-index: 9999;
+  z-index: 99999 !important;
   display: none;
   min-width: 160px;
   padding: 8px 0;
-  margin: 4px 0 0;
+  margin: 0;
   font-size: 14px;
   color: #364a63;
   text-align: left;
@@ -61,8 +72,21 @@ table tbody tr td:last-child,
   background-color: #fff;
   background-clip: padding-box;
   border: 1px solid #dbdfea;
-  border-radius: 4px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  border-radius: 6px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+  transform-origin: top right;
+  animation: dropdownFadeIn 0.15s ease-out;
+}
+
+@keyframes dropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Dropdown menu that opens upward when near bottom of screen */

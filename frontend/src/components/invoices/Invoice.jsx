@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from "react";
-import InvoiceSettingsModal from '../common/InvoiceSettingsModal';
-import axios from 'axios';
-import { API_BASE } from '../../config/api';
+import InvoiceSettingsModal from "../common/InvoiceSettingsModal";
+import InvoicePDFPreviewModal from '../common/InvoicePDFPreviewModal';
+import axios from "axios";
+import { API_BASE } from "../../config/api";
 import "./Invoice.css";
+import '../common/ActionsDropdown.css';
 
 // Utility function for status display
 const getStatusDisplay = (status) => {
@@ -700,17 +702,23 @@ const DiscrepancyMatching = ({ discrepancy }) => {
     </div>
   );
 };
-// Main Invoice Component
+
 const Invoice = () => {
   const [invoices, setInvoices] = useState([]);
   const [selectedInvoice, setSelectedInvoice] = useState(null);
-  const [showUploadModal, setShowUploadModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
-  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [showUploadModal, setShowUploadModal] = useState(false);
   const [filterStatus, setFilterStatus] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("invoices");
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [invoiceSettings, setInvoiceSettings] = useState(null);
+  const [openActionsId, setOpenActionsId] = useState(null);
+  const [actionsType, setActionsType] = useState(null);
+  const [showPDFModal, setShowPDFModal] = useState(false);
+  const [selectedInvoiceForPDF, setSelectedInvoiceForPDF] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
 
   // Sample discrepancy data
   const discrepancyData = {
@@ -726,9 +734,20 @@ const Invoice = () => {
   };
 
   useEffect(() => {
+    console.log('🚀 Invoice component mounted');
     loadInvoiceSettings();
     fetchInvoices();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Refetch when filter changes
+  useEffect(() => {
+    if (filterStatus) {
+      console.log('🔄 Filter changed to:', filterStatus);
+      fetchInvoices();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filterStatus]);
 
   // Load invoice settings
   const loadInvoiceSettings = async () => {
@@ -742,37 +761,123 @@ const Invoice = () => {
     }
   };
 
-  // Fetch invoices from API
+  // Fetch invoices from API (using reports endpoint - exactly like Reports module)
   const fetchInvoices = async () => {
+    console.log('🔄 fetchInvoices called');
     try {
-      const tenantId = localStorage.getItem("tenantId");
-      if (!tenantId) {
-        console.error("No tenantId found");
+      // Get user info from localStorage (EXACTLY like Reports module)
+      const userInfoStr = localStorage.getItem("user");
+      console.log('📦 Raw user string from localStorage:', userInfoStr ? 'Found' : 'NOT FOUND');
+      
+      if (!userInfoStr) {
+        console.error("❌ No user information found in localStorage");
+        console.error("💡 User needs to log in");
+        setInvoices([]);
         return;
       }
 
-      const response = await axios.get(`${API_BASE}/api/invoices`, {
-        params: { tenantId, status: filterStatus !== 'all' ? filterStatus : undefined }
+      const userInfo = JSON.parse(userInfoStr);
+      console.log('👤 Parsed user info:', userInfo);
+      console.log('🔑 TenantId:', userInfo.tenantId);
+      
+      if (!userInfo.tenantId) {
+        console.error("❌ No tenantId in user info");
+        setInvoices([]);
+        return;
+      }
+
+      // Set date range (last 6 months)
+      const now = new Date();
+      const startDate = new Date(now.getFullYear(), now.getMonth() - 6, 1);
+      const endDate = now;
+      
+      console.log('📅 Date range:', {
+        start: startDate.toISOString(),
+        end: endDate.toISOString()
       });
 
-      if (response.data.success) {
-        const formattedInvoices = response.data.invoices.map((inv) => ({
-          id: inv.id,
-          invoiceNumber: inv.invoiceNumber,
-          vendor: inv.vendor,
-          week: inv.week,
-          total: inv.total,
-          status: inv.status.charAt(0).toUpperCase() + inv.status.slice(1),
-          lineItems: inv.lineItems || [],
-          attachments: inv.attachments || [],
-          discrepancies: inv.discrepancies,
-          notes: inv.notes,
-        }));
+      // Build URL with query params (EXACTLY like Reports module)
+      const apiUrl = `${API_BASE}/api/reports/invoices`;
+      const queryParams = `tenantId=${userInfo.tenantId}&startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`;
+      const fullUrl = `${apiUrl}?${queryParams}`;
+      
+      console.log('🌐 Full API URL:', fullUrl);
+
+      // Headers (EXACTLY like Reports module)
+      const headers = {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      };
+      
+      console.log('🔐 Headers:', { ...headers, Authorization: 'Bearer [HIDDEN]' });
+
+      // Use fetch (EXACTLY like Reports module)
+      console.log('📡 Making fetch request...');
+      const response = await fetch(fullUrl, { headers });
+      
+      console.log('📥 Response status:', response.status);
+      console.log('📥 Response ok:', response.ok);
+
+      if (!response.ok) {
+        throw new Error(`API request failed with status ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('📊 Response data:', data);
+
+      if (data.success && data.data) {
+        const invoiceData = data.data;
+        console.log('✅ API Success! Invoices count:', invoiceData.length);
+        console.log('📦 Received invoices:', invoiceData);
+        
+        if (invoiceData.length === 0) {
+          console.warn('⚠️ No invoices in response');
+          setInvoices([]);
+          return;
+        }
+        
+        // Format invoices
+        const formattedInvoices = invoiceData.map((inv, index) => {
+          console.log(`🔄 Formatting invoice ${index + 1}:`, inv.invoiceNumber);
+          
+          // Calculate week from invoice date
+          const invoiceDate = new Date(inv.issueDate || inv.createdAt);
+          const weekStart = new Date(invoiceDate);
+          weekStart.setDate(invoiceDate.getDate() - invoiceDate.getDay());
+          const weekEnd = new Date(weekStart);
+          weekEnd.setDate(weekStart.getDate() + 6);
+          
+          const week = `${weekStart.toLocaleDateString('en-US', { month: 'short', day: '2-digit' })} - ${weekEnd.toLocaleDateString('en-US', { month: 'short', day: '2-digit' })}`;
+          
+          return {
+            id: inv.id,
+            invoiceNumber: inv.invoiceNumber,
+            vendor: inv.clientName || 'N/A',
+            week: week,
+            issueDate: inv.issueDate || inv.createdAt,
+            createdAt: inv.createdAt,
+            total: parseFloat(inv.amount) || 0,
+            status: inv.status || 'Draft',
+            lineItems: [],
+            attachments: [],
+            discrepancies: null,
+            notes: '',
+            hours: inv.totalHours || 0,
+          };
+        });
+        
+        console.log('✅ Formatted invoices:', formattedInvoices);
+        console.log('📊 Setting', formattedInvoices.length, 'invoices to state');
         setInvoices(formattedInvoices);
+      } else {
+        console.warn('⚠️ API returned success:false or no data');
+        console.log('Full response:', data);
+        setInvoices([]);
       }
     } catch (error) {
-      console.error("Error fetching invoices:", error);
-      // Fallback to empty array on error
+      console.error("❌ Error fetching invoices:", error);
+      console.error("❌ Error message:", error.message);
+      console.error("❌ Error stack:", error.stack);
       setInvoices([]);
     }
   };
@@ -788,10 +893,56 @@ const Invoice = () => {
     return matchesStatus && matchesSearch;
   });
 
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredInvoices.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedInvoices = filteredInvoices.slice(startIndex, endIndex);
+
+  // Pagination handlers
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  const handlePreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filterStatus, searchTerm]);
+
   const handleViewInvoice = (invoice) => {
     setSelectedInvoice(invoice);
     setShowDetailModal(true);
   };
+
+  const toggleActions = (invoiceId, type = 'invoice') => {
+    if (openActionsId === invoiceId && actionsType === type) {
+      setOpenActionsId(null);
+      setActionsType(null);
+    } else {
+      setOpenActionsId(invoiceId);
+      setActionsType(type);
+    }
+  };
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = () => {
+      if (openActionsId) {
+        setOpenActionsId(null);
+        setActionsType(null);
+      }
+    };
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [openActionsId]);
 
   const handleApproveInvoice = (invoiceId, notes) => {
     setInvoices(
@@ -957,47 +1108,50 @@ const Invoice = () => {
 
                   {activeTab === "invoices" ? (
                     <div className="card-inner p-0">
-                      <div className="nk-tb-list nk-tb-ulist">
+                      <div className="nk-tb-list nk-tb-orders">
                         <div className="nk-tb-item nk-tb-head">
                           <div className="nk-tb-col">
-                            <span className="sub-text">Invoice #</span>
+                            <span>Invoice #</span>
+                          </div>
+                          <div className="nk-tb-col tb-col-md">
+                            <span>Vendor</span>
+                          </div>
+                          <div className="nk-tb-col tb-col-md">
+                            <span>Week</span>
+                          </div>
+                          <div className="nk-tb-col tb-col-md">
+                            <span>Issue Date</span>
+                          </div>
+                          <div className="nk-tb-col tb-col-md">
+                            <span>Hours</span>
                           </div>
                           <div className="nk-tb-col">
-                            <span className="sub-text">Vendor</span>
+                            <span>Amount</span>
                           </div>
                           <div className="nk-tb-col">
-                            <span className="sub-text">Week</span>
+                            <span>Status</span>
                           </div>
-                          <div className="nk-tb-col">
-                            <span className="sub-text">Issue Date</span>
-                          </div>
-                          <div className="nk-tb-col">
-                            <span className="sub-text">Total</span>
-                          </div>
-                          <div className="nk-tb-col">
-                            <span className="sub-text">Status</span>
-                          </div>
-                          <div className="nk-tb-col nk-tb-col-tools text-right">
-                            <span className="sub-text">Actions</span>
+                          <div className="nk-tb-col nk-tb-col-tools text-end">
+                            <span className="sub-text">ACTIONS</span>
                           </div>
                         </div>
 
-                        {filteredInvoices.length > 0 ? (
-                          filteredInvoices.map((invoice) => (
+                        {paginatedInvoices.length > 0 ? (
+                          paginatedInvoices.map((invoice) => (
                             <div key={invoice.id} className="nk-tb-item">
                               <div className="nk-tb-col">
                                 <span className="tb-lead">
                                   {invoice.invoiceNumber}
                                 </span>
                               </div>
-                              <div className="nk-tb-col">
-                                <span className="tb-sub">{invoice.vendor}</span>
+                              <div className="nk-tb-col tb-col-md">
+                                <span>{invoice.vendor}</span>
                               </div>
-                              <div className="nk-tb-col">
-                                <span className="tb-sub">{invoice.week}</span>
+                              <div className="nk-tb-col tb-col-md">
+                                <span>{invoice.week}</span>
                               </div>
-                              <div className="nk-tb-col">
-                                <span className="tb-sub">
+                              <div className="nk-tb-col tb-col-md">
+                                <span>
                                   {invoice.issueDate 
                                     ? new Date(invoice.issueDate).toLocaleDateString('en-US', { 
                                         month: 'short', 
@@ -1014,44 +1168,74 @@ const Invoice = () => {
                                   }
                                 </span>
                               </div>
+                              <div className="nk-tb-col tb-col-md">
+                                <span>{invoice.hours || 0}</span>
+                              </div>
                               <div className="nk-tb-col">
-                                <span className="tb-lead">
-                                  ${invoice.total.toFixed(2)}
+                                <span className="tb-amount">
+                                  ${invoice.total.toLocaleString()}
                                 </span>
                               </div>
                               <div className="nk-tb-col">
-                                {(() => {
-                                  const statusInfo = getStatusDisplay(
-                                    invoice.status
-                                  );
-                                  return (
-                                    <span
-                                      className={`badge badge-${statusInfo.class} d-inline-flex align-items-center`}
-                                    >
-                                      <i
-                                        className={`${statusInfo.icon} me-1`}
-                                        style={{ fontSize: "12px" }}
-                                      ></i>
-                                      {statusInfo.text}
-                                    </span>
-                                  );
-                                })()}
+                                <span
+                                  className={`badge bg-outline-${
+                                    invoice.status === "Paid" || invoice.status === "Active"
+                                      ? "success"
+                                      : invoice.status === "Pending"
+                                      ? "warning"
+                                      : "secondary"
+                                  }`}
+                                >
+                                  {invoice.status}
+                                </span>
                               </div>
                               <div className="nk-tb-col nk-tb-col-tools">
-                                <ul className="">
-                                  <li>
-                                    <button
-                                      className="btn btn-sm btn-icon btn-trigger"
-                                      onClick={() => handleViewInvoice(invoice)}
-                                    >
-                                      {invoice.status === "Draft" ? (
-                                        <span>Edit</span>
-                                      ) : (
-                                        <span>View</span>
-                                      )}
-                                    </button>
-                                  </li>
-                                </ul>
+                                <div className="dropdown" style={{ position: 'relative' }}>
+                                  <button
+                                    className="btn btn-sm btn-outline-secondary dropdown-toggle"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      toggleActions(invoice.id, 'invoice');
+                                    }}
+                                    type="button"
+                                    ref={(el) => {
+                                      if (el && openActionsId === invoice.id) {
+                                        const rect = el.getBoundingClientRect();
+                                        const spaceBelow = window.innerHeight - rect.bottom;
+                                        if (spaceBelow < 200) {
+                                          el.nextElementSibling?.classList.add('dropup');
+                                        }
+                                      }
+                                    }}
+                                  >
+                                    Actions
+                                  </button>
+                                  {openActionsId === invoice.id && actionsType === 'invoice' && (
+                                    <div className="dropdown-menu dropdown-menu-right show">
+                                      <button
+                                        className="dropdown-item"
+                                        onClick={() => {
+                                          handleViewInvoice(invoice);
+                                          setOpenActionsId(null);
+                                          setActionsType(null);
+                                        }}
+                                      >
+                                        <i className="fas fa-eye mr-1"></i> View Details
+                                      </button>
+                                      <button
+                                        className="dropdown-item"
+                                        onClick={() => {
+                                          setSelectedInvoiceForPDF(invoice);
+                                          setShowPDFModal(true);
+                                          setOpenActionsId(null);
+                                          setActionsType(null);
+                                        }}
+                                      >
+                                        <i className="fas fa-download mr-1"></i> Download Invoice
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
                               </div>
                             </div>
                           ))
@@ -1065,6 +1249,40 @@ const Invoice = () => {
                           </div>
                         )}
                       </div>
+
+                      {/* Pagination */}
+                      {filteredInvoices.length > itemsPerPage && (
+                        <div className="card-inner">
+                          <div className="pagination-wrapper">
+                            <div className="pagination-info">
+                              Showing {startIndex + 1} to {Math.min(endIndex, filteredInvoices.length)} of {filteredInvoices.length} entries
+                            </div>
+                            <div className="pagination-controls">
+                              <button
+                                className="pagination-btn"
+                                onClick={handlePreviousPage}
+                                disabled={currentPage === 1}
+                                title="Previous page"
+                              >
+                                <i className="fas fa-chevron-left"></i>
+                              </button>
+                              <div className="pagination-pages">
+                                <span className="current-page">{currentPage}</span>
+                                <span className="page-separator">/</span>
+                                <span className="total-pages">{totalPages}</span>
+                              </div>
+                              <button
+                                className="pagination-btn"
+                                onClick={handleNextPage}
+                                disabled={currentPage === totalPages}
+                                title="Next page"
+                              >
+                                <i className="fas fa-chevron-right"></i>
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <div className="">
@@ -1107,6 +1325,17 @@ const Invoice = () => {
           onCreateAnyway={() => {
             setShowSettingsModal(false);
             setShowUploadModal(true);
+          }}
+        />
+      )}
+
+      {/* Invoice PDF Preview Modal */}
+      {showPDFModal && selectedInvoiceForPDF && (
+        <InvoicePDFPreviewModal
+          invoice={selectedInvoiceForPDF}
+          onClose={() => {
+            setShowPDFModal(false);
+            setSelectedInvoiceForPDF(null);
           }}
         />
       )}

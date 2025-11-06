@@ -311,13 +311,19 @@ router.get("/:id", async (req, res) => {
         {
           model: models.Employee,
           as: "employee",
-          attributes: ["id", "firstName", "lastName", "email"],
+          attributes: ["id", "firstName", "lastName", "email", "title", "position", "department"],
           required: false,
         },
         {
           model: models.Timesheet,
           as: "timesheet",
           required: false,
+          include: [{
+            model: models.Employee,
+            as: "employee",
+            attributes: ["id", "firstName", "lastName", "email", "title", "position", "department"],
+            required: false
+          }]
         },
         {
           model: models.User,
@@ -340,6 +346,98 @@ router.get("/:id", async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Failed to fetch invoice",
+      error: error.message,
+    });
+  }
+});
+
+// GET /api/invoices/:id/employees - Get employee details for invoice line items
+router.get("/:id/employees", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { tenantId } = req.query;
+
+    if (!tenantId) {
+      return res
+        .status(400)
+        .json({ success: false, message: "tenantId is required" });
+    }
+
+    const invoice = await models.Invoice.findOne({
+      where: { id, tenantId },
+      include: [
+        {
+          model: models.Timesheet,
+          as: "timesheet",
+          required: false,
+          include: [{
+            model: models.Employee,
+            as: "employee",
+            attributes: ["id", "firstName", "lastName", "email", "title", "position", "department", "hourlyRate"],
+            required: false
+          }]
+        },
+        {
+          model: models.Employee,
+          as: "employee",
+          attributes: ["id", "firstName", "lastName", "email", "title", "position", "department", "hourlyRate"],
+          required: false,
+        }
+      ],
+    });
+
+    if (!invoice) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Invoice not found" });
+    }
+
+    // Extract employee data from timesheet or direct employee association
+    let employeeData = null;
+    
+    if (invoice.timesheet?.employee) {
+      employeeData = {
+        id: invoice.timesheet.employee.id,
+        firstName: invoice.timesheet.employee.firstName,
+        lastName: invoice.timesheet.employee.lastName,
+        fullName: `${invoice.timesheet.employee.firstName} ${invoice.timesheet.employee.lastName}`,
+        email: invoice.timesheet.employee.email,
+        position: invoice.timesheet.employee.title || invoice.timesheet.employee.position || invoice.timesheet.employee.department || 'Position',
+        hourlyRate: invoice.timesheet.employee.hourlyRate || 45.00
+      };
+    } else if (invoice.employee) {
+      employeeData = {
+        id: invoice.employee.id,
+        firstName: invoice.employee.firstName,
+        lastName: invoice.employee.lastName,
+        fullName: `${invoice.employee.firstName} ${invoice.employee.lastName}`,
+        email: invoice.employee.email,
+        position: invoice.employee.title || invoice.employee.position || invoice.employee.department || 'Position',
+        hourlyRate: invoice.employee.hourlyRate || 45.00
+      };
+    }
+
+    // Process line items if they exist
+    let lineItemsWithEmployees = [];
+    if (invoice.lineItems && Array.isArray(invoice.lineItems)) {
+      lineItemsWithEmployees = invoice.lineItems.map(item => ({
+        ...item,
+        employeeName: item.employeeName || (employeeData ? employeeData.fullName : 'Employee Name'),
+        position: item.position || (employeeData ? employeeData.position : 'Position'),
+        hourlyRate: item.hourlyRate || item.rate || (employeeData ? employeeData.hourlyRate : 45.00)
+      }));
+    }
+
+    res.json({ 
+      success: true, 
+      employee: employeeData,
+      lineItems: lineItemsWithEmployees
+    });
+  } catch (error) {
+    console.error("❌ Error fetching invoice employees:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch invoice employees",
       error: error.message,
     });
   }

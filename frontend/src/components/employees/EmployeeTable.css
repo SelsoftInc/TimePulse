@@ -1,21 +1,37 @@
 /* Employee Table - Dedicated Styles */
 
-/* Container */
+/* Container - Force overflow visible for dropdowns */
 .employee-list-container .card {
   width: 100%;
-  overflow: hidden;
+  overflow: visible !important;
 }
 
 .employee-list-container .card-inner {
   width: 100%;
   padding: 0;
+  overflow: visible !important;
 }
 
 .employee-list-container .table-responsive {
   width: 100%;
-  overflow-x: visible;
-  overflow-y: visible;
+  overflow: visible !important;
   margin: 0;
+}
+
+/* Force all parent containers to allow overflow */
+.employee-list-container,
+.employee-list-container > *,
+.employee-list-container .nk-block,
+.employee-list-container .container-fluid,
+body:has(.employee-list-container),
+html:has(.employee-list-container) {
+  overflow: visible !important;
+}
+
+/* Ensure main content area allows overflow */
+.nk-content:has(.employee-list-container),
+.nk-wrap:has(.employee-list-container) {
+  overflow: visible !important;
 }
 
 /* Table Base */
@@ -116,13 +132,34 @@
   vertical-align: middle !important;
 }
 
+/* Allow overflow for Actions column */
+.employee-list-container .employee-table td:last-child {
+  overflow: visible !important;
+}
+
 /* Table Rows */
 .employee-list-container .employee-table tbody tr {
   transition: background-color 0.2s ease;
 }
 
-.employee-list-container .employee-table tbody tr:hover {
+.employee-list-container .employee-table tbody tr:hover:not(.dropdown-open) {
   background-color: #f5f6fa !important;
+}
+
+/* When dropdown is open, prevent hover effect */
+.employee-list-container .employee-table tbody tr.dropdown-open {
+  background-color: transparent !important;
+  position: relative;
+  z-index: 10000 !important;
+}
+
+.employee-list-container .employee-table tbody tr.dropdown-open .dropdown {
+  z-index: 10000 !important;
+}
+
+.employee-list-container .employee-table tbody tr.dropdown-open .dropdown-menu {
+  z-index: 99999 !important;
+  opacity: 1 !important;
 }
 
 /* Status Badges */
@@ -144,10 +181,13 @@
 .employee-list-container .employee-table td:last-child {
   overflow: visible !important;
   position: relative !important;
+  text-align: right !important;
+  padding-right: 16px !important;
 }
 
 .employee-list-container .employee-table .dropdown {
   position: relative !important;
+  display: inline-block !important;
 }
 
 /* Dropdown Button */
@@ -155,13 +195,96 @@
   padding: 6px 12px !important;
   font-size: 12px !important;
   white-space: nowrap !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-width: 85px !important;
+}
+
+.employee-list-container .dropdown-toggle::after {
+  margin-left: 6px !important;
+  vertical-align: middle !important;
+}
+
+/* Dropdown Menu - Ensure full visibility */
+.employee-list-container .dropdown-menu {
+  position: fixed !important;
+  top: auto !important;
+  bottom: auto !important;
+  right: auto !important;
+  left: auto !important;
+  z-index: 99999 !important;
+  min-width: 180px !important;
+  max-width: 250px !important;
+  background-color: #fff !important;
+  border: 1px solid #dbdfea !important;
+  border-radius: 4px !important;
+  box-shadow: 0 3px 12px rgba(43, 55, 72, 0.15) !important;
+  opacity: 1 !important;
+  margin: 0 !important;
+  padding: 8px 0 !important;
+  display: block !important;
+  visibility: visible !important;
+  transform: translateY(4px) !important;
+}
+
+/* Dropdown opens downward (default) */
+.employee-list-container .dropdown-menu:not(.dropup) {
+  position: absolute !important;
+  top: 100% !important;
+  right: 0 !important;
+  bottom: auto !important;
+  transform: translateY(4px) !important;
+}
+
+/* Dropdown opens upward when no space below */
+.employee-list-container .dropdown-menu.dropup {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 100% !important;
+  right: 0 !important;
+  transform: translateY(-4px) !important;
+}
+
+.employee-list-container .dropdown-menu.show {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+body.dark-mode .employee-list-container .dropdown-menu {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+/* Dropdown items */
+.employee-list-container .dropdown-item {
+  padding: 8px 16px !important;
+  color: #364a63 !important;
+  font-size: 13px !important;
+  white-space: nowrap !important;
+  cursor: pointer !important;
+}
+
+.employee-list-container .dropdown-item:hover {
+  background-color: #f5f6fa !important;
+  color: #364a63 !important;
+}
+
+body.dark-mode .employee-list-container .dropdown-item {
+  color: #e2e8f0 !important;
+}
+
+body.dark-mode .employee-list-container .dropdown-item:hover {
+  background-color: #334155 !important;
+  color: #f1f5f9 !important;
 }
 
 /* Prevent any overflow on parent containers */
 .employee-list-container {
   width: 100% !important;
   max-width: 100% !important;
-  overflow: hidden !important;
+  overflow: visible !important;
 }
 
 /* Ensure no horizontal scroll */

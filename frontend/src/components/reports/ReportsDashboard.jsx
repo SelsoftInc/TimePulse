@@ -654,7 +654,7 @@ const ReportsDashboard = () => {
                   </div>
                 </div>
                 {invoiceReportData.map((invoice) => (
-                  <div key={invoice.id} className="nk-tb-item">
+                  <div key={invoice.id} className={`nk-tb-item ${openActionsId === invoice.id ? 'dropdown-open' : ''}`}>
                     <div className="nk-tb-col">
                       <span className="tb-lead">{invoice.invoiceNumber || invoice.id}</span>
                     </div>
@@ -1124,7 +1124,7 @@ const ReportsDashboard = () => {
                     </div>
                     <div className="detail-item">
                       <label>Hours:</label>
-                      <span>{selectedInvoiceForDetails.hours || 0}</span>
+                      <span>{selectedInvoiceForDetails.totalHours || selectedInvoiceForDetails.hours || 0}</span>
                     </div>
                     <div className="detail-item">
                       <label>Amount:</label>

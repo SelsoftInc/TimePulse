@@ -65,58 +65,74 @@ const InvoicePDFPreviewModal = ({ invoice, onClose }) => {
         
         console.log('Fetching employee data for invoice:', invoice);
         
-        // First, try to use lineItems from invoice if available
+        // Use new API endpoint to fetch employee details for invoice
+        if (invoice?.id) {
+          try {
+            const response = await fetch(
+              `${API_BASE}/api/invoices/${invoice.id}/employees?tenantId=${tenantId}`,
+              {
+                headers: {
+                  'Authorization': `Bearer ${token}`,
+                  'Content-Type': 'application/json'
+                }
+              }
+            );
+            
+            if (response.ok) {
+              const data = await response.json();
+              console.log('Employee data from API:', data);
+              
+              if (data.success && data.lineItems && data.lineItems.length > 0) {
+                const processedItems = data.lineItems.map(item => ({
+                  employeeName: item.employeeName || 'Employee Name',
+                  position: item.position || 'Position',
+                  hoursWorked: parseFloat(item.hours || item.hoursWorked || 0),
+                  hourlyRate: parseFloat(item.rate || item.hourlyRate || 45.00),
+                  total: parseFloat(item.amount || item.total || 0)
+                }));
+                
+                setFormData(prev => ({
+                  ...prev,
+                  lineItems: processedItems
+                }));
+                setEmployees(processedItems);
+                setLoading(false);
+                return;
+              } else if (data.success && data.employee) {
+                // Single employee data
+                const employeeItem = {
+                  employeeName: data.employee.fullName || 'Employee Name',
+                  position: data.employee.position || 'Position',
+                  hoursWorked: parseFloat(invoice.hours || 0),
+                  hourlyRate: parseFloat(data.employee.hourlyRate || 45.00),
+                  total: parseFloat(invoice.totalAmount || invoice.total || 0)
+                };
+                
+                setFormData(prev => ({
+                  ...prev,
+                  lineItems: [employeeItem]
+                }));
+                setEmployees([employeeItem]);
+                setLoading(false);
+                return;
+              }
+            }
+          } catch (err) {
+            console.error('Error fetching employee data from new API:', err);
+          }
+        }
+        
+        // Fallback: try to use lineItems from invoice if available
         if (invoice?.lineItems && Array.isArray(invoice.lineItems) && invoice.lineItems.length > 0) {
           console.log('Using invoice lineItems:', invoice.lineItems);
           
-          // Fetch employee details for each line item
-          const processedItemsPromises = invoice.lineItems.map(async (item) => {
-            let employeeName = item.employeeName || 'Employee Name';
-            let position = item.position || 'Position';
-            
-            // Parse employee name from description if not directly available
-            if (!item.employeeName && item.description) {
-              // Format: "Timesheet for FirstName LastName - Week Range"
-              const match = item.description.match(/Timesheet for (.+?) - /);
-              if (match) {
-                employeeName = match[1];
-                
-                // Try to fetch employee details by name
-                try {
-                  const empResponse = await fetch(
-                    `${API_BASE}/employees?tenantId=${tenantId}&search=${encodeURIComponent(employeeName)}`,
-                    {
-                      headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                      }
-                    }
-                  );
-                  
-                  if (empResponse.ok) {
-                    const empData = await empResponse.json();
-                    const employees = empData.employees || empData.data || [];
-                    if (employees.length > 0) {
-                      const emp = employees[0];
-                      position = emp.title || emp.position || emp.department || 'Position';
-                    }
-                  }
-                } catch (err) {
-                  console.error('Error fetching employee details:', err);
-                }
-              }
-            }
-            
-            return {
-              employeeName,
-              position,
-              hoursWorked: parseFloat(item.hours || item.hoursWorked || 0),
-              hourlyRate: parseFloat(item.rate || item.hourlyRate || 45.00),
-              total: parseFloat(item.amount || item.total || 0)
-            };
-          });
-          
-          const processedItems = await Promise.all(processedItemsPromises);
+          const processedItems = invoice.lineItems.map(item => ({
+            employeeName: item.employeeName || 'Employee Name',
+            position: item.position || 'Position',
+            hoursWorked: parseFloat(item.hours || item.hoursWorked || 0),
+            hourlyRate: parseFloat(item.rate || item.hourlyRate || 45.00),
+            total: parseFloat(item.amount || item.total || 0)
+          }));
           
           setFormData(prev => ({
             ...prev,

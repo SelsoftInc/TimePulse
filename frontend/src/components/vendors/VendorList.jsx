@@ -203,7 +203,7 @@ const VendorList = () => {
                     </thead>
                     <tbody>
                       {paginatedVendors.map((vendor) => (
-                        <tr key={vendor.id}>
+                        <tr key={vendor.id} className={openMenuId === vendor.id ? 'dropdown-open' : ''}>
                           <td>
                             <Link
                               to={`/${subdomain}/vendors/${vendor.id}`}

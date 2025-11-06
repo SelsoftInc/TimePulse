@@ -1,10 +1,15 @@
 /* Invoice PDF Preview Modal Styles */
 
 .invoice-pdf-modal {
-  max-width: 1800px;
-  width: 96%;
-  max-height: 94vh;
+  max-width: 98vw;
+  width: 98vw;
+  max-height: 95vh;
   overflow-y: auto;
+}
+
+.invoice-pdf-modal .modal-content {
+  width: 100%;
+  max-width: 98vw;
 }
 
 .invoice-pdf-modal .modal-body {

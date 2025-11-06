@@ -127,8 +127,48 @@ margin-bottom: 10px;
   position: relative;
 }
 
-.table-vendors tbody tr:hover {
+.table-vendors tbody tr:hover:not(.dropdown-open) {
   background-color: #f9fafc;
+}
+
+/* When dropdown is open, prevent hover effect */
+.table-vendors tbody tr.dropdown-open {
+  background-color: transparent !important;
+  position: relative;
+  z-index: 10000 !important;
+}
+
+.table-vendors tbody tr.dropdown-open .dropdown {
+  z-index: 10000 !important;
+}
+
+.table-vendors tbody tr.dropdown-open .dropdown-menu {
+  z-index: 99999 !important;
+  opacity: 1 !important;
+  background-color: #fff !important;
+}
+
+body.dark-mode .table-vendors tbody tr.dropdown-open .dropdown-menu {
+  background-color: #1e293b !important;
+}
+
+/* Ensure dropdown menu is properly styled and visible */
+.table-vendors .dropdown-menu {
+  position: absolute !important;
+  top: 100% !important;
+  right: 0 !important;
+  z-index: 99999 !important;
+  min-width: 180px !important;
+  background-color: #fff !important;
+  border: 1px solid #dbdfea !important;
+  border-radius: 4px !important;
+  box-shadow: 0 3px 12px rgba(43, 55, 72, 0.15) !important;
+  opacity: 1 !important;
+}
+
+body.dark-mode .table-vendors .dropdown-menu {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
 }
 
 .table-vendors tbody tr:last-child td {

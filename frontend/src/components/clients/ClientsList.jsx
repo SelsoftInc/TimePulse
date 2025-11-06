@@ -259,7 +259,7 @@ const ClientsList = () => {
                   </thead>
                   <tbody>
                     {paginatedClients.map((client) => (
-                      <tr key={client.id}>
+                      <tr key={client.id} className={openMenuId === client.id ? 'dropdown-open' : ''}>
                         <td>
                           <Link
                             to={`/${subdomain}/clients/${client.id}`}

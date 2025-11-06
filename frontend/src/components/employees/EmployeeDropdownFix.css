@@ -1,0 +1,154 @@
+/**
+ * Employee Dropdown Fix - Global Override
+ * This file ensures dropdowns are always visible in all scenarios
+ */
+
+/* Override ALL possible overflow restrictions */
+body,
+html,
+#root,
+.nk-app-root,
+.nk-main,
+.nk-wrap,
+.nk-content,
+.nk-content-body,
+.container-fluid,
+.nk-block {
+  overflow: visible !important;
+}
+
+/* Specific employee container overrides */
+.employee-list-container,
+.employee-list-container *,
+.employee-list-container .card,
+.employee-list-container .card-inner,
+.employee-list-container .card-body,
+.employee-list-container .table-responsive {
+  overflow: visible !important;
+}
+
+/* Dropdown positioning - Always visible using FIXED positioning */
+.employee-list-container .dropdown {
+  position: static !important;
+  overflow: visible !important;
+}
+
+.employee-list-container .dropdown-menu {
+  position: fixed !important;
+  z-index: 999999 !important;
+  min-width: 200px !important;
+  max-width: 300px !important;
+  background-color: #ffffff !important;
+  border: 1px solid #dbdfea !important;
+  border-radius: 4px !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15) !important;
+  padding: 8px 0 !important;
+  margin: 0 !important;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+/* Ensure dropdown is always on screen */
+.employee-list-container .dropdown-menu.show {
+  position: fixed !important;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  z-index: 999999 !important;
+}
+
+/* Ensure dropdown is visible when shown */
+.employee-list-container .dropdown-menu.show {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+/* Dropdown items */
+.employee-list-container .dropdown-item {
+  padding: 10px 16px !important;
+  color: #364a63 !important;
+  font-size: 13px !important;
+  white-space: nowrap !important;
+  cursor: pointer !important;
+  transition: background-color 0.2s ease !important;
+}
+
+.employee-list-container .dropdown-item:hover {
+  background-color: #f5f6fa !important;
+  color: #364a63 !important;
+}
+
+.employee-list-container .dropdown-item i {
+  margin-right: 8px !important;
+  width: 16px !important;
+  text-align: center !important;
+}
+
+/* Dark mode support */
+body.dark-mode .employee-list-container .dropdown-menu {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+body.dark-mode .employee-list-container .dropdown-item {
+  color: #e2e8f0 !important;
+}
+
+body.dark-mode .employee-list-container .dropdown-item:hover {
+  background-color: #334155 !important;
+  color: #f1f5f9 !important;
+}
+
+/* Prevent table row from clipping dropdown */
+.employee-list-container .employee-table tbody tr {
+  position: relative !important;
+  overflow: visible !important;
+}
+
+.employee-list-container .employee-table tbody tr td {
+  overflow: visible !important;
+}
+
+.employee-list-container .employee-table tbody tr td:last-child {
+  overflow: visible !important;
+  position: relative !important;
+}
+
+/* Ensure Actions button is properly styled */
+.employee-list-container .dropdown-toggle {
+  padding: 6px 12px !important;
+  font-size: 12px !important;
+  white-space: nowrap !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-width: 85px !important;
+  cursor: pointer !important;
+}
+
+.employee-list-container .dropdown-toggle::after {
+  margin-left: 6px !important;
+  vertical-align: middle !important;
+}
+
+/* Remove any max-height restrictions */
+.employee-list-container .dropdown-menu {
+  max-height: none !important;
+  overflow-y: visible !important;
+}
+
+/* Ensure dropdown stays on top of everything */
+.employee-list-container tbody tr.dropdown-open {
+  z-index: 10000 !important;
+  position: relative !important;
+}
+
+.employee-list-container tbody tr.dropdown-open .dropdown {
+  z-index: 10001 !important;
+}
+
+.employee-list-container tbody tr.dropdown-open .dropdown-menu {
+  z-index: 999999 !important;
+}

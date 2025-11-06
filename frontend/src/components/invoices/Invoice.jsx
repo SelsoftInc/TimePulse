@@ -968,6 +968,63 @@ const Invoice = () => {
     setShowUploadModal(false);
   };
 
+  // Fetch full invoice details before opening PDF modal
+  const handleDownloadInvoice = async (invoice) => {
+    try {
+      const tenantId = JSON.parse(localStorage.getItem("user"))?.tenantId;
+      const token = localStorage.getItem("token");
+      
+      console.log('Fetching full invoice details for:', invoice.id);
+      
+      // Fetch full invoice details from backend
+      const response = await fetch(
+        `${API_BASE}/api/invoices/${invoice.id}?tenantId=${tenantId}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Full invoice data:', data);
+        
+        if (data.success && data.invoice) {
+          // Merge the full invoice data with the existing invoice
+          const fullInvoice = {
+            ...invoice,
+            ...data.invoice,
+            lineItems: data.invoice.lineItems || [],
+            clientName: data.invoice.clientName || invoice.vendor,
+            vendorName: data.invoice.vendorName || invoice.vendor
+          };
+          
+          setSelectedInvoiceForPDF(fullInvoice);
+          setShowPDFModal(true);
+        } else {
+          // If API fails, use the basic invoice data
+          setSelectedInvoiceForPDF(invoice);
+          setShowPDFModal(true);
+        }
+      } else {
+        // If API fails, use the basic invoice data
+        console.warn('Failed to fetch full invoice details, using basic data');
+        setSelectedInvoiceForPDF(invoice);
+        setShowPDFModal(true);
+      }
+    } catch (error) {
+      console.error('Error fetching invoice details:', error);
+      // If error, use the basic invoice data
+      setSelectedInvoiceForPDF(invoice);
+      setShowPDFModal(true);
+    } finally {
+      setOpenActionsId(null);
+      setActionsType(null);
+    }
+  };
+
   // Check if invoice settings are configured
   const isInvoiceSettingsConfigured = () => {
     if (!invoiceSettings) return false;
@@ -1138,7 +1195,7 @@ const Invoice = () => {
 
                         {paginatedInvoices.length > 0 ? (
                           paginatedInvoices.map((invoice) => (
-                            <div key={invoice.id} className="nk-tb-item">
+                            <div key={invoice.id} className={`nk-tb-item ${openActionsId === invoice.id && actionsType === 'invoice' ? 'dropdown-open' : ''}`}>
                               <div className="nk-tb-col">
                                 <span className="tb-lead">
                                   {invoice.invoiceNumber}
@@ -1224,12 +1281,7 @@ const Invoice = () => {
                                       </button>
                                       <button
                                         className="dropdown-item"
-                                        onClick={() => {
-                                          setSelectedInvoiceForPDF(invoice);
-                                          setShowPDFModal(true);
-                                          setOpenActionsId(null);
-                                          setActionsType(null);
-                                        }}
+                                        onClick={() => handleDownloadInvoice(invoice)}
                                       >
                                         <i className="fas fa-download mr-1"></i> Download Invoice
                                       </button>

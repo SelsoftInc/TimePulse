@@ -1,10 +1,16 @@
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from functools import lru_cache
 from typing import List
 
 
 class Settings(BaseSettings):
     """Application configuration settings"""
+    
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        case_sensitive=True,
+        extra="ignore"  # Ignore extra fields in .env file
+    )
     
     # Application
     APP_NAME: str = "Timesheet Generator API"
@@ -53,10 +59,6 @@ class Settings(BaseSettings):
     API_KEY: str | None = None
     LLM_MODEL_ID: str | None = None
     LLM_API_URL: str | None = None
-    
-    class Config:
-        env_file = ".env"
-        case_sensitive = True
     
     @property
     def allowed_extensions_list(self) -> List[str]:

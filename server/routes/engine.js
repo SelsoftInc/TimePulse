@@ -246,21 +246,61 @@ router.post('/upload-and-process', (req, res) => {
 });
 
 /**
+ * GET /
+ * Engine API information
+ */
+router.get('/', (req, res) => {
+  res.json({
+    service: 'TimePulse Engine API',
+    version: '1.0.0',
+    description: 'Timesheet processing and AI analysis service',
+    endpoints: {
+      health: '/api/engine/health',
+      extractTimesheet: '/api/engine/extract-timesheet (POST)',
+      uploadAndProcess: '/api/engine/upload-and-process (POST)'
+    },
+    python_engine_url: PYTHON_ENGINE_URL,
+    timestamp: new Date().toISOString()
+  });
+});
+
+/**
  * GET /health
  * Engine health check
  */
-router.get('/health', (req, res) => {
-  res.json({
-    status: 'healthy',
-    service: 'TimePulse Engine (Node.js)',
-    features: {
-      file_upload: true,
-      text_extraction: true,
-      ai_processing: !!openai,
-      supported_formats: ['PDF', 'DOCX', 'DOC', 'Images', 'Text']
-    },
-    timestamp: new Date().toISOString()
-  });
+router.get('/health', async (req, res) => {
+  try {
+    // Check if Python engine is available
+    let pythonEngineAvailable = false;
+    try {
+      const healthCheck = await axios.get(`${PYTHON_ENGINE_URL}/health`, { timeout: 2000 });
+      pythonEngineAvailable = healthCheck.status === 200;
+    } catch (error) {
+      pythonEngineAvailable = false;
+    }
+
+    res.json({
+      status: 'healthy',
+      service: 'TimePulse Engine (Node.js)',
+      python_engine: {
+        url: PYTHON_ENGINE_URL,
+        available: pythonEngineAvailable
+      },
+      features: {
+        file_upload: true,
+        text_extraction: true,
+        ai_processing: pythonEngineAvailable,
+        supported_formats: ['PDF', 'DOCX', 'DOC', 'Images', 'Text']
+      },
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: 'error',
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
 });
 
 module.exports = router;

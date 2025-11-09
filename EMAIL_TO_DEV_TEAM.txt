@@ -1,0 +1,72 @@
+Subject: AWS Deployment Summary - TimePulse Application
+
+Hi Dev Team,
+
+I've completed the AWS infrastructure deployment for the TimePulse application. Here's a summary of what has been deployed:
+
+✅ DEPLOYED SERVICES:
+
+1. Frontend (AWS Amplify - Ohio)
+   - URL: https://main.dolfu0p2owxyr.amplifyapp.com
+   - Status: Running
+   - Auto-deploys from GitHub main branch
+
+2. Backend API (AWS App Runner - Virginia)
+   - URL: https://zewunzistm.us-east-1.awsapprunner.com
+   - Status: Running
+   - Connected to RDS PostgreSQL database
+
+3. Database (AWS RDS PostgreSQL - Virginia)
+   - Endpoint: timepulse-cluster-instance-1.chb4yd9ykrnf.us-east-1.rds.amazonaws.com
+   - Status: Available
+   - Database: timepulse_db
+
+4. Container Registry (AWS ECR - Virginia)
+   - Repository: timepulse-engine
+   - Status: Created
+   - Docker image pushed (linux/amd64)
+
+⚠️ IN PROGRESS:
+
+5. Python Engine (AWS App Runner - Virginia)
+   - URL: https://sr2pid5pt9.us-east-1.awsapprunner.com
+   - Status: Deployment in progress
+   - Issue: Container startup failure (being investigated)
+   - Action: Rebuilt image for correct architecture, debugging startup issues
+
+🔧 ISSUES RESOLVED:
+
+1. Fixed Docker image architecture mismatch (ARM64 → linux/amd64)
+2. Created IAM role for ECR access (AppRunnerECRAccessRole)
+3. Configured environment variables for all services
+4. Set up CORS for cross-region communication
+
+📋 NEXT STEPS:
+
+1. Debug Python Engine container startup (checking CloudWatch logs)
+2. Update backend PYTHON_ENGINE_URL once Python Engine is running
+3. End-to-end testing of timesheet extraction functionality
+
+📊 SERVICE DETAILS:
+
+- AWS Account: 727044518907
+- Primary Region: us-east-1 (Virginia)
+- Frontend Region: us-east-2 (Ohio)
+- All service ARNs and configuration details are documented in AWS_DEPLOYMENT_EMAIL.md
+
+🔗 QUICK LINKS:
+
+- Frontend: https://main.dolfu0p2owxyr.amplifyapp.com
+- Backend API: https://zewunzistm.us-east-1.awsapprunner.com
+- Backend Health: https://zewunzistm.us-east-1.awsapprunner.com/health
+
+For detailed information, please refer to:
+- AWS_DEPLOYMENT_EMAIL.md (complete deployment summary)
+- AWS_DEPLOYMENT_STATUS.md (current status)
+- AWS_CLI_DEPLOYMENT.md (CLI commands reference)
+
+Let me know if you have any questions or need additional information.
+
+Thanks,
+Selvakumar
+

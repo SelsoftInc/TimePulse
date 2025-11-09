@@ -1,9 +1,24 @@
 /* Horizontal scrollbar for tables */
 .table-responsive {
-  overflow-x: auto;
+  position: relative;
+  width: 100%;
   -webkit-overflow-scrolling: touch;
   border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Allow dropdowns to overflow the table container */
+.table-responsive table {
+  width: 100%;
+  table-layout: auto;
+  border-collapse: collapse;
+}
+
+.table-responsive tbody tr {
+  position: relative;
+}
+
+.table-responsive tbody tr td:last-child {
+  position: relative;
 }
 
 .table-responsive table {

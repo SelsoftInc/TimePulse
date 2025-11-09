@@ -1,0 +1,270 @@
+/* Actions Dropdown Styling - Consistent across all modules */
+
+/* Ensure table containers allow dropdown overflow */
+table tbody tr,
+table tbody tr td:last-child,
+.table tbody tr,
+.table tbody tr td:last-child,
+.nk-tb-item,
+.nk-tb-col-tools {
+  position: relative;
+  overflow: visible !important;
+}
+
+/* Ensure table wrappers don't clip dropdowns */
+.nk-tb-list,
+.nk-tb-orders,
+.card-inner,
+.card-inner-group {
+  overflow: visible !important;
+}
+
+/* Dropdown container */
+.dropdown {
+  position: relative;
+  display: inline-block;
+  z-index: 100;
+}
+
+/* Actions button with chevron */
+.btn.dropdown-toggle,
+.btn-sm.dropdown-toggle {
+  position: relative;
+  padding-right: 32px !important;
+  min-width: 90px;
+  text-align: left;
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Chevron icon after Actions text */
+.btn.dropdown-toggle::after {
+  content: '';
+  display: inline-block;
+  width: 0;
+  height: 0;
+  margin-left: 8px;
+  vertical-align: middle;
+  border-top: 4px solid currentColor;
+  border-right: 4px solid transparent;
+  border-left: 4px solid transparent;
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+/* Dropdown menu */
+.dropdown-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 99999 !important;
+  display: none;
+  min-width: 160px;
+  padding: 8px 0;
+  margin: 0;
+  font-size: 14px;
+  color: #364a63;
+  text-align: left;
+  list-style: none;
+  background-color: #fff;
+  background-clip: padding-box;
+  border: 1px solid #dbdfea;
+  border-radius: 6px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+  transform-origin: top right;
+  animation: dropdownFadeIn 0.15s ease-out;
+}
+
+@keyframes dropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Dropdown menu that opens upward when near bottom of screen */
+.dropdown-menu.dropup {
+  top: auto;
+  bottom: 100%;
+  margin: 0 0 4px;
+}
+
+.dropdown-menu.show {
+  display: block;
+}
+
+.dropdown-menu-right {
+  right: 0;
+  left: auto;
+}
+
+/* Dropdown items */
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 8px 16px;
+  clear: both;
+  font-weight: 400;
+  color: #364a63;
+  text-align: inherit;
+  white-space: nowrap;
+  background-color: transparent;
+  border: 0;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.dropdown-item:hover,
+.dropdown-item:focus {
+  color: #1c2b46;
+  background-color: #f5f6fa;
+  text-decoration: none;
+}
+
+.dropdown-item.text-danger {
+  color: #e85347;
+}
+
+.dropdown-item.text-danger:hover {
+  color: #fff;
+  background-color: #e85347;
+}
+
+.dropdown-item i,
+.dropdown-item .fas {
+  margin-right: 8px;
+  width: 16px;
+  text-align: center;
+}
+
+/* Dark mode support */
+body.dark-mode .dropdown-menu {
+  background-color: #1e293b;
+  border-color: #334155;
+  color: #f1f5f9;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+body.dark-mode .dropdown-item {
+  color: #f1f5f9;
+}
+
+body.dark-mode .dropdown-item:hover,
+body.dark-mode .dropdown-item:focus {
+  color: #fff;
+  background-color: #334155;
+}
+
+body.dark-mode .dropdown-item.text-danger {
+  color: #f87171;
+}
+
+body.dark-mode .dropdown-item.text-danger:hover {
+  background-color: #dc2626;
+  color: #fff;
+}
+
+/* Pagination fixes */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pagination .page-item {
+  display: inline-block;
+}
+
+.pagination .page-link {
+  position: relative;
+  display: block;
+  padding: 6px 12px;
+  margin: 0;
+  line-height: 1.5;
+  color: #526484;
+  text-decoration: none;
+  background-color: #fff;
+  border: 1px solid #dbdfea;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.pagination .page-link:hover {
+  color: #6576ff;
+  background-color: #f5f6fa;
+  border-color: #6576ff;
+}
+
+.pagination .page-item.active .page-link {
+  z-index: 3;
+  color: #fff;
+  background-color: #6576ff;
+  border-color: #6576ff;
+}
+
+.pagination .page-item.disabled .page-link {
+  color: #8094ae;
+  pointer-events: none;
+  background-color: #f5f6fa;
+  border-color: #dbdfea;
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Pagination container alignment fix */
+.card-inner .d-flex.justify-content-between {
+  align-items: center;
+  padding: 16px 20px;
+  border-top: 1px solid #dbdfea;
+}
+
+.card-inner .text-muted {
+  font-size: 13px;
+  color: #8094ae;
+}
+
+/* Dark mode pagination */
+body.dark-mode .pagination .page-link {
+  color: #cbd5e1;
+  background-color: #1e293b;
+  border-color: #334155;
+}
+
+body.dark-mode .pagination .page-link:hover {
+  color: #60a5fa;
+  background-color: #334155;
+  border-color: #60a5fa;
+}
+
+body.dark-mode .pagination .page-item.active .page-link {
+  background-color: #3b82f6;
+  border-color: #3b82f6;
+}
+
+body.dark-mode .pagination .page-item.disabled .page-link {
+  background-color: #0f172a;
+  border-color: #1e293b;
+  color: #64748b;
+}
+
+body.dark-mode .card-inner .d-flex.justify-content-between {
+  border-top-color: #334155;
+}
+
+body.dark-mode .card-inner .text-muted {
+  color: #94a3b8;
+}

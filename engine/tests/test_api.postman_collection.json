@@ -1,0 +1,154 @@
+{
+  "info": {
+    "name": "Timesheet Generator API",
+    "_postman_id": "timesheet-gen-001",
+    "description": "API collection for testing Timesheet Generator endpoints",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/health",
+          "host": ["{{base_url}}"],
+          "path": ["health"]
+        },
+        "description": "Check API health status"
+      }
+    },
+    {
+      "name": "Extract Timesheet - PNG",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "file",
+              "type": "file",
+              "src": "/path/to/timesheet.png",
+              "description": "Upload PNG timesheet"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/timesheet/extract",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "timesheet", "extract"]
+        },
+        "description": "Extract timesheet data from PNG image"
+      }
+    },
+    {
+      "name": "Extract Timesheet - PDF",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "file",
+              "type": "file",
+              "src": "/path/to/timesheet.pdf",
+              "description": "Upload PDF timesheet"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/timesheet/extract",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "timesheet", "extract"]
+        },
+        "description": "Extract timesheet data from PDF"
+      }
+    },
+    {
+      "name": "Extract Timesheet - CSV",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "file",
+              "type": "file",
+              "src": "/path/to/timesheet.csv",
+              "description": "Upload CSV timesheet"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/timesheet/extract",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "timesheet", "extract"]
+        },
+        "description": "Extract timesheet data from CSV"
+      }
+    },
+    {
+      "name": "Extract Timesheet - DOCX",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "file",
+              "type": "file",
+              "src": "/path/to/timesheet.docx",
+              "description": "Upload DOCX timesheet"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/timesheet/extract",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "timesheet", "extract"]
+        },
+        "description": "Extract timesheet data from DOCX"
+      }
+    },
+    {
+      "name": "Extract Timesheet Batch",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "files",
+              "type": "file",
+              "src": "/path/to/timesheet1.pdf"
+            },
+            {
+              "key": "files",
+              "type": "file",
+              "src": "/path/to/timesheet2.png"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/timesheet/extract-batch",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "timesheet", "extract-batch"]
+        },
+        "description": "Extract timesheet data from multiple documents"
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000",
+      "type": "string"
+    }
+  ]
+}

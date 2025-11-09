@@ -166,12 +166,24 @@ class NotificationService {
           model: User,
           as: "user",
           attributes: ["id", "firstName", "lastName"],
+          required: false,
         },
       ],
     });
 
-    if (!employee || !employee.user) {
-      throw new Error("Employee or user not found");
+    // If employee not found, try to get user directly
+    let userId = null;
+    if (employee && employee.user) {
+      userId = employee.user.id;
+    } else {
+      // Try to get user directly if employee record doesn't exist
+      const user = await User.findByPk(employeeId);
+      if (user) {
+        userId = user.id;
+      } else {
+        console.warn(`⚠️ User not found for employeeId: ${employeeId}`);
+        return null; // Don't throw error, just return null
+      }
     }
 
     const notificationTemplates = {
@@ -216,7 +228,7 @@ class NotificationService {
 
     return await this.createNotification({
       tenantId,
-      userId: employee.user.id,
+      userId: userId,
       ...template,
       metadata: {
         timesheetId: timesheetData.id,

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../../contexts/AuthContext";
+import { useTheme } from "../../contexts/ThemeContext";
 import { API_BASE } from "../../config/api";
 import ChartWidget from "./ChartWidget";
 import "./ModernDashboard.css";

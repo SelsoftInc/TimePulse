@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import "./Auth.css";
-import { API_BASE, apiFetch } from "../../config/api";
+import { API_BASE } from "../../config/api";
 import logo2 from "../../assets/images/jsTree/TimePulseLogoAuth.png";
 
 const Login = () => {
@@ -59,6 +59,12 @@ const Login = () => {
     e.preventDefault();
     setLoading(true);
     setError("");
+
+    // Check if redirected due to token expiration
+    const sessionExpired = new URLSearchParams(window.location.search).get('sessionExpired');
+    if (sessionExpired === 'true') {
+      setError("Session expired, please login again");
+    }
 
     // Handle remember me functionality
     if (rememberMe) {
@@ -145,7 +151,12 @@ const Login = () => {
           const subdomain = data.tenant?.subdomain || "selsoft";
           window.location.href = `/${subdomain}/dashboard`;
         } else {
-          setError(data.message || "Login failed");
+          // Check if error is due to token expiration
+          if (data.message && (data.message.includes('token') || data.message.includes('expired') || data.message.includes('unauthorized'))) {
+            setError("Session expired, please login again");
+          } else {
+            setError(data.message || "Login failed");
+          }
         }
       } else {
         // Try real authentication with backend
@@ -198,19 +209,44 @@ const Login = () => {
           const subdomain = data.tenant?.subdomain || "selsoft";
           window.location.href = `/${subdomain}/dashboard`;
         } else {
-          setError(
-            data.message ||
-              "Invalid credentials. Please check your username and password."
-          );
+          // Check if error is due to token expiration
+          if (data.message && (data.message.includes('token') || data.message.includes('expired') || data.message.includes('unauthorized'))) {
+            setError("Session expired, please login again");
+          } else {
+            setError(
+              data.message ||
+                "Invalid credentials. Please check your username and password."
+            );
+          }
         }
       }
     } catch (err) {
       console.error("Login error:", err);
-      setError("Login failed. Please check your connection and try again.");
+      // Check if error is due to token expiration or network issues
+      if (err.message && (err.message.includes('token') || err.message.includes('expired') || err.message.includes('unauthorized'))) {
+        setError("Session expired, please login again");
+      } else {
+        setError("Login failed. Please check your connection and try again.");
+      }
     } finally {
       setLoading(false);
     }
   };
+
+  // Add global error handler for token expiration
+  useEffect(() => {
+    const handleUnauthorized = (event) => {
+      if (event.detail && event.detail.status === 401) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        localStorage.removeItem('userInfo');
+        window.location.href = '/login?sessionExpired=true';
+      }
+    };
+
+    window.addEventListener('unauthorized', handleUnauthorized);
+    return () => window.removeEventListener('unauthorized', handleUnauthorized);
+  }, []);
 
   return (
     <div className={`auth-container ${backgroundTheme}`}>

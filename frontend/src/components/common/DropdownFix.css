@@ -1,0 +1,16 @@
+/* Fix for dropdown visibility in tables */
+
+/* Allow last column (actions column) to overflow for dropdown menus */
+.employee-table td:last-child,
+.employee-table th:last-child,
+.table-vendors td:last-child,
+.table-vendors th:last-child,
+table tbody tr td:last-child {
+  overflow: visible !important;
+  position: relative;
+}
+
+/* Ensure dropdown menus appear above table content */
+.dropdown-menu {
+  z-index: 9999 !important;
+}

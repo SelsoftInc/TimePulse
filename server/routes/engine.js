@@ -1,15 +1,19 @@
 /**
  * Engine Routes - Timesheet Processing and AI Analysis
- * Clean version with proper error handling
+ * Proxies requests to Python FastAPI engine with AWS Bedrock/Claude
  */
 
 const express = require('express');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const { OpenAI } = require('openai');
+const FormData = require('form-data');
+const axios = require('axios');
 
 const router = express.Router();
+
+// Python engine URL
+const PYTHON_ENGINE_URL = process.env.PYTHON_ENGINE_URL || 'http://localhost:8000';
 
 // Configure multer for file uploads
 const storage = multer.diskStorage({
@@ -46,48 +50,129 @@ const upload = multer({
   }
 });
 
-// Initialize OpenAI (optional)
-let openai = null;
-if (process.env.OPENAI_API_KEY) {
-  openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY
-  });
-}
-
 /**
- * Extract text from different file types
+ * POST /extract-timesheet
+ * Upload and extract timesheet data using Python engine
  */
-async function extractTextFromFile(filePath, mimeType) {
-  try {
-    if (mimeType.includes('text') || mimeType === 'text/plain') {
-      // Handle text files
-      return fs.readFileSync(filePath, 'utf8');
-    } else {
-      // For other file types, return a mock extraction for now
-      return `Mock extracted text from ${path.basename(filePath)}. File type: ${mimeType}`;
+router.post('/extract-timesheet', (req, res) => {
+  upload.single('file')(req, res, async (err) => {
+    if (err) {
+      console.error('Multer error:', err);
+      return res.status(400).json({
+        success: false,
+        error: 'File upload failed',
+        message: err.message
+      });
     }
-  } catch (error) {
-    console.error('Text extraction error:', error);
-    throw new Error(`Failed to extract text from file: ${error.message}`);
-  }
-}
+
+    try {
+      if (!req.file) {
+        return res.status(400).json({
+          success: false,
+          error: 'No file uploaded'
+        });
+      }
+
+      const { path: filePath, mimetype, originalname } = req.file;
+      
+      console.log(`📤 Forwarding file to Python engine: ${originalname} (${mimetype})`);
+
+      // Create form data to send to Python engine
+      const formData = new FormData();
+      formData.append('file', fs.createReadStream(filePath), {
+        filename: originalname,
+        contentType: mimetype
+      });
+
+      // Forward to Python FastAPI engine
+      const response = await axios.post(
+        `${PYTHON_ENGINE_URL}/api/v1/timesheet/extract`,
+        formData,
+        {
+          headers: {
+            ...formData.getHeaders()
+          },
+          maxContentLength: Infinity,
+          maxBodyLength: Infinity,
+          timeout: 120000 // 2 minute timeout
+        }
+      );
+
+      // Clean up uploaded file
+      fs.unlinkSync(filePath);
+
+      console.log(`✅ Python engine response:`, response.data);
+
+      // Return the Python engine response
+      res.json(response.data);
+
+    } catch (error) {
+      console.error('❌ Python engine error:', error.response?.data || error.message);
+      
+      // Check if it's an AWS credentials error
+      const isAwsError = error.message?.includes('security token') || 
+                        error.message?.includes('credentials') ||
+                        error.response?.data?.detail?.includes('security token');
+      
+      if (isAwsError) {
+        console.log('⚠️  AWS credentials error detected. Using fallback mock extraction...');
+        
+        // Clean up uploaded file
+        if (req.file && fs.existsSync(req.file.path)) {
+          fs.unlinkSync(req.file.path);
+        }
+        
+        // Return mock extracted data
+        const mockResponse = {
+          success: true,
+          message: "Successfully extracted 1 employee timesheet(s) (MOCK DATA - Configure AWS credentials for real extraction)",
+          data: [
+            {
+              client_id: null,
+              client_name: "Sample Client",
+              employee_name: "Sample Employee",
+              period: "Week 1",
+              week_start: null,
+              week_end: null,
+              week_hours: [
+                { day: "Mon", hours: 8.0 },
+                { day: "Tue", hours: 8.0 },
+                { day: "Wed", hours: 8.0 },
+                { day: "Thu", hours: 8.0 },
+                { day: "Fri", hours: 8.0 },
+                { day: "Sat", hours: 0.0 },
+                { day: "Sun", hours: 0.0 }
+              ],
+              total_hours: 40.0
+            }
+          ],
+          metadata: {
+            filename: req.file.originalname,
+            file_type: path.extname(req.file.originalname).replace('.', ''),
+            employees_count: 1,
+            note: "MOCK DATA - Please configure AWS credentials in engine/.env for real AI extraction"
+          }
+        };
+        
+        return res.json(mockResponse);
+      }
+      
+      // Clean up file if it exists
+      if (req.file && fs.existsSync(req.file.path)) {
+        fs.unlinkSync(req.file.path);
+      }
+
+      res.status(error.response?.status || 500).json({
+        success: false,
+        error: 'Timesheet extraction failed',
+        message: error.response?.data?.detail || error.message
+      });
+    }
+  });
+});
 
 /**
- * Process document content with AI
- */
-async function processWithAI(documentText) {
-  // Return mock data for now
-  return {
-    Entry: [{
-      Vendor_Name: "Sample Vendor",
-      Total_Hours: "40",
-      Duration: "01/20/2025 to 01/26/2025"
-    }]
-  };
-}
-
-/**
- * POST /upload-and-process
+ * POST /upload-and-process (Legacy endpoint - redirects to new endpoint)
  * Upload and process timesheet file
  */
 router.post('/upload-and-process', (req, res) => {
@@ -109,29 +194,40 @@ router.post('/upload-and-process', (req, res) => {
 
       const { path: filePath, mimetype, originalname } = req.file;
       
-      console.log(`Processing file: ${originalname} (${mimetype})`);
+      console.log(`📤 Processing file (legacy): ${originalname} (${mimetype})`);
 
-      // Extract text from the uploaded file
-      const extractedText = await extractTextFromFile(filePath, mimetype);
-      
-      if (!extractedText || extractedText.trim().length === 0) {
-        throw new Error('No text could be extracted from the file');
-      }
+      // Create form data to send to Python engine
+      const formData = new FormData();
+      formData.append('file', fs.createReadStream(filePath), {
+        filename: originalname,
+        contentType: mimetype
+      });
 
-      // Process with AI
-      const analysisResult = await processWithAI(extractedText);
+      // Forward to Python FastAPI engine
+      const response = await axios.post(
+        `${PYTHON_ENGINE_URL}/api/v1/timesheet/extract`,
+        formData,
+        {
+          headers: {
+            ...formData.getHeaders()
+          },
+          maxContentLength: Infinity,
+          maxBodyLength: Infinity,
+          timeout: 120000
+        }
+      );
 
       // Clean up uploaded file
       fs.unlinkSync(filePath);
 
-      // Return processed data in the expected format
-      res.json({
+      // Transform response to legacy format
+      const legacyResponse = {
         status: "Processed successfully",
-        results: analysisResult,
-        cost: "Total Cost (USD): $0.05",
-        extractedText: extractedText.substring(0, 500) + '...', // First 500 chars for debugging
+        results: response.data,
         filename: originalname
-      });
+      };
+
+      res.json(legacyResponse);
 
     } catch (error) {
       console.error('File processing error:', error);
@@ -150,58 +246,61 @@ router.post('/upload-and-process', (req, res) => {
 });
 
 /**
- * GET /analyze-document
- * Analyze document from URL
+ * GET /
+ * Engine API information
  */
-router.get('/analyze-document', async (req, res) => {
-  try {
-    const documentUrl = req.headers['document-url'];
-    
-    if (!documentUrl) {
-      return res.status(400).json({
-        error: 'Missing document-url header'
-      });
-    }
-
-    // Mock response
-    const mockResponse = {
-      status: "Processed successfully",
-      results: {
-        Entry: [{
-          Vendor_Name: "John Doe Consulting",
-          Total_Hours: "40",
-          Duration: "01/20/2025 to 01/26/2025"
-        }]
-      },
-      cost: "Total Cost (USD): $0.05"
-    };
-
-    res.json(mockResponse);
-  } catch (error) {
-    console.error('Document analysis error:', error);
-    res.status(500).json({
-      error: 'Document analysis failed',
-      message: error.message
-    });
-  }
+router.get('/', (req, res) => {
+  res.json({
+    service: 'TimePulse Engine API',
+    version: '1.0.0',
+    description: 'Timesheet processing and AI analysis service',
+    endpoints: {
+      health: '/api/engine/health',
+      extractTimesheet: '/api/engine/extract-timesheet (POST)',
+      uploadAndProcess: '/api/engine/upload-and-process (POST)'
+    },
+    python_engine_url: PYTHON_ENGINE_URL,
+    timestamp: new Date().toISOString()
+  });
 });
 
 /**
  * GET /health
  * Engine health check
  */
-router.get('/health', (req, res) => {
-  res.json({
-    status: 'healthy',
-    service: 'TimePulse Engine (Node.js)',
-    features: {
-      file_upload: true,
-      text_extraction: true,
-      ai_processing: !!openai,
-      supported_formats: ['PDF', 'DOCX', 'DOC', 'Images', 'Text']
-    },
-    timestamp: new Date().toISOString()
-  });
+router.get('/health', async (req, res) => {
+  try {
+    // Check if Python engine is available
+    let pythonEngineAvailable = false;
+    try {
+      const healthCheck = await axios.get(`${PYTHON_ENGINE_URL}/health`, { timeout: 2000 });
+      pythonEngineAvailable = healthCheck.status === 200;
+    } catch (error) {
+      pythonEngineAvailable = false;
+    }
+
+    res.json({
+      status: 'healthy',
+      service: 'TimePulse Engine (Node.js)',
+      python_engine: {
+        url: PYTHON_ENGINE_URL,
+        available: pythonEngineAvailable
+      },
+      features: {
+        file_upload: true,
+        text_extraction: true,
+        ai_processing: pythonEngineAvailable,
+        supported_formats: ['PDF', 'DOCX', 'DOC', 'Images', 'Text']
+      },
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: 'error',
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
 });
 
 module.exports = router;

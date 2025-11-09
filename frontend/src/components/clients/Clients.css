@@ -25,8 +25,23 @@
   font-size: 0.9375rem;
 }
 
-.table-clients tbody tr:hover {
+.table-clients tbody tr:hover:not(.dropdown-open) {
   background-color: #f9fafc;
+}
+
+.table-clients tbody tr.dropdown-open {
+  background-color: transparent !important;
+  position: relative;
+  z-index: 10000 !important;
+}
+
+.table-clients tbody tr.dropdown-open .dropdown {
+  z-index: 10000 !important;
+}
+
+.table-clients tbody tr.dropdown-open .dropdown-menu {
+  z-index: 99999 !important;
+  opacity: 1 !important;
 }
 
 .table-clients tbody tr:last-child td {

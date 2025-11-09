@@ -9,8 +9,12 @@ import ConfirmationDialog from "../common/ConfirmationDialog";
 import { useConfirmation } from "../../hooks/useConfirmation";
 import "./Employees.css";
 import "./EmployeeManagement.css";
+import "./EmployeeTable.css";
+import "./EmployeeDropdownFix.css";
 import "../common/Pagination.css";
 import "../common/TableScroll.css";
+import "../common/ActionsDropdown.css";
+import "../common/DropdownFix.css";
 import { apiFetch } from "../../config/api";
 
 const EmployeeList = () => {
@@ -367,9 +371,34 @@ const EmployeeList = () => {
         }
       );
       if (!resp.ok) throw new Error("Failed to assign vendor");
+      
+      const data = await resp.json();
+      console.log("✅ Vendor assignment response:", data);
+      
+      // Optimistically update the employee in the local state
+      if (data.employee) {
+        setEmployees(prevEmployees => 
+          prevEmployees.map(emp => 
+            emp.id === assignTarget.id 
+              ? {
+                  ...emp,
+                  vendorId: data.employee.vendorId,
+                  vendor: data.employee.vendor ? {
+                    id: data.employee.vendor.id,
+                    name: data.employee.vendor.name,
+                    category: data.employee.vendor.category
+                  } : null
+                }
+              : emp
+          )
+        );
+      }
+      
       toast.success("Vendor assigned successfully");
       closeVendorModal();
-      fetchEmployees();
+      
+      // Also fetch fresh data from server to ensure consistency
+      await fetchEmployees();
     } catch (e) {
       console.error("Error assigning vendor:", e);
       toast.error(e.message || "Failed to assign vendor");
@@ -434,9 +463,34 @@ const EmployeeList = () => {
         }
       );
       if (!resp.ok) throw new Error("Failed to assign impl partner");
+      
+      const data = await resp.json();
+      console.log("✅ Impl partner assignment response:", data);
+      
+      // Optimistically update the employee in the local state
+      if (data.employee) {
+        setEmployees(prevEmployees => 
+          prevEmployees.map(emp => 
+            emp.id === assignTarget.id 
+              ? {
+                  ...emp,
+                  implPartnerId: data.employee.implPartnerId,
+                  implPartner: data.employee.implPartner ? {
+                    id: data.employee.implPartner.id,
+                    name: data.employee.implPartner.name,
+                    specialization: data.employee.implPartner.specialization
+                  } : null
+                }
+              : emp
+          )
+        );
+      }
+      
       toast.success("Implementation Partner assigned successfully");
       closeImplPartnerModal();
-      fetchEmployees();
+      
+      // Also fetch fresh data from server to ensure consistency
+      await fetchEmployees();
     } catch (e) {
       console.error("Error assigning impl partner:", e);
       toast.error(e.message || "Failed to assign impl partner");
@@ -628,7 +682,7 @@ const EmployeeList = () => {
   ];
 
   return (
-    <div className="">
+    <div className="employee-list-container">
       <div className="container-fluid">
         <div className="nk-block-head">
           <div className="nk-block-between">
@@ -698,7 +752,7 @@ const EmployeeList = () => {
                   </thead>
                   <tbody>
                     {paginatedEmployees.map((employee) => (
-                      <tr key={employee.id}>
+                      <tr key={employee.id} className={openMenuFor === employee.id ? 'dropdown-open' : ''}>
                         <td className="table-cell">
                           <Link
                             to={`/${subdomain}/employees/${employee.id}`}
@@ -708,21 +762,17 @@ const EmployeeList = () => {
                           </Link>
                         </td>
                         <td className="table-cell">
-                          {employee.employmentType === "Subcontractor" ? (
-                            employee.vendor ? (
-                              <Link
-                                to={`/${subdomain}/vendors/${employee.vendorId}`}
-                                className="vendor-link"
-                              >
-                                {employee.vendor}
-                              </Link>
-                            ) : (
-                              <span className="text-tertiary">
-                                No vendor assigned
-                              </span>
-                            )
+                          {employee.vendor?.name ? (
+                            <Link
+                              to={`/${subdomain}/vendors/${employee.vendorId}`}
+                              className="vendor-link"
+                            >
+                              {employee.vendor.name}
+                            </Link>
                           ) : (
-                            <span className="text-tertiary">N/A</span>
+                            <span className="text-tertiary">
+                              Not assigned
+                            </span>
                           )}
                         </td>
                         <td className="table-cell">
@@ -789,8 +839,9 @@ const EmployeeList = () => {
                         </td>
                         <td className="text-right">
                           <div
-                            className="btn-group"
+                            className="dropdown"
                             data-actions-menu={employee.id}
+                            style={{ position: "relative" }}
                           >
                             <button
                               type="button"
@@ -802,13 +853,48 @@ const EmployeeList = () => {
                                     : employee.id
                                 )
                               }
+                              ref={(el) => {
+                                if (el && openMenuFor === employee.id) {
+                                  const rect = el.getBoundingClientRect();
+                                  const spaceBelow = window.innerHeight - rect.bottom;
+                                  if (spaceBelow < 250) {
+                                    el.nextElementSibling?.classList.add('dropup');
+                                  } else {
+                                    el.nextElementSibling?.classList.remove('dropup');
+                                  }
+                                }
+                              }}
                             >
                               Actions
                             </button>
                             {openMenuFor === employee.id && (
                               <div
                                 className="dropdown-menu dropdown-menu-right show"
-                                style={{ position: "absolute" }}
+                                ref={(el) => {
+                                  if (el) {
+                                    const button = el.previousElementSibling;
+                                    if (button) {
+                                      const rect = button.getBoundingClientRect();
+                                      const spaceBelow = window.innerHeight - rect.bottom;
+                                      
+                                      if (spaceBelow < 250) {
+                                        // Open upward
+                                        el.style.position = 'fixed';
+                                        el.style.bottom = `${window.innerHeight - rect.top}px`;
+                                        el.style.top = 'auto';
+                                        el.style.right = `${window.innerWidth - rect.right}px`;
+                                        el.style.left = 'auto';
+                                      } else {
+                                        // Open downward
+                                        el.style.position = 'fixed';
+                                        el.style.top = `${rect.bottom + 4}px`;
+                                        el.style.bottom = 'auto';
+                                        el.style.right = `${window.innerWidth - rect.right}px`;
+                                        el.style.left = 'auto';
+                                      }
+                                    }
+                                  }
+                                }}
                               >
                                 <Link
                                   to={`/${subdomain}/employees/${employee.id}`}

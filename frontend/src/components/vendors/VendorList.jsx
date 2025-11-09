@@ -8,6 +8,8 @@ import { useToast } from "../../contexts/ToastContext";
 import ConfirmDialog from "../common/ConfirmDialog";
 import "../common/Pagination.css";
 import "../common/TableScroll.css";
+import "../common/ActionsDropdown.css";
+import "../common/DropdownFix.css";
 
 const VendorList = () => {
   const { subdomain } = useParams();
@@ -201,7 +203,7 @@ const VendorList = () => {
                     </thead>
                     <tbody>
                       {paginatedVendors.map((vendor) => (
-                        <tr key={vendor.id}>
+                        <tr key={vendor.id} className={openMenuId === vendor.id ? 'dropdown-open' : ''}>
                           <td>
                             <Link
                               to={`/${subdomain}/vendors/${vendor.id}`}
@@ -238,14 +240,25 @@ const VendorList = () => {
                               style={{ position: "relative" }}
                             >
                               <button
-                                className="btn btn-sm btn-icon btn-trigger"
+                                className="btn btn-sm btn-outline-secondary dropdown-toggle"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   toggleMenu(vendor.id);
                                 }}
                                 type="button"
+                                ref={(el) => {
+                                  if (el && openMenuId === vendor.id) {
+                                    const rect = el.getBoundingClientRect();
+                                    const spaceBelow = window.innerHeight - rect.bottom;
+                                    if (spaceBelow < 250) {
+                                      el.nextElementSibling?.classList.add('dropup');
+                                    } else {
+                                      el.nextElementSibling?.classList.remove('dropup');
+                                    }
+                                  }
+                                }}
                               >
-                                <i className="fas fa-ellipsis-h"></i>
+                                Actions
                               </button>
                               <div
                                 className={`dropdown-menu dropdown-menu-right ${

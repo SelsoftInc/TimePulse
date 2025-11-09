@@ -5,6 +5,345 @@
   box-sizing: border-box;
 }
 
+/* Dropdown Menu Fixes */
+.dropdown {
+  position: relative;
+  z-index: 100;
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 99999 !important;
+  min-width: 180px;
+  padding: 8px 0;
+  margin: 0;
+  background-color: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 8px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+  transform-origin: top right;
+  animation: dropdownSlideIn 0.15s ease-out;
+}
+
+@keyframes dropdownSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+body.dark-mode .dropdown-menu {
+  background-color: #1e293b;
+  border-color: #334155;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+}
+
+.dropdown-menu.show {
+  display: block;
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 10px 20px;
+  clear: both;
+  font-weight: 400;
+  color: #212529;
+  text-align: left;
+  white-space: nowrap;
+  background-color: transparent;
+  border: 0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+body.dark-mode .dropdown-item {
+  color: #f1f5f9;
+}
+
+.dropdown-item:hover {
+  background-color: #f8f9fa;
+  color: #16181b;
+}
+
+body.dark-mode .dropdown-item:hover {
+  background-color: #334155;
+  color: #fff;
+}
+
+.dropdown-item i {
+  margin-right: 8px;
+  width: 16px;
+  text-align: center;
+}
+
+/* Invoice Details Modal */
+.invoice-details-modal {
+  max-width: 900px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.details-container {
+  padding: 20px;
+}
+
+.details-section {
+  margin-bottom: 30px;
+}
+
+.details-section .section-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #2c3e50;
+  margin-bottom: 15px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #3498db;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+body.dark-mode .details-section .section-title {
+  color: #f1f5f9;
+  border-bottom-color: #3b82f6;
+}
+
+.details-section .section-title i {
+  color: #3498db;
+}
+
+body.dark-mode .details-section .section-title i {
+  color: #3b82f6;
+}
+
+.details-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+}
+
+.detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.detail-item label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #7f8c8d;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+body.dark-mode .detail-item label {
+  color: #94a3b8;
+}
+
+.detail-item span {
+  font-size: 14px;
+  font-weight: 500;
+  color: #2c3e50;
+}
+
+body.dark-mode .detail-item span {
+  color: #f1f5f9;
+}
+
+.detail-item .amount {
+  font-size: 18px;
+  font-weight: 700;
+  color: #27ae60;
+}
+
+body.dark-mode .detail-item .amount {
+  color: #10b981;
+}
+
+.detail-item .status-badge {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.status-badge.active {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.status-badge.pending {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+.status-badge.paid {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.status-badge.overdue {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+body.dark-mode .status-badge.active,
+body.dark-mode .status-badge.paid {
+  background-color: #064e3b;
+  color: #6ee7b7;
+}
+
+body.dark-mode .status-badge.pending {
+  background-color: #78350f;
+  color: #fcd34d;
+}
+
+body.dark-mode .status-badge.overdue {
+  background-color: #7f1d1d;
+  color: #fca5a5;
+}
+
+.line-items-table {
+  overflow-x: auto;
+}
+
+.line-items-table table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: #fff;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+body.dark-mode .line-items-table table {
+  background-color: #1e293b;
+}
+
+.line-items-table thead {
+  background-color: #3498db;
+  color: #fff;
+}
+
+body.dark-mode .line-items-table thead {
+  background-color: #3b82f6;
+}
+
+.line-items-table th,
+.line-items-table td {
+  padding: 12px 15px;
+  text-align: left;
+  border-bottom: 1px solid #ecf0f1;
+}
+
+body.dark-mode .line-items-table th,
+body.dark-mode .line-items-table td {
+  border-bottom-color: #334155;
+}
+
+.line-items-table th {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.line-items-table td {
+  font-size: 14px;
+  color: #2c3e50;
+}
+
+body.dark-mode .line-items-table td {
+  color: #f1f5f9;
+}
+
+.line-items-table tbody tr:hover {
+  background-color: #f8f9fa;
+}
+
+body.dark-mode .line-items-table tbody tr:hover {
+  background-color: #334155;
+}
+
+.notes-content {
+  padding: 15px;
+  background-color: #f8f9fa;
+  border-left: 4px solid #3498db;
+  border-radius: 4px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #2c3e50;
+}
+
+body.dark-mode .notes-content {
+  background-color: #1e293b;
+  border-left-color: #3b82f6;
+  color: #f1f5f9;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 15px 20px;
+  border-top: 1px solid #ecf0f1;
+  background-color: #f8f9fa;
+}
+
+body.dark-mode .modal-footer {
+  border-top-color: #334155;
+  background-color: #0f172a;
+}
+
+.modal-footer .btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.modal-footer .btn-secondary {
+  background-color: #6c757d;
+  color: #fff;
+}
+
+.modal-footer .btn-secondary:hover {
+  background-color: #5a6268;
+}
+
+.modal-footer .btn-primary {
+  background-color: #3498db;
+  color: #fff;
+}
+
+.modal-footer .btn-primary:hover {
+  background-color: #2980b9;
+}
+
+body.dark-mode .modal-footer .btn-primary {
+  background-color: #3b82f6;
+}
+
+body.dark-mode .modal-footer .btn-primary:hover {
+  background-color: #2563eb;
+}
+
 .card-inne {
   padding: 0px;
 }
@@ -343,6 +682,43 @@ body.dark-mode .form-select {
   padding: 20px;
 }
 
+.card-inner.p-0 {
+  padding: 0;
+  overflow: visible !important;
+}
+
+.card-inner-group {
+  overflow: visible !important;
+}
+
+.card-bordered {
+  overflow: visible !important;
+}
+
+.card-stretch {
+  overflow: visible !important;
+}
+
+/* Ensure dropdown appears above all content */
+.nk-tb-item .dropdown {
+  position: relative;
+  z-index: 100;
+}
+
+.nk-tb-item .dropdown .dropdown-menu {
+  position: absolute;
+  z-index: 99999 !important;
+}
+
+/* Fix for invoice report table specifically */
+.nk-tb-orders.nk-tb-list {
+  overflow: visible !important;
+}
+
+.nk-tb-orders .nk-tb-item {
+  overflow: visible !important;
+}
+
 /* Grid Layout */
 .row.g-gs {
   display: flex;
@@ -362,6 +738,7 @@ body.dark-mode .form-select {
 .card-inner-group {
   display: flex;
   flex-direction: column;
+  overflow: visible;
 }
 
 .card-title-group {
@@ -450,12 +827,16 @@ body.dark-mode .form-select {
   border-collapse: collapse;
   display: table;
   table-layout: fixed;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+  position: relative;
+  overflow: visible;
   background: var(--reports-table-bg);
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   font-size: 14px;
   transition: background-color 0.3s ease;
   position: relative;
   z-index: 1;
+  overflow: visible;
 }
 
 /* Header row */
@@ -477,9 +858,30 @@ body.dark-mode .form-select {
   z-index: 1;
 }
 
-.nk-tb-item:hover {
+.nk-tb-item:hover:not(.dropdown-open) {
   background-color: var(--reports-table-row-hover);
-  z-index: 1;
+  z-index: 2;
+}
+
+/* When dropdown is open, prevent hover effect on row */
+.nk-tb-item.dropdown-open {
+  background-color: transparent !important;
+  z-index: 10000 !important;
+}
+
+/* Ensure dropdown stays on top */
+.nk-tb-item.dropdown-open .dropdown {
+  z-index: 10000 !important;
+}
+
+.nk-tb-item.dropdown-open .dropdown-menu {
+  z-index: 99999 !important;
+  opacity: 1 !important;
+  background-color: #fff !important;
+}
+
+body.dark-mode .nk-tb-item.dropdown-open .dropdown-menu {
+  background-color: #1e293b !important;
 }
 
 /* Columns (cells) */
@@ -493,7 +895,7 @@ body.dark-mode .form-select {
   color: var(--reports-text-color);
   transition: all 0.3s ease;
   position: relative;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .nk-tb-col:last-child {
@@ -531,6 +933,32 @@ body.dark-mode .form-select {
 /* Actions column */
 .nk-tb-col-tools {
   text-align: right;
+  position: relative;
+  z-index: 10;
+  overflow: visible !important;
+  width: auto;
+  min-width: 120px;
+}
+
+/* Invoice table specific fixes */
+.nk-tb-orders {
+  position: relative;
+  overflow: visible !important;
+}
+
+.nk-tb-orders .nk-tb-item {
+  position: relative;
+  overflow: visible !important;
+}
+
+.nk-tb-orders .nk-tb-col {
+  overflow: visible !important;
+}
+
+.nk-tb-orders .nk-tb-col-tools {
+  overflow: visible !important;
+  position: relative;
+  z-index: 100;
 }
 
 /* Action buttons */
@@ -985,4 +1413,236 @@ body.dark-mode .form-select {
   background-color: var(--reports-btn-hover) !important;
   border-color: var(--reports-btn-hover) !important;
   color: var(--reports-btn-text) !important;
+}
+
+/* Actions Dropdown Button Styles - Hubstaff Design */
+.actions-dropdown {
+  position: relative;
+  display: inline-flex;
+  justify-content: flex-end;
+  z-index: 10;
+  width: auto;
+}
+
+.actions-dropdown.active {
+  z-index: 10000 !important;
+  position: relative;
+}
+
+.actions-dropdown.active .dropdown-menu {
+  z-index: 99999 !important;
+  opacity: 1 !important;
+}
+
+.btn-actions {
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #495057;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  line-height: 1.4;
+  user-select: none;
+  width: fit-content;
+  min-width: fit-content;
+  box-sizing: border-box;
+}
+
+.btn-actions:hover {
+  background-color: #e9ecef;
+  border-color: #ced4da;
+}
+
+.btn-actions:active {
+  background-color: #dee2e6;
+  border-color: #adb5bd;
+}
+
+.btn-actions .icon {
+  font-size: 11px;
+  color: #6c757d;
+  transition: transform 0.15s ease;
+  margin-left: 2px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-actions:hover .icon {
+  color: #495057;
+}
+
+.btn-actions:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+/* Dark mode support for Actions button */
+body.dark-mode .btn-actions {
+  background-color: #343a40;
+  border-color: #495057;
+  color: #e9ecef;
+}
+
+body.dark-mode .btn-actions:hover {
+  background-color: #495057;
+  border-color: #5a6268;
+}
+
+body.dark-mode .btn-actions:active {
+  background-color: #5a6268;
+}
+
+body.dark-mode .btn-actions .icon {
+  color: #adb5bd;
+}
+
+body.dark-mode .btn-actions:hover .icon {
+  color: #e9ecef;
+}
+
+/* Actions Menu Dropdown - Hubstaff Design */
+.actions-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  background-color: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1), 0 4px 16px rgba(0, 0, 0, 0.08);
+  min-width: 180px;
+  max-width: 220px;
+  z-index: 9999;
+  overflow: hidden;
+  padding: 4px 0;
+  animation: dropdownFadeIn 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  margin-top: 2px;
+}
+
+@keyframes dropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.actions-menu-item {
+  width: 100%;
+  padding: 10px 16px;
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  font-weight: 400;
+  color: #212529;
+  transition: all 0.15s ease;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  line-height: 1.5;
+}
+
+.actions-menu-item:hover {
+  background-color: #f8f9fa;
+  color: #212529;
+}
+
+.actions-menu-item:active {
+  background-color: #e9ecef;
+}
+
+.actions-menu-item .icon {
+  font-size: 16px;
+  color: #6c757d;
+  width: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: color 0.15s ease;
+}
+
+.actions-menu-item span {
+  flex: 1;
+  display: inline-block;
+}
+
+.actions-menu-item:hover .icon {
+  color: #495057;
+}
+
+.actions-menu-item.danger {
+  color: #dc3545;
+}
+
+.actions-menu-item.danger .icon {
+  color: #dc3545;
+}
+
+.actions-menu-item.danger:hover {
+  background-color: #fff5f5;
+  color: #c82333;
+}
+
+.actions-menu-item.danger:hover .icon {
+  color: #c82333;
+}
+
+/* Dark mode support for Actions menu */
+body.dark-mode .actions-menu {
+  background-color: #2d3436;
+  border-color: #495057;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3), 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+body.dark-mode .actions-menu-item {
+  color: #e9ecef;
+}
+
+body.dark-mode .actions-menu-item:hover {
+  background-color: #3d4448;
+  color: #ffffff;
+}
+
+body.dark-mode .actions-menu-item:active {
+  background-color: #495057;
+}
+
+body.dark-mode .actions-menu-item .icon {
+  color: #adb5bd;
+}
+
+body.dark-mode .actions-menu-item:hover .icon {
+  color: #e9ecef;
+}
+
+body.dark-mode .actions-menu-item.danger {
+  color: #ff6b6b;
+}
+
+body.dark-mode .actions-menu-item.danger .icon {
+  color: #ff6b6b;
+}
+
+body.dark-mode .actions-menu-item.danger:hover {
+  background-color: #3d2525;
+  color: #ff5252;
+}
+
+body.dark-mode .actions-menu-item.danger:hover .icon {
+  color: #ff5252;
 }

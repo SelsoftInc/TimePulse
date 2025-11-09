@@ -1,5 +1,63 @@
 /* Employee Management Typography Overrides */
 
+/* Employee Table Structure */
+.employee-table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+}
+
+/* Column Widths - Optimized for compact display */
+.employee-table th:nth-child(1),
+.employee-table td:nth-child(1) {
+  width: 12%;
+}
+
+.employee-table th:nth-child(2),
+.employee-table td:nth-child(2) {
+  width: 10%;
+}
+
+.employee-table th:nth-child(3),
+.employee-table td:nth-child(3) {
+  width: 10%;
+}
+
+.employee-table th:nth-child(4),
+.employee-table td:nth-child(4) {
+  width: 10%;
+}
+
+.employee-table th:nth-child(5),
+.employee-table td:nth-child(5) {
+  width: 9%;
+}
+
+.employee-table th:nth-child(6),
+.employee-table td:nth-child(6) {
+  width: 8%;
+}
+
+.employee-table th:nth-child(7),
+.employee-table td:nth-child(7) {
+  width: 16%;
+}
+
+.employee-table th:nth-child(8),
+.employee-table td:nth-child(8) {
+  width: 10%;
+}
+
+.employee-table th:nth-child(9),
+.employee-table td:nth-child(9) {
+  width: 8%;
+}
+
+.employee-table th:nth-child(10),
+.employee-table td:nth-child(10) {
+  width: 7%;
+}
+
 /* Table Headers */
 .employee-table th {
   font-family: var(--font-family-primary);
@@ -9,9 +67,12 @@
   letter-spacing: var(--letter-spacing-wide);
   color: var(--color-text-secondary);
   text-transform: uppercase;
-  padding: 0.75rem 1rem;
+  padding: 0.75rem 0.5rem;
   border-bottom: 1px solid var(--color-border-primary);
   background-color: var(--color-bg-tertiary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Table Cells */
@@ -21,9 +82,23 @@
   font-weight: var(--font-weight-regular);
   line-height: var(--line-height-normal);
   color: var(--color-text-primary);
-  padding: 0.875rem 1rem;
+  padding: 0.75rem 0.5rem;
   border-bottom: 1px solid var(--color-border-primary);
   vertical-align: middle;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Allow last column (Actions) to overflow for dropdown */
+.employee-table td:last-child,
+.employee-table th:last-child {
+  /* overflow: visible;
+  position: relative; */
+}
+
+.employee-table tbody tr {
+  /* position: relative; */
 }
 
 /* Employee Names */

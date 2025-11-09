@@ -369,10 +369,47 @@ router.put("/:id", async (req, res) => {
       }
     }
 
+    // Fetch updated employee with all relationships
+    const updatedEmployee = await Employee.findOne({
+      where: { id, tenantId },
+      include: [
+        {
+          model: User,
+          as: "user",
+          attributes: ["role"],
+          required: false,
+        },
+        {
+          model: models.Client,
+          as: "client",
+          attributes: ["id", "clientName", "legalName"],
+          required: false,
+        },
+        {
+          model: models.Vendor,
+          as: "vendor",
+          attributes: ["id", "name", "category"],
+          required: false,
+        },
+        {
+          model: models.ImplementationPartner,
+          as: "implPartner",
+          attributes: ["id", "name", "specialization"],
+          required: false,
+        },
+        {
+          model: models.EmploymentType,
+          as: "employmentType",
+          attributes: ["id", "name", "description"],
+          required: false,
+        },
+      ],
+    });
+
     res.json({
       success: true,
       message: "Employee updated successfully",
-      employee,
+      employee: updatedEmployee,
     });
   } catch (error) {
     console.error("Error updating employee:", error);

@@ -81,20 +81,81 @@
   --progress-warning: #f59e0b;
   --progress-danger: #ef4444;
 
-  /* Dashboard specific */
-  --dashboard-bg: #0f172a;
-  --dashboard-card-bg: #1e293b;
-  --dashboard-card-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-  --dashboard-card-hover-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
-  --dashboard-amount-color: #f1f5f9;
-  --dashboard-info-color: #94a3b8;
-  --dashboard-title-color: #cbd5e1;
-  --dashboard-subtitle-color: #e2e8f0;
-  --dashboard-tranx-border: #334155;
-  --dashboard-tranx-hover: #334155;
-  --dashboard-chart-bg: #475569;
-  --dashboard-block-title: #f1f5f9;
-  --dashboard-block-des: #94a3b8;
+  /* Modern Dashboard specific - Light Mode */
+  --dashboard-bg: #f8f9fa;
+  --dashboard-content-bg: #ffffff;
+  --dashboard-card-bg: #ffffff;
+  --dashboard-card-border: #e9ecef;
+  --dashboard-card-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --dashboard-card-hover-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  --dashboard-header-bg: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --dashboard-widget-header-bg: #f8f9fa;
+  --dashboard-widget-header-border: #e9ecef;
+  
+  /* Dashboard text colors - Light Mode */
+  --dashboard-title-color: #2c3e50;
+  --dashboard-subtitle-color: #6c757d;
+  --dashboard-text-color: #2c3e50;
+  --dashboard-text-secondary: #6c757d;
+  --dashboard-text-muted: #8094ae;
+  --dashboard-amount-color: #2c3e50;
+  --dashboard-info-color: #6c757d;
+  --dashboard-block-title: #2c3e50;
+  --dashboard-block-des: #6c757d;
+  
+  /* Dashboard widget specific - Light Mode */
+  --dashboard-widget-bg: #ffffff;
+  --dashboard-widget-border: #e9ecef;
+  --dashboard-widget-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --dashboard-widget-hover-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  
+  /* Dashboard metric cards - Light Mode */
+  --dashboard-metric-bg: #ffffff;
+  --dashboard-metric-border: #e9ecef;
+  --dashboard-metric-value-color: #2c3e50;
+  --dashboard-metric-label-color: #6c757d;
+  --dashboard-metric-icon-bg: #f8f9fa;
+  --dashboard-metric-icon-color: #6c757d;
+  
+  /* Dashboard chart colors - Light Mode */
+  --dashboard-chart-bg: #ffffff;
+  --dashboard-chart-border: #e9ecef;
+  --dashboard-chart-grid: #f1f3f4;
+  --dashboard-chart-text: #6c757d;
+  
+  /* Dashboard list items - Light Mode */
+  --dashboard-list-item-bg: #ffffff;
+  --dashboard-list-item-hover: #f8f9fa;
+  --dashboard-list-item-border: #f1f3f4;
+  --dashboard-list-rank-bg: #f8f9fa;
+  --dashboard-list-rank-color: #6c757d;
+  
+  /* Dashboard activity - Light Mode */
+  --dashboard-activity-bg: #ffffff;
+  --dashboard-activity-hover: #f8f9fa;
+  --dashboard-activity-border: #f1f3f4;
+  --dashboard-activity-icon-bg: #f8f9fa;
+  --dashboard-activity-icon-color: #6c757d;
+  
+  /* Dashboard search and controls - Light Mode */
+  --dashboard-search-bg: #ffffff;
+  --dashboard-search-border: #dee2e6;
+  --dashboard-search-focus-border: #007bff;
+  --dashboard-search-focus-shadow: rgba(0, 123, 255, 0.1);
+  --dashboard-toggle-bg: rgba(255, 255, 255, 0.2);
+  --dashboard-toggle-active-bg: rgba(255, 255, 255, 0.9);
+  --dashboard-toggle-active-color: #2c3e50;
+  --dashboard-toggle-text: rgba(255, 255, 255, 0.7);
+  
+  /* Dashboard status badges - Light Mode */
+  --dashboard-badge-success-bg: #d4edda;
+  --dashboard-badge-success-text: #155724;
+  --dashboard-badge-warning-bg: #fff3cd;
+  --dashboard-badge-warning-text: #856404;
+  --dashboard-badge-danger-bg: #f8d7da;
+  --dashboard-badge-danger-text: #721c24;
+  --dashboard-badge-info-bg: #d1ecf1;
+  --dashboard-badge-info-text: #0c5460;
 
   /* Timesheet specific - Light Mode */
   --timesheet-bg: #f5f7fa;
@@ -314,20 +375,81 @@ body.dark-mode {
   --progress-warning: #ffc107;
   --progress-danger: #dc3545;
 
-  /* Dashboard specific */
-  --dashboard-bg: #f5f7fa;
-  --dashboard-card-bg: #ffffff;
-  --dashboard-card-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-  --dashboard-card-hover-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
-  --dashboard-amount-color: #292621;
-  --dashboard-info-color: #6c757d;
-  --dashboard-title-color: #616f85;
-  --dashboard-subtitle-color: #424446;
-  --dashboard-tranx-border: #e0e0e0;
-  --dashboard-tranx-hover: #f8f9fb;
-  --dashboard-chart-bg: #d3d3d3;
-  --dashboard-block-title: #333;
-  --dashboard-block-des: #787878;
+  /* Modern Dashboard specific - Dark Mode */
+  --dashboard-bg: #0f172a;
+  --dashboard-content-bg: #1e293b;
+  --dashboard-card-bg: #1e293b;
+  --dashboard-card-border: #334155;
+  --dashboard-card-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --dashboard-card-hover-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  --dashboard-header-bg: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --dashboard-widget-header-bg: #334155;
+  --dashboard-widget-header-border: #475569;
+  
+  /* Dashboard text colors - Dark Mode */
+  --dashboard-title-color: #f1f5f9;
+  --dashboard-subtitle-color: #cbd5e1;
+  --dashboard-text-color: #f1f5f9;
+  --dashboard-text-secondary: #cbd5e1;
+  --dashboard-text-muted: #94a3b8;
+  --dashboard-amount-color: #f1f5f9;
+  --dashboard-info-color: #94a3b8;
+  --dashboard-block-title: #f1f5f9;
+  --dashboard-block-des: #94a3b8;
+  
+  /* Dashboard widget specific - Dark Mode */
+  --dashboard-widget-bg: #1e293b;
+  --dashboard-widget-border: #334155;
+  --dashboard-widget-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --dashboard-widget-hover-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  
+  /* Dashboard metric cards - Dark Mode */
+  --dashboard-metric-bg: #1e293b;
+  --dashboard-metric-border: #334155;
+  --dashboard-metric-value-color: #f1f5f9;
+  --dashboard-metric-label-color: #cbd5e1;
+  --dashboard-metric-icon-bg: #334155;
+  --dashboard-metric-icon-color: #94a3b8;
+  
+  /* Dashboard chart colors - Dark Mode */
+  --dashboard-chart-bg: #1e293b;
+  --dashboard-chart-border: #334155;
+  --dashboard-chart-grid: #334155;
+  --dashboard-chart-text: #94a3b8;
+  
+  /* Dashboard list items - Dark Mode */
+  --dashboard-list-item-bg: #1e293b;
+  --dashboard-list-item-hover: #334155;
+  --dashboard-list-item-border: #334155;
+  --dashboard-list-rank-bg: #334155;
+  --dashboard-list-rank-color: #94a3b8;
+  
+  /* Dashboard activity - Dark Mode */
+  --dashboard-activity-bg: #1e293b;
+  --dashboard-activity-hover: #334155;
+  --dashboard-activity-border: #334155;
+  --dashboard-activity-icon-bg: #334155;
+  --dashboard-activity-icon-color: #94a3b8;
+  
+  /* Dashboard search and controls - Dark Mode */
+  --dashboard-search-bg: #334155;
+  --dashboard-search-border: #475569;
+  --dashboard-search-focus-border: #3b82f6;
+  --dashboard-search-focus-shadow: rgba(59, 130, 246, 0.2);
+  --dashboard-toggle-bg: rgba(51, 65, 85, 0.5);
+  --dashboard-toggle-active-bg: rgba(255, 255, 255, 0.9);
+  --dashboard-toggle-active-color: #2c3e50;
+  --dashboard-toggle-text: rgba(255, 255, 255, 0.7);
+  
+  /* Dashboard status badges - Dark Mode */
+  --dashboard-badge-success-bg: rgba(16, 185, 129, 0.2);
+  --dashboard-badge-success-text: #34d399;
+  --dashboard-badge-warning-bg: rgba(245, 158, 11, 0.2);
+  --dashboard-badge-warning-text: #fbbf24;
+  --dashboard-badge-danger-bg: rgba(239, 68, 68, 0.2);
+  --dashboard-badge-danger-text: #f87171;
+  --dashboard-badge-info-bg: rgba(59, 130, 246, 0.2);
+  --dashboard-badge-info-text: #60a5fa;
 
   /* Timesheet specific - Dark Mode */
   --timesheet-bg: #0f172a;

@@ -559,6 +559,10 @@ models.User.hasMany(models.User, {
   foreignKey: "managerId",
   as: "subordinates",
 });
+models.User.hasOne(models.Employee, {
+  foreignKey: "userId",
+  as: "employee",
+});
 
 // Employee associations
 models.Employee.belongsTo(models.Tenant, {
@@ -737,12 +741,12 @@ models.Timesheet = sequelize.define(
     weekStart: {
       type: DataTypes.DATEONLY,
       allowNull: false,
-      field: "week_start_date",
+      field: "week_start",
     },
     weekEnd: {
       type: DataTypes.DATEONLY,
       allowNull: false,
-      field: "week_end_date",
+      field: "week_end",
     },
     timeEntries: {
       // Array of time entries
@@ -754,6 +758,29 @@ models.Timesheet = sequelize.define(
       type: DataTypes.DECIMAL(5, 2),
       defaultValue: 0,
       field: "total_hours",
+    },
+    dailyHours: {
+      type: DataTypes.JSONB,
+      defaultValue: {
+        mon: 0,
+        tue: 0,
+        wed: 0,
+        thu: 0,
+        fri: 0,
+        sat: 0,
+        sun: 0,
+      },
+      field: "daily_hours",
+    },
+    notes: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
+    reviewerId: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      field: "reviewer_id",
+      references: { model: "users", key: "id" },
     },
     status: {
       type: DataTypes.ENUM(
@@ -830,10 +857,27 @@ models.Invoice = sequelize.define(
       field: "client_id",
       references: { model: "clients", key: "id" },
     },
+    timesheetId: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      field: "timesheet_id",
+      references: { model: "timesheets", key: "id" },
+    },
+    invoiceHash: {
+      type: DataTypes.STRING(32),
+      allowNull: true,
+      unique: true,
+      field: "invoice_hash",
+    },
     invoiceDate: {
       type: DataTypes.DATEONLY,
       defaultValue: DataTypes.NOW,
       field: "invoice_date",
+    },
+    issueDate: {
+      type: DataTypes.DATE,
+      defaultValue: DataTypes.NOW,
+      field: "issue_date",
     },
     dueDate: {
       type: DataTypes.DATEONLY,
@@ -897,9 +941,10 @@ models.Invoice = sequelize.define(
     updatedAt: "updated_at",
     indexes: [
       { unique: true, fields: ["invoice_number"] },
+      { unique: true, fields: ["invoice_hash"] },
       { fields: ["tenant_id", "status"] },
-      { fields: ["vendor_id"] },
       { fields: ["client_id"] },
+      { fields: ["timesheet_id"] },
     ],
   }
 );
@@ -938,6 +983,10 @@ models.Timesheet.belongsTo(models.Client, {
 models.Timesheet.belongsTo(models.User, {
   foreignKey: "approvedBy",
   as: "approver",
+});
+models.Timesheet.belongsTo(models.User, {
+  foreignKey: "reviewerId",
+  as: "reviewer",
 });
 
 // Leave Request associations
@@ -1015,6 +1064,10 @@ models.Client.hasMany(models.Invoice, {
   foreignKey: "clientId",
   as: "invoices",
 });
+models.Timesheet.hasMany(models.Invoice, {
+  foreignKey: "timesheetId",
+  as: "invoices",
+});
 models.Invoice.belongsTo(models.Tenant, {
   foreignKey: "tenantId",
   as: "tenant",
@@ -1022,6 +1075,10 @@ models.Invoice.belongsTo(models.Tenant, {
 models.Invoice.belongsTo(models.Client, {
   foreignKey: "clientId",
   as: "client",
+});
+models.Invoice.belongsTo(models.Timesheet, {
+  foreignKey: "timesheetId",
+  as: "timesheet",
 });
 models.Invoice.belongsTo(models.User, {
   foreignKey: "createdBy",

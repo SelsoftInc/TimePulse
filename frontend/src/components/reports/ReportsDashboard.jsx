@@ -1,6 +1,9 @@
 // src/components/reports/ReportsDashboard.jsx
 import React, { useState, useEffect } from "react";
+import { API_BASE } from "../../config/api";
 import "./ReportsDashboard.css";
+import '../common/ActionsDropdown.css';
+import InvoicePDFPreviewModal from '../common/InvoicePDFPreviewModal';
 
 const ReportsDashboard = () => {
   const [activeTab, setActiveTab] = useState("client");
@@ -15,10 +18,48 @@ const ReportsDashboard = () => {
   const [invoiceReportData, setInvoiceReportData] = useState([]);
   const [analyticsData, setAnalyticsData] = useState(null);
 
+  // Dropdown state for Actions
+  const [openActionsId, setOpenActionsId] = useState(null);
+  const [actionsType, setActionsType] = useState(null); // 'client', 'employee', 'invoice'
+  
+  // PDF Modal state
+  const [showPDFModal, setShowPDFModal] = useState(false);
+  const [selectedInvoiceForPDF, setSelectedInvoiceForPDF] = useState(null);
+  
+  // Invoice Details Modal state
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [selectedInvoiceForDetails, setSelectedInvoiceForDetails] = useState(null);
+
   // Fetch data from API
   useEffect(() => {
     fetchReportsData();
   }, [selectedMonth, selectedYear]);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (!event.target.closest('.actions-dropdown')) {
+        setOpenActionsId(null);
+        setActionsType(null);
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, []);
+
+  // Toggle Actions dropdown
+  const toggleActions = (id, type) => {
+    if (openActionsId === id && actionsType === type) {
+      setOpenActionsId(null);
+      setActionsType(null);
+    } else {
+      setOpenActionsId(id);
+      setActionsType(type);
+    }
+  };
 
   const fetchReportsData = async () => {
     try {
@@ -51,36 +92,36 @@ const ReportsDashboard = () => {
       const [clientsRes, employeesRes, invoicesRes, analyticsRes] =
         await Promise.all([
            fetch(
-             `http://localhost:5001/api/reports/clients?tenantId=${
-               userInfo.tenantId
-             }&startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`,
-             { headers }
-           ).catch(err => {
+            `${API_BASE}/api/reports/clients?tenantId=${
+              userInfo.tenantId
+            }&startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`,
+            { headers }
+          ).catch(err => {
              console.error('❌ Client reports fetch failed:', err);
              throw err;
            }),
            fetch(
-             `http://localhost:5001/api/reports/employees?tenantId=${
-               userInfo.tenantId
-             }&startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`,
-             { headers }
-           ).catch(err => {
+            `${API_BASE}/api/reports/employees?tenantId=${
+              userInfo.tenantId
+            }&startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`,
+            { headers }
+          ).catch(err => {
              console.error('❌ Employee reports fetch failed:', err);
              throw err;
            }),
            fetch(
-             `http://localhost:5001/api/reports/invoices?tenantId=${
-               userInfo.tenantId
-             }&startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`,
-             { headers }
-           ).catch(err => {
+            `${API_BASE}/api/reports/invoices?tenantId=${
+              userInfo.tenantId
+            }&startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`,
+            { headers }
+          ).catch(err => {
              console.error('❌ Invoice reports fetch failed:', err);
              throw err;
            }),
            fetch(
-             `http://localhost:5001/api/reports/analytics?tenantId=${userInfo.tenantId}&period=month`,
-             { headers }
-           ).catch(err => {
+            `${API_BASE}/api/reports/analytics?tenantId=${userInfo.tenantId}&period=month`,
+            { headers }
+          ).catch(err => {
              console.error('❌ Analytics fetch failed:', err);
              throw err;
            }),
@@ -252,30 +293,42 @@ const ReportsDashboard = () => {
                         </span>
                       </div>
                       <div className="nk-tb-col nk-tb-col-tools">
-                        <ul className="nk-tb-actions gx-1">
-                          <li>
-                            <button
-                              className="btn btn-trigger btn-icon"
-                              title="View Details"
-                              onClick={() =>
-                                alert(`Viewing details for ${client.name}`)
-                              }
-                            >
-                              <em className="icon ni ni-eye"></em>
-                            </button>
-                          </li>
-                          <li>
-                            <button
-                              className="btn btn-trigger btn-icon"
-                              title="Download Report"
-                              onClick={() =>
-                                alert(`Downloading report for ${client.name}`)
-                              }
-                            >
-                              <em className="icon ni ni-download"></em>
-                            </button>
-                          </li>
-                        </ul>
+                        <div className="dropdown" style={{ position: 'relative' }}>
+                          <button
+                            className="btn btn-sm btn-outline-secondary dropdown-toggle"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleActions(client.id, 'client');
+                            }}
+                            type="button"
+                          >
+                            Actions
+                          </button>
+                          {openActionsId === client.id && actionsType === 'client' && (
+                            <div className="dropdown-menu dropdown-menu-right show">
+                              <button
+                                className="dropdown-item"
+                                onClick={() => {
+                                  alert(`Viewing details for ${client.name}`);
+                                  setOpenActionsId(null);
+                                  setActionsType(null);
+                                }}
+                              >
+                                <i className="fas fa-eye mr-1"></i> View Details
+                              </button>
+                              <button
+                                className="dropdown-item"
+                                onClick={() => {
+                                  alert(`Downloading report for ${client.name}`);
+                                  setOpenActionsId(null);
+                                  setActionsType(null);
+                                }}
+                              >
+                                <i className="fas fa-download mr-1"></i> Download Report
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -444,30 +497,42 @@ const ReportsDashboard = () => {
                         </div>
                       </div>
                       <div className="nk-tb-col nk-tb-col-tools">
-                        <ul className="nk-tb-actions gx-1">
-                          <li>
-                            <button
-                              className="btn btn-trigger btn-icon"
-                              title="View Details"
-                              onClick={() =>
-                                alert(`Viewing details for ${employee.name}`)
-                              }
-                            >
-                              <em className="icon ni ni-eye"></em>
-                            </button>
-                          </li>
-                          <li>
-                            <button
-                              className="btn btn-trigger btn-icon"
-                              title="Download Report"
-                              onClick={() =>
-                                alert(`Downloading report for ${employee.name}`)
-                              }
-                            >
-                              <em className="icon ni ni-download"></em>
-                            </button>
-                          </li>
-                        </ul>
+                        <div className="dropdown" style={{ position: 'relative' }}>
+                          <button
+                            className="btn btn-sm btn-outline-secondary dropdown-toggle"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleActions(employee.id, 'employee');
+                            }}
+                            type="button"
+                          >
+                            Actions
+                          </button>
+                          {openActionsId === employee.id && actionsType === 'employee' && (
+                            <div className="dropdown-menu dropdown-menu-right show">
+                              <button
+                                className="dropdown-item"
+                                onClick={() => {
+                                  alert(`Viewing details for ${employee.name}`);
+                                  setOpenActionsId(null);
+                                  setActionsType(null);
+                                }}
+                              >
+                                <i className="fas fa-eye mr-1"></i> View Details
+                              </button>
+                              <button
+                                className="dropdown-item"
+                                onClick={() => {
+                                  alert(`Downloading report for ${employee.name}`);
+                                  setOpenActionsId(null);
+                                  setActionsType(null);
+                                }}
+                              >
+                                <i className="fas fa-download mr-1"></i> Download Report
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -573,6 +638,9 @@ const ReportsDashboard = () => {
                     <span>Month</span>
                   </div>
                   <div className="nk-tb-col tb-col-md">
+                    <span>Issue Date</span>
+                  </div>
+                  <div className="nk-tb-col tb-col-md">
                     <span>Hours</span>
                   </div>
                   <div className="nk-tb-col">
@@ -581,11 +649,14 @@ const ReportsDashboard = () => {
                   <div className="nk-tb-col">
                     <span>Status</span>
                   </div>
+                  <div className="nk-tb-col nk-tb-col-tools text-end">
+                    <span className="sub-text">Actions</span>
+                  </div>
                 </div>
                 {invoiceReportData.map((invoice) => (
-                  <div key={invoice.id} className="nk-tb-item">
+                  <div key={invoice.id} className={`nk-tb-item ${openActionsId === invoice.id ? 'dropdown-open' : ''}`}>
                     <div className="nk-tb-col">
-                      <span className="tb-lead">{invoice.id}</span>
+                      <span className="tb-lead">{invoice.invoiceNumber || invoice.id}</span>
                     </div>
                     <div className="nk-tb-col tb-col-md">
                       <span>{invoice.clientName}</span>
@@ -593,6 +664,24 @@ const ReportsDashboard = () => {
                     <div className="nk-tb-col tb-col-md">
                       <span>
                         {invoice.month} {invoice.year}
+                      </span>
+                    </div>
+                    <div className="nk-tb-col tb-col-md">
+                      <span>
+                        {invoice.issueDate 
+                          ? new Date(invoice.issueDate).toLocaleDateString('en-US', { 
+                              month: 'short', 
+                              day: '2-digit',
+                              year: 'numeric'
+                            })
+                          : invoice.createdAt 
+                            ? new Date(invoice.createdAt).toLocaleDateString('en-US', { 
+                                month: 'short', 
+                                day: '2-digit',
+                                year: 'numeric'
+                              })
+                            : 'N/A'
+                        }
                       </span>
                     </div>
                     <div className="nk-tb-col tb-col-md">
@@ -615,6 +704,55 @@ const ReportsDashboard = () => {
                       >
                         {invoice.status}
                       </span>
+                    </div>
+                    <div className="nk-tb-col nk-tb-col-tools">
+                      <div className="dropdown" style={{ position: 'relative' }}>
+                        <button
+                          className="btn btn-sm btn-outline-secondary dropdown-toggle"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleActions(invoice.id, 'invoice');
+                          }}
+                          type="button"
+                          ref={(el) => {
+                            if (el && openActionsId === invoice.id) {
+                              const rect = el.getBoundingClientRect();
+                              const spaceBelow = window.innerHeight - rect.bottom;
+                              if (spaceBelow < 200) {
+                                el.nextElementSibling?.classList.add('dropup');
+                              }
+                            }
+                          }}
+                        >
+                          Actions
+                        </button>
+                        {openActionsId === invoice.id && actionsType === 'invoice' && (
+                          <div className="dropdown-menu dropdown-menu-right show">
+                            <button
+                              className="dropdown-item"
+                              onClick={() => {
+                                setSelectedInvoiceForDetails(invoice);
+                                setShowDetailsModal(true);
+                                setOpenActionsId(null);
+                                setActionsType(null);
+                              }}
+                            >
+                              <i className="fas fa-eye mr-1"></i> View Details
+                            </button>
+                            <button
+                              className="dropdown-item"
+                              onClick={() => {
+                                setSelectedInvoiceForPDF(invoice);
+                                setShowPDFModal(true);
+                                setOpenActionsId(null);
+                                setActionsType(null);
+                              }}
+                            >
+                              <i className="fas fa-download mr-1"></i> Download Invoice
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -905,14 +1043,14 @@ const ReportsDashboard = () => {
                     >
                       Invoice
                     </div>
-                    <div
+                    {/* <div
                       className={`pill-option ${
                         activeTab === "analytics" ? "active" : ""
                       }`}
                       onClick={() => setActiveTab("analytics")}
                     >
                       Analytics
-                    </div>
+                    </div> */}
                     <div className={`pill-slider ${activeTab}`}></div>
                   </div>
 
@@ -925,7 +1063,8 @@ const ReportsDashboard = () => {
                         ? "Employee-wise Report"
                         : activeTab === "invoice"
                         ? "Invoice Report"
-                        : "Analytics Dashboard"}
+                        : "Analytics Dashboard"
+                        }
                     </strong>
                   </div>
                 </div>
@@ -933,12 +1072,134 @@ const ReportsDashboard = () => {
                 {activeTab === "client" && renderClientReport()}
                 {activeTab === "employee" && renderEmployeeReport()}
                 {activeTab === "invoice" && renderInvoiceReport()}
-                {activeTab === "analytics" && renderAnalyticsReport()}
+                {/* {activeTab === "analytics" && renderAnalyticsReport()} */}
               </>
             )}
           </div>
         </div>
       </div>
+      
+      {/* Invoice PDF Preview Modal */}
+      {showPDFModal && selectedInvoiceForPDF && (
+        <InvoicePDFPreviewModal
+          invoice={selectedInvoiceForPDF}
+          onClose={() => {
+            setShowPDFModal(false);
+            setSelectedInvoiceForPDF(null);
+          }}
+        />
+      )}
+      
+      {/* Invoice Details Modal */}
+      {showDetailsModal && selectedInvoiceForDetails && (
+        <div className="modal-overlay" onClick={() => setShowDetailsModal(false)}>
+          <div className="modal-content invoice-details-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h4>Invoice Details</h4>
+              <button className="modal-close" onClick={() => setShowDetailsModal(false)}>×</button>
+            </div>
+            
+            <div className="modal-body">
+              <div className="details-container">
+                <div className="details-section">
+                  <h5 className="section-title">
+                    <i className="fas fa-file-invoice"></i> Invoice Information
+                  </h5>
+                  <div className="details-grid">
+                    <div className="detail-item">
+                      <label>Invoice ID:</label>
+                      <span>{selectedInvoiceForDetails.invoiceNumber || selectedInvoiceForDetails.id}</span>
+                    </div>
+                    <div className="detail-item">
+                      <label>Client:</label>
+                      <span>{selectedInvoiceForDetails.clientName || 'N/A'}</span>
+                    </div>
+                    <div className="detail-item">
+                      <label>Month:</label>
+                      <span>{selectedInvoiceForDetails.month || 'N/A'}</span>
+                    </div>
+                    <div className="detail-item">
+                      <label>Issue Date:</label>
+                      <span>{selectedInvoiceForDetails.issueDate ? new Date(selectedInvoiceForDetails.issueDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : 'N/A'}</span>
+                    </div>
+                    <div className="detail-item">
+                      <label>Hours:</label>
+                      <span>{selectedInvoiceForDetails.totalHours || selectedInvoiceForDetails.hours || 0}</span>
+                    </div>
+                    <div className="detail-item">
+                      <label>Amount:</label>
+                      <span className="amount">${parseFloat(selectedInvoiceForDetails.amount || 0).toFixed(2)}</span>
+                    </div>
+                    <div className="detail-item">
+                      <label>Status:</label>
+                      <span className={`status-badge ${selectedInvoiceForDetails.status?.toLowerCase()}`}>
+                        {selectedInvoiceForDetails.status || 'N/A'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                
+                {selectedInvoiceForDetails.lineItems && selectedInvoiceForDetails.lineItems.length > 0 && (
+                  <div className="details-section">
+                    <h5 className="section-title">
+                      <i className="fas fa-list"></i> Line Items
+                    </h5>
+                    <div className="line-items-table">
+                      <table>
+                        <thead>
+                          <tr>
+                            <th>Description</th>
+                            <th>Hours</th>
+                            <th>Rate</th>
+                            <th>Amount</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {selectedInvoiceForDetails.lineItems.map((item, index) => (
+                            <tr key={index}>
+                              <td>{item.description || 'N/A'}</td>
+                              <td>{item.hours || 0}</td>
+                              <td>${parseFloat(item.rate || 0).toFixed(2)}</td>
+                              <td>${parseFloat(item.amount || 0).toFixed(2)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+                
+                {selectedInvoiceForDetails.notes && (
+                  <div className="details-section">
+                    <h5 className="section-title">
+                      <i className="fas fa-sticky-note"></i> Notes
+                    </h5>
+                    <div className="notes-content">
+                      {selectedInvoiceForDetails.notes}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            <div className="modal-footer">
+              <button className="btn btn-secondary" onClick={() => setShowDetailsModal(false)}>
+                Close
+              </button>
+              <button 
+                className="btn btn-primary" 
+                onClick={() => {
+                  setSelectedInvoiceForPDF(selectedInvoiceForDetails);
+                  setShowPDFModal(true);
+                  setShowDetailsModal(false);
+                }}
+              >
+                <i className="fas fa-download mr-1"></i> Download PDF
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

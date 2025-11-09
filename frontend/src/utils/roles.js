@@ -99,7 +99,8 @@ export const ROLE_PERMISSIONS = {
     PERMISSIONS.APPROVE_TIMESHEET,
     PERMISSIONS.APPROVE_TIMESHEETS,
 
-    // Invoice - view and approve only
+    // Invoice - create, view and approve
+    PERMISSIONS.CREATE_INVOICE,
     PERMISSIONS.VIEW_INVOICE,
     PERMISSIONS.APPROVE_INVOICE,
 
@@ -116,7 +117,8 @@ export const ROLE_PERMISSIONS = {
     PERMISSIONS.VIEW_TIMESHEET,
     PERMISSIONS.EDIT_TIMESHEET,
 
-    // No settings access for employees
+    // Settings - view only (for profile and account settings)
+    PERMISSIONS.VIEW_SETTINGS,
   ],
 };
 

@@ -91,6 +91,26 @@ router.get("/", async (req, res) => {
       };
     }
 
+    // Add Timesheet association to get employee and vendor data
+    includeClause.push({
+      model: models.Timesheet,
+      as: "timesheet",
+      attributes: ["id", "weekStart", "weekEnd", "employeeId"],
+      required: false,
+      include: [{
+        model: models.Employee,
+        as: "employee",
+        attributes: ["id", "firstName", "lastName", "vendorId"],
+        required: false,
+        include: [{
+          model: models.Vendor,
+          as: "vendor",
+          attributes: ["id", "name", "email"],
+          required: false
+        }]
+      }]
+    });
+
     const invoices = await models.Invoice.findAll({
       where: whereClause,
       include: includeClause,
@@ -138,23 +158,36 @@ router.get("/", async (req, res) => {
     // Transform data for frontend dashboard
     const transformedInvoices = invoices.map((inv) => ({
       id: inv.id,
+      invoiceNumber: inv.invoiceNumber,
+      vendor: inv.timesheet?.employee?.vendor?.name || "N/A",
+      vendorEmail: inv.timesheet?.employee?.vendor?.email || "N/A",
       client: inv.client ? inv.client.clientName : "No Client",
-      employeeId: inv.employeeId,
-      employeeName: inv.employee
-        ? `${inv.employee.firstName} ${inv.employee.lastName}`
-        : "Unknown",
-      period:
-        inv.weekStart && inv.weekEnd
-          ? `${inv.weekStart} - ${inv.weekEnd}`
-          : "N/A",
-      issuedOn: inv.createdAt
-        ? new Date(inv.createdAt).toISOString().split("T")[0]
+      employeeId: inv.timesheet?.employeeId || inv.employeeId,
+      employeeName: inv.timesheet?.employee
+        ? `${inv.timesheet.employee.firstName} ${inv.timesheet.employee.lastName}`
+        : (inv.employee ? `${inv.employee.firstName} ${inv.employee.lastName}` : "Unknown"),
+      week: inv.timesheet?.weekStart && inv.timesheet?.weekEnd
+        ? `${new Date(inv.timesheet.weekStart).toLocaleDateString('en-US', { month: 'short', day: '2-digit' })} - ${new Date(inv.timesheet.weekEnd).toLocaleDateString('en-US', { month: 'short', day: '2-digit' })}`
         : "N/A",
+      period:
+        inv.timesheet?.weekStart && inv.timesheet?.weekEnd
+          ? `${inv.timesheet.weekStart} - ${inv.timesheet.weekEnd}`
+          : "N/A",
+      issueDate: inv.issueDate
+        ? new Date(inv.issueDate).toISOString()
+        : (inv.createdAt ? new Date(inv.createdAt).toISOString() : null),
+      issuedOn: inv.invoiceDate
+        ? new Date(inv.invoiceDate).toISOString().split("T")[0]
+        : (inv.createdAt ? new Date(inv.createdAt).toISOString().split("T")[0] : "N/A"),
       dueOn: inv.dueDate
         ? new Date(inv.dueDate).toISOString().split("T")[0]
         : "N/A",
-      amount: parseFloat(inv.total) || 0,
-      status: inv.status || "draft",
+      total: parseFloat(inv.totalAmount) || 0,
+      amount: parseFloat(inv.totalAmount) || 0,
+      paymentStatus: inv.paymentStatus || "pending",
+      status: inv.status || "active",
+      lineItems: inv.lineItems || [],
+      notes: inv.notes,
     }));
 
     res.json({
@@ -199,18 +232,22 @@ router.post("/", async (req, res) => {
         .json({ success: false, message: "tenantId is required" });
     }
 
-    // Generate invoice number
+    // Generate invoice number in format IN-2025-XXX
+    const currentYear = new Date().getFullYear();
     const lastInvoice = await models.Invoice.findOne({
-      where: { tenantId },
+      where: { 
+        tenantId,
+        invoiceNumber: { [Op.like]: `IN-${currentYear}-%` }
+      },
       order: [["created_at", "DESC"]],
     });
 
     let invoiceNumber;
     if (lastInvoice && lastInvoice.invoiceNumber) {
       const lastNumber = parseInt(lastInvoice.invoiceNumber.split("-").pop());
-      invoiceNumber = `INV-${String(lastNumber + 1).padStart(4, "0")}`;
+      invoiceNumber = `IN-${currentYear}-${String(lastNumber + 1).padStart(3, "0")}`;
     } else {
-      invoiceNumber = "INV-1023";
+      invoiceNumber = `IN-${currentYear}-001`;
     }
 
     const newInvoice = await models.Invoice.create({
@@ -274,13 +311,19 @@ router.get("/:id", async (req, res) => {
         {
           model: models.Employee,
           as: "employee",
-          attributes: ["id", "firstName", "lastName", "email"],
+          attributes: ["id", "firstName", "lastName", "email", "title", "position", "department"],
           required: false,
         },
         {
           model: models.Timesheet,
           as: "timesheet",
           required: false,
+          include: [{
+            model: models.Employee,
+            as: "employee",
+            attributes: ["id", "firstName", "lastName", "email", "title", "position", "department"],
+            required: false
+          }]
         },
         {
           model: models.User,
@@ -303,6 +346,98 @@ router.get("/:id", async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Failed to fetch invoice",
+      error: error.message,
+    });
+  }
+});
+
+// GET /api/invoices/:id/employees - Get employee details for invoice line items
+router.get("/:id/employees", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { tenantId } = req.query;
+
+    if (!tenantId) {
+      return res
+        .status(400)
+        .json({ success: false, message: "tenantId is required" });
+    }
+
+    const invoice = await models.Invoice.findOne({
+      where: { id, tenantId },
+      include: [
+        {
+          model: models.Timesheet,
+          as: "timesheet",
+          required: false,
+          include: [{
+            model: models.Employee,
+            as: "employee",
+            attributes: ["id", "firstName", "lastName", "email", "title", "position", "department", "hourlyRate"],
+            required: false
+          }]
+        },
+        {
+          model: models.Employee,
+          as: "employee",
+          attributes: ["id", "firstName", "lastName", "email", "title", "position", "department", "hourlyRate"],
+          required: false,
+        }
+      ],
+    });
+
+    if (!invoice) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Invoice not found" });
+    }
+
+    // Extract employee data from timesheet or direct employee association
+    let employeeData = null;
+    
+    if (invoice.timesheet?.employee) {
+      employeeData = {
+        id: invoice.timesheet.employee.id,
+        firstName: invoice.timesheet.employee.firstName,
+        lastName: invoice.timesheet.employee.lastName,
+        fullName: `${invoice.timesheet.employee.firstName} ${invoice.timesheet.employee.lastName}`,
+        email: invoice.timesheet.employee.email,
+        position: invoice.timesheet.employee.title || invoice.timesheet.employee.position || invoice.timesheet.employee.department || 'Position',
+        hourlyRate: invoice.timesheet.employee.hourlyRate || 45.00
+      };
+    } else if (invoice.employee) {
+      employeeData = {
+        id: invoice.employee.id,
+        firstName: invoice.employee.firstName,
+        lastName: invoice.employee.lastName,
+        fullName: `${invoice.employee.firstName} ${invoice.employee.lastName}`,
+        email: invoice.employee.email,
+        position: invoice.employee.title || invoice.employee.position || invoice.employee.department || 'Position',
+        hourlyRate: invoice.employee.hourlyRate || 45.00
+      };
+    }
+
+    // Process line items if they exist
+    let lineItemsWithEmployees = [];
+    if (invoice.lineItems && Array.isArray(invoice.lineItems)) {
+      lineItemsWithEmployees = invoice.lineItems.map(item => ({
+        ...item,
+        employeeName: item.employeeName || (employeeData ? employeeData.fullName : 'Employee Name'),
+        position: item.position || (employeeData ? employeeData.position : 'Position'),
+        hourlyRate: item.hourlyRate || item.rate || (employeeData ? employeeData.hourlyRate : 45.00)
+      }));
+    }
+
+    res.json({ 
+      success: true, 
+      employee: employeeData,
+      lineItems: lineItemsWithEmployees
+    });
+  } catch (error) {
+    console.error("❌ Error fetching invoice employees:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch invoice employees",
       error: error.message,
     });
   }

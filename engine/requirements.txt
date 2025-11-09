@@ -4,6 +4,7 @@ python-multipart
 pydantic
 pydantic-settings
 python-dotenv
+loguru
 
 # LangChain and document processing
 langchain

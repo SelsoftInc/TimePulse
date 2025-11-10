@@ -8,7 +8,8 @@ applications:
             - echo "Installing dependencies..."
             - rm -rf node_modules package-lock.json
             - unset NODE_ENV || true
-            - npm install --legacy-peer-deps --include=dev
+            - npm install --legacy-peer-deps --include=dev --force
+            - npm install ajv@^8.0.0 --legacy-peer-deps --save-dev || true
             - echo "Verifying react-scripts installation..."
             - ls -la node_modules/.bin/react-scripts || echo "react-scripts not found in node_modules/.bin"
             - echo "Checking installed packages..."

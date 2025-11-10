@@ -5,7 +5,12 @@
 
 const { Sequelize, DataTypes } = require("sequelize");
 const path = require("path");
-require("dotenv").config();
+// Only load .env file if NODE_ENV is not set (local development)
+// In production (App Runner), environment variables are set by App Runner
+// and should not be overridden by .env file
+if (!process.env.NODE_ENV || process.env.NODE_ENV === "development") {
+  require("dotenv").config();
+}
 
 // Load database configuration based on environment
 const getDbConfig = () => {

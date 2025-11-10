@@ -6,7 +6,10 @@ applications:
         preBuild:
           commands:
             - echo "Installing dependencies..."
-            - npm install
+            - rm -rf node_modules package-lock.json
+            - npm install --legacy-peer-deps
+            - echo "Verifying react-scripts installation..."
+            - ls -la node_modules/.bin/react-scripts || echo "react-scripts not found in node_modules/.bin"
             - echo "Setting up environment variables..."
             - echo "REACT_APP_API_BASE=$REACT_APP_API_BASE" >> .env.production
             - echo "REACT_APP_ENGINE_API_URL=$REACT_APP_ENGINE_API_URL" >> .env.production
@@ -22,3 +25,5 @@ applications:
       cache:
         paths:
           - node_modules/**/*
+        # Clear cache to ensure devDependencies are installed
+        # Remove this comment after first successful build

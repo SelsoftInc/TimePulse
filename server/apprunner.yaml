@@ -35,6 +35,3 @@ run:
   secrets:
     - name: DB_PASSWORD
       value-from: "arn:aws:secretsmanager:us-east-1:727044518907:secret:rdscluster-9f97854d-552e-4d54-81bb-9916133d0d28-JoNKzn"
-  runtime-context:
-    instance-role: "arn:aws:iam::727044518907:role/AppRunnerSecretsRole"
-# Deployment trigger

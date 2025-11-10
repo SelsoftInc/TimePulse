@@ -6,9 +6,10 @@ applications:
         preBuild:
           commands:
             - echo "Installing dependencies..."
-            - npm ci
+            - npm ci --include=dev
             - echo "Setting up environment variables..."
             - echo "REACT_APP_API_BASE=$REACT_APP_API_BASE" >> .env.production
+            - echo "REACT_APP_ENGINE_API_URL=$REACT_APP_ENGINE_API_URL" >> .env.production
         build:
           commands:
             - echo "Building React application..."

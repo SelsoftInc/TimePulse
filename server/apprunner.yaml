@@ -19,7 +19,7 @@ run:
     - name: PYTHON_ENGINE_URL
       value: "https://fitqus53gn.us-east-1.awsapprunner.com"
     - name: CORS_ORIGIN
-      value: "https://app.timepulse.io,https://main.dolfu0p2owxyr.amplifyapp.com"
+      value: "https://app.timepulse.io,https://main.dolfu0p2owxyr.amplifyapp.com,https://www.timepulse.io,https://timepulse.io"
     - name: DB_HOST
       value: "timepulse-cluster-instance-1.chb4yd9ykrnf.us-east-1.rds.amazonaws.com"
     - name: DB_PORT

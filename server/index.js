@@ -42,7 +42,16 @@ const dashboardRoutes = require("./routes/dashboard");
 // const dashboardPrismaRoutes = require("./routes/dashboard-prisma"); // Disabled - requires Prisma setup
 
 // Middleware
-app.use(cors()); // Completely open CORS for debugging
+// Configure CORS - allow specific origins from environment variable or default to open
+const corsOptions = {
+  origin: process.env.CORS_ORIGIN 
+    ? process.env.CORS_ORIGIN.split(',').map(origin => origin.trim())
+    : '*', // Fallback to allow all if not set
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+};
+app.use(cors(corsOptions));
 
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ extended: true, limit: "50mb" }));

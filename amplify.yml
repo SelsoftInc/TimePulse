@@ -7,9 +7,12 @@ applications:
           commands:
             - echo "Installing dependencies..."
             - rm -rf node_modules package-lock.json
-            - npm install --legacy-peer-deps
+            - unset NODE_ENV || true
+            - npm install --legacy-peer-deps --include=dev
             - echo "Verifying react-scripts installation..."
             - ls -la node_modules/.bin/react-scripts || echo "react-scripts not found in node_modules/.bin"
+            - echo "Checking installed packages..."
+            - npm list react-scripts || echo "react-scripts not in package list"
             - echo "Setting up environment variables..."
             - echo "REACT_APP_API_BASE=$REACT_APP_API_BASE" >> .env.production
             - echo "REACT_APP_ENGINE_API_URL=$REACT_APP_ENGINE_API_URL" >> .env.production

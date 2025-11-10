@@ -10,7 +10,19 @@ module.exports = {
     port: process.env.DB_PORT || 5432,
     database: process.env.DB_NAME,
     username: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
+    // Handle JSON secret format from App Runner
+    password: (() => {
+      const pwd = process.env.DB_PASSWORD;
+      if (!pwd) return undefined;
+      // If secret is JSON format, parse it
+      try {
+        const parsed = JSON.parse(pwd);
+        return parsed.password || parsed.PASSWORD || pwd;
+      } catch (e) {
+        // Not JSON, return as-is
+        return pwd;
+      }
+    })(),
     logging: false,
     pool: {
       max: 20,

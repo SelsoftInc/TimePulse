@@ -1,0 +1,20 @@
+RESTART BACKEND SERVER NOW
+==========================
+
+1. Stop the backend server (Ctrl+C in the terminal)
+
+2. Restart it:
+   cd d:\selsoft\WebApp\TimePulse\server
+   npm start
+
+3. Wait for "Server running on port 3001"
+
+4. Test the invoice feature again
+
+What was fixed:
+- Simplified the GET /api/invoices/:id query
+- Reduced complex nested associations
+- Added better error logging
+- Fixed potential association conflicts
+
+The server should now handle invoice fetching without 500 errors.

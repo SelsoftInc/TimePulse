@@ -7,52 +7,94 @@ import './InvoicePDFPreviewModal.css';
 const InvoicePDFPreviewModal = ({ invoice, onClose }) => {
   const [loading, setLoading] = useState(true);
   const [employees, setEmployees] = useState([]);
-  const [formData, setFormData] = useState({
-    // Staffing Company (Current Company - Selsoft)
-    companyName: 'Selsoft Inc.',
-    companyAddress: '123 Business Street, Suite 100',
-    companyCity: 'Dallas, TX 75201',
-    companyEmail: 'billing@selsoft.com',
-    companyPhone: '(214) 555-0100',
+  
+  // Safe number formatting to prevent toFixed errors
+  const formatNumber = (value, decimals = 2) => {
+    const num = parseFloat(value) || 0;
+    return num.toFixed(decimals);
+  };
+  
+  // Safe string conversion to prevent object-to-text errors
+  const safeString = (value, defaultValue = 'N/A') => {
+    if (value === null || value === undefined) return defaultValue;
+    if (typeof value === 'object') return defaultValue;
+    return String(value);
+  };
+  
+  const [formData, setFormData] = useState(() => {
+    // Calculate invoice duration from timesheet line items if available
+    let calculatedStartDate = null;
+    let calculatedEndDate = null;
     
-    // Invoice Details
-    invoiceNumber: invoice?.invoiceNumber || `INV-2025-${String(invoice?.id || '0001').padStart(4, '0')}`,
-    invoiceDate: new Date().toISOString().split('T')[0],
-    dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    paymentTerms: 'Net 14 Days',
-    
-    // Bill To (Vendor/Client)
-    billToName: invoice?.clientName || invoice?.vendorName || invoice?.vendor || 'Client Company Name',
-    billToAttn: 'Accounts Payable',
-    billToAddress: '789 Enterprise Blvd',
-    billToCity: 'Dallas, TX 75201',
-    
-    // Project Details
-    projectName: invoice?.month && invoice?.year ? `${invoice.month} ${invoice.year}` : 'Contract Staffing',
-    projectDescription: 'Professional Services',
-    
-    // Line Items
-    lineItems: invoice?.lineItems || [
-      {
-        employeeName: 'Employee Name',
-        position: 'Position',
-        hoursWorked: 160,
-        hourlyRate: 45.00,
-        total: 7200.00
+    if (invoice?.lineItems && invoice.lineItems.length > 0) {
+      const dates = invoice.lineItems
+        .map(item => item.date || item.workDate || item.startDate)
+        .filter(date => date)
+        .map(date => new Date(date));
+      
+      if (dates.length > 0) {
+        calculatedStartDate = new Date(Math.min(...dates)).toISOString().split('T')[0];
+        calculatedEndDate = new Date(Math.max(...dates)).toISOString().split('T')[0];
       }
-    ],
+    }
     
-    // Payment Details
-    bankName: 'Chase Bank',
-    accountName: 'Selsoft Inc.',
-    accountNumber: '123456789',
-    routingNumber: '111000025',
-    paymentMethod: 'ACH / Wire Transfer',
+    // Fallback to invoice dates or month-based calculation
+    const startDate = invoice?.startDate || calculatedStartDate || 
+      new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0];
+    const endDate = invoice?.endDate || calculatedEndDate || 
+      new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).toISOString().split('T')[0];
     
-    // Tax
-    salesTax: 0,
-    taxExempt: true,
-    taxNote: 'Exempt (Professional Services)'
+    return {
+      // Staffing Company (Current Company - Selsoft)
+      companyName: 'Selsoft Inc.',
+      companyAddress: '123 Business Street, Suite 100',
+      companyCity: 'Dallas, TX 75201',
+      companyEmail: 'billing@selsoft.com',
+      companyPhone: '(214) 555-0100',
+      
+      // Invoice Details
+      invoiceNumber: invoice?.invoiceNumber || `INV-2025-${String(invoice?.id || '0001').padStart(4, '0')}`,
+      invoiceDate: new Date().toISOString().split('T')[0],
+      dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      paymentTerms: 'Net 14 Days',
+      
+      // Bill To (Vendor/Client)
+      billToName: invoice?.clientName || invoice?.vendorName || invoice?.vendor || 'Client Company Name',
+      billToAttn: 'Accounts Payable',
+      billToAddress: '789 Enterprise Blvd',
+      billToCity: 'Dallas, TX 75201',
+      
+      // Project Details
+      projectName: invoice?.month && invoice?.year ? `${invoice.month} ${invoice.year}` : 'Contract Staffing',
+      projectDescription: 'Professional Services',
+      
+      // Invoice Duration - calculated from actual timesheet dates
+      invoiceDurationFrom: startDate,
+      invoiceDurationTo: endDate,
+      
+      // Line Items
+      lineItems: invoice?.lineItems || [
+        {
+          employeeName: 'Employee Name',
+          position: 'Position',
+          hoursWorked: 160,
+          hourlyRate: 45.00,
+          total: 7200.00
+        }
+      ],
+      
+      // Payment Details
+      bankName: 'Chase Bank',
+      accountName: 'Selsoft Inc.',
+      accountNumber: '123456789',
+      routingNumber: '111000025',
+      paymentMethod: 'ACH / Wire Transfer',
+      
+      // Tax
+      salesTax: 0,
+      taxExempt: true,
+      taxNote: 'Exempt (Professional Services)'
+    };
   });
 
   // Fetch employee data from backend
@@ -208,7 +250,11 @@ const InvoicePDFPreviewModal = ({ invoice, onClose }) => {
 
   // Calculate totals
   const calculateSubtotal = () => {
-    return formData.lineItems.reduce((sum, item) => sum + (item.hoursWorked * item.hourlyRate), 0);
+    return formData.lineItems.reduce((sum, item) => {
+      const hours = parseFloat(item.hoursWorked || item.hours || item.quantity || 0);
+      const rate = parseFloat(item.hourlyRate || item.rate || 0);
+      return sum + (hours * rate);
+    }, 0);
   };
 
   const calculateTotal = () => {
@@ -273,11 +319,12 @@ const InvoicePDFPreviewModal = ({ invoice, onClose }) => {
     }
   };
 
-  // Generate PDF - Optimized for single page
-  const generatePDF = () => {
+  // Generate PDF - Optimized for single page with employer logo
+  const generatePDF = async () => {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
+    const margin = 15; // Reduced margin for more space
     
     // Colors
     const primaryColor = [41, 128, 185]; // Professional Blue
@@ -285,180 +332,242 @@ const InvoicePDFPreviewModal = ({ invoice, onClose }) => {
     const darkGray = [44, 62, 80];
     const lightGray = [236, 240, 241];
     
-    // Modern Header with gradient effect
+    // Compact Header with gradient effect
     doc.setFillColor(...primaryColor);
     doc.rect(0, 0, pageWidth, 35, 'F');
+    
+    // Add employer logo if available
+    let logoYPos = 35;
+    if (invoice?.companyLogo) {
+      try {
+        console.log('📷 Adding employer logo to PDF...');
+        // Check if logo is base64 or URL
+        const logoData = invoice.companyLogo;
+        
+        // Add logo to top-left of header
+        const logoWidth = 30;
+        const logoHeight = 20;
+        const logoX = margin;
+        const logoY = 7;
+        
+        doc.addImage(logoData, 'PNG', logoX, logoY, logoWidth, logoHeight);
+        console.log('✅ Employer logo added to PDF');
+      } catch (error) {
+        console.error('❌ Error adding logo to PDF:', error);
+        // Continue without logo if there's an error
+      }
+    }
+    
+    // Invoice title (centered or right-aligned if logo exists)
     doc.setTextColor(255, 255, 255);
-    doc.setFontSize(28);
+    doc.setFontSize(24);
     doc.setFont('helvetica', 'bold');
-    doc.text('INVOICE', pageWidth / 2, 22, { align: 'center' });
+    const titleX = invoice?.companyLogo ? pageWidth - margin - 50 : pageWidth / 2;
+    doc.text('INVOICE', titleX, 22, { align: invoice?.companyLogo ? 'left' : 'center' });
     
-    let yPos = 42;
+    let yPos = logoYPos + 5;
     
-    // Company Info (Left) and Invoice Details (Right)
+    // Billed To (Left) and Invoice Details (Right) - Compact
     doc.setTextColor(...darkGray);
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Staffing Company:', 20, yPos);
-    doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
-    doc.text(formData.companyName, 20, yPos + 5);
-    doc.text(formData.companyAddress, 20, yPos + 10);
-    doc.text(formData.companyCity, 20, yPos + 15);
-    doc.text(`Email: ${formData.companyEmail}`, 20, yPos + 20);
-    doc.text(`Phone: ${formData.companyPhone}`, 20, yPos + 25);
-    
-    // Invoice Details (Right aligned)
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10);
-    const rightX = pageWidth - 20;
+    doc.text('Billed To:', margin, yPos);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.text(safeString(formData.companyName), margin, yPos + 4);
+    doc.text(safeString(formData.companyAddress), margin, yPos + 8);
+    doc.text(safeString(formData.companyCity), margin, yPos + 12);
+    doc.text(`Email: ${safeString(formData.companyEmail)}`, margin, yPos + 16);
+    doc.text(`Phone: ${safeString(formData.companyPhone)}`, margin, yPos + 20);
+    
+    // Invoice Details (Right aligned) - Compact
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    const rightX = pageWidth - margin;
     doc.text('Invoice Number:', rightX, yPos, { align: 'right' });
     doc.setFont('helvetica', 'normal');
-    doc.text(formData.invoiceNumber, rightX, yPos + 5, { align: 'right' });
+    doc.setFontSize(8);
+    doc.text(safeString(formData.invoiceNumber), rightX, yPos + 4, { align: 'right' });
     
     doc.setFont('helvetica', 'bold');
-    doc.text('Invoice Date:', rightX, yPos + 10, { align: 'right' });
+    doc.setFontSize(9);
+    doc.text('Invoice Date:', rightX, yPos + 8, { align: 'right' });
     doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
     doc.text(new Date(formData.invoiceDate).toLocaleDateString('en-US', { 
-      year: 'numeric', month: 'long', day: 'numeric' 
-    }), rightX, yPos + 15, { align: 'right' });
+      month: 'short', day: 'numeric', year: 'numeric' 
+    }), rightX, yPos + 12, { align: 'right' });
     
     doc.setFont('helvetica', 'bold');
-    doc.text('Due Date:', rightX, yPos + 20, { align: 'right' });
+    doc.setFontSize(9);
+    doc.text('Due Date:', rightX, yPos + 16, { align: 'right' });
     doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
     doc.text(new Date(formData.dueDate).toLocaleDateString('en-US', { 
-      year: 'numeric', month: 'long', day: 'numeric' 
-    }), rightX, yPos + 25, { align: 'right' });
+      month: 'short', day: 'numeric', year: 'numeric' 
+    }), rightX, yPos + 20, { align: 'right' });
     
     doc.setFont('helvetica', 'bold');
-    doc.text('Payment Terms:', rightX, yPos + 30, { align: 'right' });
+    doc.setFontSize(9);
+    doc.text('Payment Terms:', rightX, yPos + 24, { align: 'right' });
     doc.setFont('helvetica', 'normal');
-    doc.text(formData.paymentTerms, rightX, yPos + 35, { align: 'right' });
+    doc.setFontSize(8);
+    doc.text(safeString(formData.paymentTerms), rightX, yPos + 28, { align: 'right' });
     
-    yPos += 50;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.text('Invoice Duration:', rightX, yPos + 32, { align: 'right' });
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    const fromDate = new Date(formData.invoiceDurationFrom).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    const toDate = new Date(formData.invoiceDurationTo).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    doc.text(`${fromDate} - ${toDate}`, rightX, yPos + 36, { align: 'right' });
     
-    // Bill To Section
-    doc.setFillColor(240, 240, 240);
-    doc.rect(20, yPos, pageWidth - 40, 30, 'F');
+    yPos += 45;
+    
+    // Shipped To Section - Compact
+    doc.setFillColor(245, 245, 245);
+    doc.rect(margin, yPos, pageWidth - 2 * margin, 22, 'F');
     doc.setTextColor(...darkGray);
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10);
-    doc.text('Bill To:', 25, yPos + 7);
-    doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
-    doc.text(formData.billToName, 25, yPos + 12);
-    doc.text(`Attn: ${formData.billToAttn}`, 25, yPos + 17);
-    doc.text(formData.billToAddress, 25, yPos + 22);
-    doc.text(formData.billToCity, 25, yPos + 27);
+    doc.text('Shipped To:', margin + 3, yPos + 5);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.text(safeString(formData.billToName), margin + 3, yPos + 9);
+    doc.text(`Attn: ${safeString(formData.billToAttn)}`, margin + 3, yPos + 13);
+    doc.text(`${safeString(formData.billToAddress)}, ${safeString(formData.billToCity)}`, margin + 3, yPos + 17);
     
-    yPos += 40;
+    yPos += 27;
     
-    // Project/Engagement Section
+    // Project/Engagement Section - Compact
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10);
-    doc.text('Project / Engagement:', 20, yPos);
-    doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
-    doc.text(`${formData.projectName} - ${formData.projectDescription}`, 20, yPos + 5);
+    doc.text('Project / Engagement:', margin, yPos);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.text(`${safeString(formData.projectName)} - ${safeString(formData.projectDescription)}`, margin, yPos + 4);
     
-    yPos += 15;
+    yPos += 10;
     
     // Line Items Table
-    const tableData = formData.lineItems.map(item => [
-      item.employeeName,
-      item.position,
-      item.hoursWorked.toString(),
-      `$${item.hourlyRate.toFixed(2)}`,
-      `$${item.total.toFixed(2)}`
-    ]);
+    const tableData = formData.lineItems.map(item => {
+      const hours = parseFloat(item.hoursWorked || item.hours || item.quantity || 0);
+      const rate = parseFloat(item.hourlyRate || item.rate || 0);
+      const total = parseFloat(item.total || item.amount || (hours * rate) || 0);
+      
+      return [
+        safeString(item.employeeName || item.employee, 'N/A'),
+        safeString(item.position || item.title, 'N/A'),
+        hours.toString(),
+        `$${formatNumber(rate)}`,
+        `$${formatNumber(total)}`
+      ];
+    });
     
     autoTable(doc, {
       startY: yPos,
-      head: [['Employee Name', 'Position', 'Hours Worked', 'Hourly Rate (USD)', 'Total (USD)']],
+      head: [['Employee Name', 'Position', 'Hours', 'Rate (USD)', 'Total (USD)']],
       body: tableData,
       theme: 'striped',
       headStyles: {
         fillColor: primaryColor,
         textColor: [255, 255, 255],
-        fontSize: 10,
+        fontSize: 8,
         fontStyle: 'bold',
         halign: 'center',
-        cellPadding: 5
+        cellPadding: 3
       },
       bodyStyles: {
-        fontSize: 10,
+        fontSize: 8,
         textColor: darkGray,
-        cellPadding: 5
+        cellPadding: 3
       },
       columnStyles: {
         0: { cellWidth: 'auto', halign: 'left' },
         1: { cellWidth: 'auto', halign: 'left' },
-        2: { cellWidth: 35, halign: 'center' },
-        3: { cellWidth: 40, halign: 'right' },
-        4: { cellWidth: 40, halign: 'right' }
+        2: { cellWidth: 25, halign: 'center' },
+        3: { cellWidth: 30, halign: 'right' },
+        4: { cellWidth: 30, halign: 'right' }
       },
-      margin: { left: 20, right: 20 },
+      margin: { left: margin, right: margin },
       tableWidth: 'auto'
     });
     
-    yPos = doc.lastAutoTable.finalY + 10;
+    yPos = doc.lastAutoTable.finalY + 6;
     
-    // Totals Section
+    // Totals Section - Compact
     const subtotal = calculateSubtotal();
     const total = calculateTotal();
     
-    const totalsX = pageWidth - 70;
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(10);
-    doc.text('Subtotal:', totalsX, yPos, { align: 'right' });
-    doc.text(`$${subtotal.toFixed(2)}`, pageWidth - 20, yPos, { align: 'right' });
-    
-    yPos += 7;
-    doc.text(`Sales Tax (${formData.taxExempt ? '0%' : formData.salesTax + '%'}):`, totalsX, yPos, { align: 'right' });
-    doc.text(formData.taxExempt ? formData.taxNote : `$${(subtotal * formData.salesTax / 100).toFixed(2)}`, pageWidth - 20, yPos, { align: 'right' });
-    
-    yPos += 10;
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(12);
-    doc.text('Total Due:', totalsX, yPos, { align: 'right' });
-    doc.text(`$${total.toFixed(2)} USD`, pageWidth - 20, yPos, { align: 'right' });
-    
-    yPos += 20;
-    
-    // Payment Instructions
-    if (yPos > pageHeight - 60) {
-      doc.addPage();
-      yPos = 20;
-    }
-    
-    doc.setFillColor(240, 240, 240);
-    doc.rect(20, yPos, pageWidth - 40, 40, 'F');
-    doc.setTextColor(...darkGray);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10);
-    doc.text('Payment Instructions:', 25, yPos + 7);
+    const totalsX = pageWidth - 55;
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
-    doc.text(`Bank Name: ${formData.bankName}`, 25, yPos + 13);
-    doc.text(`Account Name: ${formData.accountName}`, 25, yPos + 18);
-    doc.text(`Account Number: ${formData.accountNumber}`, 25, yPos + 23);
-    doc.text(`Routing Number: ${formData.routingNumber}`, 25, yPos + 28);
-    doc.text(`Payment Method: ${formData.paymentMethod}`, 25, yPos + 33);
+    doc.text('Subtotal:', totalsX, yPos, { align: 'right' });
+    doc.text(`$${formatNumber(subtotal)}`, rightX, yPos, { align: 'right' });
+    
+    yPos += 5;
+    doc.text(`Tax (${formData.taxExempt ? '0%' : formData.salesTax + '%'}):`, totalsX, yPos, { align: 'right' });
+    doc.text(formData.taxExempt ? formData.taxNote : `$${formatNumber(subtotal * formData.salesTax / 100)}`, rightX, yPos, { align: 'right' });
+    
+    yPos += 7;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.text('Total Due:', totalsX, yPos, { align: 'right' });
+    doc.text(`$${formatNumber(total)} USD`, rightX, yPos, { align: 'right' });
+    
+    yPos += 12;
+    
+    // Payment Instructions - Compact
+    doc.setFillColor(245, 245, 245);
+    doc.rect(margin, yPos, pageWidth - 2 * margin, 24, 'F');
+    doc.setTextColor(...darkGray);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.text('Payment Instructions:', margin + 3, yPos + 5);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
+    doc.text(`Bank: ${safeString(formData.bankName)} | Account: ${safeString(formData.accountName)} | Acc#: ${safeString(formData.accountNumber)}`, margin + 3, yPos + 10);
+    doc.text(`Routing: ${safeString(formData.routingNumber)} | Method: ${safeString(formData.paymentMethod)}`, margin + 3, yPos + 14);
+    
+    yPos += 28;
+    
+    // Closing Note - Compact with bold NOTE and support email
+    doc.setFillColor(248, 250, 252);
+    doc.rect(margin, yPos, pageWidth - 2 * margin, 28, 'F');
+    doc.setDrawColor(59, 130, 246);
+    doc.setLineWidth(0.5);
+    doc.rect(margin, yPos, pageWidth - 2 * margin, 28);
+    
+    doc.setTextColor(...darkGray);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.text('NOTE:', margin + 3, yPos + 5);
+    
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
+    doc.text('We appreciate your continued partnership and trust in our services.', margin + 3, yPos + 10);
+    doc.text('Kindly quote this invoice number in all future correspondence for faster reference.', margin + 3, yPos + 14);
+    
+    
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7);
+    doc.text('Support Mail: support@selsoftinc.com', margin + 3, yPos + 23);
     
     return doc;
   };
 
   // Preview PDF in new tab
-  const handlePreview = () => {
-    const doc = generatePDF();
+  const handlePreview = async () => {
+    const doc = await generatePDF();
     const pdfBlob = doc.output('blob');
     const pdfUrl = URL.createObjectURL(pdfBlob);
     window.open(pdfUrl, '_blank');
   };
 
   // Download PDF
-  const handleDownload = () => {
-    const doc = generatePDF();
+  const handleDownload = async () => {
+    const doc = await generatePDF();
     doc.save(`${formData.invoiceNumber}.pdf`);
   };
 
@@ -494,7 +603,7 @@ const InvoicePDFPreviewModal = ({ invoice, onClose }) => {
             {/* Company Information */}
             <div className="form-section">
               <h5 className="section-title">
-                <i className="fas fa-building"></i> Staffing Company Information
+                <i className="fas fa-building"></i> Billed To Information
               </h5>
               <div className="form-row">
                 <div className="form-group">
@@ -603,12 +712,34 @@ const InvoicePDFPreviewModal = ({ invoice, onClose }) => {
                   />
                 </div>
               </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Invoice Duration From</label>
+                  <input
+                    type="date"
+                    name="invoiceDurationFrom"
+                    value={formData.invoiceDurationFrom}
+                    onChange={handleChange}
+                    className="form-control"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Invoice Duration To</label>
+                  <input
+                    type="date"
+                    name="invoiceDurationTo"
+                    value={formData.invoiceDurationTo}
+                    onChange={handleChange}
+                    className="form-control"
+                  />
+                </div>
+              </div>
             </div>
 
-            {/* Bill To */}
+            {/* Shipped To */}
             <div className="form-section">
               <h5 className="section-title">
-                <i className="fas fa-user-tie"></i> Bill To (Vendor/Client)
+                <i className="fas fa-shipping-fast"></i> Shipped To (Vendor/Client)
               </h5>
               <div className="form-row">
                 <div className="form-group">
@@ -745,7 +876,7 @@ const InvoicePDFPreviewModal = ({ invoice, onClose }) => {
                       <label>Total</label>
                       <input
                         type="text"
-                        value={`$${item.total.toFixed(2)}`}
+                        value={`$${formatNumber(item.total)}`}
                         className="form-control"
                         disabled
                       />
@@ -768,19 +899,19 @@ const InvoicePDFPreviewModal = ({ invoice, onClose }) => {
               <div className="totals-section">
                 <div className="total-row">
                   <span className="total-label">Subtotal:</span>
-                  <span className="total-value">${calculateSubtotal().toFixed(2)}</span>
+                  <span className="total-value">${formatNumber(calculateSubtotal())}</span>
                 </div>
                 <div className="total-row">
                   <span className="total-label">
                     Sales Tax ({formData.taxExempt ? '0%' : formData.salesTax + '%'}):
                   </span>
                   <span className="total-value">
-                    {formData.taxExempt ? formData.taxNote : `$${(calculateSubtotal() * formData.salesTax / 100).toFixed(2)}`}
+                    {formData.taxExempt ? formData.taxNote : `$${formatNumber(calculateSubtotal() * formData.salesTax / 100)}`}
                   </span>
                 </div>
                 <div className="total-row total-due">
                   <span className="total-label">Total Due:</span>
-                  <span className="total-value">${calculateTotal().toFixed(2)} USD</span>
+                  <span className="total-value">${formatNumber(calculateTotal())} USD</span>
                 </div>
               </div>
             </div>

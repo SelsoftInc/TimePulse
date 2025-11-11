@@ -91,6 +91,14 @@ router.get("/", async (req, res) => {
       };
     }
 
+    // Add Vendor association
+    includeClause.push({
+      model: models.Vendor,
+      as: "vendor",
+      attributes: ["id", "name", "email"],
+      required: false,
+    });
+
     // Add Timesheet association to get employee and vendor data
     includeClause.push({
       model: models.Timesheet,
@@ -121,10 +129,12 @@ router.get("/", async (req, res) => {
     const formattedInvoices = invoices.map((inv) => ({
       id: inv.id,
       invoiceNumber: inv.invoiceNumber,
-      vendor: inv.vendor?.name || "N/A",
+      vendor: inv.vendor?.name || inv.timesheet?.employee?.vendor?.name || "N/A",
       client: inv.client?.clientName || "N/A",
       employee: inv.employee
         ? `${inv.employee.firstName} ${inv.employee.lastName}`
+        : inv.timesheet?.employee
+        ? `${inv.timesheet.employee.firstName} ${inv.timesheet.employee.lastName}`
         : "N/A",
       week:
         inv.weekStart && inv.weekEnd
@@ -159,8 +169,8 @@ router.get("/", async (req, res) => {
     const transformedInvoices = invoices.map((inv) => ({
       id: inv.id,
       invoiceNumber: inv.invoiceNumber,
-      vendor: inv.timesheet?.employee?.vendor?.name || "N/A",
-      vendorEmail: inv.timesheet?.employee?.vendor?.email || "N/A",
+      vendor: inv.vendor?.name || inv.timesheet?.employee?.vendor?.name || "N/A",
+      vendorEmail: inv.vendor?.email || inv.timesheet?.employee?.vendor?.email || "N/A",
       client: inv.client ? inv.client.clientName : "No Client",
       employeeId: inv.timesheet?.employeeId || inv.employeeId,
       employeeName: inv.timesheet?.employee
@@ -188,6 +198,13 @@ router.get("/", async (req, res) => {
       status: inv.status || "active",
       lineItems: inv.lineItems || [],
       notes: inv.notes,
+      timesheetId: inv.timesheetId,
+      timesheet: inv.timesheet ? {
+        id: inv.timesheet.id,
+        weekStart: inv.timesheet.weekStart,
+        weekEnd: inv.timesheet.weekEnd,
+        employee: inv.timesheet.employee
+      } : null,
     }));
 
     res.json({
@@ -281,6 +298,53 @@ router.post("/", async (req, res) => {
   }
 });
 
+// GET /api/invoices/check-timesheet/:timesheetId
+// Check if invoice exists for a specific timesheet
+router.get("/check-timesheet/:timesheetId", async (req, res) => {
+  try {
+    const { timesheetId } = req.params;
+    const { tenantId } = req.query;
+
+    if (!tenantId) {
+      return res
+        .status(400)
+        .json({ success: false, message: "tenantId is required" });
+    }
+
+    const invoice = await models.Invoice.findOne({
+      where: { timesheetId, tenantId },
+      attributes: ["id", "invoiceNumber", "totalAmount", "status", "paymentStatus"],
+    });
+
+    if (invoice) {
+      return res.json({
+        success: true,
+        exists: true,
+        invoice: {
+          id: invoice.id,
+          invoiceNumber: invoice.invoiceNumber,
+          totalAmount: invoice.totalAmount,
+          status: invoice.status,
+          paymentStatus: invoice.paymentStatus,
+        },
+      });
+    } else {
+      return res.json({
+        success: true,
+        exists: false,
+        invoice: null,
+      });
+    }
+  } catch (error) {
+    console.error("❌ Error checking invoice for timesheet:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to check invoice",
+      error: error.message,
+    });
+  }
+});
+
 // GET /api/invoices/:id
 router.get("/:id", async (req, res) => {
   try {
@@ -293,6 +357,7 @@ router.get("/:id", async (req, res) => {
         .json({ success: false, message: "tenantId is required" });
     }
 
+    // Fetch invoice with basic associations first
     const invoice = await models.Invoice.findOne({
       where: { id, tenantId },
       include: [
@@ -311,18 +376,31 @@ router.get("/:id", async (req, res) => {
         {
           model: models.Employee,
           as: "employee",
-          attributes: ["id", "firstName", "lastName", "email", "title", "position", "department"],
+          attributes: ["id", "firstName", "lastName", "email"],
           required: false,
+          include: [{
+            model: models.Vendor,
+            as: "vendor",
+            attributes: ["id", "name", "email"],
+            required: false
+          }]
         },
         {
           model: models.Timesheet,
           as: "timesheet",
+          attributes: ["id", "weekStart", "weekEnd", "employeeId"],
           required: false,
           include: [{
             model: models.Employee,
             as: "employee",
-            attributes: ["id", "firstName", "lastName", "email", "title", "position", "department"],
-            required: false
+            attributes: ["id", "firstName", "lastName", "email"],
+            required: false,
+            include: [{
+              model: models.Vendor,
+              as: "vendor",
+              attributes: ["id", "name", "email"],
+              required: false
+            }]
           }]
         },
         {
@@ -343,6 +421,11 @@ router.get("/:id", async (req, res) => {
     res.json({ success: true, invoice });
   } catch (error) {
     console.error("❌ Error fetching invoice:", error);
+    console.error("Error details:", {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    });
     res.status(500).json({
       success: false,
       message: "Failed to fetch invoice",

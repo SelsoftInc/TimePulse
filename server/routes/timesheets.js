@@ -1825,6 +1825,8 @@ router.post("/:timesheetId/generate-invoice", async (req, res) => {
       tenantId,
       invoiceNumber,
       clientId: timesheet.clientId,
+      employeeId: employee.id,
+      vendorId: vendor.id,
       timesheetId: timesheet.id,
       invoiceHash,
       invoiceDate: toDateOnly(invoiceDate),

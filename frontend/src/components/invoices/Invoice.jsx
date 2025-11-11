@@ -6,6 +6,12 @@ import { API_BASE } from "../../config/api";
 import "./Invoice.css";
 import '../common/ActionsDropdown.css';
 
+// Utility function for safe number formatting (prevents toFixed errors)
+const formatCurrency = (value) => {
+  const num = parseFloat(value) || 0;
+  return num.toFixed(2);
+};
+
 // Utility function for status display
 const getStatusDisplay = (status) => {
   switch (status.toLowerCase()) {
@@ -34,193 +40,217 @@ const getStatusDisplay = (status) => {
   }
 };
 
-// Invoice Detail Modal Component
+// Invoice Detail Modal Component - Redesigned to match Timesheet popup
 const InvoiceDetailModal = ({ invoice, onClose, onApprove, onReject }) => {
   const [notes, setNotes] = useState("");
+  const [showPDFPreview, setShowPDFPreview] = useState(false);
+  const [selectedInvoiceForPDF, setSelectedInvoiceForPDF] = useState(null);
+
+  // Safe number formatting to prevent toFixed errors
+  const formatCurrency = (value) => {
+    const num = parseFloat(value) || 0;
+    return num.toFixed(2);
+  };
+
+  const handlePreviewPDF = async () => {
+    try {
+      const tenantId = JSON.parse(localStorage.getItem("user"))?.tenantId;
+      const token = localStorage.getItem("token");
+      
+      console.log('📄 Fetching full invoice details for PDF preview:', invoice.id);
+      
+      // Fetch full invoice details from backend
+      const response = await fetch(
+        `${API_BASE}/api/invoices/${invoice.id}?tenantId=${tenantId}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('✅ Full invoice data for PDF:', data);
+        
+        if (data.success && data.invoice) {
+          const fullInvoice = {
+            ...invoice,
+            ...data.invoice,
+            lineItems: data.invoice.lineItems || invoice.lineItems || [],
+            companyLogo: data.invoice.companyLogo || null
+          };
+          
+          setSelectedInvoiceForPDF(fullInvoice);
+          setShowPDFPreview(true);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching invoice for PDF:", error);
+      alert('Failed to load invoice details for PDF');
+    }
+  };
+
+  const handleDownloadPDF = async () => {
+    try {
+      const tenantId = JSON.parse(localStorage.getItem("user"))?.tenantId;
+      const token = localStorage.getItem("token");
+      
+      console.log('📥 Fetching full invoice details for PDF download:', invoice.id);
+      
+      // Fetch full invoice details from backend
+      const response = await fetch(
+        `${API_BASE}/api/invoices/${invoice.id}?tenantId=${tenantId}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      
+      if (response.ok) {
+        const data = await response.json();
+        
+        if (data.success && data.invoice) {
+          const fullInvoice = {
+            ...invoice,
+            ...data.invoice,
+            lineItems: data.invoice.lineItems || invoice.lineItems || [],
+            companyLogo: data.invoice.companyLogo || null
+          };
+          
+          setSelectedInvoiceForPDF(fullInvoice);
+          setShowPDFPreview(true);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching invoice for PDF:", error);
+      alert('Failed to load invoice details for PDF');
+    }
+  };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div
-        className="modal-content invoice-modal"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="modal-header">
-          <h4>Invoice Details - {invoice.invoiceNumber}</h4>
-          <button className="modal-close" onClick={onClose}>
-            ×
-          </button>
-        </div>
-
-        <div className="modal-body">
-          <div className="invoice-detail-header">
-            <div className="invoice-detail-info">
-              <div className="detail-group">
-                <span className="detail-label">Vendor:</span>
-                <span className="detail-value">{invoice.vendor}</span>
-              </div>
-              <div className="detail-group">
-                <span className="detail-label">Week:</span>
-                <span className="detail-value">{invoice.week}</span>
-              </div>
-              <div className="detail-group">
-                <span className="detail-label">Status:</span>
-                {(() => {
-                  const statusInfo = getStatusDisplay(invoice.status);
-                  return (
-                    <span
-                      className={`badge badge-${statusInfo.class} d-inline-flex align-items-center`}
-                    >
-                      <i
-                        className={`${statusInfo.icon} me-1`}
-                        style={{ fontSize: "12px" }}
-                      ></i>
-                      {statusInfo.text}
-                    </span>
-                  );
-                })()}
-              </div>
-            </div>
-            <div className="invoice-detail-total">
-              <span className="total-label">Total Amount:</span>
-              <span className="total-value">${invoice.total.toFixed(2)}</span>
-            </div>
+    <>
+      <div className="modal-overlay" onClick={onClose}>
+        <div
+          className="modal-content invoice-modal"
+          onClick={(e) => e.stopPropagation()}
+          style={{maxWidth: '800px', borderRadius: '12px'}}
+        >
+          {/* Modern Header matching Timesheet design */}
+          <div className="modal-header" style={{background: 'linear-gradient(135deg, #4285f4 0%, #1967d2 100%)', borderRadius: '12px 12px 0 0', padding: '20px 24px'}}>
+            <h4 style={{color: '#ffffff', margin: 0, fontSize: '18px', fontWeight: '600'}}>Invoice Details</h4>
+            <button className="modal-close" onClick={onClose} style={{background: 'rgba(255,255,255,0.2)', border: 'none', color: '#ffffff', fontSize: '24px', width: '32px', height: '32px', borderRadius: '6px', cursor: 'pointer'}}>
+              ×
+            </button>
           </div>
 
-          <div className="invoice-line-items">
-            <h5>Line Items</h5>
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>Description</th>
-                  <th>Hours</th>
-                  <th>Rate</th>
-                  <th>Amount</th>
-                </tr>
-              </thead>
-              <tbody>
-                {invoice.lineItems.map((item, index) => (
-                  <tr key={index}>
-                    <td>{item.description}</td>
-                    <td>{item.hours}</td>
-                    <td>${item.rate.toFixed(2)}/hr</td>
-                    <td>${(item.hours * item.rate).toFixed(2)}</td>
-                  </tr>
-                ))}
-              </tbody>
-              <tfoot>
-                <tr>
-                  <td colSpan="3" className="text-right">
-                    <strong>Total</strong>
-                  </td>
-                  <td>
-                    <strong>${invoice.total.toFixed(2)}</strong>
-                  </td>
-                </tr>
-              </tfoot>
-            </table>
-          </div>
-
-          {invoice.discrepancies && (
-            <div className="invoice-discrepancies">
-              <h5>Discrepancies Found</h5>
-              <div className="alert alert-warning">
-                <i className="fas fa-exclamation-triangle"></i>
-                <span>
-                  There are discrepancies between the invoice and timesheet
-                  data.
-                </span>
+          <div className="modal-body" style={{padding: '24px'}}>
+            {/* Employee Information */}
+            <div style={{marginBottom: '24px'}}>
+              <div style={{display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px'}}>
+                <div style={{background: '#e8f0fe', padding: '8px', borderRadius: '8px', display: 'flex'}}>
+                  <i className="fas fa-user" style={{fontSize: '16px', color: '#1967d2'}}></i>
+                </div>
+                <h5 style={{margin: 0, fontSize: '15px', fontWeight: '600', color: '#202124'}}>Employee Information</h5>
               </div>
+              <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', padding: '16px', background: '#f8f9fa', borderRadius: '8px', border: '1px solid #e8eaed'}}>
+                <div>
+                  <label style={{display: 'block', fontSize: '12px', fontWeight: '600', color: '#5f6368', marginBottom: '4px'}}>EMPLOYEE NAME</label>
+                  <div style={{fontSize: '14px', color: '#202124'}}>{invoice.employeeName || 'N/A'}</div>
+                </div>
+                <div>
+                  <label style={{display: 'block', fontSize: '12px', fontWeight: '600', color: '#5f6368', marginBottom: '4px'}}>EMPLOYEE EMAIL</label>
+                  <div style={{fontSize: '14px', color: '#202124'}}>{invoice.employeeEmail || 'N/A'}</div>
+                </div>
+              </div>
+            </div>
 
-              <table className="table discrepancy-table">
-                <thead>
-                  <tr>
-                    <th>Source</th>
-                    <th>Hours</th>
-                    <th>Notes</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {Object.entries(invoice.discrepancies).map(
-                    ([source, data], index) => (
-                      <tr
-                        key={index}
-                        className={data.mismatch ? "mismatch-row" : ""}
-                      >
-                        <td>{source}</td>
-                        <td>{data.hours}</td>
-                        <td>{data.notes}</td>
-                      </tr>
-                    )
-                  )}
-                  {invoice.discrepancies.mismatch && (
-                    <tr className="mismatch-alert">
-                      <td>
-                        <i className="fas fa-flag"></i> Mismatch
-                      </td>
-                      <td colSpan="2">Needs employer review</td>
+            {/* Timesheet Period */}
+            <div style={{marginBottom: '24px'}}>
+              <h5 style={{fontSize: '15px', fontWeight: '600', color: '#202124', marginBottom: '12px'}}>Timesheet Period</h5>
+              <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', padding: '16px', background: '#f8f9fa', borderRadius: '8px', border: '1px solid #e8eaed'}}>
+                <div>
+                  <label style={{display: 'block', fontSize: '12px', fontWeight: '600', color: '#5f6368', marginBottom: '4px'}}>WEEK START:</label>
+                  <div style={{fontSize: '14px', color: '#202124'}}>{invoice.weekStart || invoice.week?.split(' - ')[0] || 'N/A'}</div>
+                </div>
+                <div>
+                  <label style={{display: 'block', fontSize: '12px', fontWeight: '600', color: '#5f6368', marginBottom: '4px'}}>WEEK END:</label>
+                  <div style={{fontSize: '14px', color: '#202124'}}>{invoice.weekEnd || invoice.week?.split(' - ')[1] || 'N/A'}</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Line Items */}
+            <div style={{marginBottom: '24px'}}>
+              <h5 style={{fontSize: '15px', fontWeight: '600', color: '#202124', marginBottom: '12px'}}>Line Items</h5>
+              <div style={{overflowX: 'auto'}}>
+                <table style={{width: '100%', borderCollapse: 'collapse'}}>
+                  <thead>
+                    <tr style={{background: '#4285f4'}}>
+                      <th style={{padding: '12px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: '#ffffff', textTransform: 'uppercase'}}>DESCRIPTION</th>
+                      <th style={{padding: '12px', textAlign: 'center', fontSize: '12px', fontWeight: '600', color: '#ffffff', textTransform: 'uppercase'}}>HOURS</th>
+                      <th style={{padding: '12px', textAlign: 'center', fontSize: '12px', fontWeight: '600', color: '#ffffff', textTransform: 'uppercase'}}>RATE</th>
+                      <th style={{padding: '12px', textAlign: 'right', fontSize: '12px', fontWeight: '600', color: '#ffffff', textTransform: 'uppercase'}}>AMOUNT</th>
                     </tr>
-                  )}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {(invoice.lineItems || []).map((item, index) => (
+                      <tr key={index} style={{borderBottom: '1px solid #e8eaed'}}>
+                        <td style={{padding: '12px', fontSize: '14px', color: '#202124'}}>{item.description || 'Service'}</td>
+                        <td style={{padding: '12px', textAlign: 'center', fontSize: '14px', color: '#202124'}}>{formatCurrency(item.hours)}</td>
+                        <td style={{padding: '12px', textAlign: 'center', fontSize: '14px', color: '#202124'}}>${formatCurrency(item.rate)}</td>
+                        <td style={{padding: '12px', textAlign: 'right', fontSize: '14px', fontWeight: '600', color: '#202124'}}>${formatCurrency(parseFloat(item.hours || 0) * parseFloat(item.rate || 0))}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          )}
-
-          <div className="invoice-attachments">
-            <h5>Attachments</h5>
-            {Array.isArray(invoice.attachments) &&
-            invoice.attachments.length > 0 ? (
-              <ul className="attachment-list">
-                {invoice.attachments.map((attachment, index) => (
-                  <li key={index} className="attachment-item">
-                    <i className="fas fa-file-pdf"></i>
-                    <span>{attachment.name}</span>
-                    <a href="#download" className="attachment-download">
-                      <i className="fas fa-download"></i>
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-muted">No attachments found</p>
-            )}
           </div>
 
-          <div className="form-group">
-            <label htmlFor="notes">Notes</label>
-            <textarea
-              id="notes"
-              className="form-control"
-              rows="3"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Add notes about this invoice..."
-            ></textarea>
+          {/* Footer with Preview and Download buttons */}
+          <div className="modal-footer" style={{padding: '16px 24px', borderTop: '1px solid #e8eaed', display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+            <button 
+              className="btn-outline" 
+              onClick={onClose}
+              style={{padding: '10px 20px', border: '1px solid #dadce0', borderRadius: '6px', fontSize: '14px', fontWeight: '500', color: '#5f6368', background: '#ffffff', cursor: 'pointer'}}
+            >
+              Close
+            </button>
+            <div style={{display: 'flex', gap: '12px'}}>
+              <button
+                onClick={handlePreviewPDF}
+                style={{padding: '10px 20px', border: 'none', borderRadius: '6px', fontSize: '14px', fontWeight: '500', color: '#ffffff', background: '#34a853', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px'}}
+              >
+                <i className="fas fa-eye"></i>
+                Preview
+              </button>
+              <button
+                onClick={handleDownloadPDF}
+                style={{padding: '10px 20px', border: 'none', borderRadius: '6px', fontSize: '14px', fontWeight: '500', color: '#ffffff', background: '#1967d2', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px'}}
+              >
+                <i className="fas fa-download"></i>
+                Download Invoice
+              </button>
+            </div>
           </div>
-        </div>
-
-        <div className="modal-footer">
-          <button className="btn-outline" onClick={onClose}>
-            Close
-          </button>
-          {invoice.status === "Draft" || invoice.status === "Pending" ? (
-            <>
-              <button
-                className="btn-outline btn-reject"
-                onClick={() => onReject(invoice.id, notes)}
-              >
-                Reject
-              </button>
-              <button
-                className="btn-primary"
-                onClick={() => onApprove(invoice.id, notes)}
-              >
-                Approve
-              </button>
-            </>
-          ) : null}
         </div>
       </div>
-    </div>
+
+      {/* PDF Preview Modal */}
+      {showPDFPreview && selectedInvoiceForPDF && (
+        <InvoicePDFPreviewModal
+          invoice={selectedInvoiceForPDF}
+          onClose={() => {
+            setShowPDFPreview(false);
+            setSelectedInvoiceForPDF(null);
+          }}
+        />
+      )}
+    </>
   );
 };
 
@@ -566,7 +596,7 @@ const InvoiceUploadModal = ({ onClose, onUpload }) => {
                     <option key={ts.id} value={ts.id}>
                       {ts.client?.clientName || "N/A"} - {ts.totalHours}hrs @ $
                       {ts.hourlyRate}/hr = $
-                      {(ts.totalHours * ts.hourlyRate).toFixed(2)}
+                      {formatCurrency(ts.totalHours * ts.hourlyRate)}
                     </option>
                   ))}
                 </select>
@@ -717,6 +747,13 @@ const Invoice = () => {
   const [actionsType, setActionsType] = useState(null);
   const [showPDFModal, setShowPDFModal] = useState(false);
   const [selectedInvoiceForPDF, setSelectedInvoiceForPDF] = useState(null);
+  
+  // Edit invoice modal state
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editInvoiceData, setEditInvoiceData] = useState(null);
+  const [companyLogo, setCompanyLogo] = useState(null);
+  const [timesheetFile, setTimesheetFile] = useState(null);
+  
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
@@ -1281,9 +1318,80 @@ const Invoice = () => {
                                       </button>
                                       <button
                                         className="dropdown-item"
-                                        onClick={() => handleDownloadInvoice(invoice)}
+                                        onClick={async () => {
+                                          try {
+                                            const tenantId = JSON.parse(localStorage.getItem("user"))?.tenantId;
+                                            const token = localStorage.getItem("token");
+                                            
+                                            console.log('📥 Fetching complete invoice details for editing:', invoice.id);
+                                            
+                                            // Fetch full invoice details including timesheet data from backend
+                                            const response = await fetch(
+                                              `${API_BASE}/api/invoices/${invoice.id}?tenantId=${tenantId}`,
+                                              {
+                                                headers: {
+                                                  'Authorization': `Bearer ${token}`,
+                                                  'Content-Type': 'application/json'
+                                                }
+                                              }
+                                            );
+                                            
+                                            if (response.ok) {
+                                              const data = await response.json();
+                                              console.log('✅ Full invoice data fetched:', data);
+                                              
+                                              if (data.success && data.invoice) {
+                                                // Merge full invoice data with existing invoice
+                                                const fullInvoice = {
+                                                  ...invoice,
+                                                  ...data.invoice,
+                                                  lineItems: data.invoice.lineItems || [],
+                                                  employeeName: data.invoice.employeeName || 'N/A',
+                                                  employeeEmail: data.invoice.employeeEmail || 'N/A',
+                                                  vendorContact: data.invoice.vendorContact || 'N/A',
+                                                  week: data.invoice.week || invoice.week,
+                                                  notes: data.invoice.notes || '',
+                                                  companyLogo: data.invoice.companyLogo || null,
+                                                  timesheetFile: data.invoice.timesheetFile || null,
+                                                  timesheetFileName: data.invoice.timesheetFileName || null
+                                                };
+                                                
+                                                // Ensure line items have proper structure
+                                                fullInvoice.lineItems = fullInvoice.lineItems.map(item => ({
+                                                  ...item,
+                                                  description: item.description || 'Service',
+                                                  hours: parseFloat(item.hours || item.quantity || 0),
+                                                  rate: parseFloat(item.rate || item.hourlyRate || 0),
+                                                  amount: parseFloat(item.amount || (item.hours * item.rate) || 0)
+                                                }));
+                                                
+                                                console.log('📝 Opening edit modal with data:', fullInvoice);
+                                                setEditInvoiceData(fullInvoice);
+                                                setEditModalOpen(true);
+                                              } else {
+                                                console.error('API returned success:false or no invoice data');
+                                                alert('Failed to fetch invoice details. Opening with available data.');
+                                                setEditInvoiceData(invoice);
+                                                setEditModalOpen(true);
+                                              }
+                                            } else {
+                                              console.error('Failed to fetch invoice details:', response.status);
+                                              alert('Failed to fetch complete invoice details. Opening with available data.');
+                                              setEditInvoiceData(invoice);
+                                              setEditModalOpen(true);
+                                            }
+                                          } catch (error) {
+                                            console.error("Error fetching invoice details:", error);
+                                            alert('An error occurred. Opening with available data.');
+                                            setEditInvoiceData(invoice);
+                                            setEditModalOpen(true);
+                                          } finally {
+                                            setOpenActionsId(null);
+                                            setActionsType(null);
+                                          }
+                                        }}
                                       >
-                                        <i className="fas fa-download mr-1"></i> Download Invoice
+                                        <i className="fas fa-edit mr-1"></i> Edit Invoice
                                       </button>
                                     </div>
                                   )}
@@ -1390,6 +1498,577 @@ const Invoice = () => {
             setSelectedInvoiceForPDF(null);
           }}
         />
+      )}
+
+      {/* Edit Invoice Modal - Completely Revamped */}
+      {editModalOpen && editInvoiceData && (
+        <div className="invoice-modal-overlay" onClick={() => setEditModalOpen(false)}>
+          <div className="invoice-modal-content modern-edit-modal" onClick={(e) => e.stopPropagation()} style={{maxWidth: '1400px', width: '98%', maxHeight: '95vh', overflow: 'hidden', display: 'flex', flexDirection: 'column'}}>
+            {/* Modern Header with Gradient */}
+            <div className="invoice-modal-header" style={{background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', padding: '24px 32px', borderRadius: '12px 12px 0 0'}}>
+              <div className="invoice-modal-title" style={{display: 'flex', alignItems: 'center', gap: '16px'}}>
+                <div style={{background: 'rgba(255,255,255,0.2)', padding: '12px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
+                  <em className="icon ni ni-file-docs" style={{fontSize: '28px', color: '#ffffff'}}></em>
+                </div>
+                <div>
+                  <h3 style={{margin: 0, fontSize: '24px', fontWeight: '600', color: '#ffffff'}}>Edit Invoice</h3>
+                  <p style={{margin: '4px 0 0 0', fontSize: '14px', color: 'rgba(255,255,255,0.9)'}}>{editInvoiceData.invoiceNumber}</p>
+                </div>
+              </div>
+              <button 
+                className="invoice-modal-close"
+                onClick={() => setEditModalOpen(false)}
+                title="Close"
+                style={{background: 'rgba(255,255,255,0.2)', border: 'none', color: '#ffffff', fontSize: '28px', width: '40px', height: '40px', borderRadius: '8px', cursor: 'pointer', transition: 'all 0.3s'}}
+                onMouseEnter={(e) => e.target.style.background = 'rgba(255,255,255,0.3)'}
+                onMouseLeave={(e) => e.target.style.background = 'rgba(255,255,255,0.2)'}
+              >
+                ×
+              </button>
+            </div>
+            
+            <div className="edit-invoice-modal-body" style={{flex: 1, overflowY: 'auto', padding: '32px', background: '#f8f9fa'}}>
+              
+              {/* Upload Section - Employer Logo & Timesheet */}
+              <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '32px'}}>
+                {/* Employer Logo Upload */}
+                <div style={{background: '#ffffff', borderRadius: '16px', padding: '24px', boxShadow: '0 2px 12px rgba(0,0,0,0.08)', border: '2px dashed #e0e0e0', transition: 'all 0.3s'}}
+                     onMouseEnter={(e) => e.currentTarget.style.borderColor = '#667eea'}
+                     onMouseLeave={(e) => e.currentTarget.style.borderColor = '#e0e0e0'}>
+                  <div style={{display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px'}}>
+                    <div style={{background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', padding: '10px', borderRadius: '10px', display: 'flex'}}>
+                      <em className="icon ni ni-building" style={{fontSize: '20px', color: '#ffffff'}}></em>
+                    </div>
+                    <div>
+                      <h4 style={{margin: 0, fontSize: '16px', fontWeight: '600', color: '#2c3e50'}}>Employer Logo</h4>
+                      <p style={{margin: '2px 0 0 0', fontSize: '13px', color: '#7f8c8d'}}>Company branding for invoice</p>
+                    </div>
+                  </div>
+                  <div style={{position: 'relative', textAlign: 'center', padding: '32px 16px', background: '#f8f9fa', borderRadius: '12px', cursor: 'pointer'}}
+                       onClick={() => document.getElementById('logoUpload').click()}>
+                    <input
+                      id="logoUpload"
+                      type="file"
+                      accept="image/*"
+                      style={{display: 'none'}}
+                      onChange={(e) => {
+                        const file = e.target.files[0];
+                        if (file) {
+                          setCompanyLogo(file);
+                        }
+                      }}
+                    />
+                    {!companyLogo ? (
+                      <>
+                        <em className="icon ni ni-upload-cloud" style={{fontSize: '48px', color: '#667eea', marginBottom: '12px', display: 'block'}}></em>
+                        <p style={{margin: 0, fontSize: '14px', fontWeight: '500', color: '#2c3e50'}}>Click to upload logo</p>
+                        <p style={{margin: '4px 0 0 0', fontSize: '12px', color: '#95a5a6'}}>PNG, JPG up to 5MB</p>
+                      </>
+                    ) : (
+                      <div style={{display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px'}}>
+                        <em className="icon ni ni-check-circle" style={{fontSize: '32px', color: '#27ae60'}}></em>
+                        <div style={{textAlign: 'left'}}>
+                          <p style={{margin: 0, fontSize: '14px', fontWeight: '500', color: '#27ae60'}}>Logo uploaded</p>
+                          <p style={{margin: '2px 0 0 0', fontSize: '12px', color: '#7f8c8d'}}>{companyLogo.name}</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Timesheet Upload */}
+                <div style={{background: '#ffffff', borderRadius: '16px', padding: '24px', boxShadow: '0 2px 12px rgba(0,0,0,0.08)', border: '2px dashed #e0e0e0', transition: 'all 0.3s'}}
+                     onMouseEnter={(e) => e.currentTarget.style.borderColor = '#667eea'}
+                     onMouseLeave={(e) => e.currentTarget.style.borderColor = '#e0e0e0'}>
+                  <div style={{display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px'}}>
+                    <div style={{background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', padding: '10px', borderRadius: '10px', display: 'flex'}}>
+                      <em className="icon ni ni-file-text" style={{fontSize: '20px', color: '#ffffff'}}></em>
+                    </div>
+                    <div>
+                      <h4 style={{margin: 0, fontSize: '16px', fontWeight: '600', color: '#2c3e50'}}>Timesheet Document</h4>
+                      <p style={{margin: '2px 0 0 0', fontSize: '13px', color: '#7f8c8d'}}>Upload timesheet file</p>
+                    </div>
+                  </div>
+                  <div style={{position: 'relative', textAlign: 'center', padding: '32px 16px', background: '#f8f9fa', borderRadius: '12px', cursor: 'pointer'}}
+                       onClick={() => document.getElementById('timesheetUpload').click()}>
+                    <input
+                      id="timesheetUpload"
+                      type="file"
+                      accept=".pdf,.xlsx,.xls,.csv"
+                      style={{display: 'none'}}
+                      onChange={(e) => {
+                        const file = e.target.files[0];
+                        if (file) {
+                          setTimesheetFile(file);
+                        }
+                      }}
+                    />
+                    {!timesheetFile ? (
+                      <>
+                        <em className="icon ni ni-upload" style={{fontSize: '48px', color: '#667eea', marginBottom: '12px', display: 'block'}}></em>
+                        <p style={{margin: 0, fontSize: '14px', fontWeight: '500', color: '#2c3e50'}}>Click to upload timesheet</p>
+                        <p style={{margin: '4px 0 0 0', fontSize: '12px', color: '#95a5a6'}}>PDF, Excel, CSV files</p>
+                      </>
+                    ) : (
+                      <div style={{display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px'}}>
+                        <em className="icon ni ni-check-circle" style={{fontSize: '32px', color: '#27ae60'}}></em>
+                        <div style={{textAlign: 'left'}}>
+                          <p style={{margin: 0, fontSize: '14px', fontWeight: '500', color: '#27ae60'}}>Timesheet uploaded</p>
+                          <p style={{margin: '2px 0 0 0', fontSize: '12px', color: '#7f8c8d'}}>{timesheetFile.name}</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Employee & Vendor Details Section */}
+              <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '32px'}}>
+                {/* Employee Details */}
+                <div style={{background: '#ffffff', borderRadius: '16px', padding: '24px', boxShadow: '0 2px 12px rgba(0,0,0,0.08)'}}>
+                  <div style={{display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px', paddingBottom: '16px', borderBottom: '2px solid #f0f0f0'}}>
+                    <div style={{background: 'linear-gradient(135deg, #3498db 0%, #2980b9 100%)', padding: '10px', borderRadius: '10px', display: 'flex'}}>
+                      <em className="icon ni ni-user" style={{fontSize: '20px', color: '#ffffff'}}></em>
+                    </div>
+                    <h4 style={{margin: 0, fontSize: '16px', fontWeight: '600', color: '#2c3e50'}}>Employee Details</h4>
+                  </div>
+                  <div style={{display: 'flex', flexDirection: 'column', gap: '16px'}}>
+                    <div>
+                      <label style={{display: 'block', fontSize: '12px', fontWeight: '600', color: '#7f8c8d', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px'}}>Employee Name</label>
+                      <input
+                        type="text"
+                        style={{width: '100%', padding: '12px 16px', border: '2px solid #e8e8e8', borderRadius: '10px', fontSize: '14px', fontWeight: '500', color: '#2c3e50', transition: 'all 0.3s'}}
+                        value={editInvoiceData.employeeName || 'N/A'}
+                        onChange={(e) => setEditInvoiceData({...editInvoiceData, employeeName: e.target.value})}
+                        onFocus={(e) => e.target.style.borderColor = '#667eea'}
+                        onBlur={(e) => e.target.style.borderColor = '#e8e8e8'}
+                      />
+                    </div>
+                    <div>
+                      <label style={{display: 'block', fontSize: '12px', fontWeight: '600', color: '#7f8c8d', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px'}}>Employee Email</label>
+                      <input
+                        type="email"
+                        style={{width: '100%', padding: '12px 16px', border: '2px solid #e8e8e8', borderRadius: '10px', fontSize: '14px', color: '#2c3e50', transition: 'all 0.3s'}}
+                        value={editInvoiceData.employeeEmail || 'N/A'}
+                        onChange={(e) => setEditInvoiceData({...editInvoiceData, employeeEmail: e.target.value})}
+                        onFocus={(e) => e.target.style.borderColor = '#667eea'}
+                        onBlur={(e) => e.target.style.borderColor = '#e8e8e8'}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Vendor Details */}
+                <div style={{background: '#ffffff', borderRadius: '16px', padding: '24px', boxShadow: '0 2px 12px rgba(0,0,0,0.08)'}}>
+                  <div style={{display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px', paddingBottom: '16px', borderBottom: '2px solid #f0f0f0'}}>
+                    <div style={{background: 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)', padding: '10px', borderRadius: '10px', display: 'flex'}}>
+                      <em className="icon ni ni-briefcase" style={{fontSize: '20px', color: '#ffffff'}}></em>
+                    </div>
+                    <h4 style={{margin: 0, fontSize: '16px', fontWeight: '600', color: '#2c3e50'}}>Vendor Details</h4>
+                  </div>
+                  <div style={{display: 'flex', flexDirection: 'column', gap: '16px'}}>
+                    <div>
+                      <label style={{display: 'block', fontSize: '12px', fontWeight: '600', color: '#7f8c8d', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px'}}>Vendor Name</label>
+                      <input
+                        type="text"
+                        style={{width: '100%', padding: '12px 16px', border: '2px solid #e8e8e8', borderRadius: '10px', fontSize: '14px', fontWeight: '500', color: '#2c3e50', transition: 'all 0.3s'}}
+                        value={editInvoiceData.vendor || ''}
+                        onChange={(e) => setEditInvoiceData({...editInvoiceData, vendor: e.target.value})}
+                        onFocus={(e) => e.target.style.borderColor = '#667eea'}
+                        onBlur={(e) => e.target.style.borderColor = '#e8e8e8'}
+                      />
+                    </div>
+                    <div>
+                      <label style={{display: 'block', fontSize: '12px', fontWeight: '600', color: '#7f8c8d', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px'}}>Vendor Contact</label>
+                      <input
+                        type="text"
+                        style={{width: '100%', padding: '12px 16px', border: '2px solid #e8e8e8', borderRadius: '10px', fontSize: '14px', color: '#2c3e50', transition: 'all 0.3s'}}
+                        value={editInvoiceData.vendorContact || 'N/A'}
+                        onChange={(e) => setEditInvoiceData({...editInvoiceData, vendorContact: e.target.value})}
+                        onFocus={(e) => e.target.style.borderColor = '#667eea'}
+                        onBlur={(e) => e.target.style.borderColor = '#e8e8e8'}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Invoice Information Section */}
+              <div style={{background: '#ffffff', borderRadius: '16px', padding: '24px', boxShadow: '0 2px 12px rgba(0,0,0,0.08)', marginBottom: '32px'}}>
+                <div style={{display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px', paddingBottom: '16px', borderBottom: '2px solid #f0f0f0'}}>
+                  <div style={{background: 'linear-gradient(135deg, #f39c12 0%, #e67e22 100%)', padding: '10px', borderRadius: '10px', display: 'flex'}}>
+                    <em className="icon ni ni-file-docs" style={{fontSize: '20px', color: '#ffffff'}}></em>
+                  </div>
+                  <h4 style={{margin: 0, fontSize: '16px', fontWeight: '600', color: '#2c3e50'}}>Invoice Information</h4>
+                </div>
+                <div style={{display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px'}}>
+                  <div>
+                    <label style={{display: 'block', fontSize: '12px', fontWeight: '600', color: '#7f8c8d', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px'}}>Invoice Number</label>
+                    <input
+                      type="text"
+                      style={{width: '100%', padding: '12px 16px', border: '2px solid #e8e8e8', borderRadius: '10px', fontSize: '14px', fontWeight: '600', color: '#2c3e50', transition: 'all 0.3s'}}
+                      value={editInvoiceData.invoiceNumber || ''}
+                      onChange={(e) => setEditInvoiceData({...editInvoiceData, invoiceNumber: e.target.value})}
+                      onFocus={(e) => e.target.style.borderColor = '#667eea'}
+                      onBlur={(e) => e.target.style.borderColor = '#e8e8e8'}
+                    />
+                  </div>
+                  <div>
+                    <label style={{display: 'block', fontSize: '12px', fontWeight: '600', color: '#7f8c8d', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px'}}>Issue Date</label>
+                    <input
+                      type="date"
+                      style={{width: '100%', padding: '12px 16px', border: '2px solid #e8e8e8', borderRadius: '10px', fontSize: '14px', color: '#2c3e50', transition: 'all 0.3s'}}
+                      value={editInvoiceData.issueDate ? new Date(editInvoiceData.issueDate).toISOString().split('T')[0] : ''}
+                      onChange={(e) => setEditInvoiceData({...editInvoiceData, issueDate: e.target.value})}
+                      onFocus={(e) => e.target.style.borderColor = '#667eea'}
+                      onBlur={(e) => e.target.style.borderColor = '#e8e8e8'}
+                    />
+                  </div>
+                  <div>
+                    <label style={{display: 'block', fontSize: '12px', fontWeight: '600', color: '#7f8c8d', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px'}}>Status</label>
+                    <select
+                      style={{width: '100%', padding: '12px 16px', border: '2px solid #e8e8e8', borderRadius: '10px', fontSize: '14px', fontWeight: '500', color: '#2c3e50', transition: 'all 0.3s', cursor: 'pointer'}}
+                      value={editInvoiceData.status || 'Draft'}
+                      onChange={(e) => setEditInvoiceData({...editInvoiceData, status: e.target.value})}
+                      onFocus={(e) => e.target.style.borderColor = '#667eea'}
+                      onBlur={(e) => e.target.style.borderColor = '#e8e8e8'}
+                    >
+                      <option value="Draft">Draft</option>
+                      <option value="Pending">Pending</option>
+                      <option value="Approved">Approved</option>
+                      <option value="Sent">Sent</option>
+                      <option value="Paid">Paid</option>
+                      <option value="Rejected">Rejected</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{display: 'block', fontSize: '12px', fontWeight: '600', color: '#7f8c8d', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px'}}>Total Hours</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      style={{width: '100%', padding: '12px 16px', border: '2px solid #e8e8e8', borderRadius: '10px', fontSize: '14px', color: '#2c3e50', transition: 'all 0.3s'}}
+                      value={editInvoiceData.hours || 0}
+                      onChange={(e) => setEditInvoiceData({...editInvoiceData, hours: parseFloat(e.target.value) || 0})}
+                      onFocus={(e) => e.target.style.borderColor = '#667eea'}
+                      onBlur={(e) => e.target.style.borderColor = '#e8e8e8'}
+                    />
+                  </div>
+                  <div>
+                    <label style={{display: 'block', fontSize: '12px', fontWeight: '600', color: '#7f8c8d', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px'}}>Total Amount</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      style={{width: '100%', padding: '12px 16px', border: '2px solid #e8e8e8', borderRadius: '10px', fontSize: '14px', fontWeight: '600', color: '#27ae60', transition: 'all 0.3s'}}
+                      value={editInvoiceData.total || ''}
+                      onChange={(e) => setEditInvoiceData({...editInvoiceData, total: parseFloat(e.target.value) || 0})}
+                      onFocus={(e) => e.target.style.borderColor = '#667eea'}
+                      onBlur={(e) => e.target.style.borderColor = '#e8e8e8'}
+                    />
+                  </div>
+                  <div>
+                    <label style={{display: 'block', fontSize: '12px', fontWeight: '600', color: '#7f8c8d', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px'}}>Timesheet Period</label>
+                    <input
+                      type="text"
+                      style={{width: '100%', padding: '12px 16px', border: '2px solid #e8e8e8', borderRadius: '10px', fontSize: '14px', color: '#2c3e50', transition: 'all 0.3s'}}
+                      value={editInvoiceData.week || 'N/A'}
+                      onChange={(e) => setEditInvoiceData({...editInvoiceData, week: e.target.value})}
+                      onFocus={(e) => e.target.style.borderColor = '#667eea'}
+                      onBlur={(e) => e.target.style.borderColor = '#e8e8e8'}
+                      placeholder="e.g., Nov 02 - Nov 08"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Timesheet Details / Line Items Section - Modern Table */}
+              <div style={{background: '#ffffff', borderRadius: '16px', padding: '24px', boxShadow: '0 2px 12px rgba(0,0,0,0.08)', marginBottom: '32px'}}>
+                <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px', paddingBottom: '16px', borderBottom: '2px solid #f0f0f0'}}>
+                  <div style={{display: 'flex', alignItems: 'center', gap: '12px'}}>
+                    <div style={{background: 'linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%)', padding: '10px', borderRadius: '10px', display: 'flex'}}>
+                      <em className="icon ni ni-list-check" style={{fontSize: '20px', color: '#ffffff'}}></em>
+                    </div>
+                    <div>
+                      <h4 style={{margin: 0, fontSize: '16px', fontWeight: '600', color: '#2c3e50'}}>Timesheet Details</h4>
+                      <p style={{margin: '2px 0 0 0', fontSize: '13px', color: '#7f8c8d'}}>Work hours and billing information</p>
+                    </div>
+                  </div>
+                  <button
+                    style={{padding: '10px 20px', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: '#ffffff', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', transition: 'all 0.3s', boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)'}}
+                    onClick={() => {
+                      const newItems = [
+                        ...(editInvoiceData.lineItems || []),
+                        { description: 'Extra Hours', hours: 0, rate: 0, amount: 0 }
+                      ];
+                      setEditInvoiceData({...editInvoiceData, lineItems: newItems});
+                    }}
+                    onMouseEnter={(e) => e.target.style.transform = 'translateY(-2px)'}
+                    onMouseLeave={(e) => e.target.style.transform = 'translateY(0)'}
+                  >
+                    <em className="icon ni ni-plus-circle" style={{fontSize: '18px'}}></em>
+                    Add Extra Hours
+                  </button>
+                </div>
+                
+                <div style={{overflowX: 'auto'}}>
+                  <table style={{width: '100%', borderCollapse: 'separate', borderSpacing: '0 8px'}}>
+                    <thead>
+                      <tr style={{background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)'}}>
+                        <th style={{padding: '16px', textAlign: 'left', fontSize: '12px', fontWeight: '700', color: '#7f8c8d', textTransform: 'uppercase', letterSpacing: '0.5px', borderRadius: '10px 0 0 10px'}}>Description</th>
+                        <th style={{padding: '16px', textAlign: 'center', fontSize: '12px', fontWeight: '700', color: '#7f8c8d', textTransform: 'uppercase', letterSpacing: '0.5px'}}>Hours</th>
+                        <th style={{padding: '16px', textAlign: 'center', fontSize: '12px', fontWeight: '700', color: '#7f8c8d', textTransform: 'uppercase', letterSpacing: '0.5px'}}>Rate ($/hr)</th>
+                        <th style={{padding: '16px', textAlign: 'center', fontSize: '12px', fontWeight: '700', color: '#7f8c8d', textTransform: 'uppercase', letterSpacing: '0.5px'}}>Amount</th>
+                        <th style={{padding: '16px', textAlign: 'center', fontSize: '12px', fontWeight: '700', color: '#7f8c8d', textTransform: 'uppercase', letterSpacing: '0.5px', borderRadius: '0 10px 10px 0'}}>Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(editInvoiceData.lineItems || []).map((item, index) => (
+                        <tr key={index} style={{background: '#ffffff', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', transition: 'all 0.3s'}}
+                            onMouseEnter={(e) => e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.12)'}
+                            onMouseLeave={(e) => e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.06)'}>
+                          <td style={{padding: '16px', borderRadius: '10px 0 0 10px'}}>
+                            <input
+                              type="text"
+                              value={item.description || ''}
+                              onChange={(e) => {
+                                const newItems = [...editInvoiceData.lineItems];
+                                newItems[index].description = e.target.value;
+                                setEditInvoiceData({...editInvoiceData, lineItems: newItems});
+                              }}
+                              style={{width: '100%', padding: '10px 14px', border: '2px solid #e8e8e8', borderRadius: '8px', fontSize: '14px', color: '#2c3e50', transition: 'all 0.3s'}}
+                              onFocus={(e) => e.target.style.borderColor = '#667eea'}
+                              onBlur={(e) => e.target.style.borderColor = '#e8e8e8'}
+                              placeholder="Enter description..."
+                            />
+                          </td>
+                          <td style={{padding: '16px', textAlign: 'center'}}>
+                            <input
+                              type="number"
+                              step="0.01"
+                              value={item.hours || item.quantity || 0}
+                              onChange={(e) => {
+                                const newItems = [...editInvoiceData.lineItems];
+                                const newHours = parseFloat(e.target.value) || 0;
+                                newItems[index].hours = newHours;
+                                newItems[index].quantity = newHours;
+                                const rate = parseFloat(newItems[index].rate || 0);
+                                newItems[index].amount = newHours * rate;
+                                setEditInvoiceData({...editInvoiceData, lineItems: newItems});
+                              }}
+                              style={{width: '100px', padding: '10px 14px', border: '2px solid #e8e8e8', borderRadius: '8px', fontSize: '14px', color: '#2c3e50', textAlign: 'center', transition: 'all 0.3s'}}
+                              onFocus={(e) => e.target.style.borderColor = '#667eea'}
+                              onBlur={(e) => e.target.style.borderColor = '#e8e8e8'}
+                            />
+                          </td>
+                          <td style={{padding: '16px', textAlign: 'center'}}>
+                            <input
+                              type="number"
+                              step="0.01"
+                              value={item.rate || 0}
+                              onChange={(e) => {
+                                const newItems = [...editInvoiceData.lineItems];
+                                const newRate = parseFloat(e.target.value) || 0;
+                                newItems[index].rate = newRate;
+                                const hours = parseFloat(newItems[index].hours || newItems[index].quantity || 0);
+                                newItems[index].amount = hours * newRate;
+                                setEditInvoiceData({...editInvoiceData, lineItems: newItems});
+                              }}
+                              style={{width: '120px', padding: '10px 14px', border: '2px solid #e8e8e8', borderRadius: '8px', fontSize: '14px', color: '#2c3e50', textAlign: 'center', transition: 'all 0.3s'}}
+                              onFocus={(e) => e.target.style.borderColor = '#667eea'}
+                              onBlur={(e) => e.target.style.borderColor = '#e8e8e8'}
+                            />
+                          </td>
+                          <td style={{padding: '16px', textAlign: 'center'}}>
+                            <div style={{padding: '10px 14px', background: '#f8f9fa', borderRadius: '8px', fontSize: '14px', fontWeight: '600', color: '#27ae60'}}>
+                              ${formatCurrency(item.amount)}
+                            </div>
+                          </td>
+                          <td style={{padding: '16px', textAlign: 'center', borderRadius: '0 10px 10px 0'}}>
+                            <button
+                              onClick={() => {
+                                const newItems = editInvoiceData.lineItems.filter((_, i) => i !== index);
+                                setEditInvoiceData({...editInvoiceData, lineItems: newItems});
+                              }}
+                              style={{padding: '8px 16px', background: 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)', color: '#ffffff', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: '600', cursor: 'pointer', transition: 'all 0.3s', display: 'flex', alignItems: 'center', gap: '6px', margin: '0 auto'}}
+                              onMouseEnter={(e) => {
+                                e.target.style.transform = 'scale(1.05)';
+                                e.target.style.boxShadow = '0 4px 12px rgba(231, 76, 60, 0.3)';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.target.style.transform = 'scale(1)';
+                                e.target.style.boxShadow = 'none';
+                              }}
+                            >
+                              <em className="icon ni ni-trash" style={{fontSize: '14px'}}></em>
+                              Remove
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                
+                {/* Total Summary */}
+                <div style={{marginTop: '24px', padding: '20px', background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)', borderRadius: '12px', display: 'flex', justifyContent: 'flex-end'}}>
+                  <div style={{textAlign: 'right'}}>
+                    <p style={{margin: '0 0 8px 0', fontSize: '14px', color: '#7f8c8d', fontWeight: '600'}}>TOTAL AMOUNT</p>
+                    <p style={{margin: 0, fontSize: '32px', fontWeight: '700', color: '#27ae60'}}>
+                      ${formatCurrency((editInvoiceData.lineItems || []).reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0))}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Notes Section - Modern Design */}
+              <div style={{background: '#ffffff', borderRadius: '16px', padding: '24px', boxShadow: '0 2px 12px rgba(0,0,0,0.08)', marginBottom: '32px'}}>
+                <div style={{display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px', paddingBottom: '16px', borderBottom: '2px solid #f0f0f0'}}>
+                  <div style={{background: 'linear-gradient(135deg, #16a085 0%, #138d75 100%)', padding: '10px', borderRadius: '10px', display: 'flex'}}>
+                    <em className="icon ni ni-notes" style={{fontSize: '20px', color: '#ffffff'}}></em>
+                  </div>
+                  <div>
+                    <h4 style={{margin: 0, fontSize: '16px', fontWeight: '600', color: '#2c3e50'}}>Additional Notes</h4>
+                    <p style={{margin: '2px 0 0 0', fontSize: '13px', color: '#7f8c8d'}}>Comments or special instructions</p>
+                  </div>
+                </div>
+                <textarea
+                  style={{width: '100%', minHeight: '120px', padding: '16px', border: '2px solid #e8e8e8', borderRadius: '12px', fontSize: '14px', color: '#2c3e50', resize: 'vertical', transition: 'all 0.3s', fontFamily: 'inherit'}}
+                  placeholder="Add any additional notes, comments, or special instructions..."
+                  value={editInvoiceData.notes || ''}
+                  onChange={(e) => setEditInvoiceData({...editInvoiceData, notes: e.target.value})}
+                  onFocus={(e) => e.target.style.borderColor = '#667eea'}
+                  onBlur={(e) => e.target.style.borderColor = '#e8e8e8'}
+                />
+              </div>
+            </div>
+            
+            {/* Modern Footer with Action Buttons */}
+            <div style={{padding: '24px 32px', background: '#ffffff', borderTop: '2px solid #f0f0f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderRadius: '0 0 12px 12px'}}>
+              <div style={{display: 'flex', gap: '12px'}}>
+                <button 
+                  style={{padding: '12px 24px', background: '#ffffff', border: '2px solid #e8e8e8', borderRadius: '10px', fontSize: '14px', fontWeight: '600', color: '#7f8c8d', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', transition: 'all 0.3s'}}
+                  onClick={() => {
+                    setEditModalOpen(false);
+                    setCompanyLogo(null);
+                    setTimesheetFile(null);
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.borderColor = '#667eea';
+                    e.target.style.color = '#667eea';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.borderColor = '#e8e8e8';
+                    e.target.style.color = '#7f8c8d';
+                  }}
+                >
+                  <em className="icon ni ni-cross" style={{fontSize: '16px'}}></em>
+                  Cancel
+                </button>
+              </div>
+              <div style={{display: 'flex', gap: '12px'}}>
+                <button 
+                  style={{padding: '14px 32px', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', border: 'none', borderRadius: '10px', fontSize: '15px', fontWeight: '600', color: '#ffffff', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', transition: 'all 0.3s', boxShadow: '0 4px 16px rgba(102, 126, 234, 0.4)'}}
+                  onClick={async () => {
+                    try {
+                      const userInfo = JSON.parse(localStorage.getItem("user") || "{}");
+                      const token = localStorage.getItem("token");
+                      
+                      if (!userInfo.tenantId) {
+                        throw new Error('Tenant ID not found');
+                      }
+                      
+                      console.log('💾 Saving invoice changes...', editInvoiceData);
+                      
+                      // Prepare the invoice data for API
+                      const invoiceUpdateData = {
+                        invoiceNumber: editInvoiceData.invoiceNumber,
+                        issueDate: editInvoiceData.issueDate,
+                        vendor: editInvoiceData.vendor,
+                        employeeName: editInvoiceData.employeeName,
+                        employeeEmail: editInvoiceData.employeeEmail,
+                        vendorContact: editInvoiceData.vendorContact,
+                        total: editInvoiceData.total,
+                        status: editInvoiceData.status,
+                        hours: editInvoiceData.hours,
+                        week: editInvoiceData.week,
+                        notes: editInvoiceData.notes,
+                        lineItems: (editInvoiceData.lineItems || []).map(item => ({
+                          description: item.description,
+                          hours: parseFloat(item.hours || item.quantity || 0),
+                          rate: parseFloat(item.rate || 0),
+                          amount: parseFloat(item.amount || 0)
+                        })),
+                        tenantId: userInfo.tenantId
+                      };
+                      
+                      // Convert logo to base64 if uploaded
+                      if (companyLogo) {
+                        const logoBase64 = await new Promise((resolve) => {
+                          const reader = new FileReader();
+                          reader.onloadend = () => resolve(reader.result);
+                          reader.readAsDataURL(companyLogo);
+                        });
+                        invoiceUpdateData.companyLogo = logoBase64;
+                      }
+                      
+                      // Convert timesheet to base64 if uploaded
+                      if (timesheetFile) {
+                        const timesheetBase64 = await new Promise((resolve) => {
+                          const reader = new FileReader();
+                          reader.onloadend = () => resolve(reader.result);
+                          reader.readAsDataURL(timesheetFile);
+                        });
+                        invoiceUpdateData.timesheetFile = timesheetBase64;
+                        invoiceUpdateData.timesheetFileName = timesheetFile.name;
+                      }
+                      
+                      console.log('📤 Sending update to API:', invoiceUpdateData);
+                      
+                      // Call API to update invoice
+                      const response = await axios.put(
+                        `${API_BASE}/api/invoices/${editInvoiceData.id}?tenantId=${userInfo.tenantId}`,
+                        invoiceUpdateData,
+                        {
+                          headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                          }
+                        }
+                      );
+                      
+                      console.log('✅ Invoice updated successfully:', response.data);
+                      
+                      // Close edit modal and reset states
+                      setEditModalOpen(false);
+                      setCompanyLogo(null);
+                      setTimesheetFile(null);
+                      
+                      // Reload all invoice data from API to refresh the screen
+                      console.log('🔄 Reloading invoice data...');
+                      await fetchInvoices();
+                      
+                      alert('✅ Invoice updated successfully! Logo will appear in PDF preview and download.');
+                    } catch (error) {
+                      console.error('❌ Error updating invoice:', error);
+                      console.error('Error details:', error.response?.data);
+                      alert(error.response?.data?.message || 'Failed to update invoice. Please try again.');
+                    }
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.transform = 'translateY(-2px)';
+                    e.target.style.boxShadow = '0 6px 20px rgba(102, 126, 234, 0.5)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.transform = 'translateY(0)';
+                    e.target.style.boxShadow = '0 4px 16px rgba(102, 126, 234, 0.4)';
+                  }}
+                >
+                  <em className="icon ni ni-save" style={{fontSize: '18px'}}></em>
+                  Save Changes
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

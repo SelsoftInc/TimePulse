@@ -868,34 +868,7 @@ const EmployeeList = () => {
                               Actions
                             </button>
                             {openMenuFor === employee.id && (
-                              <div
-                                className="dropdown-menu dropdown-menu-right show"
-                                ref={(el) => {
-                                  if (el) {
-                                    const button = el.previousElementSibling;
-                                    if (button) {
-                                      const rect = button.getBoundingClientRect();
-                                      const spaceBelow = window.innerHeight - rect.bottom;
-                                      
-                                      if (spaceBelow < 250) {
-                                        // Open upward
-                                        el.style.position = 'fixed';
-                                        el.style.bottom = `${window.innerHeight - rect.top}px`;
-                                        el.style.top = 'auto';
-                                        el.style.right = `${window.innerWidth - rect.right}px`;
-                                        el.style.left = 'auto';
-                                      } else {
-                                        // Open downward
-                                        el.style.position = 'fixed';
-                                        el.style.top = `${rect.bottom + 4}px`;
-                                        el.style.bottom = 'auto';
-                                        el.style.right = `${window.innerWidth - rect.right}px`;
-                                        el.style.left = 'auto';
-                                      }
-                                    }
-                                  }
-                                }}
-                              >
+                              <div className="dropdown-menu dropdown-menu-right show">
                                 <Link
                                   to={`/${subdomain}/employees/${employee.id}`}
                                   className="dropdown-item"

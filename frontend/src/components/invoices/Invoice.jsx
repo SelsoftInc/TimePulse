@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import InvoiceSettingsModal from "../common/InvoiceSettingsModal";
 import InvoicePDFPreviewModal from '../common/InvoicePDFPreviewModal';
+import InvoiceSuccessModal from '../common/InvoiceSuccessModal';
 import axios from "axios";
 import { API_BASE } from "../../config/api";
 import "./Invoice.css";
@@ -159,11 +160,17 @@ const InvoiceDetailModal = ({ invoice, onClose, onApprove, onReject }) => {
               <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', padding: '16px', background: '#f8f9fa', borderRadius: '8px', border: '1px solid #e8eaed'}}>
                 <div>
                   <label style={{display: 'block', fontSize: '12px', fontWeight: '600', color: '#5f6368', marginBottom: '4px'}}>EMPLOYEE NAME</label>
-                  <div style={{fontSize: '14px', color: '#202124'}}>{invoice.employeeName || 'N/A'}</div>
+                  <div style={{fontSize: '14px', color: '#202124'}}>
+                    {invoice.employee 
+                      ? `${invoice.employee.firstName} ${invoice.employee.lastName}`
+                      : invoice.employeeName || 'N/A'}
+                  </div>
                 </div>
                 <div>
                   <label style={{display: 'block', fontSize: '12px', fontWeight: '600', color: '#5f6368', marginBottom: '4px'}}>EMPLOYEE EMAIL</label>
-                  <div style={{fontSize: '14px', color: '#202124'}}>{invoice.employeeEmail || 'N/A'}</div>
+                  <div style={{fontSize: '14px', color: '#202124'}}>
+                    {invoice.employee?.email || invoice.employeeEmail || 'N/A'}
+                  </div>
                 </div>
               </div>
             </div>
@@ -754,6 +761,10 @@ const Invoice = () => {
   const [companyLogo, setCompanyLogo] = useState(null);
   const [timesheetFile, setTimesheetFile] = useState(null);
   
+  // Success modal state
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successInvoiceData, setSuccessInvoiceData] = useState(null);
+  
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
@@ -1341,19 +1352,48 @@ const Invoice = () => {
                                               console.log('✅ Full invoice data fetched:', data);
                                               
                                               if (data.success && data.invoice) {
+                                                const inv = data.invoice;
+                                                
+                                                // Extract employee data from multiple sources
+                                                const employeeName = inv.employee 
+                                                  ? `${inv.employee.firstName} ${inv.employee.lastName}`
+                                                  : inv.timesheet?.employee
+                                                  ? `${inv.timesheet.employee.firstName} ${inv.timesheet.employee.lastName}`
+                                                  : inv.employeeName || 'N/A';
+                                                
+                                                const employeeEmail = inv.employee?.email 
+                                                  || inv.timesheet?.employee?.email 
+                                                  || inv.employeeEmail || 'N/A';
+                                                
+                                                // Extract vendor data from multiple sources
+                                                const vendorName = inv.vendor?.name 
+                                                  || inv.employee?.vendor?.name
+                                                  || inv.timesheet?.employee?.vendor?.name
+                                                  || (typeof inv.vendor === 'string' ? inv.vendor : 'N/A');
+                                                
+                                                const vendorEmail = inv.vendor?.email 
+                                                  || inv.employee?.vendor?.email
+                                                  || inv.timesheet?.employee?.vendor?.email
+                                                  || 'N/A';
+                                                
                                                 // Merge full invoice data with existing invoice
                                                 const fullInvoice = {
                                                   ...invoice,
-                                                  ...data.invoice,
-                                                  lineItems: data.invoice.lineItems || [],
-                                                  employeeName: data.invoice.employeeName || 'N/A',
-                                                  employeeEmail: data.invoice.employeeEmail || 'N/A',
-                                                  vendorContact: data.invoice.vendorContact || 'N/A',
-                                                  week: data.invoice.week || invoice.week,
-                                                  notes: data.invoice.notes || '',
-                                                  companyLogo: data.invoice.companyLogo || null,
-                                                  timesheetFile: data.invoice.timesheetFile || null,
-                                                  timesheetFileName: data.invoice.timesheetFileName || null
+                                                  ...inv,
+                                                  lineItems: inv.lineItems || [],
+                                                  employeeName: employeeName,
+                                                  employeeEmail: employeeEmail,
+                                                  vendor: vendorName,
+                                                  vendorContact: vendorEmail,
+                                                  week: inv.week || invoice.week,
+                                                  notes: inv.notes || '',
+                                                  companyLogo: inv.companyLogo || null,
+                                                  timesheetFile: inv.timesheetFile || null,
+                                                  timesheetFileName: inv.timesheetFileName || null,
+                                                  // Store IDs for backend updates
+                                                  employeeId: inv.employeeId || inv.employee?.id || inv.timesheet?.employeeId,
+                                                  vendorId: inv.vendorId || inv.vendor?.id || inv.employee?.vendor?.id,
+                                                  clientId: inv.clientId || inv.client?.id
                                                 };
                                                 
                                                 // Ensure line items have proper structure
@@ -2046,7 +2086,9 @@ const Invoice = () => {
                       console.log('🔄 Reloading invoice data...');
                       await fetchInvoices();
                       
-                      alert('✅ Invoice updated successfully! Logo will appear in PDF preview and download.');
+                      // Show success modal with updated invoice data
+                      setSuccessInvoiceData(response.data.invoice || editInvoiceData);
+                      setShowSuccessModal(true);
                     } catch (error) {
                       console.error('❌ Error updating invoice:', error);
                       console.error('Error details:', error.response?.data);
@@ -2069,6 +2111,71 @@ const Invoice = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Success Modal */}
+      {showSuccessModal && successInvoiceData && (
+        <InvoiceSuccessModal
+          invoice={successInvoiceData}
+          onClose={() => {
+            setShowSuccessModal(false);
+            setSuccessInvoiceData(null);
+          }}
+          onPreview={() => {
+            // Close success modal
+            setShowSuccessModal(false);
+            // Open PDF preview modal
+            setSelectedInvoiceForPDF(successInvoiceData);
+            setShowPDFModal(true);
+          }}
+          onDownload={() => {
+            // Trigger PDF download
+            const handleDownload = async () => {
+              try {
+                const jsPDF = (await import('jspdf')).default;
+                const autoTable = (await import('jspdf-autotable')).default;
+                
+                const doc = new jsPDF();
+                const pageWidth = doc.internal.pageSize.getWidth();
+                const margin = 15;
+                
+                // Add header
+                doc.setFillColor(41, 128, 185);
+                doc.rect(0, 0, pageWidth, 35, 'F');
+                
+                // Add logo if available
+                if (successInvoiceData.companyLogo) {
+                  try {
+                    doc.addImage(successInvoiceData.companyLogo, 'PNG', margin, 7, 30, 20);
+                  } catch (error) {
+                    console.error('Error adding logo:', error);
+                  }
+                }
+                
+                // Add title
+                doc.setTextColor(255, 255, 255);
+                doc.setFontSize(24);
+                doc.setFont('helvetica', 'bold');
+                doc.text('INVOICE', pageWidth / 2, 22, { align: 'center' });
+                
+                // Add invoice details
+                let yPos = 45;
+                doc.setTextColor(44, 62, 80);
+                doc.setFontSize(10);
+                doc.setFont('helvetica', 'bold');
+                doc.text(`Invoice #: ${successInvoiceData.invoiceNumber || 'N/A'}`, margin, yPos);
+                doc.text(`Total: $${(successInvoiceData.total || 0).toFixed(2)}`, pageWidth - margin, yPos, { align: 'right' });
+                
+                // Save PDF
+                doc.save(`${successInvoiceData.invoiceNumber || 'invoice'}.pdf`);
+              } catch (error) {
+                console.error('Error generating PDF:', error);
+                alert('Failed to generate PDF. Please try again.');
+              }
+            };
+            handleDownload();
+          }}
+        />
       )}
     </div>
   );

@@ -46,8 +46,9 @@ html:has(.employee-list-container) {
 /* Column Widths - Compact & Balanced */
 .employee-list-container .employee-table th:nth-child(1),
 .employee-list-container .employee-table td:nth-child(1) {
-  width: 11% !important;
-  min-width: 100px;
+  width: 14% !important;
+  min-width: 140px;
+  max-width: 180px;
 }
 
 .employee-list-container .employee-table th:nth-child(2),
@@ -132,6 +133,13 @@ html:has(.employee-list-container) {
   vertical-align: middle !important;
 }
 
+/* Name column - allow text wrapping if needed */
+.employee-list-container .employee-table td:nth-child(1) {
+  white-space: normal !important;
+  word-wrap: break-word !important;
+  max-width: 180px !important;
+}
+
 /* Allow overflow for Actions column */
 .employee-list-container .employee-table td:last-child {
   overflow: visible !important;
@@ -208,18 +216,18 @@ html:has(.employee-list-container) {
 
 /* Dropdown Menu - Ensure full visibility */
 .employee-list-container .dropdown-menu {
-  position: fixed !important;
+  position: absolute !important;
   top: auto !important;
   bottom: auto !important;
-  right: auto !important;
+  right: 0 !important;
   left: auto !important;
   z-index: 99999 !important;
-  min-width: 180px !important;
+  min-width: 200px !important;
   max-width: 250px !important;
   background-color: #fff !important;
   border: 1px solid #dbdfea !important;
-  border-radius: 4px !important;
-  box-shadow: 0 3px 12px rgba(43, 55, 72, 0.15) !important;
+  border-radius: 6px !important;
+  box-shadow: 0 4px 16px rgba(43, 55, 72, 0.2) !important;
   opacity: 1 !important;
   margin: 0 !important;
   padding: 8px 0 !important;
@@ -230,19 +238,15 @@ html:has(.employee-list-container) {
 
 /* Dropdown opens downward (default) */
 .employee-list-container .dropdown-menu:not(.dropup) {
-  position: absolute !important;
   top: 100% !important;
-  right: 0 !important;
   bottom: auto !important;
   transform: translateY(4px) !important;
 }
 
 /* Dropdown opens upward when no space below */
 .employee-list-container .dropdown-menu.dropup {
-  position: absolute !important;
   top: auto !important;
   bottom: 100% !important;
-  right: 0 !important;
   transform: translateY(-4px) !important;
 }
 

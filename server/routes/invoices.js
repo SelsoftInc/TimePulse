@@ -539,6 +539,17 @@ router.put("/:id", async (req, res) => {
       subtotal,
       tax,
       approvedBy,
+      invoiceNumber,
+      issueDate,
+      vendor,
+      employeeName,
+      employeeEmail,
+      vendorContact,
+      hours,
+      week,
+      companyLogo,
+      timesheetFile,
+      timesheetFileName,
     } = req.body;
 
     if (!tenantId) {
@@ -558,13 +569,32 @@ router.put("/:id", async (req, res) => {
     }
 
     const updateData = {};
+    
+    // Basic invoice fields
+    if (invoiceNumber) updateData.invoiceNumber = invoiceNumber;
+    if (issueDate) updateData.issueDate = issueDate;
     if (status) updateData.status = status;
     if (notes !== undefined) updateData.notes = notes;
     if (lineItems) updateData.lineItems = lineItems;
     if (total !== undefined) updateData.total = total;
+    if (total !== undefined) updateData.totalAmount = total; // Also update totalAmount field
     if (subtotal !== undefined) updateData.subtotal = subtotal;
     if (tax !== undefined) updateData.tax = tax;
+    if (hours !== undefined) updateData.hours = hours;
+    if (week) updateData.week = week;
+    
+    // Employee and vendor fields
+    if (employeeName !== undefined) updateData.employeeName = employeeName;
+    if (employeeEmail !== undefined) updateData.employeeEmail = employeeEmail;
+    if (vendor !== undefined) updateData.vendor = vendor;
+    if (vendorContact !== undefined) updateData.vendorContact = vendorContact;
+    
+    // File uploads
+    if (companyLogo !== undefined) updateData.companyLogo = companyLogo;
+    if (timesheetFile !== undefined) updateData.timesheetFile = timesheetFile;
+    if (timesheetFileName !== undefined) updateData.timesheetFileName = timesheetFileName;
 
+    // Status-specific updates
     if (status === "approved") {
       updateData.approvedBy = approvedBy;
       updateData.approvedAt = new Date();
@@ -572,9 +602,36 @@ router.put("/:id", async (req, res) => {
       updateData.paidAt = new Date();
     }
 
+    console.log('📝 Updating invoice with data:', updateData);
     await invoice.update(updateData);
 
-    res.json({ success: true, invoice });
+    // Fetch updated invoice with associations
+    const updatedInvoice = await models.Invoice.findOne({
+      where: { id, tenantId },
+      include: [
+        {
+          model: models.Vendor,
+          as: "vendor",
+          attributes: ["id", "name", "email"],
+          required: false,
+        },
+        {
+          model: models.Client,
+          as: "client",
+          attributes: ["id", "clientName", "email"],
+          required: false,
+        },
+        {
+          model: models.Employee,
+          as: "employee",
+          attributes: ["id", "firstName", "lastName", "email"],
+          required: false,
+        },
+      ],
+    });
+
+    console.log('✅ Invoice updated successfully');
+    res.json({ success: true, invoice: updatedInvoice });
   } catch (error) {
     console.error("❌ Error updating invoice:", error);
     res.status(500).json({

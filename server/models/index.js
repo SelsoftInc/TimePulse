@@ -857,6 +857,18 @@ models.Invoice = sequelize.define(
       field: "client_id",
       references: { model: "clients", key: "id" },
     },
+    employeeId: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      field: "employee_id",
+      references: { model: "employees", key: "id" },
+    },
+    vendorId: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      field: "vendor_id",
+      references: { model: "vendors", key: "id" },
+    },
     timesheetId: {
       type: DataTypes.UUID,
       allowNull: true,
@@ -928,6 +940,17 @@ models.Invoice = sequelize.define(
       allowNull: true,
       field: "created_by",
       references: { model: "users", key: "id" },
+    },
+    approvedBy: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      field: "approved_by",
+      references: { model: "users", key: "id" },
+    },
+    approvedAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      field: "approved_at",
     },
     status: {
       type: DataTypes.ENUM("active", "inactive", "deleted"),
@@ -1080,9 +1103,21 @@ models.Invoice.belongsTo(models.Timesheet, {
   foreignKey: "timesheetId",
   as: "timesheet",
 });
+models.Invoice.belongsTo(models.Employee, {
+  foreignKey: "employeeId",
+  as: "employee",
+});
+models.Invoice.belongsTo(models.Vendor, {
+  foreignKey: "vendorId",
+  as: "vendor",
+});
 models.Invoice.belongsTo(models.User, {
   foreignKey: "createdBy",
   as: "creator",
+});
+models.Invoice.belongsTo(models.User, {
+  foreignKey: "approvedBy",
+  as: "approver",
 });
 
 // =============================================

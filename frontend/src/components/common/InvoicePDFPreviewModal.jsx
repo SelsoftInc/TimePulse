@@ -94,28 +94,32 @@ const InvoicePDFPreviewModal = ({ invoice, onClose, onUpdate }) => {
     console.log('📅 Final invoice period:', startDate, '-', endDate);
     
     return {
-      // Staffing Company (Current Company - Selsoft)
+      // Staffing Company (Selsoft Inc. - Our Company)
       companyName: 'Selsoft Inc.',
       companyAddress: '123 Business Street, Suite 100',
       companyCity: 'Dallas, TX 75201',
       companyEmail: 'billing@selsoft.com',
       companyPhone: '(214) 555-0100',
+      companyTaxId: 'XX-XXXXXXX',
+      companyWebsite: 'www.selsoft.com',
       
       // Invoice Details
       invoiceNumber: invoice?.invoiceNumber || `INV-2025-${String(invoice?.id || '0001').padStart(4, '0')}`,
       invoiceDate: invoice?.issueDate || invoice?.invoiceDate || new Date().toISOString().split('T')[0],
-      dueDate: invoice?.dueDate || new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      paymentTerms: invoice?.paymentTerms || 'Net 14 Days',
+      dueDate: invoice?.dueDate || new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      paymentTerms: invoice?.paymentTerms || 'Net 15',
       
-      // Bill To (Vendor/Client) - from invoice table
-      billToName: invoice?.vendorName || invoice?.clientName || invoice?.vendor || 'Client Company Name',
+      // Billed To (Vendor/Client paying the invoice - Hays)
+      billToName: invoice?.vendorName || invoice?.clientName || invoice?.vendor || 'Hays',
       billToAttn: 'Accounts Payable',
-      billToAddress: invoice?.vendorAddress || '789 Enterprise Blvd',
+      billToAddress: invoice?.vendorAddress || '500 Corporate Drive, Suite 200',
       billToCity: invoice?.vendorCity || 'Dallas, TX 75201',
+      billToEmail: invoice?.vendorEmail || 'ap@hays.com',
       
       // Project Details
-      projectName: invoice?.month && invoice?.year ? `${invoice.month} ${invoice.year}` : 'Contract Staffing',
+      projectName: 'Contract Staffing',
       projectDescription: 'Professional Services',
+      engagementDetails: invoice?.employeeName ? `${invoice.employeeName} working onsite for ${invoice?.vendorName || 'Client'} under Contract ID #12345` : 'Staffing engagement details',
       
       // Invoice Duration - calculated from actual timesheet dates
       invoiceDurationFrom: startDate,
@@ -124,14 +128,16 @@ const InvoicePDFPreviewModal = ({ invoice, onClose, onUpdate }) => {
       // Line Items - use invoice table data
       lineItems: invoice?.lineItems?.map(item => ({
         employeeName: item.employeeName || invoice?.employeeName || 'Employee Name',
-        description: `${invoice?.month || 'Period'} ${invoice?.year || new Date().getFullYear()} (${startDate} to ${endDate})`,
+        role: item.role || item.position || 'Software Engineer',
+        description: `${startDate} to ${endDate}`,
         hoursWorked: parseFloat(item.hours || item.hoursWorked || invoice?.hours || 0),
         hourlyRate: parseFloat(item.rate || item.hourlyRate || invoice?.hourlyRate || 0),
         total: parseFloat(item.amount || item.total || invoice?.total || invoice?.totalAmount || 0)
       })) || [
         {
           employeeName: invoice?.employeeName || 'Employee Name',
-          description: `${invoice?.month || 'Period'} ${invoice?.year || new Date().getFullYear()} (${startDate} to ${endDate})`,
+          role: invoice?.role || invoice?.position || 'Software Engineer',
+          description: `${startDate} to ${endDate}`,
           hoursWorked: parseFloat(invoice?.hours || 0),
           hourlyRate: parseFloat(invoice?.hourlyRate || 0),
           total: parseFloat(invoice?.total || invoice?.totalAmount || 0)
@@ -141,8 +147,9 @@ const InvoicePDFPreviewModal = ({ invoice, onClose, onUpdate }) => {
       // Payment Details
       bankName: 'Chase Bank',
       accountName: 'Selsoft Inc.',
-      accountNumber: '123456789',
-      routingNumber: '111000025',
+      accountNumber: 'XXXX1234',
+      routingNumber: 'XXXXXXXX',
+      swiftCode: 'CHASUS33',
       paymentMethod: 'ACH / Wire Transfer',
       
       // Tax
@@ -428,15 +435,15 @@ const InvoicePDFPreviewModal = ({ invoice, onClose, onUpdate }) => {
     
     let yPos = 20;
     
-    // Add employer logo if available (top left)
+    // Add Selsoft Inc. logo (top left) - Remove any vendor logo
     const logoToUse = logoPreview || invoice?.companyLogo;
     if (logoToUse) {
       try {
-        console.log('📷 Adding employer logo to PDF...');
+        console.log('📷 Adding Selsoft Inc. logo to PDF...');
         const logoWidth = 40;
         const logoHeight = 25;
         doc.addImage(logoToUse, 'PNG', margin, yPos, logoWidth, logoHeight);
-        console.log('✅ Employer logo added to PDF');
+        console.log('✅ Selsoft Inc. logo added to PDF');
       } catch (error) {
         console.error('❌ Error adding logo to PDF:', error);
       }
@@ -448,7 +455,13 @@ const InvoicePDFPreviewModal = ({ invoice, onClose, onUpdate }) => {
     doc.setFont('helvetica', 'bold');
     doc.text('INVOICE', pageWidth - margin, yPos + 10, { align: 'right' });
     
-    yPos += 30;
+    // Subtitle: Staffing Services Invoice
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(100, 100, 100);
+    doc.text('Staffing Services Invoice', pageWidth - margin, yPos + 16, { align: 'right' });
+    
+    yPos += 36;
     
     // Horizontal line separator (after logo and title)
     doc.setDrawColor(...borderColor);
@@ -457,16 +470,15 @@ const InvoicePDFPreviewModal = ({ invoice, onClose, onUpdate }) => {
     
     yPos += 10;
     
-    // Two-column layout: Billed To (Left) and Invoice Details (Right)
+    // Two-column layout: From (Left) and Billed To (Right)
     const leftColX = margin;
     const rightColX = pageWidth / 2 + 10;
-    const rightX = pageWidth - margin;
     
-    // Left Column - Billed To
+    // Left Column - From (Selsoft Inc.)
     doc.setTextColor(...primaryColor);
     doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
-    doc.text('Billed To:', leftColX, yPos);
+    doc.text('From:', leftColX, yPos);
     
     doc.setTextColor(60, 60, 60);
     doc.setFont('helvetica', 'normal');
@@ -477,86 +489,109 @@ const InvoicePDFPreviewModal = ({ invoice, onClose, onUpdate }) => {
     doc.text(safeString(formData.companyCity), leftColX, yPos + 16);
     doc.text(`Email: ${safeString(formData.companyEmail)}`, leftColX, yPos + 21);
     doc.text(`Phone: ${safeString(formData.companyPhone)}`, leftColX, yPos + 26);
+    doc.text(`Tax ID: ${safeString(formData.companyTaxId)}`, leftColX, yPos + 31);
     
-    // Right Column - Invoice Details
+    // Right Column - Billed To (Vendor/Client - Hays)
     doc.setTextColor(...primaryColor);
     doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
-    doc.text('Invoice Number:', rightColX, yPos);
-    doc.setTextColor(60, 60, 60);
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9);
-    doc.text(safeString(formData.invoiceNumber), rightColX, yPos + 6);
+    doc.text('Billed To:', rightColX, yPos);
     
-    // Invoice Period (from timesheet week)
-    doc.setTextColor(...primaryColor);
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Invoice Period:', rightColX, yPos + 12);
     doc.setTextColor(60, 60, 60);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
+    doc.text(safeString(formData.billToName), rightColX, yPos + 6);
+    doc.setFontSize(8);
+    doc.text(safeString(formData.billToAddress), rightColX, yPos + 11);
+    doc.text(safeString(formData.billToCity), rightColX, yPos + 16);
+    doc.text(`Attn: ${safeString(formData.billToAttn)}`, rightColX, yPos + 21);
+    doc.text(`Email: ${safeString(formData.billToEmail)}`, rightColX, yPos + 26);
+    
+    yPos += 40;
+    
+    // Invoice Details Section with light background
+    doc.setFillColor(...lightGray);
+    doc.rect(margin, yPos, pageWidth - 2 * margin, 24, 'F');
+    
+    const detailsLeftX = margin + 3;
+    const detailsMidX = pageWidth / 3 + 10;
+    const detailsRightX = (pageWidth / 3) * 2 + 10;
+    
+    // Invoice Number
+    doc.setTextColor(...primaryColor);
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Invoice Number:', detailsLeftX, yPos + 6);
+    doc.setTextColor(60, 60, 60);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.text(safeString(formData.invoiceNumber), detailsLeftX, yPos + 11);
+    
+    // Invoice Date
+    doc.setTextColor(...primaryColor);
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Invoice Date:', detailsMidX, yPos + 6);
+    doc.setTextColor(60, 60, 60);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.text(new Date(formData.invoiceDate).toLocaleDateString('en-US', { 
+      month: 'short', day: 'numeric', year: 'numeric' 
+    }), detailsMidX, yPos + 11);
+    
+    // Due Date
+    doc.setTextColor(...primaryColor);
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Due Date:', detailsRightX, yPos + 6);
+    doc.setTextColor(60, 60, 60);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.text(new Date(formData.dueDate).toLocaleDateString('en-US', { 
+      month: 'short', day: 'numeric', year: 'numeric' 
+    }), detailsRightX, yPos + 11);
+    
+    // Payment Terms
+    doc.setTextColor(...primaryColor);
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Payment Terms:', detailsLeftX, yPos + 17);
+    doc.setTextColor(60, 60, 60);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.text(safeString(formData.paymentTerms), detailsLeftX + 30, yPos + 17);
+    
+    yPos += 29;
+    
+    // Billing Period Section
+    doc.setTextColor(...primaryColor);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.text('Billing Period:', margin, yPos);
+    
+    doc.setTextColor(60, 60, 60);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
     const periodFromDate = new Date(formData.invoiceDurationFrom).toLocaleDateString('en-US', { 
       month: 'short', day: 'numeric', year: 'numeric' 
     });
     const periodToDate = new Date(formData.invoiceDurationTo).toLocaleDateString('en-US', { 
       month: 'short', day: 'numeric', year: 'numeric' 
     });
-    doc.text(`${periodFromDate} - ${periodToDate}`, rightColX, yPos + 18);
+    doc.text(`${periodFromDate} - ${periodToDate}`, margin + 28, yPos);
     
-    doc.setTextColor(...primaryColor);
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Invoice Date:', rightColX, yPos + 24);
-    doc.setTextColor(60, 60, 60);
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9);
-    doc.text(new Date(formData.invoiceDate).toLocaleDateString('en-US', { 
-      month: 'short', day: 'numeric', year: 'numeric' 
-    }), rightColX, yPos + 30);
+    yPos += 7;
     
-    doc.setTextColor(...primaryColor);
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Due Date:', rightColX, yPos + 36);
-    doc.setTextColor(60, 60, 60);
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9);
-    doc.text(new Date(formData.dueDate).toLocaleDateString('en-US', { 
-      month: 'short', day: 'numeric', year: 'numeric' 
-    }), rightColX, yPos + 42);
-    
-    yPos += 52;
-    
-    // Shipped To Section with light background
-    doc.setFillColor(...lightGray);
-    doc.rect(margin, yPos, pageWidth - 2 * margin, 28, 'F');
-    
+    // Engagement Section
     doc.setTextColor(...primaryColor);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(9);
-    doc.text('Shipped To:', margin + 3, yPos + 6);
+    doc.text('Engagement:', margin, yPos);
     
     doc.setTextColor(60, 60, 60);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
-    doc.text(safeString(formData.billToName), margin + 3, yPos + 11);
-    doc.text(safeString(formData.billToAddress), margin + 3, yPos + 15);
-    doc.text(safeString(formData.billToCity), margin + 3, yPos + 19);
-    doc.text(`Attn: ${safeString(formData.billToAttn)}`, margin + 3, yPos + 23);
-    
-    yPos += 33;
-    
-    // Project/Engagement Section
-    doc.setTextColor(...primaryColor);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(9);
-    doc.text('Project / Engagement:', margin, yPos);
-    
-    doc.setTextColor(60, 60, 60);
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8);
-    doc.text(`${safeString(formData.projectName)} - ${safeString(formData.projectDescription)}`, margin, yPos + 5);
+    doc.text(safeString(formData.engagementDetails), margin, yPos + 5);
     
     yPos += 12;
     
@@ -565,10 +600,13 @@ const InvoicePDFPreviewModal = ({ invoice, onClose, onUpdate }) => {
       const hours = parseFloat(item.hoursWorked || item.hours || item.quantity || 0);
       const rate = parseFloat(item.hourlyRate || item.rate || 0);
       const total = parseFloat(item.total || item.amount || (hours * rate) || 0);
+      const employeeName = safeString(item.employeeName || item.employee, 'N/A');
+      const role = safeString(item.role || item.position || item.title, 'Software Engineer');
+      const period = safeString(item.description, 'N/A');
       
       return [
-        safeString(item.employeeName || item.employee, 'N/A'),
-        safeString(item.description || item.position || item.title, 'N/A'),
+        `${employeeName} (${role})`,
+        period,
         hours.toString(),
         `$${formatNumber(rate)}`,
         `$${formatNumber(total)}`
@@ -577,7 +615,7 @@ const InvoicePDFPreviewModal = ({ invoice, onClose, onUpdate }) => {
     
     autoTable(doc, {
       startY: yPos,
-      head: [['Employee Name', 'Description', 'Hours', 'Rate (USD)', 'Total (USD)']],
+      head: [['Employee (Role)', 'Billing Period', 'Hours', 'Rate (USD)', 'Total (USD)']],
       body: tableData,
       theme: 'grid',
       headStyles: {
@@ -650,27 +688,29 @@ const InvoicePDFPreviewModal = ({ invoice, onClose, onUpdate }) => {
     
     // Payment Instructions Section
     doc.setFillColor(...lightGray);
-    doc.rect(margin, yPos, pageWidth - 2 * margin, 22, 'F');
+    doc.rect(margin, yPos, pageWidth - 2 * margin, 28, 'F');
     
     doc.setTextColor(...primaryColor);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(9);
-    doc.text('Payment Instructions:', margin + 3, yPos + 5);
+    doc.text('Remit Payment To:', margin + 3, yPos + 5);
     
     doc.setTextColor(60, 60, 60);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
-    doc.text(`Bank: ${safeString(formData.bankName)} | Account: ${safeString(formData.accountName)}`, margin + 3, yPos + 10);
-    doc.text(`Account #: ${safeString(formData.accountNumber)} | Routing: ${safeString(formData.routingNumber)}`, margin + 3, yPos + 15);
+    doc.text(`Bank: ${safeString(formData.bankName)}`, margin + 3, yPos + 10);
+    doc.text(`Account Name: ${safeString(formData.accountName)}`, margin + 3, yPos + 14);
+    doc.text(`Account #: ${safeString(formData.accountNumber)} | Routing #: ${safeString(formData.routingNumber)}`, margin + 3, yPos + 18);
+    doc.text(`Swift Code: ${safeString(formData.swiftCode)} | Payment Terms: ${safeString(formData.paymentTerms)}`, margin + 3, yPos + 22);
     
-    yPos += 28;
+    yPos += 34;
     
     // Closing Note
     doc.setFillColor(248, 250, 252);
-    doc.rect(margin, yPos, pageWidth - 2 * margin, 20, 'F');
+    doc.rect(margin, yPos, pageWidth - 2 * margin, 24, 'F');
     doc.setDrawColor(...borderColor);
     doc.setLineWidth(0.3);
-    doc.rect(margin, yPos, pageWidth - 2 * margin, 20);
+    doc.rect(margin, yPos, pageWidth - 2 * margin, 24);
     
     doc.setTextColor(60, 60, 60);
     doc.setFont('helvetica', 'bold');
@@ -682,10 +722,18 @@ const InvoicePDFPreviewModal = ({ invoice, onClose, onUpdate }) => {
     doc.text('We appreciate your continued partnership and trust in our services.', margin + 3, yPos + 10);
     doc.text('Kindly quote this invoice number in all future correspondence for faster reference.', margin + 3, yPos + 14);
     
+    yPos += 28;
     
+    // Footer with company info
+    doc.setTextColor(...accentColor);
     doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.text('Selsoft Inc.', pageWidth / 2, yPos, { align: 'center' });
+    
+    doc.setTextColor(100, 100, 100);
+    doc.setFont('helvetica', 'normal');
     doc.setFontSize(7);
-    doc.text('Support Mail: support@selsoftinc.com', margin + 3, yPos + 23);
+    doc.text(`${safeString(formData.companyWebsite)} | support@selsoftinc.com`, pageWidth / 2, yPos + 5, { align: 'center' });
     
     return doc;
   };
@@ -750,7 +798,7 @@ const InvoicePDFPreviewModal = ({ invoice, onClose, onUpdate }) => {
               <h5 className="section-title">
                 <div className="section-title-content">
                   <i className="fas fa-building"></i>
-                  <span>Billed To Information</span>
+                  <span>From (Selsoft Inc.)</span>
                 </div>
               </h5>
               <div className="form-row">
@@ -973,12 +1021,12 @@ const InvoicePDFPreviewModal = ({ invoice, onClose, onUpdate }) => {
               </div>
             </div>
 
-            {/* Shipped To */}
+            {/* Billed To (Client/Vendor) */}
             <div className="form-section">
               <h5 className="section-title">
                 <div className="section-title-content">
-                  <i className="fas fa-shipping-fast"></i>
-                  <span>Shipped To (Vendor/Client)</span>
+                  <i className="fas fa-file-invoice-dollar"></i>
+                  <span>Billed To (Client/Vendor - Hays)</span>
                 </div>
               </h5>
               <div className="form-row">
@@ -1215,6 +1263,16 @@ const InvoicePDFPreviewModal = ({ invoice, onClose, onUpdate }) => {
                 </div>
               </div>
               <div className="form-row">
+                <div className="form-group">
+                  <label>Swift Code</label>
+                  <input
+                    type="text"
+                    name="swiftCode"
+                    value={formData.swiftCode}
+                    onChange={handleChange}
+                    className="form-control"
+                  />
+                </div>
                 <div className="form-group">
                   <label>Payment Method</label>
                   <input

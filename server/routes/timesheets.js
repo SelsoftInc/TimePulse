@@ -1010,6 +1010,10 @@ router.put("/:id", async (req, res, next) => {
         .status(404)
         .json({ success: false, message: "Timesheet not found" });
 
+    // Track if status is changing to approved
+    const wasNotApproved = row.status !== "approved";
+    const isBeingApproved = status === "approved";
+
     if (dailyHours && typeof dailyHours === "object") {
       const total = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
         .map((k) => Number(dailyHours[k] || 0))
@@ -1043,10 +1047,43 @@ router.put("/:id", async (req, res, next) => {
     if (reviewerId !== undefined) row.reviewerId = reviewerId || null;
 
     await row.save();
+
+    // ✨ AUTOMATIC INVOICE GENERATION ✨
+    // Trigger invoice generation when timesheet is approved
+    let invoiceData = null;
+    if (wasNotApproved && isBeingApproved) {
+      try {
+        console.log("🎯 Timesheet approved - triggering automatic invoice generation");
+        const InvoiceService = require("../services/InvoiceService");
+        
+        const result = await InvoiceService.generateInvoiceFromTimesheet(
+          row.id,
+          row.tenantId,
+          approvedBy || null
+        );
+
+        if (result.success) {
+          console.log("✅ Invoice auto-generated:", result.invoice.invoiceNumber);
+          invoiceData = {
+            invoiceId: result.invoice.id,
+            invoiceNumber: result.invoice.invoiceNumber,
+            totalAmount: result.invoice.totalAmount,
+          };
+        } else {
+          console.log("⚠️ Invoice generation skipped:", result.message);
+        }
+      } catch (invoiceError) {
+        console.error("❌ Error auto-generating invoice:", invoiceError.message);
+        // Don't fail the timesheet approval if invoice generation fails
+        // Just log the error and continue
+      }
+    }
+
     res.json({
       success: true,
       timesheet: row,
       message: "Timesheet updated successfully",
+      invoice: invoiceData, // Include invoice data if generated
     });
   } catch (err) {
     next(err);
@@ -1670,11 +1707,13 @@ router.post("/:timesheetId/generate-invoice", async (req, res) => {
         {
           model: models.Employee,
           as: "employee",
+          required: false,
           attributes: ["id", "firstName", "lastName", "email", "hourlyRate", "vendorId"],
           include: [
             {
               model: models.Vendor,
               as: "vendor",
+              required: false,
               attributes: ["id", "name", "email", "contactPerson"],
             },
           ],
@@ -1761,12 +1800,54 @@ router.post("/:timesheetId/generate-invoice", async (req, res) => {
       });
     }
 
+    // Log employee and vendor data for debugging
+    console.log('📋 Employee data:', {
+      id: employee.id,
+      name: `${employee.firstName} ${employee.lastName}`,
+      vendorId: employee.vendorId,
+      hasVendor: !!employee.vendor,
+      vendorData: employee.vendor ? {
+        id: employee.vendor.id,
+        name: employee.vendor.name,
+        email: employee.vendor.email
+      } : null
+    });
+
     // Check if employee has vendor
     if (!employee.vendorId || !employee.vendor) {
-      return res.status(400).json({
-        success: false,
-        message: "Employee must be associated with a vendor to generate invoice",
+      console.error('❌ Vendor validation failed:', {
+        vendorId: employee.vendorId,
+        hasVendor: !!employee.vendor
       });
+      
+      // Try to fetch employee with vendor again
+      const employeeWithVendor = await models.Employee.findOne({
+        where: { id: employee.id, tenantId },
+        include: [{
+          model: models.Vendor,
+          as: 'vendor',
+          required: false,
+          attributes: ["id", "name", "email", "contactPerson"],
+        }]
+      });
+      
+      console.log('🔄 Re-fetched employee:', {
+        vendorId: employeeWithVendor?.vendorId,
+        hasVendor: !!employeeWithVendor?.vendor,
+        vendorData: employeeWithVendor?.vendor
+      });
+      
+      // If vendor exists after re-fetch, use it
+      if (employeeWithVendor && employeeWithVendor.vendorId && employeeWithVendor.vendor) {
+        employee.vendor = employeeWithVendor.vendor;
+        employee.vendorId = employeeWithVendor.vendorId;
+        console.log('✅ Vendor found after re-fetch');
+      } else {
+        return res.status(400).json({
+          success: false,
+          message: "Employee must be associated with a vendor to generate invoice",
+        });
+      }
     }
 
     const vendor = employee.vendor;

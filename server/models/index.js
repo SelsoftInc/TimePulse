@@ -699,6 +699,11 @@ models.Vendor.belongsTo(models.Tenant, {
   foreignKey: "tenantId",
   as: "tenant",
 });
+// Vendor-Employee reverse association (Employee.belongsTo is defined at line ~1223)
+models.Vendor.hasMany(models.Employee, { 
+  foreignKey: "vendorId", 
+  as: "employees" 
+});
 
 // Implementation Partner associations
 models.Tenant.hasMany(models.ImplementationPartner, {
@@ -710,9 +715,8 @@ models.ImplementationPartner.belongsTo(models.Tenant, {
   as: "tenant",
 });
 
-// Removed Employee-Vendor associations as vendor columns don't exist in current schema
-// models.Employee.belongsTo(models.Vendor, { foreignKey: 'vendorId', as: 'vendor' });
-// models.Employee.belongsTo(models.Vendor, { foreignKey: 'implPartnerId', as: 'implPartner' });
+// Note: Employee-Vendor associations are defined later in the file (line ~1227)
+// after all models are loaded to avoid circular dependency issues
 
 // =============================================
 // TIMESHEET MODEL

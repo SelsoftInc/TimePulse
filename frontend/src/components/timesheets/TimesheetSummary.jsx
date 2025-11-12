@@ -388,23 +388,147 @@ const TimesheetSummary = () => {
     }
   };
   
-  // View invoice details
-  const handleViewInvoice = async (invoiceId) => {
+  // View invoice details modal - Fetch complete invoice data
+  const handleViewInvoiceDetails = async (invoiceId) => {
     try {
+      console.log('📄 Fetching invoice details for invoice:', invoiceId);
+      
+      // Fetch complete invoice data with all associations
       const response = await axios.get(
         `${API_BASE}/api/invoices/${invoiceId}?tenantId=${user.tenantId}`
       );
       
       if (response.data.success) {
-        setSelectedInvoice(response.data.invoice);
+        const invoiceData = response.data.invoice;
+        console.log('✅ Invoice details loaded:', invoiceData);
+        
+        // Open invoice details modal
+        setSelectedInvoice(invoiceData);
         setInvoiceModalOpen(true);
       }
     } catch (error) {
-      console.error('❌ Error fetching invoice:', error);
+      console.error('❌ Error fetching invoice details:', error);
       showModal({
         type: 'error',
         title: 'Error',
         message: 'Failed to load invoice details. Please try again.'
+      });
+    }
+  };
+  
+  // Edit invoice - Fetch complete data with all associations
+  const handleEditInvoice = async (invoiceId) => {
+    try {
+      console.log('✏️ Fetching invoice data for editing:', invoiceId);
+      
+      // Fetch complete invoice data with all associations including employee and vendor
+      const response = await axios.get(
+        `${API_BASE}/api/invoices/${invoiceId}?tenantId=${user.tenantId}`
+      );
+      
+      if (response.data.success) {
+        const invoiceData = response.data.invoice;
+        console.log('✅ Invoice data loaded for editing:', invoiceData);
+        
+        // If employee data is missing, fetch it separately
+        if (invoiceData.timesheetId && (!invoiceData.employee || !invoiceData.vendor)) {
+          console.log('📡 Fetching additional employee and vendor data...');
+          
+          try {
+            // Fetch timesheet with employee and vendor associations
+            const timesheetResponse = await axios.get(
+              `${API_BASE}/api/timesheets/${invoiceData.timesheetId}?tenantId=${user.tenantId}`
+            );
+            
+            if (timesheetResponse.data.success && timesheetResponse.data.timesheet) {
+              const timesheet = timesheetResponse.data.timesheet;
+              console.log('✅ Timesheet data loaded:', timesheet);
+              
+              // Merge employee and vendor data
+              if (timesheet.employee) {
+                invoiceData.employee = timesheet.employee;
+                
+                // If employee has vendor, use it
+                if (timesheet.employee.vendor) {
+                  invoiceData.vendor = timesheet.employee.vendor;
+                }
+              }
+              
+              // Update timesheet reference
+              invoiceData.timesheet = timesheet;
+            }
+          } catch (timesheetError) {
+            console.error('⚠️ Error fetching timesheet data:', timesheetError);
+          }
+        }
+        
+        // If vendor is still missing, try to fetch from employee directly
+        if (invoiceData.employeeId && !invoiceData.vendor) {
+          console.log('📡 Fetching vendor from employee record...');
+          
+          try {
+            const employeeResponse = await axios.get(
+              `${API_BASE}/api/employees/${invoiceData.employeeId}?tenantId=${user.tenantId}`
+            );
+            
+            if (employeeResponse.data.success && employeeResponse.data.employee) {
+              const employee = employeeResponse.data.employee;
+              console.log('✅ Employee data loaded:', employee);
+              
+              if (!invoiceData.employee) {
+                invoiceData.employee = employee;
+              }
+              
+              if (employee.vendor) {
+                invoiceData.vendor = employee.vendor;
+              }
+            }
+          } catch (employeeError) {
+            console.error('⚠️ Error fetching employee data:', employeeError);
+          }
+        }
+        
+        console.log('📋 Final invoice data for editing:', invoiceData);
+        
+        // Set the edit data and open modal
+        setEditInvoiceData(invoiceData);
+        setInvoiceModalOpen(false); // Close details modal
+        setEditModalOpen(true);
+      }
+    } catch (error) {
+      console.error('❌ Error fetching invoice for editing:', error);
+      showModal({
+        type: 'error',
+        title: 'Error',
+        message: 'Failed to load invoice for editing. Please try again.'
+      });
+    }
+  };
+  
+  // View invoice PDF - Fetch data for PDF generation
+  const handleViewInvoicePDF = async (invoiceId) => {
+    try {
+      console.log('📄 Fetching invoice PDF data for invoice:', invoiceId);
+      
+      // Use the pdf-data endpoint that includes timesheet data
+      const response = await axios.get(
+        `${API_BASE}/api/invoices/${invoiceId}/pdf-data?tenantId=${user.tenantId}`
+      );
+      
+      if (response.data.success) {
+        const invoiceData = response.data.invoice;
+        console.log('✅ Invoice PDF data loaded:', invoiceData);
+        
+        // Open PDF preview modal with complete timesheet data
+        setInvoiceForPDF(invoiceData);
+        setPdfPreviewOpen(true);
+      }
+    } catch (error) {
+      console.error('❌ Error fetching invoice PDF data:', error);
+      showModal({
+        type: 'error',
+        title: 'Error',
+        message: 'Failed to load invoice PDF. Please try again.'
       });
     }
   };
@@ -426,8 +550,8 @@ const TimesheetSummary = () => {
     setGeneratingInvoiceId(null);
     
     if (existingInvoice) {
-      // Invoice exists - show view modal
-      handleViewInvoice(existingInvoice.id);
+      // Invoice exists - show details modal
+      handleViewInvoiceDetails(existingInvoice.id);
     } else {
       // No invoice - show generate confirmation
       handleGenerateInvoiceFromTimesheet(timesheet);
@@ -1282,14 +1406,52 @@ const TimesheetSummary = () => {
               </button>
               <button 
                 className="btn btn-primary"
-                onClick={() => {
-                  setInvoiceModalOpen(false);
-                  setEditInvoiceData(selectedInvoice);
-                  setEditModalOpen(true);
-                }}
+                onClick={() => handleEditInvoice(selectedInvoice.id)}
+                style={{backgroundColor: '#6366f1'}}
               >
                 <em className="icon ni ni-edit"></em>
                 Edit Invoice
+              </button>
+              <button 
+                className="btn btn-success"
+                onClick={() => {
+                  setInvoiceModalOpen(false);
+                  handleViewInvoicePDF(selectedInvoice.id);
+                }}
+                style={{backgroundColor: '#10b981'}}
+              >
+                <em className="icon ni ni-eye"></em>
+                Preview PDF
+              </button>
+              <button 
+                className="btn btn-info"
+                onClick={async () => {
+                  try {
+                    // Fetch PDF data and trigger download
+                    const response = await axios.get(
+                      `${API_BASE}/api/invoices/${selectedInvoice.id}/pdf-data?tenantId=${user.tenantId}`
+                    );
+                    if (response.data.success) {
+                      setInvoiceForPDF(response.data.invoice);
+                      // Trigger download via InvoicePDFPreviewModal
+                      setPdfPreviewOpen(true);
+                      setTimeout(() => {
+                        // Auto-trigger download
+                        document.querySelector('.invoice-pdf-download-btn')?.click();
+                      }, 500);
+                    }
+                  } catch (error) {
+                    console.error('Error downloading invoice:', error);
+                    showModal({
+                      type: 'error',
+                      title: 'Error',
+                      message: 'Failed to download invoice.'
+                    });
+                  }
+                }}
+              >
+                <em className="icon ni ni-download"></em>
+                Download Invoice
               </button>
             </div>
           </div>
@@ -1474,7 +1636,12 @@ const TimesheetSummary = () => {
                       <input
                         type="text"
                         className="form-input"
-                        value={editInvoiceData.vendor?.name || editInvoiceData.timesheet?.employee?.vendor?.name || ''}
+                        value={
+                          editInvoiceData.vendor?.name || 
+                          editInvoiceData.timesheet?.employee?.vendor?.name || 
+                          editInvoiceData.employee?.vendor?.name || 
+                          'N/A'
+                        }
                         onChange={(e) => setEditInvoiceData({
                           ...editInvoiceData,
                           vendor: {...(editInvoiceData.vendor || {}), name: e.target.value}
@@ -1482,14 +1649,22 @@ const TimesheetSummary = () => {
                       />
                     </div>
                     <div className="form-group">
-                      <label className="form-label">Vendor Email</label>
+                      <label className="form-label">Vendor Contact</label>
                       <input
-                        type="email"
+                        type="text"
                         className="form-input"
-                        value={editInvoiceData.vendor?.email || editInvoiceData.timesheet?.employee?.vendor?.email || ''}
+                        value={
+                          editInvoiceData.vendor?.email || 
+                          editInvoiceData.vendor?.contactEmail ||
+                          editInvoiceData.timesheet?.employee?.vendor?.email || 
+                          editInvoiceData.timesheet?.employee?.vendor?.contactEmail ||
+                          editInvoiceData.employee?.vendor?.email ||
+                          editInvoiceData.employee?.vendor?.contactEmail ||
+                          'N/A'
+                        }
                         onChange={(e) => setEditInvoiceData({
                           ...editInvoiceData,
-                          vendor: {...(editInvoiceData.vendor || {}), email: e.target.value}
+                          vendor: {...(editInvoiceData.vendor || {}), email: e.target.value, contactEmail: e.target.value}
                         })}
                       />
                     </div>
@@ -1502,10 +1677,10 @@ const TimesheetSummary = () => {
                         className="form-input"
                         value={
                           editInvoiceData.employee 
-                            ? `${editInvoiceData.employee.firstName} ${editInvoiceData.employee.lastName}`
+                            ? `${editInvoiceData.employee.firstName || ''} ${editInvoiceData.employee.lastName || ''}`.trim()
                             : editInvoiceData.timesheet?.employee
-                            ? `${editInvoiceData.timesheet.employee.firstName} ${editInvoiceData.timesheet.employee.lastName}`
-                            : ''
+                            ? `${editInvoiceData.timesheet.employee.firstName || ''} ${editInvoiceData.timesheet.employee.lastName || ''}`.trim()
+                            : 'N/A'
                         }
                         readOnly
                       />
@@ -1515,7 +1690,11 @@ const TimesheetSummary = () => {
                       <input
                         type="email"
                         className="form-input"
-                        value={editInvoiceData.employee?.email || editInvoiceData.timesheet?.employee?.email || ''}
+                        value={
+                          editInvoiceData.employee?.email || 
+                          editInvoiceData.timesheet?.employee?.email || 
+                          'N/A'
+                        }
                         readOnly
                       />
                     </div>

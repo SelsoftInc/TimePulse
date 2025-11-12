@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link, useParams } from "react-router-dom";
 import { PERMISSIONS } from "../../utils/roles";
 import PermissionGuard from "../common/PermissionGuard";
@@ -57,6 +57,8 @@ const EmployeeList = () => {
 
   // Track which row's actions menu is open
   const [openMenuFor, setOpenMenuFor] = useState(null);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
+  const buttonRefs = useRef({});
 
   // Quick Add Client state
   const [quickAddOpen, setQuickAddOpen] = useState(false);
@@ -73,10 +75,14 @@ const EmployeeList = () => {
   useEffect(() => {
     const handleDocClick = (e) => {
       if (!openMenuFor) return;
-      const menuEl = document.querySelector(
-        `[data-actions-menu="${openMenuFor}"]`
-      );
-      if (menuEl && menuEl.contains(e.target)) return; // click inside menu wrapper
+      
+      // Check if click is on the dropdown menu or the button
+      const dropdownMenu = document.querySelector('.dropdown-menu.show');
+      const actionButton = buttonRefs.current[openMenuFor];
+      
+      if (dropdownMenu && dropdownMenu.contains(e.target)) return; // click inside dropdown
+      if (actionButton && actionButton.contains(e.target)) return; // click on button
+      
       setOpenMenuFor(null);
     };
     document.addEventListener("mousedown", handleDocClick);
@@ -731,248 +737,130 @@ const EmployeeList = () => {
               </div>
             </div>
           ) : (
-            <div className="card">
-              <div className="card-inner table-responsive">
-                <table className="table employee-table">
-                  <thead>
-                    <tr>
-                      <th className="table-header">Name</th>
-                      <th className="table-header">Vendor</th>
-                      <th className="table-header">Client</th>
-                      <th className="table-header">End Client</th>
-                      <th className="table-header">Employment Type</th>
-                      {checkPermission(PERMISSIONS.MANAGE_SETTINGS) && (
-                        <th className="table-header">Hourly Rate</th>
-                      )}
-                      <th className="table-header">Email</th>
-                      <th className="table-header">Phone</th>
-                      <th className="table-header">Status</th>
-                      <th className="table-header text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {paginatedEmployees.map((employee) => (
-                      <tr key={employee.id} className={openMenuFor === employee.id ? 'dropdown-open' : ''}>
-                        <td className="table-cell">
+            <div className="card card-bordered">
+              <div className="card-inner p-0">
+                <div className="nk-tb-list nk-tb-orders">
+                  <div className="nk-tb-item nk-tb-head">
+                    <div className="nk-tb-col"><span>Name</span></div>
+                    <div className="nk-tb-col tb-col-md"><span>Vendor</span></div>
+                    <div className="nk-tb-col tb-col-md"><span>Client</span></div>
+                    <div className="nk-tb-col tb-col-md"><span>End Client</span></div>
+                    <div className="nk-tb-col"><span>Employment Type</span></div>
+                    {checkPermission(PERMISSIONS.MANAGE_SETTINGS) && (
+                      <div className="nk-tb-col"><span>Hourly Rate</span></div>
+                    )}
+                    <div className="nk-tb-col"><span>Email</span></div>
+                    <div className="nk-tb-col tb-col-md"><span>Phone</span></div>
+                    <div className="nk-tb-col"><span>Status</span></div>
+                    <div className="nk-tb-col nk-tb-col-tools text-end"><span className="sub-text">ACTIONS</span></div>
+                  </div>
+                  {paginatedEmployees.map((employee) => (
+                    <div key={employee.id} className={`nk-tb-item ${openMenuFor === employee.id ? 'dropdown-open' : ''}`}>
+                      <div className="nk-tb-col">
+                        <Link
+                          to={`/${subdomain}/employees/${employee.id}`}
+                          className="tb-lead"
+                        >
+                          {employee.name}
+                        </Link>
+                      </div>
+                      <div className="nk-tb-col tb-col-md">
+                        {employee.vendor?.name ? (
                           <Link
-                            to={`/${subdomain}/employees/${employee.id}`}
-                            className="employee-name"
+                            to={`/${subdomain}/vendors/${employee.vendorId}`}
+                            className="tb-sub"
                           >
-                            {employee.name}
+                            {employee.vendor.name}
                           </Link>
-                        </td>
-                        <td className="table-cell">
-                          {employee.vendor?.name ? (
-                            <Link
-                              to={`/${subdomain}/vendors/${employee.vendorId}`}
-                              className="vendor-link"
-                            >
-                              {employee.vendor.name}
-                            </Link>
-                          ) : (
-                            <span className="text-tertiary">
-                              Not assigned
-                            </span>
-                          )}
-                        </td>
-                        <td className="table-cell">
-                          {employee.client ? (
-                            employee.client
-                          ) : (
-                            <span className="text-tertiary">Not assigned</span>
-                          )}
-                        </td>
-                        <td className="table-cell">
-                          {employee.endClient ? (
-                            <div className="d-flex flex-column">
-                              <span className="table-cell">
-                                {employee.endClient.name}
-                              </span>
-                              <small className="text-tertiary">
-                                {employee.endClient.location}
-                              </small>
-                            </div>
-                          ) : (
-                            <span className="text-tertiary">Not assigned</span>
-                          )}
-                        </td>
-                        <td className="table-cell">
-                          <span
-                            className={`employment-type-badge ${
-                              employee.employmentType === "W2"
-                                ? "primary"
-                                : "info"
-                            }`}
-                          >
-                            {employee.employmentType}
-                          </span>
-                        </td>
-                        {checkPermission(PERMISSIONS.MANAGE_SETTINGS) && (
-                          <td className="table-cell">
-                            {employee.hourlyRate ? (
-                              `$${employee.hourlyRate}`
-                            ) : (
-                              <span className="text-tertiary">Not set</span>
-                            )}
-                          </td>
+                        ) : (
+                          <span className="tb-sub text-soft">Not assigned</span>
                         )}
-                        <td className="table-cell">{employee.email}</td>
-                        <td className="table-cell">
-                          {employee.phone ? (
-                            employee.phone
-                          ) : (
-                            <span className="text-tertiary">Not provided</span>
-                          )}
-                        </td>
-                        <td className="table-cell">
-                          <span
-                            className={`status-badge ${
-                              employee.status === "active"
-                                ? "active"
-                                : "inactive"
-                            }`}
-                          >
-                            {employee.status === "active"
-                              ? "Active"
-                              : "Inactive"}
-                          </span>
-                        </td>
-                        <td className="text-right">
-                          <div
-                            className="dropdown"
-                            data-actions-menu={employee.id}
-                            style={{ position: "relative" }}
-                          >
-                            <button
-                              type="button"
-                              className="btn btn-sm btn-outline-secondary dropdown-toggle"
-                              onClick={() =>
-                                setOpenMenuFor(
-                                  openMenuFor === employee.id
-                                    ? null
-                                    : employee.id
-                                )
-                              }
-                              ref={(el) => {
-                                if (el && openMenuFor === employee.id) {
-                                  const rect = el.getBoundingClientRect();
-                                  const spaceBelow = window.innerHeight - rect.bottom;
-                                  if (spaceBelow < 250) {
-                                    el.nextElementSibling?.classList.add('dropup');
-                                  } else {
-                                    el.nextElementSibling?.classList.remove('dropup');
-                                  }
-                                }
-                              }}
-                            >
-                              Actions
-                            </button>
-                            {openMenuFor === employee.id && (
-                              <div
-                                className="dropdown-menu dropdown-menu-right show"
-                                ref={(el) => {
-                                  if (el) {
-                                    const button = el.previousElementSibling;
-                                    if (button) {
-                                      const rect = button.getBoundingClientRect();
-                                      const spaceBelow = window.innerHeight - rect.bottom;
-                                      
-                                      if (spaceBelow < 250) {
-                                        // Open upward
-                                        el.style.position = 'fixed';
-                                        el.style.bottom = `${window.innerHeight - rect.top}px`;
-                                        el.style.top = 'auto';
-                                        el.style.right = `${window.innerWidth - rect.right}px`;
-                                        el.style.left = 'auto';
-                                      } else {
-                                        // Open downward
-                                        el.style.position = 'fixed';
-                                        el.style.top = `${rect.bottom + 4}px`;
-                                        el.style.bottom = 'auto';
-                                        el.style.right = `${window.innerWidth - rect.right}px`;
-                                        el.style.left = 'auto';
-                                      }
-                                    }
-                                  }
-                                }}
-                              >
-                                <Link
-                                  to={`/${subdomain}/employees/${employee.id}`}
-                                  className="dropdown-item"
-                                  onClick={() => setOpenMenuFor(null)}
-                                >
-                                  <i className="fas fa-eye mr-1"></i> View
-                                  Details
-                                </Link>
-                                <PermissionGuard
-                                  requiredPermission={PERMISSIONS.EDIT_EMPLOYEE}
-                                >
-                                  <button
-                                    type="button"
-                                    className="dropdown-item"
-                                    onClick={() => {
-                                      setOpenMenuFor(null);
-                                      openAssignModal(employee);
-                                    }}
-                                  >
-                                    <i className="fas fa-users mr-1"></i> Assign
-                                    End Client
-                                  </button>
-                                  <button
-                                    type="button"
-                                    className="dropdown-item"
-                                    onClick={() => {
-                                      setOpenMenuFor(null);
-                                      openVendorModal(employee);
-                                    }}
-                                  >
-                                    <i className="fas fa-truck mr-1"></i> Assign
-                                    Vendor
-                                  </button>
-                                  <button
-                                    type="button"
-                                    className="dropdown-item"
-                                    onClick={() => {
-                                      setOpenMenuFor(null);
-                                      openImplPartnerModal(employee);
-                                    }}
-                                  >
-                                    <i className="fas fa-handshake mr-1"></i>{" "}
-                                    Assign Impl Partner
-                                  </button>
-                                  <div className="dropdown-divider"></div>
-                                  <Link
-                                    to={`/${subdomain}/employees/${employee.id}/edit`}
-                                    className="dropdown-item"
-                                    onClick={() => setOpenMenuFor(null)}
-                                  >
-                                    <i className="fas fa-edit mr-1"></i> Edit
-                                  </Link>
-                                </PermissionGuard>
-                                <PermissionGuard
-                                  requiredPermission={
-                                    PERMISSIONS.DELETE_EMPLOYEE
-                                  }
-                                >
-                                  <button
-                                    type="button"
-                                    className="dropdown-item text-danger"
-                                    onClick={() =>
-                                      handleDeleteEmployee(employee)
-                                    }
-                                  >
-                                    <i className="fas fa-trash-alt mr-1"></i>{" "}
-                                    Delete
-                                  </button>
-                                </PermissionGuard>
-                              </div>
-                            )}
+                      </div>
+                      <div className="nk-tb-col tb-col-md">
+                        <span className="tb-sub">
+                          {employee.client || <span className="text-soft">Not assigned</span>}
+                        </span>
+                      </div>
+                      <div className="nk-tb-col tb-col-md">
+                        {employee.endClient ? (
+                          <div>
+                            <span className="tb-sub">{employee.endClient.name}</span>
+                            <br />
+                            <small className="text-soft">{employee.endClient.location}</small>
                           </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                        ) : (
+                          <span className="tb-sub text-soft">Not assigned</span>
+                        )}
+                      </div>
+                      <div className="nk-tb-col">
+                        <span
+                          className={`badge badge-dim bg-outline-${
+                            employee.employmentType === "W2" ? "primary" : "info"
+                          }`}
+                        >
+                          {employee.employmentType}
+                        </span>
+                      </div>
+                      {checkPermission(PERMISSIONS.MANAGE_SETTINGS) && (
+                        <div className="nk-tb-col">
+                          <span className="tb-amount">
+                            {employee.hourlyRate ? `$${employee.hourlyRate}` : <span className="text-soft">Not set</span>}
+                          </span>
+                        </div>
+                      )}
+                      <div className="nk-tb-col">
+                        <span className="tb-sub">{employee.email}</span>
+                      </div>
+                      <div className="nk-tb-col tb-col-md">
+                        <span className="tb-sub">
+                          {employee.phone || <span className="text-soft">Not provided</span>}
+                        </span>
+                      </div>
+                      <div className="nk-tb-col">
+                        <span
+                          className={`badge bg-outline-${
+                            employee.status === "active" ? "success" : "secondary"
+                          }`}
+                        >
+                          {employee.status === "active" ? "Active" : "Inactive"}
+                        </span>
+                      </div>
+                      <div className="nk-tb-col nk-tb-col-tools">
+                        <div className="dropdown">
+                          <button
+                            ref={(el) => {
+                              if (el) buttonRefs.current[employee.id] = el;
+                            }}
+                            className="btn btn-sm btn-outline-secondary dropdown-toggle"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              console.log('🖱️ Actions button clicked for employee:', employee.id);
+                              const isOpening = openMenuFor !== employee.id;
+                              if (isOpening) {
+                                // Calculate position
+                                const rect = e.currentTarget.getBoundingClientRect();
+                                const position = {
+                                  top: rect.bottom + 4,
+                                  left: rect.right - 200, // 200px is dropdown width
+                                };
+                                console.log('📍 Dropdown position:', position);
+                                setDropdownPosition(position);
+                                setOpenMenuFor(employee.id);
+                                console.log('✅ Dropdown opened for:', employee.id);
+                              } else {
+                                console.log('❌ Dropdown closed');
+                                setOpenMenuFor(null);
+                              }
+                            }}
+                            type="button"
+                          >
+                            Actions
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
 
                 {/* Pagination Controls */}
                 {filteredEmployees.length > itemsPerPage && (
@@ -1044,6 +932,91 @@ const EmployeeList = () => {
           )}
         </div>
       </div>
+
+      {/* Fixed Position Dropdown Menu */}
+      {openMenuFor && (() => {
+        console.log('🎨 Rendering dropdown for:', openMenuFor);
+        console.log('📊 Total employees:', employees.length);
+        const employee = employees.find(e => e.id === openMenuFor);
+        console.log('👤 Found employee:', employee ? `${employee.firstName} ${employee.lastName}` : 'NOT FOUND');
+        
+        if (!employee) {
+          console.error('❌ Employee not found in employees array');
+          return null;
+        }
+        
+        return (
+          <div
+            className="dropdown-menu dropdown-menu-right show"
+            style={{
+              position: 'fixed',
+              top: `${dropdownPosition.top}px`,
+              left: `${dropdownPosition.left}px`,
+              zIndex: 99999,
+              minWidth: '200px',
+            }}
+          >
+            <Link
+              to={`/${subdomain}/employees/${employee.id}`}
+              className="dropdown-item"
+              onClick={() => setOpenMenuFor(null)}
+            >
+              <i className="fas fa-eye mr-1"></i> View Details
+            </Link>
+            <PermissionGuard requiredPermission={PERMISSIONS.EDIT_EMPLOYEE}>
+              <button
+                type="button"
+                className="dropdown-item"
+                onClick={() => {
+                  setOpenMenuFor(null);
+                  openAssignModal(employee);
+                }}
+              >
+                <i className="fas fa-users mr-1"></i> Assign End Client
+              </button>
+              <button
+                type="button"
+                className="dropdown-item"
+                onClick={() => {
+                  setOpenMenuFor(null);
+                  openVendorModal(employee);
+                }}
+              >
+                <i className="fas fa-truck mr-1"></i> Assign Vendor
+              </button>
+              <button
+                type="button"
+                className="dropdown-item"
+                onClick={() => {
+                  setOpenMenuFor(null);
+                  openImplPartnerModal(employee);
+                }}
+              >
+                <i className="fas fa-handshake mr-1"></i> Assign Impl Partner
+              </button>
+              <Link
+                to={`/${subdomain}/employees/${employee.id}/edit`}
+                className="dropdown-item"
+                onClick={() => setOpenMenuFor(null)}
+              >
+                <i className="fas fa-edit mr-1"></i> Edit
+              </Link>
+            </PermissionGuard>
+            <PermissionGuard requiredPermission={PERMISSIONS.DELETE_EMPLOYEE}>
+              <button
+                type="button"
+                className="dropdown-item text-danger"
+                onClick={() => {
+                  setOpenMenuFor(null);
+                  handleDeleteEmployee(employee);
+                }}
+              >
+                <i className="fas fa-trash mr-1"></i> Delete
+              </button>
+            </PermissionGuard>
+          </div>
+        );
+      })()}
 
       {assignModalOpen && (
         <div

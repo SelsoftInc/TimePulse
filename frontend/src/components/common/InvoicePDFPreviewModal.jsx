@@ -4,9 +4,13 @@ import autoTable from 'jspdf-autotable';
 import { API_BASE } from '../../config/api';
 import './InvoicePDFPreviewModal.css';
 
-const InvoicePDFPreviewModal = ({ invoice, onClose }) => {
+const InvoicePDFPreviewModal = ({ invoice, onClose, onUpdate }) => {
   const [loading, setLoading] = useState(true);
   const [employees, setEmployees] = useState([]);
+  const [companyLogo, setCompanyLogo] = useState(invoice?.companyLogo || null);
+  const [logoPreview, setLogoPreview] = useState(invoice?.companyLogo || null);
+  const [timesheetFile, setTimesheetFile] = useState(invoice?.timesheetFile || null);
+  const [timesheetFileName, setTimesheetFileName] = useState(invoice?.timesheetFileName || null);
   
   // Safe number formatting to prevent toFixed errors
   const formatNumber = (value, decimals = 2) => {
@@ -22,11 +26,53 @@ const InvoicePDFPreviewModal = ({ invoice, onClose }) => {
   };
   
   const [formData, setFormData] = useState(() => {
-    // Calculate invoice duration from timesheet line items if available
+    // Calculate invoice period from timesheet week data
     let calculatedStartDate = null;
     let calculatedEndDate = null;
     
-    if (invoice?.lineItems && invoice.lineItems.length > 0) {
+    console.log('📊 Invoice data for PDF:', invoice);
+    
+    // Priority 1: Parse week string from invoice (e.g., "Nov 09 - Nov 15")
+    if (invoice?.week && typeof invoice.week === 'string') {
+      try {
+        // Parse "Nov 09 - Nov 15" or "Nov 02 - Nov 08" format
+        const weekParts = invoice.week.split(' - ');
+        if (weekParts.length === 2) {
+          const year = invoice?.year || new Date().getFullYear();
+          const startPart = weekParts[0].trim(); // "Nov 09"
+          const endPart = weekParts[1].trim();   // "Nov 15"
+          
+          // Parse dates with year
+          const startDate = new Date(`${startPart}, ${year}`);
+          const endDate = new Date(`${endPart}, ${year}`);
+          
+          if (!isNaN(startDate.getTime()) && !isNaN(endDate.getTime())) {
+            calculatedStartDate = startDate.toISOString().split('T')[0];
+            calculatedEndDate = endDate.toISOString().split('T')[0];
+            console.log('✅ Parsed week from invoice.week:', calculatedStartDate, '-', calculatedEndDate);
+          }
+        }
+      } catch (error) {
+        console.error('Error parsing week string:', error);
+      }
+    }
+    
+    // Priority 2: Use weekStart/weekEnd if available
+    if (!calculatedStartDate && invoice?.weekStart && invoice?.weekEnd) {
+      calculatedStartDate = invoice.weekStart;
+      calculatedEndDate = invoice.weekEnd;
+      console.log('✅ Using weekStart/weekEnd:', calculatedStartDate, '-', calculatedEndDate);
+    }
+    
+    // Priority 3: Use timesheet object if available
+    if (!calculatedStartDate && invoice?.timesheet?.weekStart && invoice?.timesheet?.weekEnd) {
+      calculatedStartDate = invoice.timesheet.weekStart;
+      calculatedEndDate = invoice.timesheet.weekEnd;
+      console.log('✅ Using timesheet.weekStart/weekEnd:', calculatedStartDate, '-', calculatedEndDate);
+    }
+    
+    // Priority 4: Calculate from line items dates
+    if (!calculatedStartDate && invoice?.lineItems && invoice.lineItems.length > 0) {
       const dates = invoice.lineItems
         .map(item => item.date || item.workDate || item.startDate)
         .filter(date => date)
@@ -35,59 +81,75 @@ const InvoicePDFPreviewModal = ({ invoice, onClose }) => {
       if (dates.length > 0) {
         calculatedStartDate = new Date(Math.min(...dates)).toISOString().split('T')[0];
         calculatedEndDate = new Date(Math.max(...dates)).toISOString().split('T')[0];
+        console.log('✅ Calculated from line items:', calculatedStartDate, '-', calculatedEndDate);
       }
     }
     
-    // Fallback to invoice dates or month-based calculation
-    const startDate = invoice?.startDate || calculatedStartDate || 
+    // Fallback: Use invoice dates or current week
+    const startDate = calculatedStartDate || invoice?.startDate || 
       new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0];
-    const endDate = invoice?.endDate || calculatedEndDate || 
+    const endDate = calculatedEndDate || invoice?.endDate || 
       new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).toISOString().split('T')[0];
     
+    console.log('📅 Final invoice period:', startDate, '-', endDate);
+    
     return {
-      // Staffing Company (Current Company - Selsoft)
+      // Staffing Company (Selsoft Inc. - Our Company)
       companyName: 'Selsoft Inc.',
       companyAddress: '123 Business Street, Suite 100',
       companyCity: 'Dallas, TX 75201',
       companyEmail: 'billing@selsoft.com',
       companyPhone: '(214) 555-0100',
+      companyTaxId: 'XX-XXXXXXX',
+      companyWebsite: 'www.selsoft.com',
       
       // Invoice Details
       invoiceNumber: invoice?.invoiceNumber || `INV-2025-${String(invoice?.id || '0001').padStart(4, '0')}`,
-      invoiceDate: new Date().toISOString().split('T')[0],
-      dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      paymentTerms: 'Net 14 Days',
+      invoiceDate: invoice?.issueDate || invoice?.invoiceDate || new Date().toISOString().split('T')[0],
+      dueDate: invoice?.dueDate || new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      paymentTerms: invoice?.paymentTerms || 'Net 15',
       
-      // Bill To (Vendor/Client)
-      billToName: invoice?.clientName || invoice?.vendorName || invoice?.vendor || 'Client Company Name',
+      // Billed To (Vendor/Client paying the invoice - Hays)
+      billToName: invoice?.vendorName || invoice?.clientName || invoice?.vendor || 'Hays',
       billToAttn: 'Accounts Payable',
-      billToAddress: '789 Enterprise Blvd',
-      billToCity: 'Dallas, TX 75201',
+      billToAddress: invoice?.vendorAddress || '500 Corporate Drive, Suite 200',
+      billToCity: invoice?.vendorCity || 'Dallas, TX 75201',
+      billToEmail: invoice?.vendorEmail || 'ap@hays.com',
       
       // Project Details
-      projectName: invoice?.month && invoice?.year ? `${invoice.month} ${invoice.year}` : 'Contract Staffing',
+      projectName: 'Contract Staffing',
       projectDescription: 'Professional Services',
+      engagementDetails: invoice?.employeeName ? `${invoice.employeeName} working onsite for ${invoice?.vendorName || 'Client'} under Contract ID #12345` : 'Staffing engagement details',
       
       // Invoice Duration - calculated from actual timesheet dates
       invoiceDurationFrom: startDate,
       invoiceDurationTo: endDate,
       
-      // Line Items
-      lineItems: invoice?.lineItems || [
+      // Line Items - use invoice table data
+      lineItems: invoice?.lineItems?.map(item => ({
+        employeeName: item.employeeName || invoice?.employeeName || 'Employee Name',
+        role: item.role || item.position || 'Software Engineer',
+        description: `${startDate} to ${endDate}`,
+        hoursWorked: parseFloat(item.hours || item.hoursWorked || invoice?.hours || 0),
+        hourlyRate: parseFloat(item.rate || item.hourlyRate || invoice?.hourlyRate || 0),
+        total: parseFloat(item.amount || item.total || invoice?.total || invoice?.totalAmount || 0)
+      })) || [
         {
-          employeeName: 'Employee Name',
-          position: 'Position',
-          hoursWorked: 160,
-          hourlyRate: 45.00,
-          total: 7200.00
+          employeeName: invoice?.employeeName || 'Employee Name',
+          role: invoice?.role || invoice?.position || 'Software Engineer',
+          description: `${startDate} to ${endDate}`,
+          hoursWorked: parseFloat(invoice?.hours || 0),
+          hourlyRate: parseFloat(invoice?.hourlyRate || 0),
+          total: parseFloat(invoice?.total || invoice?.totalAmount || 0)
         }
       ],
       
       // Payment Details
       bankName: 'Chase Bank',
       accountName: 'Selsoft Inc.',
-      accountNumber: '123456789',
-      routingNumber: '111000025',
+      accountNumber: 'XXXX1234',
+      routingNumber: 'XXXXXXXX',
+      swiftCode: 'CHASUS33',
       paymentMethod: 'ACH / Wire Transfer',
       
       // Tax
@@ -126,8 +188,8 @@ const InvoicePDFPreviewModal = ({ invoice, onClose }) => {
               
               if (data.success && data.lineItems && data.lineItems.length > 0) {
                 const processedItems = data.lineItems.map(item => ({
-                  employeeName: item.employeeName || 'Employee Name',
-                  position: item.position || 'Position',
+                  employeeName: item.employeeName || invoice?.employeeName || 'Employee Name',
+                  description: `${invoice?.month || 'Period'} ${invoice?.year || new Date().getFullYear()} (${formData.invoiceDurationFrom} to ${formData.invoiceDurationTo})`,
                   hoursWorked: parseFloat(item.hours || item.hoursWorked || 0),
                   hourlyRate: parseFloat(item.rate || item.hourlyRate || 45.00),
                   total: parseFloat(item.amount || item.total || 0)
@@ -143,8 +205,8 @@ const InvoicePDFPreviewModal = ({ invoice, onClose }) => {
               } else if (data.success && data.employee) {
                 // Single employee data
                 const employeeItem = {
-                  employeeName: data.employee.fullName || 'Employee Name',
-                  position: data.employee.position || 'Position',
+                  employeeName: data.employee.fullName || invoice?.employeeName || 'Employee Name',
+                  description: `${invoice?.month || 'Period'} ${invoice?.year || new Date().getFullYear()} (${formData.invoiceDurationFrom} to ${formData.invoiceDurationTo})`,
                   hoursWorked: parseFloat(invoice.hours || 0),
                   hourlyRate: parseFloat(data.employee.hourlyRate || 45.00),
                   total: parseFloat(invoice.totalAmount || invoice.total || 0)
@@ -169,8 +231,8 @@ const InvoicePDFPreviewModal = ({ invoice, onClose }) => {
           console.log('Using invoice lineItems:', invoice.lineItems);
           
           const processedItems = invoice.lineItems.map(item => ({
-            employeeName: item.employeeName || 'Employee Name',
-            position: item.position || 'Position',
+            employeeName: item.employeeName || invoice?.employeeName || 'Employee Name',
+            description: `${invoice?.month || 'Period'} ${invoice?.year || new Date().getFullYear()} (${formData.invoiceDurationFrom} to ${formData.invoiceDurationTo})`,
             hoursWorked: parseFloat(item.hours || item.hoursWorked || 0),
             hourlyRate: parseFloat(item.rate || item.hourlyRate || 45.00),
             total: parseFloat(item.amount || item.total || 0)
@@ -299,8 +361,8 @@ const InvoicePDFPreviewModal = ({ invoice, onClose }) => {
       lineItems: [
         ...prev.lineItems,
         {
-          employeeName: '',
-          position: '',
+          employeeName: invoice?.employeeName || '',
+          description: `${invoice?.month || 'Period'} ${invoice?.year || new Date().getFullYear()} (${prev.invoiceDurationFrom} to ${prev.invoiceDurationTo})`,
           hoursWorked: 0,
           hourlyRate: 0,
           total: 0
@@ -319,146 +381,232 @@ const InvoicePDFPreviewModal = ({ invoice, onClose }) => {
     }
   };
 
-  // Generate PDF - Optimized for single page with employer logo
+  // Handle logo upload
+  const handleLogoUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result;
+        setCompanyLogo(base64String);
+        setLogoPreview(base64String);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Handle document upload
+  const handleDocumentUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setTimesheetFileName(file.name);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result;
+        setTimesheetFile(base64String);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Remove logo
+  const removeLogo = () => {
+    setCompanyLogo(null);
+    setLogoPreview(null);
+  };
+
+  // Remove document
+  const removeDocument = () => {
+    setTimesheetFile(null);
+    setTimesheetFileName(null);
+  };
+
+  // Generate PDF - Professional Standard Invoice Design
   const generatePDF = async () => {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
-    const pageHeight = doc.internal.pageSize.getHeight();
-    const margin = 15; // Reduced margin for more space
+    const margin = 20;
     
-    // Colors
-    const primaryColor = [41, 128, 185]; // Professional Blue
-    const accentColor = [52, 152, 219]; // Light Blue
-    const darkGray = [44, 62, 80];
-    const lightGray = [236, 240, 241];
+    // Professional Colors
+    const primaryColor = [52, 73, 94]; // Dark slate
+    const accentColor = [41, 128, 185]; // Professional blue
+    const lightGray = [245, 245, 245];
+    const borderColor = [220, 220, 220];
     
-    // Compact Header with gradient effect
-    doc.setFillColor(...primaryColor);
-    doc.rect(0, 0, pageWidth, 35, 'F');
+    let yPos = 20;
     
-    // Add employer logo if available
-    let logoYPos = 35;
-    if (invoice?.companyLogo) {
+    // Add Selsoft Inc. logo (top left) - Remove any vendor logo
+    const logoToUse = logoPreview || invoice?.companyLogo;
+    if (logoToUse) {
       try {
-        console.log('📷 Adding employer logo to PDF...');
-        // Check if logo is base64 or URL
-        const logoData = invoice.companyLogo;
-        
-        // Add logo to top-left of header
-        const logoWidth = 30;
-        const logoHeight = 20;
-        const logoX = margin;
-        const logoY = 7;
-        
-        doc.addImage(logoData, 'PNG', logoX, logoY, logoWidth, logoHeight);
-        console.log('✅ Employer logo added to PDF');
+        console.log('📷 Adding Selsoft Inc. logo to PDF...');
+        const logoWidth = 40;
+        const logoHeight = 25;
+        doc.addImage(logoToUse, 'PNG', margin, yPos, logoWidth, logoHeight);
+        console.log('✅ Selsoft Inc. logo added to PDF');
       } catch (error) {
         console.error('❌ Error adding logo to PDF:', error);
-        // Continue without logo if there's an error
       }
     }
     
-    // Invoice title (centered or right-aligned if logo exists)
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(24);
+    // INVOICE Title (top right, aligned with logo)
+    doc.setTextColor(...primaryColor);
+    doc.setFontSize(28);
     doc.setFont('helvetica', 'bold');
-    const titleX = invoice?.companyLogo ? pageWidth - margin - 50 : pageWidth / 2;
-    doc.text('INVOICE', titleX, 22, { align: invoice?.companyLogo ? 'left' : 'center' });
+    doc.text('INVOICE', pageWidth - margin, yPos + 10, { align: 'right' });
     
-    let yPos = logoYPos + 5;
+    // Subtitle: Staffing Services Invoice
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(100, 100, 100);
+    doc.text('Staffing Services Invoice', pageWidth - margin, yPos + 16, { align: 'right' });
     
-    // Billed To (Left) and Invoice Details (Right) - Compact
-    doc.setTextColor(...darkGray);
+    yPos += 36;
+    
+    // Horizontal line separator (after logo and title)
+    doc.setDrawColor(...borderColor);
+    doc.setLineWidth(0.5);
+    doc.line(margin, yPos, pageWidth - margin, yPos);
+    
+    yPos += 10;
+    
+    // Two-column layout: From (Left) and Billed To (Right)
+    const leftColX = margin;
+    const rightColX = pageWidth / 2 + 10;
+    
+    // Left Column - From (Selsoft Inc.)
+    doc.setTextColor(...primaryColor);
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.text('From:', leftColX, yPos);
+    
+    doc.setTextColor(60, 60, 60);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.text(safeString(formData.companyName), leftColX, yPos + 6);
+    doc.setFontSize(8);
+    doc.text(safeString(formData.companyAddress), leftColX, yPos + 11);
+    doc.text(safeString(formData.companyCity), leftColX, yPos + 16);
+    doc.text(`Email: ${safeString(formData.companyEmail)}`, leftColX, yPos + 21);
+    doc.text(`Phone: ${safeString(formData.companyPhone)}`, leftColX, yPos + 26);
+    doc.text(`Tax ID: ${safeString(formData.companyTaxId)}`, leftColX, yPos + 31);
+    
+    // Right Column - Billed To (Vendor/Client - Hays)
+    doc.setTextColor(...primaryColor);
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Billed To:', rightColX, yPos);
+    
+    doc.setTextColor(60, 60, 60);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.text(safeString(formData.billToName), rightColX, yPos + 6);
+    doc.setFontSize(8);
+    doc.text(safeString(formData.billToAddress), rightColX, yPos + 11);
+    doc.text(safeString(formData.billToCity), rightColX, yPos + 16);
+    doc.text(`Attn: ${safeString(formData.billToAttn)}`, rightColX, yPos + 21);
+    doc.text(`Email: ${safeString(formData.billToEmail)}`, rightColX, yPos + 26);
+    
+    yPos += 40;
+    
+    // Invoice Details Section with light background
+    doc.setFillColor(...lightGray);
+    doc.rect(margin, yPos, pageWidth - 2 * margin, 24, 'F');
+    
+    const detailsLeftX = margin + 3;
+    const detailsMidX = pageWidth / 3 + 10;
+    const detailsRightX = (pageWidth / 3) * 2 + 10;
+    
+    // Invoice Number
+    doc.setTextColor(...primaryColor);
     doc.setFontSize(9);
     doc.setFont('helvetica', 'bold');
-    doc.text('Billed To:', margin, yPos);
+    doc.text('Invoice Number:', detailsLeftX, yPos + 6);
+    doc.setTextColor(60, 60, 60);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
-    doc.text(safeString(formData.companyName), margin, yPos + 4);
-    doc.text(safeString(formData.companyAddress), margin, yPos + 8);
-    doc.text(safeString(formData.companyCity), margin, yPos + 12);
-    doc.text(`Email: ${safeString(formData.companyEmail)}`, margin, yPos + 16);
-    doc.text(`Phone: ${safeString(formData.companyPhone)}`, margin, yPos + 20);
+    doc.text(safeString(formData.invoiceNumber), detailsLeftX, yPos + 11);
     
-    // Invoice Details (Right aligned) - Compact
-    doc.setFont('helvetica', 'bold');
+    // Invoice Date
+    doc.setTextColor(...primaryColor);
     doc.setFontSize(9);
-    const rightX = pageWidth - margin;
-    doc.text('Invoice Number:', rightX, yPos, { align: 'right' });
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8);
-    doc.text(safeString(formData.invoiceNumber), rightX, yPos + 4, { align: 'right' });
-    
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(9);
-    doc.text('Invoice Date:', rightX, yPos + 8, { align: 'right' });
+    doc.text('Invoice Date:', detailsMidX, yPos + 6);
+    doc.setTextColor(60, 60, 60);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
     doc.text(new Date(formData.invoiceDate).toLocaleDateString('en-US', { 
       month: 'short', day: 'numeric', year: 'numeric' 
-    }), rightX, yPos + 12, { align: 'right' });
+    }), detailsMidX, yPos + 11);
     
-    doc.setFont('helvetica', 'bold');
+    // Due Date
+    doc.setTextColor(...primaryColor);
     doc.setFontSize(9);
-    doc.text('Due Date:', rightX, yPos + 16, { align: 'right' });
+    doc.setFont('helvetica', 'bold');
+    doc.text('Due Date:', detailsRightX, yPos + 6);
+    doc.setTextColor(60, 60, 60);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
     doc.text(new Date(formData.dueDate).toLocaleDateString('en-US', { 
       month: 'short', day: 'numeric', year: 'numeric' 
-    }), rightX, yPos + 20, { align: 'right' });
+    }), detailsRightX, yPos + 11);
     
-    doc.setFont('helvetica', 'bold');
+    // Payment Terms
+    doc.setTextColor(...primaryColor);
     doc.setFontSize(9);
-    doc.text('Payment Terms:', rightX, yPos + 24, { align: 'right' });
+    doc.setFont('helvetica', 'bold');
+    doc.text('Payment Terms:', detailsLeftX, yPos + 17);
+    doc.setTextColor(60, 60, 60);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
-    doc.text(safeString(formData.paymentTerms), rightX, yPos + 28, { align: 'right' });
+    doc.text(safeString(formData.paymentTerms), detailsLeftX + 30, yPos + 17);
     
+    yPos += 29;
+    
+    // Billing Period Section
+    doc.setTextColor(...primaryColor);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(9);
-    doc.text('Invoice Duration:', rightX, yPos + 32, { align: 'right' });
+    doc.text('Billing Period:', margin, yPos);
+    
+    doc.setTextColor(60, 60, 60);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
-    const fromDate = new Date(formData.invoiceDurationFrom).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-    const toDate = new Date(formData.invoiceDurationTo).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-    doc.text(`${fromDate} - ${toDate}`, rightX, yPos + 36, { align: 'right' });
+    const periodFromDate = new Date(formData.invoiceDurationFrom).toLocaleDateString('en-US', { 
+      month: 'short', day: 'numeric', year: 'numeric' 
+    });
+    const periodToDate = new Date(formData.invoiceDurationTo).toLocaleDateString('en-US', { 
+      month: 'short', day: 'numeric', year: 'numeric' 
+    });
+    doc.text(`${periodFromDate} - ${periodToDate}`, margin + 28, yPos);
     
-    yPos += 45;
+    yPos += 7;
     
-    // Shipped To Section - Compact
-    doc.setFillColor(245, 245, 245);
-    doc.rect(margin, yPos, pageWidth - 2 * margin, 22, 'F');
-    doc.setTextColor(...darkGray);
+    // Engagement Section
+    doc.setTextColor(...primaryColor);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(9);
-    doc.text('Shipped To:', margin + 3, yPos + 5);
+    doc.text('Engagement:', margin, yPos);
+    
+    doc.setTextColor(60, 60, 60);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
-    doc.text(safeString(formData.billToName), margin + 3, yPos + 9);
-    doc.text(`Attn: ${safeString(formData.billToAttn)}`, margin + 3, yPos + 13);
-    doc.text(`${safeString(formData.billToAddress)}, ${safeString(formData.billToCity)}`, margin + 3, yPos + 17);
+    doc.text(safeString(formData.engagementDetails), margin, yPos + 5);
     
-    yPos += 27;
-    
-    // Project/Engagement Section - Compact
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(9);
-    doc.text('Project / Engagement:', margin, yPos);
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8);
-    doc.text(`${safeString(formData.projectName)} - ${safeString(formData.projectDescription)}`, margin, yPos + 4);
-    
-    yPos += 10;
+    yPos += 12;
     
     // Line Items Table
     const tableData = formData.lineItems.map(item => {
       const hours = parseFloat(item.hoursWorked || item.hours || item.quantity || 0);
       const rate = parseFloat(item.hourlyRate || item.rate || 0);
       const total = parseFloat(item.total || item.amount || (hours * rate) || 0);
+      const employeeName = safeString(item.employeeName || item.employee, 'N/A');
+      const role = safeString(item.role || item.position || item.title, 'Software Engineer');
+      const period = safeString(item.description, 'N/A');
       
       return [
-        safeString(item.employeeName || item.employee, 'N/A'),
-        safeString(item.position || item.title, 'N/A'),
+        `${employeeName} (${role})`,
+        period,
         hours.toString(),
         `$${formatNumber(rate)}`,
         `$${formatNumber(total)}`
@@ -467,92 +615,125 @@ const InvoicePDFPreviewModal = ({ invoice, onClose }) => {
     
     autoTable(doc, {
       startY: yPos,
-      head: [['Employee Name', 'Position', 'Hours', 'Rate (USD)', 'Total (USD)']],
+      head: [['Employee (Role)', 'Billing Period', 'Hours', 'Rate (USD)', 'Total (USD)']],
       body: tableData,
-      theme: 'striped',
+      theme: 'grid',
       headStyles: {
-        fillColor: primaryColor,
+        fillColor: accentColor,
         textColor: [255, 255, 255],
-        fontSize: 8,
+        fontSize: 9,
         fontStyle: 'bold',
         halign: 'center',
-        cellPadding: 3
+        cellPadding: 4
       },
       bodyStyles: {
-        fontSize: 8,
-        textColor: darkGray,
-        cellPadding: 3
+        fontSize: 9,
+        textColor: [60, 60, 60],
+        cellPadding: 4
       },
       columnStyles: {
-        0: { cellWidth: 'auto', halign: 'left' },
+        0: { cellWidth: 40, halign: 'left' },
         1: { cellWidth: 'auto', halign: 'left' },
-        2: { cellWidth: 25, halign: 'center' },
-        3: { cellWidth: 30, halign: 'right' },
-        4: { cellWidth: 30, halign: 'right' }
+        2: { cellWidth: 20, halign: 'center' },
+        3: { cellWidth: 28, halign: 'right' },
+        4: { cellWidth: 30, halign: 'right', fontStyle: 'bold' }
       },
       margin: { left: margin, right: margin },
-      tableWidth: 'auto'
+      tableWidth: 'auto',
+      alternateRowStyles: {
+        fillColor: [250, 250, 250]
+      }
     });
     
-    yPos = doc.lastAutoTable.finalY + 6;
+    yPos = doc.lastAutoTable.finalY + 10;
     
-    // Totals Section - Compact
+    // Totals Section with proper alignment
     const subtotal = calculateSubtotal();
     const total = calculateTotal();
     
-    const totalsX = pageWidth - 55;
+    const totalsBoxX = pageWidth - margin - 65;
+    const totalsBoxWidth = 65;
+    
+    // Draw totals box background
+    doc.setFillColor(...lightGray);
+    doc.rect(totalsBoxX, yPos - 3, totalsBoxWidth, 25, 'F');
+    
+    // Subtotal row
+    doc.setTextColor(60, 60, 60);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
-    doc.text('Subtotal:', totalsX, yPos, { align: 'right' });
-    doc.text(`$${formatNumber(subtotal)}`, rightX, yPos, { align: 'right' });
+    doc.text('Subtotal:', totalsBoxX + 3, yPos + 2);
+    doc.text(`$${formatNumber(subtotal)}`, totalsBoxX + totalsBoxWidth - 3, yPos + 2, { align: 'right' });
+    
+    // Tax row with proper alignment
+    yPos += 6;
+    doc.text('Tax:', totalsBoxX + 3, yPos + 2);
+    const taxText = formData.taxExempt ? formData.taxNote : `$${formatNumber(subtotal * formData.salesTax / 100)}`;
+    doc.text(taxText, totalsBoxX + totalsBoxWidth - 3, yPos + 2, { align: 'right' });
+    
+    // Total Due row with emphasis
+    yPos += 8;
+    doc.setDrawColor(...accentColor);
+    doc.setLineWidth(0.5);
+    doc.line(totalsBoxX, yPos, totalsBoxX + totalsBoxWidth, yPos);
     
     yPos += 5;
-    doc.text(`Tax (${formData.taxExempt ? '0%' : formData.salesTax + '%'}):`, totalsX, yPos, { align: 'right' });
-    doc.text(formData.taxExempt ? formData.taxNote : `$${formatNumber(subtotal * formData.salesTax / 100)}`, rightX, yPos, { align: 'right' });
-    
-    yPos += 7;
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10);
-    doc.text('Total Due:', totalsX, yPos, { align: 'right' });
-    doc.text(`$${formatNumber(total)} USD`, rightX, yPos, { align: 'right' });
+    doc.setFontSize(11);
+    doc.setTextColor(...primaryColor);
+    doc.text('Total Due:', totalsBoxX + 3, yPos + 2);
+    doc.text(`$${formatNumber(total)} USD`, totalsBoxX + totalsBoxWidth - 3, yPos + 2, { align: 'right' });
     
     yPos += 12;
     
-    // Payment Instructions - Compact
-    doc.setFillColor(245, 245, 245);
-    doc.rect(margin, yPos, pageWidth - 2 * margin, 24, 'F');
-    doc.setTextColor(...darkGray);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(9);
-    doc.text('Payment Instructions:', margin + 3, yPos + 5);
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(7);
-    doc.text(`Bank: ${safeString(formData.bankName)} | Account: ${safeString(formData.accountName)} | Acc#: ${safeString(formData.accountNumber)}`, margin + 3, yPos + 10);
-    doc.text(`Routing: ${safeString(formData.routingNumber)} | Method: ${safeString(formData.paymentMethod)}`, margin + 3, yPos + 14);
-    
-    yPos += 28;
-    
-    // Closing Note - Compact with bold NOTE and support email
-    doc.setFillColor(248, 250, 252);
+    // Payment Instructions Section
+    doc.setFillColor(...lightGray);
     doc.rect(margin, yPos, pageWidth - 2 * margin, 28, 'F');
-    doc.setDrawColor(59, 130, 246);
-    doc.setLineWidth(0.5);
-    doc.rect(margin, yPos, pageWidth - 2 * margin, 28);
     
-    doc.setTextColor(...darkGray);
+    doc.setTextColor(...primaryColor);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(9);
-    doc.text('NOTE:', margin + 3, yPos + 5);
+    doc.text('Remit Payment To:', margin + 3, yPos + 5);
+    
+    doc.setTextColor(60, 60, 60);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.text(`Bank: ${safeString(formData.bankName)}`, margin + 3, yPos + 10);
+    doc.text(`Account Name: ${safeString(formData.accountName)}`, margin + 3, yPos + 14);
+    doc.text(`Account #: ${safeString(formData.accountNumber)} | Routing #: ${safeString(formData.routingNumber)}`, margin + 3, yPos + 18);
+    doc.text(`Swift Code: ${safeString(formData.swiftCode)} | Payment Terms: ${safeString(formData.paymentTerms)}`, margin + 3, yPos + 22);
+    
+    yPos += 34;
+    
+    // Closing Note
+    doc.setFillColor(248, 250, 252);
+    doc.rect(margin, yPos, pageWidth - 2 * margin, 24, 'F');
+    doc.setDrawColor(...borderColor);
+    doc.setLineWidth(0.3);
+    doc.rect(margin, yPos, pageWidth - 2 * margin, 24);
+    
+    doc.setTextColor(60, 60, 60);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.text('NOTE:', margin + 3, yPos + 6);
     
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(7);
     doc.text('We appreciate your continued partnership and trust in our services.', margin + 3, yPos + 10);
     doc.text('Kindly quote this invoice number in all future correspondence for faster reference.', margin + 3, yPos + 14);
     
+    yPos += 28;
     
+    // Footer with company info
+    doc.setTextColor(...accentColor);
     doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.text('Selsoft Inc.', pageWidth / 2, yPos, { align: 'center' });
+    
+    doc.setTextColor(100, 100, 100);
+    doc.setFont('helvetica', 'normal');
     doc.setFontSize(7);
-    doc.text('Support Mail: support@selsoftinc.com', margin + 3, yPos + 23);
+    doc.text(`${safeString(formData.companyWebsite)} | support@selsoftinc.com`, pageWidth / 2, yPos + 5, { align: 'center' });
     
     return doc;
   };
@@ -572,10 +753,21 @@ const InvoicePDFPreviewModal = ({ invoice, onClose }) => {
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content invoice-pdf-modal" onClick={(e) => e.stopPropagation()}>
+    <div className="invoice-pdf-modal" onClick={onClose}>
+      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+        {/* Modern Header with Gradient */}
         <div className="modal-header">
-          <h4>Invoice Preview & Edit</h4>
+          <div className="modal-header-content">
+            <div className="modal-icon">
+              <i className="fas fa-file-invoice-dollar"></i>
+            </div>
+            <div className="modal-title-group">
+              <h2>Invoice Preview & Edit</h2>
+              <p className="modal-subtitle">
+                {formData.invoiceNumber} • Configure and generate professional invoices
+              </p>
+            </div>
+          </div>
           <button className="modal-close" onClick={onClose}>×</button>
         </div>
 
@@ -587,23 +779,27 @@ const InvoicePDFPreviewModal = ({ invoice, onClose }) => {
               left: '50%',
               transform: 'translate(-50%, -50%)',
               zIndex: 1000,
-              background: 'rgba(255, 255, 255, 0.95)',
-              padding: '20px 40px',
-              borderRadius: '12px',
-              boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)',
+              background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.95) 0%, rgba(118, 75, 162, 0.95) 100%)',
+              padding: '24px 48px',
+              borderRadius: '16px',
+              boxShadow: '0 8px 32px rgba(102, 126, 234, 0.4)',
               display: 'flex',
               alignItems: 'center',
-              gap: '12px'
+              gap: '16px',
+              backdropFilter: 'blur(10px)'
             }}>
-              <div className="spinner-border" role="status" style={{ width: '24px', height: '24px' }}></div>
-              <span style={{ fontSize: '14px', fontWeight: 500 }}>Loading employee data...</span>
+              <div className="spinner-border text-white" role="status" style={{ width: '28px', height: '28px', borderWidth: '3px' }}></div>
+              <span style={{ fontSize: '15px', fontWeight: 600, color: '#ffffff', letterSpacing: '0.3px' }}>Loading employee data...</span>
             </div>
           )}
           <div className="invoice-form-container">
             {/* Company Information */}
             <div className="form-section">
               <h5 className="section-title">
-                <i className="fas fa-building"></i> Billed To Information
+                <div className="section-title-content">
+                  <i className="fas fa-building"></i>
+                  <span>From (Selsoft Inc.)</span>
+                </div>
               </h5>
               <div className="form-row">
                 <div className="form-group">
@@ -666,7 +862,10 @@ const InvoicePDFPreviewModal = ({ invoice, onClose }) => {
             {/* Invoice Details */}
             <div className="form-section">
               <h5 className="section-title">
-                <i className="fas fa-file-invoice"></i> Invoice Details
+                <div className="section-title-content">
+                  <i className="fas fa-file-invoice"></i>
+                  <span>Invoice Details</span>
+                </div>
               </h5>
               <div className="form-row">
                 <div className="form-group">
@@ -736,10 +935,99 @@ const InvoicePDFPreviewModal = ({ invoice, onClose }) => {
               </div>
             </div>
 
-            {/* Shipped To */}
+            {/* Logo and Documents Upload */}
             <div className="form-section">
               <h5 className="section-title">
-                <i className="fas fa-shipping-fast"></i> Shipped To (Vendor/Client)
+                <div className="section-title-content">
+                  <i className="fas fa-upload"></i>
+                  <span>Logo & Documents</span>
+                </div>
+              </h5>
+              
+              <div className="form-row">
+                {/* Company Logo Upload */}
+                <div className="form-group">
+                  <label>Company Logo</label>
+                  <div className="file-upload-container">
+                    {logoPreview ? (
+                      <div className="file-preview">
+                        <img src={logoPreview} alt="Company Logo" className="logo-preview-img" />
+                        <button
+                          type="button"
+                          className="btn-remove-file"
+                          onClick={removeLogo}
+                          title="Remove logo"
+                        >
+                          <i className="fas fa-times"></i>
+                        </button>
+                      </div>
+                    ) : (
+                      <label className="file-upload-label">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleLogoUpload}
+                          className="file-input-hidden"
+                        />
+                        <div className="file-upload-content">
+                          <i className="fas fa-image"></i>
+                          <span>Click to upload logo</span>
+                          <small>PNG, JPG, GIF up to 5MB</small>
+                        </div>
+                      </label>
+                    )}
+                  </div>
+                </div>
+
+                {/* Timesheet Document Upload */}
+                <div className="form-group">
+                  <label>Timesheet Document</label>
+                  <div className="file-upload-container">
+                    {timesheetFileName ? (
+                      <div className="file-preview document-preview">
+                        <div className="document-icon">
+                          <i className="fas fa-file-pdf"></i>
+                        </div>
+                        <div className="document-info">
+                          <span className="document-name">{timesheetFileName}</span>
+                          <small>Document attached</small>
+                        </div>
+                        <button
+                          type="button"
+                          className="btn-remove-file"
+                          onClick={removeDocument}
+                          title="Remove document"
+                        >
+                          <i className="fas fa-times"></i>
+                        </button>
+                      </div>
+                    ) : (
+                      <label className="file-upload-label">
+                        <input
+                          type="file"
+                          accept=".pdf,.doc,.docx,.xls,.xlsx"
+                          onChange={handleDocumentUpload}
+                          className="file-input-hidden"
+                        />
+                        <div className="file-upload-content">
+                          <i className="fas fa-file-upload"></i>
+                          <span>Click to upload document</span>
+                          <small>PDF, DOC, XLS up to 10MB</small>
+                        </div>
+                      </label>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Billed To (Client/Vendor) */}
+            <div className="form-section">
+              <h5 className="section-title">
+                <div className="section-title-content">
+                  <i className="fas fa-file-invoice-dollar"></i>
+                  <span>Billed To (Client/Vendor - Hays)</span>
+                </div>
               </h5>
               <div className="form-row">
                 <div className="form-group">
@@ -790,7 +1078,10 @@ const InvoicePDFPreviewModal = ({ invoice, onClose }) => {
             {/* Project Details */}
             <div className="form-section">
               <h5 className="section-title">
-                <i className="fas fa-project-diagram"></i> Project / Engagement
+                <div className="section-title-content">
+                  <i className="fas fa-project-diagram"></i>
+                  <span>Project / Engagement</span>
+                </div>
               </h5>
               <div className="form-row">
                 <div className="form-group">
@@ -819,7 +1110,10 @@ const InvoicePDFPreviewModal = ({ invoice, onClose }) => {
             {/* Line Items */}
             <div className="form-section">
               <h5 className="section-title">
-                <i className="fas fa-list"></i> Line Items
+                <div className="section-title-content">
+                  <i className="fas fa-list"></i>
+                  <span>Line Items</span>
+                </div>
                 <button 
                   type="button" 
                   className="btn-add-item"
@@ -842,11 +1136,11 @@ const InvoicePDFPreviewModal = ({ invoice, onClose }) => {
                       />
                     </div>
                     <div className="form-group">
-                      <label>Position</label>
+                      <label>Description</label>
                       <input
                         type="text"
-                        value={item.position}
-                        onChange={(e) => handleLineItemChange(index, 'position', e.target.value)}
+                        value={item.description}
+                        onChange={(e) => handleLineItemChange(index, 'description', e.target.value)}
                         className="form-control"
                       />
                     </div>
@@ -919,7 +1213,10 @@ const InvoicePDFPreviewModal = ({ invoice, onClose }) => {
             {/* Payment Instructions */}
             <div className="form-section">
               <h5 className="section-title">
-                <i className="fas fa-credit-card"></i> Payment Instructions
+                <div className="section-title-content">
+                  <i className="fas fa-credit-card"></i>
+                  <span>Payment Instructions</span>
+                </div>
               </h5>
               <div className="form-row">
                 <div className="form-group">
@@ -967,6 +1264,16 @@ const InvoicePDFPreviewModal = ({ invoice, onClose }) => {
               </div>
               <div className="form-row">
                 <div className="form-group">
+                  <label>Swift Code</label>
+                  <input
+                    type="text"
+                    name="swiftCode"
+                    value={formData.swiftCode}
+                    onChange={handleChange}
+                    className="form-control"
+                  />
+                </div>
+                <div className="form-group">
                   <label>Payment Method</label>
                   <input
                     type="text"
@@ -982,15 +1289,24 @@ const InvoicePDFPreviewModal = ({ invoice, onClose }) => {
         </div>
 
         <div className="modal-footer">
-          <button className="btn-outline" onClick={onClose}>
-            Cancel
-          </button>
-          <button className="btn-preview" onClick={handlePreview}>
-            <i className="fas fa-eye"></i> Preview PDF
-          </button>
-          <button className="btn-primary" onClick={handleDownload}>
-            <i className="fas fa-download"></i> Download PDF
-          </button>
+          <div className="modal-footer-left">
+            <i className="fas fa-info-circle"></i>
+            <span>Invoice will be generated in PDF format</span>
+          </div>
+          <div className="modal-footer-right">
+            <button className="btn-outline" onClick={onClose}>
+              <i className="fas fa-times"></i>
+              Cancel
+            </button>
+            <button className="btn-preview" onClick={handlePreview}>
+              <i className="fas fa-eye"></i>
+              Preview PDF
+            </button>
+            <button className="btn-primary" onClick={handleDownload}>
+              <i className="fas fa-download"></i>
+              Download PDF
+            </button>
+          </div>
         </div>
       </div>
     </div>

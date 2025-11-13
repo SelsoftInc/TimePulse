@@ -95,13 +95,13 @@ const InvoicePDFPreviewModal = ({ invoice, onClose, onUpdate }) => {
     
     return {
       // Staffing Company (Selsoft Inc. - Our Company)
-      companyName: 'Selsoft Inc.',
-      companyAddress: '123 Business Street, Suite 100',
-      companyCity: 'Dallas, TX 75201',
-      companyEmail: 'billing@selsoft.com',
-      companyPhone: '(214) 555-0100',
-      companyTaxId: 'XX-XXXXXXX',
-      companyWebsite: 'www.selsoft.com',
+      companyName: invoice?.companyName || 'Selsoft Inc.',
+      companyAddress: invoice?.companyAddress || '123 Business Street, Suite 100',
+      companyCity: invoice?.companyCity || 'Dallas, TX 75201',
+      companyEmail: invoice?.companyEmail || 'billing@selsoft.com',
+      companyPhone: invoice?.companyPhone || '(214) 555-0100',
+      companyTaxId: invoice?.taxId || 'XX-XXXXXXX',
+      companyWebsite: invoice?.companyWebsite || 'www.selsoft.com',
       
       // Invoice Details
       invoiceNumber: invoice?.invoiceNumber || `INV-2025-${String(invoice?.id || '0001').padStart(4, '0')}`,
@@ -109,48 +109,48 @@ const InvoicePDFPreviewModal = ({ invoice, onClose, onUpdate }) => {
       dueDate: invoice?.dueDate || new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       paymentTerms: invoice?.paymentTerms || 'Net 15',
       
-      // Billed To (Vendor/Client paying the invoice - Hays)
-      billToName: invoice?.vendorName || invoice?.clientName || invoice?.vendor || 'Hays',
+      // Billed To (Vendor/Client paying the invoice)
+      billToName: invoice?.clientName || invoice?.vendorName || invoice?.client?.clientName || 'Acme Corporation',
       billToAttn: 'Accounts Payable',
-      billToAddress: invoice?.vendorAddress || '500 Corporate Drive, Suite 200',
-      billToCity: invoice?.vendorCity || 'Dallas, TX 75201',
-      billToEmail: invoice?.vendorEmail || 'ap@hays.com',
+      billToAddress: invoice?.client?.address || invoice?.vendorAddress || invoice?.billToAddress || '456 Client Avenue',
+      billToCity: invoice?.client?.city || invoice?.vendorCity || invoice?.billToCity || 'Dallas, TX 75202',
+      billToEmail: invoice?.client?.email || invoice?.vendorEmail || invoice?.billToEmail || 'ap@acmecorp.com',
       
       // Project Details
-      projectName: 'Contract Staffing',
-      projectDescription: 'Professional Services',
-      engagementDetails: invoice?.employeeName ? `${invoice.employeeName} working onsite for ${invoice?.vendorName || 'Client'} under Contract ID #12345` : 'Staffing engagement details',
+      projectName: invoice?.projectName || 'Contract Staffing',
+      projectDescription: invoice?.projectDescription || 'Professional Services',
+      engagementDetails: invoice?.engagementDetails || `${invoice?.employeeName || 'Employee'} working onsite for ${invoice?.clientName || 'Client'}`,
       
       // Invoice Duration - calculated from actual timesheet dates
       invoiceDurationFrom: startDate,
       invoiceDurationTo: endDate,
       
-      // Line Items - use invoice table data
+      // Line Items - Prefilled with invoice data
       lineItems: invoice?.lineItems?.map(item => ({
         employeeName: item.employeeName || invoice?.employeeName || 'Employee Name',
-        role: item.role || item.position || 'Software Engineer',
+        role: item.role || item.position || invoice?.position || 'Software Engineer',
         description: `${startDate} to ${endDate}`,
-        hoursWorked: parseFloat(item.hours || item.hoursWorked || invoice?.hours || 0),
-        hourlyRate: parseFloat(item.rate || item.hourlyRate || invoice?.hourlyRate || 0),
-        total: parseFloat(item.amount || item.total || invoice?.total || invoice?.totalAmount || 0)
+        hoursWorked: parseFloat(item.hours || item.hoursWorked || 0),
+        hourlyRate: parseFloat(item.rate || item.hourlyRate || invoice?.hourlyRate || 45.00),
+        total: parseFloat(item.amount || item.total || 0)
       })) || [
         {
           employeeName: invoice?.employeeName || 'Employee Name',
           role: invoice?.role || invoice?.position || 'Software Engineer',
           description: `${startDate} to ${endDate}`,
           hoursWorked: parseFloat(invoice?.hours || 0),
-          hourlyRate: parseFloat(invoice?.hourlyRate || 0),
+          hourlyRate: parseFloat(invoice?.hourlyRate || 45.00),
           total: parseFloat(invoice?.total || invoice?.totalAmount || 0)
         }
       ],
       
       // Payment Details
-      bankName: 'Chase Bank',
-      accountName: 'Selsoft Inc.',
-      accountNumber: 'XXXX1234',
-      routingNumber: 'XXXXXXXX',
-      swiftCode: 'CHASUS33',
-      paymentMethod: 'ACH / Wire Transfer',
+      bankName: invoice?.bankName || 'Chase Bank',
+      accountName: invoice?.accountName || 'Selsoft Inc.',
+      accountNumber: invoice?.accountNumber || 'XXXX1234',
+      routingNumber: invoice?.routingNumber || 'XXXXXXXX',
+      swiftCode: invoice?.swiftCode || 'CHASUS33',
+      paymentMethod: invoice?.paymentMethod || 'ACH / Wire Transfer',
       
       // Tax
       salesTax: 0,
@@ -164,8 +164,10 @@ const InvoicePDFPreviewModal = ({ invoice, onClose, onUpdate }) => {
     const fetchEmployeeData = async () => {
       try {
         setLoading(true);
-        const tenantId = localStorage.getItem('tenantId');
+        const userInfo = JSON.parse(localStorage.getItem('user') || '{}');
+        const tenantId = userInfo.tenantId || localStorage.getItem('tenantId');
         const token = localStorage.getItem('token');
+        
         
         console.log('Fetching employee data for invoice:', invoice);
         
@@ -195,9 +197,27 @@ const InvoicePDFPreviewModal = ({ invoice, onClose, onUpdate }) => {
                   total: parseFloat(item.amount || item.total || 0)
                 }));
                 
+                // Extract vendor/client details if available in response
+                const updateData = {
+                  lineItems: processedItems
+                };
+                
+                // Update vendor/client address if available
+                if (data.invoice?.client) {
+                  updateData.billToName = data.invoice.client.clientName || formData.billToName;
+                  updateData.billToAddress = data.invoice.client.address || formData.billToAddress;
+                  updateData.billToCity = data.invoice.client.city || formData.billToCity;
+                  updateData.billToEmail = data.invoice.client.email || formData.billToEmail;
+                } else if (data.client) {
+                  updateData.billToName = data.client.clientName || formData.billToName;
+                  updateData.billToAddress = data.client.address || formData.billToAddress;
+                  updateData.billToCity = data.client.city || formData.billToCity;
+                  updateData.billToEmail = data.client.email || formData.billToEmail;
+                }
+                
                 setFormData(prev => ({
                   ...prev,
-                  lineItems: processedItems
+                  ...updateData
                 }));
                 setEmployees(processedItems);
                 setLoading(false);
@@ -205,16 +225,33 @@ const InvoicePDFPreviewModal = ({ invoice, onClose, onUpdate }) => {
               } else if (data.success && data.employee) {
                 // Single employee data
                 const employeeItem = {
-                  employeeName: data.employee.fullName || invoice?.employeeName || 'Employee Name',
+                  employeeName: data.employee.fullName || `${data.employee.firstName || ''} ${data.employee.lastName || ''}`.trim() || invoice?.employeeName || 'Employee Name',
                   description: `${invoice?.month || 'Period'} ${invoice?.year || new Date().getFullYear()} (${formData.invoiceDurationFrom} to ${formData.invoiceDurationTo})`,
                   hoursWorked: parseFloat(invoice.hours || 0),
                   hourlyRate: parseFloat(data.employee.hourlyRate || 45.00),
                   total: parseFloat(invoice.totalAmount || invoice.total || 0)
                 };
                 
+                // Extract vendor/client details if available
+                const updateData = {
+                  lineItems: [employeeItem]
+                };
+                
+                if (data.invoice?.client) {
+                  updateData.billToName = data.invoice.client.clientName || formData.billToName;
+                  updateData.billToAddress = data.invoice.client.address || formData.billToAddress;
+                  updateData.billToCity = data.invoice.client.city || formData.billToCity;
+                  updateData.billToEmail = data.invoice.client.email || formData.billToEmail;
+                } else if (data.client) {
+                  updateData.billToName = data.client.clientName || formData.billToName;
+                  updateData.billToAddress = data.client.address || formData.billToAddress;
+                  updateData.billToCity = data.client.city || formData.billToCity;
+                  updateData.billToEmail = data.client.email || formData.billToEmail;
+                }
+                
                 setFormData(prev => ({
                   ...prev,
-                  lineItems: [employeeItem]
+                  ...updateData
                 }));
                 setEmployees([employeeItem]);
                 setLoading(false);
@@ -728,7 +765,7 @@ const InvoicePDFPreviewModal = ({ invoice, onClose, onUpdate }) => {
     doc.setTextColor(...accentColor);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(8);
-    doc.text('Selsoft Inc.', pageWidth / 2, yPos, { align: 'center' });
+    doc.text('', pageWidth / 2, yPos, { align: 'center' });
     
     doc.setTextColor(100, 100, 100);
     doc.setFont('helvetica', 'normal');
@@ -1298,14 +1335,36 @@ const InvoicePDFPreviewModal = ({ invoice, onClose, onUpdate }) => {
               <i className="fas fa-times"></i>
               Cancel
             </button>
-            <button className="btn-preview" onClick={handlePreview}>
-              <i className="fas fa-eye"></i>
-              Preview PDF
-            </button>
-            <button className="btn-primary" onClick={handleDownload}>
-              <i className="fas fa-download"></i>
-              Download PDF
-            </button>
+            {onUpdate && (
+              <button className="btn-primary" onClick={() => {
+                // Prepare updated invoice data
+                const updatedInvoice = {
+                  ...invoice,
+                  ...formData,
+                  companyLogo: logoPreview,
+                  timesheetFile: timesheetFile,
+                  timesheetFileName: timesheetFileName,
+                  totalAmount: calculateTotal(),
+                  total: calculateTotal()
+                };
+                onUpdate(updatedInvoice);
+              }}>
+                <i className="fas fa-save"></i>
+                Save Changes
+              </button>
+            )}
+            {!onUpdate && (
+              <>
+                <button className="btn-preview" onClick={handlePreview}>
+                  <i className="fas fa-eye"></i>
+                  Preview PDF
+                </button>
+                <button className="btn-primary" onClick={handleDownload}>
+                  <i className="fas fa-download"></i>
+                  Download PDF
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>

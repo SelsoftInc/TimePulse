@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import InvoiceSettingsModal from "../common/InvoiceSettingsModal";
 import InvoicePDFPreviewModal from '../common/InvoicePDFPreviewModal';
 import InvoiceSuccessModal from '../common/InvoiceSuccessModal';
+import InvoiceDetailsModal from '../common/InvoiceDetailsModal';
 import axios from "axios";
 import { API_BASE } from "../../config/api";
 import "./Invoice.css";
@@ -161,15 +162,23 @@ const InvoiceDetailModal = ({ invoice, onClose, onApprove, onReject }) => {
                 <div>
                   <label style={{display: 'block', fontSize: '12px', fontWeight: '600', color: '#5f6368', marginBottom: '4px'}}>EMPLOYEE NAME</label>
                   <div style={{fontSize: '14px', color: '#202124'}}>
-                    {invoice.employee 
-                      ? `${invoice.employee.firstName} ${invoice.employee.lastName}`
-                      : invoice.employeeName || 'N/A'}
+                    {(() => {
+                      // Try multiple paths to find employee name
+                      if (invoice.employee?.firstName && invoice.employee?.lastName) {
+                        return `${invoice.employee.firstName} ${invoice.employee.lastName}`;
+                      } else if (invoice.timesheet?.employee?.firstName && invoice.timesheet?.employee?.lastName) {
+                        return `${invoice.timesheet.employee.firstName} ${invoice.timesheet.employee.lastName}`;
+                      } else if (invoice.employeeName) {
+                        return invoice.employeeName;
+                      }
+                      return 'N/A';
+                    })()}
                   </div>
                 </div>
                 <div>
                   <label style={{display: 'block', fontSize: '12px', fontWeight: '600', color: '#5f6368', marginBottom: '4px'}}>EMPLOYEE EMAIL</label>
                   <div style={{fontSize: '14px', color: '#202124'}}>
-                    {invoice.employee?.email || invoice.employeeEmail || 'N/A'}
+                    {invoice.employee?.email || invoice.timesheet?.employee?.email || invoice.employeeEmail || 'N/A'}
                   </div>
                 </div>
               </div>
@@ -755,6 +764,10 @@ const Invoice = () => {
   const [showPDFModal, setShowPDFModal] = useState(false);
   const [selectedInvoiceForPDF, setSelectedInvoiceForPDF] = useState(null);
   
+  // New Invoice Details Modal state (from Reports & Analytics)
+  const [showNewDetailsModal, setShowNewDetailsModal] = useState(false);
+  const [selectedInvoiceForNewDetails, setSelectedInvoiceForNewDetails] = useState(null);
+  
   // Edit invoice modal state
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editInvoiceData, setEditInvoiceData] = useState(null);
@@ -965,9 +978,74 @@ const Invoice = () => {
     setCurrentPage(1);
   }, [filterStatus, searchTerm]);
 
-  const handleViewInvoice = (invoice) => {
-    setSelectedInvoice(invoice);
-    setShowDetailModal(true);
+  const handleViewInvoice = async (invoice) => {
+    try {
+      const tenantId = JSON.parse(localStorage.getItem("user"))?.tenantId;
+      const token = localStorage.getItem("token");
+      
+      console.log('📥 Fetching complete invoice details for viewing:', invoice.id);
+      
+      // Fetch full invoice details including employee and vendor data from backend
+      const response = await fetch(
+        `${API_BASE}/api/invoices/${invoice.id}?tenantId=${tenantId}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('✅ Full invoice data fetched for viewing:', data);
+        
+        if (data.success && data.invoice) {
+          const inv = data.invoice;
+          
+          // Extract employee data from multiple sources
+          const employeeName = inv.employee 
+            ? `${inv.employee.firstName} ${inv.employee.lastName}`
+            : inv.timesheet?.employee
+            ? `${inv.timesheet.employee.firstName} ${inv.timesheet.employee.lastName}`
+            : inv.employeeName || 'N/A';
+          
+          const employeeEmail = inv.employee?.email 
+            || inv.timesheet?.employee?.email 
+            || inv.employeeEmail || 'N/A';
+          
+          // Merge full invoice data
+          const fullInvoice = {
+            ...invoice,
+            ...inv,
+            employeeName: employeeName,
+            employeeEmail: employeeEmail,
+            employee: inv.employee,
+            vendor: inv.vendor,
+            timesheet: inv.timesheet,
+            client: inv.client
+          };
+          
+          console.log('📋 Opening view modal with complete data:', fullInvoice);
+          setSelectedInvoiceForNewDetails(fullInvoice);
+          setShowNewDetailsModal(true);
+        } else {
+          console.warn('API returned success:false, using original invoice data');
+          setSelectedInvoiceForNewDetails(invoice);
+          setShowNewDetailsModal(true);
+        }
+      } else {
+        console.error('Failed to fetch invoice details:', response.status);
+        // Fallback to original invoice data
+        setSelectedInvoiceForNewDetails(invoice);
+        setShowNewDetailsModal(true);
+      }
+    } catch (error) {
+      console.error("Error fetching invoice details for viewing:", error);
+      // Fallback to original invoice data
+      setSelectedInvoiceForNewDetails(invoice);
+      setShowNewDetailsModal(true);
+    }
   };
 
   const toggleActions = (invoiceId, type = 'invoice') => {
@@ -1540,8 +1618,38 @@ const Invoice = () => {
         />
       )}
 
-      {/* Edit Invoice Modal - Completely Revamped */}
+      {/* New Invoice Details Modal - Replicated from Reports & Analytics */}
+      {showNewDetailsModal && selectedInvoiceForNewDetails && (
+        <InvoiceDetailsModal
+          invoice={selectedInvoiceForNewDetails}
+          onClose={() => {
+            setShowNewDetailsModal(false);
+            setSelectedInvoiceForNewDetails(null);
+          }}
+        />
+      )}
+
+      {/* Invoice Preview & Edit Modal - From Reports & Analytics */}
       {editModalOpen && editInvoiceData && (
+        <InvoicePDFPreviewModal
+          invoice={editInvoiceData}
+          onClose={() => {
+            setEditModalOpen(false);
+            setEditInvoiceData(null);
+          }}
+          onUpdate={(updatedInvoice) => {
+            // Show success modal after saving
+            setSuccessInvoiceData(updatedInvoice);
+            setShowSuccessModal(true);
+            setEditModalOpen(false);
+            // Refresh invoices list
+            fetchInvoices();
+          }}
+        />
+      )}
+
+      {/* Old Edit Invoice Modal - REMOVED - Replaced with InvoicePDFPreviewModal above */}
+      {false && editModalOpen && editInvoiceData && (
         <div className="invoice-modal-overlay" onClick={() => setEditModalOpen(false)}>
           <div className="invoice-modal-content modern-edit-modal" onClick={(e) => e.stopPropagation()} style={{maxWidth: '1400px', width: '98%', maxHeight: '95vh', overflow: 'hidden', display: 'flex', flexDirection: 'column'}}>
             {/* Modern Header with Gradient */}
@@ -1782,28 +1890,20 @@ const Invoice = () => {
                     </select>
                   </div>
                   <div>
-                    <label style={{display: 'block', fontSize: '12px', fontWeight: '600', color: '#7f8c8d', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px'}}>Total Hours</label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      style={{width: '100%', padding: '12px 16px', border: '2px solid #e8e8e8', borderRadius: '10px', fontSize: '14px', color: '#2c3e50', transition: 'all 0.3s'}}
-                      value={editInvoiceData.hours || 0}
-                      onChange={(e) => setEditInvoiceData({...editInvoiceData, hours: parseFloat(e.target.value) || 0})}
-                      onFocus={(e) => e.target.style.borderColor = '#667eea'}
-                      onBlur={(e) => e.target.style.borderColor = '#e8e8e8'}
-                    />
+                    <label style={{display: 'block', fontSize: '12px', fontWeight: '600', color: '#7f8c8d', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px'}}>Total Hours (Auto-calculated)</label>
+                    <div
+                      style={{width: '100%', padding: '12px 16px', border: '2px solid #e8e8e8', borderRadius: '10px', fontSize: '16px', fontWeight: '600', color: '#3498db', background: '#eff6ff'}}
+                    >
+                      {formatCurrency(editInvoiceData.hours || 0)} hrs
+                    </div>
                   </div>
                   <div>
-                    <label style={{display: 'block', fontSize: '12px', fontWeight: '600', color: '#7f8c8d', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px'}}>Total Amount</label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      style={{width: '100%', padding: '12px 16px', border: '2px solid #e8e8e8', borderRadius: '10px', fontSize: '14px', fontWeight: '600', color: '#27ae60', transition: 'all 0.3s'}}
-                      value={editInvoiceData.total || ''}
-                      onChange={(e) => setEditInvoiceData({...editInvoiceData, total: parseFloat(e.target.value) || 0})}
-                      onFocus={(e) => e.target.style.borderColor = '#667eea'}
-                      onBlur={(e) => e.target.style.borderColor = '#e8e8e8'}
-                    />
+                    <label style={{display: 'block', fontSize: '12px', fontWeight: '600', color: '#7f8c8d', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px'}}>Total Amount (Auto-calculated)</label>
+                    <div
+                      style={{width: '100%', padding: '12px 16px', border: '2px solid #e8e8e8', borderRadius: '10px', fontSize: '18px', fontWeight: '700', color: '#27ae60', background: '#f0fdf4'}}
+                    >
+                      ${formatCurrency(editInvoiceData.total || 0)}
+                    </div>
                   </div>
                   <div>
                     <label style={{display: 'block', fontSize: '12px', fontWeight: '600', color: '#7f8c8d', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px'}}>Timesheet Period</label>
@@ -1892,7 +1992,18 @@ const Invoice = () => {
                                 newItems[index].quantity = newHours;
                                 const rate = parseFloat(newItems[index].rate || 0);
                                 newItems[index].amount = newHours * rate;
-                                setEditInvoiceData({...editInvoiceData, lineItems: newItems});
+                                
+                                // Recalculate total amount and total hours
+                                const newTotal = newItems.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
+                                const newTotalHours = newItems.reduce((sum, item) => sum + (parseFloat(item.hours || item.quantity) || 0), 0);
+                                
+                                setEditInvoiceData({
+                                  ...editInvoiceData, 
+                                  lineItems: newItems,
+                                  total: newTotal,
+                                  totalAmount: newTotal,
+                                  hours: newTotalHours
+                                });
                               }}
                               style={{width: '100px', padding: '10px 14px', border: '2px solid #e8e8e8', borderRadius: '8px', fontSize: '14px', color: '#2c3e50', textAlign: 'center', transition: 'all 0.3s'}}
                               onFocus={(e) => e.target.style.borderColor = '#667eea'}
@@ -1910,7 +2021,18 @@ const Invoice = () => {
                                 newItems[index].rate = newRate;
                                 const hours = parseFloat(newItems[index].hours || newItems[index].quantity || 0);
                                 newItems[index].amount = hours * newRate;
-                                setEditInvoiceData({...editInvoiceData, lineItems: newItems});
+                                
+                                // Recalculate total amount and total hours
+                                const newTotal = newItems.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
+                                const newTotalHours = newItems.reduce((sum, item) => sum + (parseFloat(item.hours || item.quantity) || 0), 0);
+                                
+                                setEditInvoiceData({
+                                  ...editInvoiceData, 
+                                  lineItems: newItems,
+                                  total: newTotal,
+                                  totalAmount: newTotal,
+                                  hours: newTotalHours
+                                });
                               }}
                               style={{width: '120px', padding: '10px 14px', border: '2px solid #e8e8e8', borderRadius: '8px', fontSize: '14px', color: '#2c3e50', textAlign: 'center', transition: 'all 0.3s'}}
                               onFocus={(e) => e.target.style.borderColor = '#667eea'}
@@ -2018,6 +2140,31 @@ const Invoice = () => {
                       
                       console.log('💾 Saving invoice changes...', editInvoiceData);
                       
+                      // Calculate total from line items
+                      const lineItems = (editInvoiceData.lineItems || []).map(item => {
+                        const hours = parseFloat(item.hours || item.quantity || 0);
+                        const rate = parseFloat(item.rate || 0);
+                        const amount = hours * rate; // Recalculate amount
+                        return {
+                          description: item.description,
+                          hours: hours,
+                          rate: rate,
+                          amount: amount
+                        };
+                      });
+                      
+                      // Calculate total amount from all line items
+                      const calculatedTotal = lineItems.reduce((sum, item) => sum + item.amount, 0);
+                      
+                      // Calculate total hours from all line items
+                      const totalHours = lineItems.reduce((sum, item) => sum + item.hours, 0);
+                      
+                      console.log('📊 Calculated totals:', {
+                        lineItems: lineItems,
+                        totalHours: totalHours,
+                        calculatedTotal: calculatedTotal
+                      });
+                      
                       // Prepare the invoice data for API
                       const invoiceUpdateData = {
                         invoiceNumber: editInvoiceData.invoiceNumber,
@@ -2026,17 +2173,13 @@ const Invoice = () => {
                         employeeName: editInvoiceData.employeeName,
                         employeeEmail: editInvoiceData.employeeEmail,
                         vendorContact: editInvoiceData.vendorContact,
-                        total: editInvoiceData.total,
+                        total: calculatedTotal, // Use calculated total
+                        totalAmount: calculatedTotal, // Also set totalAmount field
                         status: editInvoiceData.status,
-                        hours: editInvoiceData.hours,
+                        hours: totalHours, // Use calculated total hours
                         week: editInvoiceData.week,
                         notes: editInvoiceData.notes,
-                        lineItems: (editInvoiceData.lineItems || []).map(item => ({
-                          description: item.description,
-                          hours: parseFloat(item.hours || item.quantity || 0),
-                          rate: parseFloat(item.rate || 0),
-                          amount: parseFloat(item.amount || 0)
-                        })),
+                        lineItems: lineItems,
                         tenantId: userInfo.tenantId
                       };
                       
@@ -2121,12 +2264,504 @@ const Invoice = () => {
             setShowSuccessModal(false);
             setSuccessInvoiceData(null);
           }}
-          onPreview={() => {
+          onPreview={async () => {
             // Close success modal
             setShowSuccessModal(false);
-            // Open PDF preview modal
-            setSelectedInvoiceForPDF(successInvoiceData);
-            setShowPDFModal(true);
+            
+            try {
+              // Fetch complete invoice data from API
+              const userInfo = JSON.parse(localStorage.getItem('user') || '{}');
+              const tenantId = userInfo.tenantId || localStorage.getItem('tenantId');
+              const token = localStorage.getItem('token');
+              
+              console.log('🔍 Fetching complete invoice data for PDF generation...');
+              
+              const response = await fetch(
+                `${API_BASE}/api/invoices/${successInvoiceData.id}?tenantId=${tenantId}`,
+                {
+                  headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                  }
+                }
+              );
+              
+              let completeInvoice = successInvoiceData;
+              if (response.ok) {
+                const data = await response.json();
+                if (data.success && data.invoice) {
+                  // Merge API data with modal data (modal data takes precedence)
+                  completeInvoice = {
+                    ...data.invoice,
+                    ...successInvoiceData,
+                    // Ensure nested objects are preserved
+                    employee: successInvoiceData.employee || data.invoice.employee,
+                    client: successInvoiceData.client || data.invoice.client,
+                    vendor: successInvoiceData.vendor || data.invoice.vendor
+                  };
+                  console.log('✅ Complete invoice data merged:', completeInvoice);
+                }
+              }
+              
+              // If employee data is missing, fetch from employee API
+              if (!completeInvoice.employee && completeInvoice.employeeId) {
+                console.log('🔍 Fetching employee data...');
+                try {
+                  const empResponse = await fetch(
+                    `${API_BASE}/api/employees/${completeInvoice.employeeId}?tenantId=${tenantId}`,
+                    {
+                      headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                      }
+                    }
+                  );
+                  if (empResponse.ok) {
+                    const empData = await empResponse.json();
+                    if (empData.success) {
+                      completeInvoice.employee = empData.employee || empData.data;
+                      console.log('✅ Employee data fetched:', completeInvoice.employee);
+                    }
+                  }
+                } catch (err) {
+                  console.error('Error fetching employee:', err);
+                }
+              }
+              
+              // If vendor data is missing, fetch from vendor API
+              if (!completeInvoice.vendor && completeInvoice.vendorId) {
+                console.log('🔍 Fetching vendor data...');
+                try {
+                  const vendorResponse = await fetch(
+                    `${API_BASE}/api/vendors/${completeInvoice.vendorId}?tenantId=${tenantId}`,
+                    {
+                      headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                      }
+                    }
+                  );
+                  if (vendorResponse.ok) {
+                    const vendorData = await vendorResponse.json();
+                    if (vendorData.success) {
+                      completeInvoice.vendor = vendorData.vendor || vendorData.data;
+                      console.log('✅ Vendor data fetched:', completeInvoice.vendor);
+                    }
+                  }
+                } catch (err) {
+                  console.error('Error fetching vendor:', err);
+                }
+              }
+              
+              // If client data is missing, fetch from client API
+              if (!completeInvoice.client && completeInvoice.clientId) {
+                console.log('🔍 Fetching client data...');
+                try {
+                  const clientResponse = await fetch(
+                    `${API_BASE}/api/clients/${completeInvoice.clientId}?tenantId=${tenantId}`,
+                    {
+                      headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                      }
+                    }
+                  );
+                  if (clientResponse.ok) {
+                    const clientData = await clientResponse.json();
+                    if (clientData.success) {
+                      completeInvoice.client = clientData.client || clientData.data;
+                      console.log('✅ Client data fetched:', completeInvoice.client);
+                    }
+                  }
+                } catch (err) {
+                  console.error('Error fetching client:', err);
+                }
+              }
+              
+              // Generate professional PDF with complete data
+              const jsPDF = (await import('jspdf')).default;
+              const autoTable = (await import('jspdf-autotable')).default;
+              
+              const doc = new jsPDF();
+              const pageWidth = doc.internal.pageSize.getWidth();
+              const margin = 20;
+              let yPos = 20;
+              
+              // Company Logo and Header
+              // Add tenant uploaded logo if available
+              if (completeInvoice.companyLogo) {
+                try {
+                  // Logo from modal (tenant uploaded)
+                  doc.addImage(completeInvoice.companyLogo, 'PNG', margin, yPos - 5, 50, 25);
+                  yPos += 5; // Add space after logo
+                } catch (error) {
+                  console.error('Error adding logo to PDF:', error);
+                  // If logo fails, show company name instead
+                  if (completeInvoice.companyName) {
+                    doc.setFontSize(16);
+                    doc.setFont('helvetica', 'bold');
+                    doc.setTextColor(41, 128, 185);
+                    doc.text(completeInvoice.companyName, margin, yPos);
+                    doc.setTextColor(0, 0, 0);
+                  }
+                }
+              } else if (completeInvoice.companyName) {
+                // No logo, show company name
+                doc.setFontSize(16);
+                doc.setFont('helvetica', 'bold');
+                doc.setTextColor(41, 128, 185);
+                doc.text(completeInvoice.companyName, margin, yPos);
+                doc.setTextColor(0, 0, 0);
+              }
+              
+              // Company name from database
+              // const companyName = completeInvoice.companyName || 
+              //                    successInvoiceData.companyName || 
+              //                    '';
+              doc.setFontSize(24);
+              doc.setFont('helvetica', 'bold');
+              // doc.text(companyName, margin, yPos);
+              
+              doc.setFontSize(20);
+              doc.setTextColor(41, 128, 185);
+              doc.text('INVOICE', pageWidth - margin, yPos, { align: 'right' });
+              doc.setTextColor(0, 0, 0);
+              
+              yPos += 5;
+              doc.setFontSize(9);
+              doc.setFont('helvetica', 'normal');
+              doc.setTextColor(100, 100, 100);
+              doc.text('Staffing Services Invoice', pageWidth - margin, yPos, { align: 'right' });
+              doc.setTextColor(0, 0, 0);
+              
+              yPos += 15;
+              doc.setLineWidth(0.5);
+              doc.line(margin, yPos, pageWidth - margin, yPos);
+              yPos += 10;
+              
+              // From and Billed To sections
+              doc.setFontSize(10);
+              doc.setFont('helvetica', 'bold');
+              doc.text('From:', margin, yPos);
+              doc.text('Billed To:', pageWidth / 2 + 10, yPos);
+              
+              yPos += 6;
+              doc.setFont('helvetica', 'normal');
+              doc.setFontSize(9);
+              
+              // From (Company) details - Use real data from database
+              const fromStartY = yPos;
+              const fromDetails = [];
+              if (completeInvoice.companyName) {
+                fromDetails.push(completeInvoice.companyName);
+              }
+              if (completeInvoice.companyAddress) {
+                fromDetails.push(completeInvoice.companyAddress);
+              }
+              if (completeInvoice.companyCity) {
+                fromDetails.push(completeInvoice.companyCity);
+              }
+              if (completeInvoice.companyEmail) {
+                fromDetails.push(`Email: ${completeInvoice.companyEmail}`);
+              }
+              if (completeInvoice.companyPhone) {
+                fromDetails.push(`Phone: ${completeInvoice.companyPhone}`);
+              }
+              if (completeInvoice.taxId) {
+                fromDetails.push(`Tax ID: ${completeInvoice.taxId}`);
+              }
+              
+              let fromYPos = fromStartY;
+              fromDetails.forEach(line => {
+                doc.text(line, margin, fromYPos);
+                fromYPos += 5;
+              });
+              
+              // Billed To (Vendor/Client) details - Use real data from database
+              // Start at same Y position as From section
+              let billedToYPos = fromStartY;
+              const vendor = completeInvoice.vendor || {};
+              const client = completeInvoice.client || {};
+              
+              const billedToDetails = [];
+              const billedToName = vendor.vendorName || vendor.name || client.clientName || 
+                                  completeInvoice.clientName || completeInvoice.billToName;
+              if (billedToName) {
+                billedToDetails.push(billedToName);
+              }
+              
+              const billedToAddress = vendor.address || client.address || 
+                                     completeInvoice.billToAddress;
+              if (billedToAddress) {
+                billedToDetails.push(billedToAddress);
+              }
+              
+              const billedToCity = vendor.city || client.city || 
+                                  completeInvoice.billToCity;
+              if (billedToCity) {
+                billedToDetails.push(billedToCity);
+              }
+              
+              billedToDetails.push('Attn: Accounts Payable');
+              
+              const billedToEmail = vendor.email || client.email || 
+                                   completeInvoice.billToEmail;
+              if (billedToEmail) {
+                billedToDetails.push(`Email: ${billedToEmail}`);
+              }
+              
+              billedToDetails.forEach(line => {
+                doc.text(line, pageWidth / 2 + 10, billedToYPos);
+                billedToYPos += 5;
+              });
+              
+              // Move yPos to the maximum of both sections
+              yPos = Math.max(fromYPos, billedToYPos) + 5;
+              
+              // Invoice details box
+              doc.setFillColor(240, 240, 240);
+              doc.rect(margin, yPos, pageWidth - 2 * margin, 25, 'F');
+              
+              yPos += 7;
+              doc.setFontSize(9);
+              doc.setFont('helvetica', 'bold');
+              doc.text('Invoice Number:', margin + 5, yPos);
+              doc.text('Invoice Date:', margin + 65, yPos);
+              doc.text('Due Date:', margin + 125, yPos);
+              
+              yPos += 5;
+              doc.setFont('helvetica', 'normal');
+              
+              // Format dates properly
+              const formatDate = (dateStr) => {
+                if (!dateStr) return '';
+                const date = new Date(dateStr);
+                return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+              };
+              
+              const invoiceNumber = completeInvoice.invoiceNumber || '';
+              const invoiceDate = formatDate(completeInvoice.issueDate || completeInvoice.invoiceDate || completeInvoice.createdAt);
+              const dueDate = formatDate(completeInvoice.dueDate);
+              
+              doc.text(invoiceNumber, margin + 5, yPos);
+              doc.text(invoiceDate, margin + 65, yPos);
+              doc.text(dueDate, margin + 125, yPos);
+              
+              yPos += 7;
+              doc.setFont('helvetica', 'bold');
+              doc.text('Payment Terms:', margin + 5, yPos);
+              doc.setFont('helvetica', 'normal');
+              const paymentTerms = completeInvoice.paymentTerms || 'Net 15';
+              doc.text(paymentTerms, margin + 35, yPos);
+              
+              yPos += 10;
+              
+              // Billing Period and Engagement
+              doc.setFontSize(9);
+              doc.setFont('helvetica', 'bold');
+              doc.text('Billing Period:', margin, yPos);
+              doc.setFont('helvetica', 'normal');
+              
+              // Calculate billing period from timesheet or invoice data
+              const timesheetData = completeInvoice.timesheet || {};
+              const startDate = formatDate(timesheetData.startDate || completeInvoice.invoiceDurationFrom);
+              const endDate = formatDate(timesheetData.endDate || completeInvoice.invoiceDurationTo);
+              const billingPeriod = (startDate && endDate) ? `${startDate} - ${endDate}` : 
+                                   `${completeInvoice.month || ''} ${completeInvoice.year || ''}`;
+              doc.text(billingPeriod, margin + 30, yPos);
+              
+              yPos += 5;
+              doc.setFont('helvetica', 'bold');
+              doc.text('Engagement:', margin, yPos);
+              doc.setFont('helvetica', 'normal');
+              const engagement = completeInvoice.projectDescription || 
+                                completeInvoice.description || 
+                                'Staffing engagement details';
+              doc.text(engagement, margin + 30, yPos);
+              
+              yPos += 10;
+              
+              // Employee details table - Use lineItems from modal if available
+              const lineItems = completeInvoice.lineItems || [];
+              const tableBody = [];
+              
+              if (lineItems.length > 0) {
+                // Use line items from modal
+                lineItems.forEach(item => {
+                  const empName = item.employeeName || 'Employee Name';
+                  const empRole = item.role || item.position || 'Software Engineer';
+                  const itemHours = parseFloat(item.hoursWorked || item.hours || 0);
+                  const itemRate = parseFloat(item.hourlyRate || item.rate || 0);
+                  const itemTotal = parseFloat(item.total || (itemHours * itemRate));
+                  
+                  tableBody.push([
+                    `${empName}\n(${empRole})`,
+                    item.description || billingPeriod,
+                    itemHours.toFixed(2),
+                    `$${itemRate.toFixed(2)}`,
+                    `$${itemTotal.toFixed(2)}`
+                  ]);
+                });
+              } else {
+                // Fallback to single employee
+                const employee = completeInvoice.employee || {};
+                const employeeName = employee.fullName || 
+                                    (employee.firstName && employee.lastName ? 
+                                      `${employee.firstName} ${employee.lastName}` : 
+                                      completeInvoice.employeeName || 'Employee Name');
+                const employeeRole = employee.position || employee.title || employee.role || 'Software Engineer';
+                const hours = parseFloat(timesheetData.totalHours || completeInvoice.hours || completeInvoice.totalHours || 0);
+                const rate = parseFloat(employee.hourlyRate || completeInvoice.hourlyRate || 0);
+                const total = hours * rate;
+                
+                tableBody.push([
+                  `${employeeName}\n(${employeeRole})`,
+                  billingPeriod,
+                  hours.toFixed(2),
+                  `$${rate.toFixed(2)}`,
+                  `$${total.toFixed(2)}`
+                ]);
+              }
+              
+              autoTable(doc, {
+                startY: yPos,
+                head: [['Employee (Role)', 'Billing Period', 'Hours', 'Rate (USD)', 'Total (USD)']],
+                body: tableBody,
+                theme: 'grid',
+                headStyles: {
+                  fillColor: [41, 128, 185],
+                  textColor: 255,
+                  fontSize: 9,
+                  fontStyle: 'bold'
+                },
+                bodyStyles: {
+                  fontSize: 9
+                },
+                columnStyles: {
+                  0: { cellWidth: 50 },
+                  1: { cellWidth: 50 },
+                  2: { cellWidth: 25, halign: 'center' },
+                  3: { cellWidth: 30, halign: 'right' },
+                  4: { cellWidth: 30, halign: 'right' }
+                }
+              });
+              
+              yPos = doc.lastAutoTable.finalY + 10;
+              
+              // Totals section - Calculate from all line items
+              const subtotal = tableBody.reduce((sum, row) => {
+                // Extract number from "$1234.56" format
+                const amount = parseFloat(row[4].replace('$', '').replace(',', '')) || 0;
+                return sum + amount;
+              }, 0);
+              const taxExempt = true;
+              const totalDue = completeInvoice.totalAmount || completeInvoice.total || subtotal;
+              
+              const totalsX = pageWidth - margin - 60;
+              doc.setFontSize(9);
+              
+              doc.setFont('helvetica', 'bold');
+              doc.text('Subtotal:', totalsX, yPos);
+              doc.setFont('helvetica', 'normal');
+              doc.text(`$${subtotal.toFixed(2)}`, totalsX + 50, yPos, { align: 'right' });
+              
+              yPos += 6;
+              doc.setFont('helvetica', 'bold');
+              doc.text('Tax:', totalsX, yPos);
+              doc.setFont('helvetica', 'normal');
+              doc.setFontSize(8);
+              if (taxExempt) {
+                doc.text('Exempt (Professional Services)', totalsX + 50, yPos, { align: 'right' });
+              } else {
+                doc.text('$0.00', totalsX + 50, yPos, { align: 'right' });
+              }
+              doc.setFontSize(9);
+              
+              yPos += 8;
+              doc.setFillColor(240, 240, 240);
+              doc.rect(totalsX - 5, yPos - 5, 65, 8, 'F');
+              doc.setFont('helvetica', 'bold');
+              doc.setFontSize(10);
+              doc.text('Total Due:', totalsX, yPos);
+              doc.text(`$${totalDue.toFixed(2)} USD`, totalsX + 50, yPos, { align: 'right' });
+              
+              yPos += 15;
+              
+              // Payment instructions
+              doc.setFillColor(250, 250, 250);
+              doc.rect(margin, yPos, pageWidth - 2 * margin, 35, 'F');
+              
+              yPos += 7;
+              doc.setFontSize(10);
+              doc.setFont('helvetica', 'bold');
+              doc.text('Remit Payment To:', margin + 5, yPos);
+              
+              yPos += 6;
+              doc.setFontSize(9);
+              doc.setFont('helvetica', 'normal');
+              
+              // Use real payment data from database
+              const paymentDetails = [];
+              if (completeInvoice.bankName) {
+                paymentDetails.push(`Bank: ${completeInvoice.bankName}`);
+              }
+              if (completeInvoice.accountName) {
+                paymentDetails.push(`Account Name: ${completeInvoice.accountName}`);
+              }
+              if (completeInvoice.accountNumber || completeInvoice.routingNumber) {
+                const accNum = completeInvoice.accountNumber || 'XXXX1234';
+                const routing = completeInvoice.routingNumber || 'XXXXXXXX';
+                paymentDetails.push(`Account #: ${accNum} | Routing #: ${routing}`);
+              }
+              if (completeInvoice.swiftCode || paymentTerms) {
+                const swift = completeInvoice.swiftCode || 'CHASUS33';
+                paymentDetails.push(`Swift Code: ${swift} | Payment Terms: ${paymentTerms}`);
+              }
+              
+              paymentDetails.forEach(line => {
+                doc.text(line, margin + 5, yPos);
+                yPos += 5;
+              });
+              
+              yPos += 10;
+              
+              // Note section
+              doc.setFillColor(255, 250, 205);
+              doc.rect(margin, yPos, pageWidth - 2 * margin, 20, 'F');
+              
+              yPos += 7;
+              doc.setFont('helvetica', 'bold');
+              doc.text('NOTE:', margin + 5, yPos);
+              
+              yPos += 5;
+              doc.setFont('helvetica', 'normal');
+              doc.setFontSize(8);
+              doc.text('We appreciate your continued partnership and trust in our services.', margin + 5, yPos);
+              yPos += 4;
+              doc.text('Kindly quote this invoice number in all future correspondence for faster reference.', margin + 5, yPos);
+              
+              // Footer
+              yPos = doc.internal.pageSize.getHeight() - 20;
+              doc.setFontSize(9);
+              doc.setFont('helvetica', 'bold');
+              doc.setTextColor(41, 128, 185);
+              doc.text('', pageWidth / 2, yPos, { align: 'center' });
+              
+              yPos += 5;
+              doc.setFontSize(8);
+              doc.setFont('helvetica', 'normal');
+              doc.setTextColor(100, 100, 100);
+              doc.text('www.selsoft.com | support@selsoft.com', pageWidth / 2, yPos, { align: 'center' });
+              
+              // Open PDF in new tab
+              const pdfBlob = doc.output('blob');
+              const pdfUrl = URL.createObjectURL(pdfBlob);
+              window.open(pdfUrl, '_blank');
+              
+            } catch (error) {
+              console.error('Error generating PDF:', error);
+              alert('Failed to generate PDF preview. Please try again.');
+            }
           }}
           onDownload={() => {
             // Trigger PDF download

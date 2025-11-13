@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import ReactDOM from "react-dom";
 import { Link, useParams } from "react-router-dom";
 import { PERMISSIONS } from "../../utils/roles";
 import PermissionGuard from "../common/PermissionGuard";
@@ -853,8 +854,9 @@ const EmployeeList = () => {
                               }
                             }}
                             type="button"
+                            style={{ paddingLeft: '12px', paddingRight: '12px' }}
                           >
-                            Actions
+                            <span style={{ marginRight: '8px' }}>Actions</span>
                           </button>
                         </div>
                       </div>
@@ -933,27 +935,37 @@ const EmployeeList = () => {
         </div>
       </div>
 
-      {/* Fixed Position Dropdown Menu */}
+      {/* Fixed Position Dropdown Menu - Using Portal for proper z-index */}
       {openMenuFor && (() => {
         console.log('🎨 Rendering dropdown for:', openMenuFor);
-        console.log('📊 Total employees:', employees.length);
-        const employee = employees.find(e => e.id === openMenuFor);
+        console.log('📊 Total filtered employees:', filteredEmployees.length);
+        // Search in filteredEmployees instead of employees to handle pagination/filtering
+        let employee = filteredEmployees.find(e => e.id === openMenuFor);
+        
+        // Fallback to searching in all employees if not found in filtered
+        if (!employee) {
+          console.log('🔍 Not found in filtered, searching in all employees...');
+          employee = employees.find(e => e.id === openMenuFor);
+        }
+        
         console.log('👤 Found employee:', employee ? `${employee.firstName} ${employee.lastName}` : 'NOT FOUND');
         
         if (!employee) {
-          console.error('❌ Employee not found in employees array');
+          console.error('❌ Employee not found in any array');
           return null;
         }
         
-        return (
+        // Render dropdown using Portal to ensure it appears above everything
+        return ReactDOM.createPortal(
           <div
             className="dropdown-menu dropdown-menu-right show"
             style={{
               position: 'fixed',
               top: `${dropdownPosition.top}px`,
               left: `${dropdownPosition.left}px`,
-              zIndex: 99999,
+              zIndex: 999999,
               minWidth: '200px',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
             }}
           >
             <Link
@@ -1014,7 +1026,8 @@ const EmployeeList = () => {
                 <i className="fas fa-trash mr-1"></i> Delete
               </button>
             </PermissionGuard>
-          </div>
+          </div>,
+          document.body
         );
       })()}
 

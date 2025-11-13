@@ -17,14 +17,52 @@ html,
   overflow: visible !important;
 }
 
-/* Specific employee container overrides */
-.employee-list-container,
-.employee-list-container *,
-.employee-list-container .card,
-.employee-list-container .card-inner,
-.employee-list-container .card-body,
+/* Specific employee container overrides - EXCLUDE filter card */
+.employee-list-container {
+  overflow: visible !important;
+}
+
+/* Only apply overflow:visible to table-related elements, NOT filter card */
+.employee-list-container .nk-tb-list,
+.employee-list-container .nk-tb-item,
+.employee-list-container .nk-tb-col,
 .employee-list-container .table-responsive {
   overflow: visible !important;
+}
+
+/* DO NOT apply overflow rules to filter card - let it behave normally */
+/* This ensures the Employment Type and Status dropdowns work properly */
+
+/* Ensure filter select dropdowns work properly with default browser behavior */
+.employee-list-container .data-grid-filter {
+  overflow: visible;
+  position: relative;
+}
+
+.employee-list-container .filter-controls {
+  overflow: visible;
+  position: relative;
+}
+
+.employee-list-container .filter-item {
+  overflow: visible;
+  position: relative;
+}
+
+.employee-list-container .filter-select,
+.employee-list-container .form-select {
+  /* Let select elements use their default behavior */
+  position: relative;
+  z-index: 100;
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+/* Ensure filter select options are visible */
+.employee-list-container .filter-select option,
+.employee-list-container .form-select option {
+  pointer-events: auto;
+  cursor: pointer;
 }
 
 /* Dropdown positioning - Always visible using FIXED positioning */

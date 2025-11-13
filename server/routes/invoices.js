@@ -587,10 +587,12 @@ router.get("/:id", async (req, res) => {
           where: { id: invoice.vendorId },
           attributes: ["id", "name", "email", "phone", "address", "city", "state", "zipCode"]
         });
-        console.log('✅ Vendor found:', vendor?.name);
+        console.log('✅ Vendor found via invoice.vendorId:', vendor?.name, 'Email:', vendor?.email);
       } catch (err) {
         console.log('⚠️ Vendor fetch error:', err.message);
       }
+    } else {
+      console.log('⚠️ No vendorId on invoice, will try to get from employee');
     }
 
     // Fetch client
@@ -635,7 +637,9 @@ router.get("/:id", async (req, res) => {
             where: { id: employee.vendorId },
             attributes: ["id", "name", "email", "phone", "address", "city", "state", "zipCode"]
           });
-          console.log('✅ Vendor found via employee:', vendor?.name);
+          console.log('✅ Vendor found via employee.vendorId:', vendor?.name, 'Email:', vendor?.email);
+        } else if (!vendor) {
+          console.log('⚠️ No vendor found - employee.vendorId:', employee?.vendorId);
         }
       } catch (err) {
         console.log('⚠️ Employee fetch error:', err.message);
@@ -655,6 +659,8 @@ router.get("/:id", async (req, res) => {
     };
 
     console.log('✅ Complete invoice data prepared');
+    console.log('📋 Final vendor in response:', completeInvoice.vendor ? `${completeInvoice.vendor.name} (${completeInvoice.vendor.email})` : 'NULL');
+    console.log('👤 Final employee in response:', completeInvoice.employee ? `${completeInvoice.employee.firstName} ${completeInvoice.employee.lastName}` : 'NULL');
 
     res.json({ success: true, invoice: completeInvoice });
   } catch (error) {

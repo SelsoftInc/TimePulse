@@ -27,11 +27,15 @@ const InvoiceSuccessModal = ({ invoice, onClose, onPreview, onDownload }) => {
           </div>
           <div className="info-row">
             <span className="info-label">Amount:</span>
-            <span className="info-value">${invoice?.total?.toFixed(2) || '0.00'}</span>
+            <span className="info-value">
+              ${parseFloat(invoice?.totalAmount || invoice?.total || 0).toFixed(2)}
+            </span>
           </div>
           <div className="info-row">
             <span className="info-label">Status:</span>
-            <span className="info-value status-badge">{invoice?.status || 'Active'}</span>
+            <span className="info-value status-badge">
+              {(invoice?.status || 'active').toUpperCase()}
+            </span>
           </div>
         </div>
 

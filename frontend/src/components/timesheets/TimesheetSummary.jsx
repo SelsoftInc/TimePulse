@@ -401,6 +401,9 @@ const TimesheetSummary = () => {
       if (response.data.success) {
         const invoiceData = response.data.invoice;
         console.log('✅ Invoice details loaded:', invoiceData);
+        console.log('📋 Vendor data:', invoiceData.vendor);
+        console.log('👤 Employee data:', invoiceData.employee);
+        console.log('📅 Timesheet data:', invoiceData.timesheet);
         
         // Open invoice details modal
         setSelectedInvoice(invoiceData);
@@ -579,6 +582,115 @@ const TimesheetSummary = () => {
 
     try {
       console.log('📄 Generating invoice for timesheet:', timesheet.id);
+      console.log('📋 Timesheet details:', {
+        id: timesheet.id,
+        employeeId: timesheet.employeeId,
+        employeeName: timesheet.employeeName,
+        vendorId: timesheet.vendorId,
+        vendor: timesheet.vendor,
+        clientId: timesheet.clientId,
+        client: timesheet.client,
+        status: timesheet.status
+      });
+
+      // Fetch employee data to get vendor/client information
+      let employeeVendorId = timesheet.vendorId;
+      let employeeClientId = timesheet.clientId;
+      
+      if (!employeeVendorId && !employeeClientId && timesheet.employeeId) {
+        console.log('🔍 Fetching employee data to get vendor/client info...');
+        try {
+          const empResponse = await axios.get(
+            `${API_BASE}/api/employees/${timesheet.employeeId}?tenantId=${user.tenantId}`
+          );
+          if (empResponse.data.success) {
+            const employeeData = empResponse.data.employee || empResponse.data.data;
+            employeeVendorId = employeeData.vendorId;
+            employeeClientId = employeeData.clientId;
+            console.log('✅ Employee data fetched:', {
+              vendorId: employeeVendorId,
+              clientId: employeeClientId
+            });
+          }
+        } catch (error) {
+          console.error('❌ Error fetching employee data:', error);
+        }
+      }
+
+      // Pre-validation: Check if employee has vendor or client assigned
+      if (!employeeVendorId && !employeeClientId) {
+        console.error('❌ Validation failed: No vendor or client assigned');
+        setGeneratingInvoiceId(null);
+        
+        // Close confirmation modal first, then show error
+        closeModal();
+        setTimeout(() => {
+          showModal({
+            type: 'error',
+            title: 'Vendor/Client Not Assigned',
+            message: `Employee "${timesheet.employeeName || 'Unknown'}" must be associated with a vendor or client to generate invoice.\n\nAction Required:\n1. Go to Employees menu\n2. Edit employee: ${timesheet.employeeName || 'Unknown'}\n3. Assign a vendor OR client with email address\n4. Save and try generating invoice again`
+          });
+        }, 100);
+        return;
+      }
+
+      // Validate vendor/client has email address
+      let vendorClientInfo = null;
+      let vendorClientType = '';
+      
+      if (employeeVendorId) {
+        try {
+          const vendorResponse = await axios.get(
+            `${API_BASE}/api/vendors/${employeeVendorId}?tenantId=${user.tenantId}`
+          );
+          if (vendorResponse.data.success) {
+            vendorClientInfo = vendorResponse.data.vendor || vendorResponse.data.data;
+            vendorClientType = 'Vendor';
+            console.log('✅ Vendor info fetched:', vendorClientInfo);
+          }
+        } catch (error) {
+          console.error('❌ Error fetching vendor:', error);
+        }
+      } else if (employeeClientId) {
+        try {
+          const clientResponse = await axios.get(
+            `${API_BASE}/api/clients/${employeeClientId}?tenantId=${user.tenantId}`
+          );
+          if (clientResponse.data.success) {
+            vendorClientInfo = clientResponse.data.client || clientResponse.data.data;
+            vendorClientType = 'Client';
+            console.log('✅ Client info fetched:', vendorClientInfo);
+          }
+        } catch (error) {
+          console.error('❌ Error fetching client:', error);
+        }
+      }
+
+      // Check if vendor/client has email
+      if (vendorClientInfo && !vendorClientInfo.email) {
+        console.error('❌ Validation failed: Vendor/Client email missing');
+        console.error('Vendor/Client info:', vendorClientInfo);
+        setGeneratingInvoiceId(null);
+        
+        // Close confirmation modal first, then show error
+        closeModal();
+        setTimeout(() => {
+          showModal({
+            type: 'error',
+            title: `${vendorClientType} Email Missing`,
+            message: `${vendorClientType} "${vendorClientInfo.vendorName || vendorClientInfo.clientName || vendorClientInfo.name || 'Unknown'}" does not have an email address configured.\n\nAction Required:\n1. Go to ${vendorClientType}s menu\n2. Edit ${vendorClientType}: ${vendorClientInfo.vendorName || vendorClientInfo.clientName || vendorClientInfo.name || 'Unknown'}\n3. Add a valid email address\n4. Save and try generating invoice again`,
+            details: {
+              'Employee': timesheet.employeeName || 'Unknown',
+              [`${vendorClientType} Name`]: vendorClientInfo.vendorName || vendorClientInfo.clientName || vendorClientInfo.name || 'Unknown',
+              [`${vendorClientType} ID`]: employeeVendorId || employeeClientId,
+              'Email Status': '❌ Missing'
+            }
+          });
+        }, 100);
+        return;
+      }
+      
+      console.log('✅ Validation passed, proceeding with invoice generation');
 
       const response = await axios.post(
         `${API_BASE}/api/timesheets/${timesheet.id}/generate-invoice`,
@@ -638,10 +750,21 @@ const TimesheetSummary = () => {
       
       // Show user-friendly error message with guidance
       if (errorMessage.includes('vendor') || errorMessage.includes('employee')) {
+        // Check if it's a vendor email issue
+        const isEmailIssue = errorMessage.toLowerCase().includes('email') || 
+                            errorMessage.toLowerCase().includes('contact');
+        
         showModal({
           type: 'error',
-          title: errorMessage.includes('vendor') ? 'Vendor Not Assigned' : 'Employee Not Found',
-          message: `${errorMessage}\n\nAction Required:\n1. Go to Employees menu\n2. Edit the employee record\n3. Assign a vendor with email address\n4. Save and try generating invoice again`
+          title: errorMessage.includes('vendor') ? 'Vendor Configuration Issue' : 'Employee Not Found',
+          message: isEmailIssue 
+            ? `${errorMessage}\n\nAction Required:\n1. Go to Vendors menu\n2. Find and edit the vendor assigned to this employee\n3. Add a valid email address for the vendor\n4. Save and try generating invoice again`
+            : `${errorMessage}\n\nAction Required:\n1. Go to Employees menu\n2. Edit the employee record: ${timesheet.employeeName || 'Unknown'}\n3. Assign a vendor with email address\n4. Save and try generating invoice again`,
+          details: errorDetails ? {
+            'Employee': timesheet.employeeName || 'Unknown',
+            'Timesheet ID': timesheet.id,
+            'Error Details': JSON.stringify(errorDetails, null, 2)
+          } : undefined
         });
       } else if (errorMessage.includes('association') || errorMessage.includes('not associated')) {
         showModal({
@@ -1263,30 +1386,55 @@ const TimesheetSummary = () => {
                   <div className="invoice-detail-item">
                     <span className="invoice-detail-label">Vendor:</span>
                     <span className="invoice-detail-value">
-                      {selectedInvoice.vendor?.name || selectedInvoice.timesheet?.employee?.vendor?.name || 'N/A'}
+                      {(() => {
+                        // Try multiple paths to find vendor name
+                        const vendorName = selectedInvoice.vendor?.name || 
+                                          selectedInvoice.timesheet?.employee?.vendor?.name || 
+                                          selectedInvoice.employee?.vendor?.name;
+                        console.log('🏢 Displaying vendor name:', vendorName);
+                        return vendorName || 'N/A';
+                      })()}
                     </span>
                   </div>
                   <div className="invoice-detail-item">
                     <span className="invoice-detail-label">Vendor Email:</span>
                     <span className="invoice-detail-value">
-                      {selectedInvoice.vendor?.email || selectedInvoice.timesheet?.employee?.vendor?.email || 'N/A'}
+                      {(() => {
+                        // Try multiple paths to find vendor email
+                        const vendorEmail = selectedInvoice.vendor?.email || 
+                                           selectedInvoice.timesheet?.employee?.vendor?.email || 
+                                           selectedInvoice.employee?.vendor?.email;
+                        console.log('📧 Displaying vendor email:', vendorEmail);
+                        return vendorEmail || 'N/A';
+                      })()}
                     </span>
                   </div>
                   <div className="invoice-detail-item">
                     <span className="invoice-detail-label">Employee:</span>
                     <span className="invoice-detail-value">
-                      {selectedInvoice.employee 
-                        ? `${selectedInvoice.employee.firstName} ${selectedInvoice.employee.lastName}`
-                        : selectedInvoice.timesheet?.employee
-                        ? `${selectedInvoice.timesheet.employee.firstName} ${selectedInvoice.timesheet.employee.lastName}`
-                        : 'N/A'
-                      }
+                      {(() => {
+                        // Try multiple paths to find employee name
+                        let employeeName = 'N/A';
+                        if (selectedInvoice.employee?.firstName && selectedInvoice.employee?.lastName) {
+                          employeeName = `${selectedInvoice.employee.firstName} ${selectedInvoice.employee.lastName}`;
+                        } else if (selectedInvoice.timesheet?.employee?.firstName && selectedInvoice.timesheet?.employee?.lastName) {
+                          employeeName = `${selectedInvoice.timesheet.employee.firstName} ${selectedInvoice.timesheet.employee.lastName}`;
+                        }
+                        console.log('👤 Displaying employee name:', employeeName);
+                        return employeeName;
+                      })()}
                     </span>
                   </div>
                   <div className="invoice-detail-item">
                     <span className="invoice-detail-label">Employee Email:</span>
                     <span className="invoice-detail-value">
-                      {selectedInvoice.employee?.email || selectedInvoice.timesheet?.employee?.email || 'N/A'}
+                      {(() => {
+                        // Try multiple paths to find employee email
+                        const employeeEmail = selectedInvoice.employee?.email || 
+                                             selectedInvoice.timesheet?.employee?.email;
+                        console.log('📧 Displaying employee email:', employeeEmail);
+                        return employeeEmail || 'N/A';
+                      })()}
                     </span>
                   </div>
                 </div>
@@ -1984,10 +2132,16 @@ const TimesheetSummary = () => {
                     console.log('🔄 Reloading timesheet data...');
                     await loadTimesheetData();
                     
+                    // Show success modal with invoice details
                     showModal({
                       type: 'success',
-                      title: 'Invoice Updated',
-                      message: 'Invoice has been updated successfully! The data has been refreshed.'
+                      title: 'Invoice Updated Successfully!',
+                      message: `${updatedInvoice.invoiceNumber || editInvoiceData.invoiceNumber} has been updated.`,
+                      details: {
+                        'Invoice Number': updatedInvoice.invoiceNumber || editInvoiceData.invoiceNumber,
+                        'Amount': `$${parseFloat(updatedInvoice.totalAmount || editInvoiceData.totalAmount || editInvoiceData.total || 0).toFixed(2)}`,
+                        'Status': (updatedInvoice.status || editInvoiceData.status || 'active').toUpperCase()
+                      }
                     });
                   } catch (error) {
                     console.error('❌ Error updating invoice:', error);
@@ -2010,7 +2164,7 @@ const TimesheetSummary = () => {
       )}
       
       {/* PDF Preview Modal */}
-      {/* {pdfPreviewOpen && invoiceForPDF && (
+      {pdfPreviewOpen && invoiceForPDF && (
         <InvoicePDFPreviewModal
           invoice={invoiceForPDF}
           onClose={() => {
@@ -2018,7 +2172,7 @@ const TimesheetSummary = () => {
             setInvoiceForPDF(null);
           }}
         />
-      )} */}
+      )}
     </div>
   );
 };

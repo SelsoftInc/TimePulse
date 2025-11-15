@@ -750,12 +750,12 @@ models.Timesheet = sequelize.define(
     weekStart: {
       type: DataTypes.DATEONLY,
       allowNull: false,
-      field: "week_start",
+      field: "week_start_date",
     },
     weekEnd: {
       type: DataTypes.DATEONLY,
       allowNull: false,
-      field: "week_end",
+      field: "week_end_date",
     },
     timeEntries: {
       // Array of time entries

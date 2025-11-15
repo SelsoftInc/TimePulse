@@ -11,7 +11,8 @@
  */
 
 require('dotenv').config();
-const models = require('../models');
+const { models } = require('../models');
+const { Op } = require('sequelize');
 const EmailService = require('../services/EmailService');
 
 // Helper function to get week range (Monday to Sunday)
@@ -74,8 +75,8 @@ async function sendRemindersForWeek(weekEndDate, tenantId = null) {
 
     // Build where clause
     const whereClause = {
-      weekStart,
-      weekEnd,
+      weekStart: weekStart,
+      weekEnd: weekEnd,
     };
 
     if (tenantId) {
@@ -258,12 +259,13 @@ async function main() {
 
 // Run the script
 if (require.main === module) {
+  const { sequelize } = require('../models');
   main().then(() => {
     // Close database connection
-    models.sequelize.close();
+    sequelize.close();
   }).catch((error) => {
     console.error('Unhandled error:', error);
-    models.sequelize.close();
+    sequelize.close();
     process.exit(1);
   });
 }

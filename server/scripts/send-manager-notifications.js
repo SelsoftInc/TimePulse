@@ -8,7 +8,7 @@
  */
 
 require('dotenv').config();
-const models = require('../models');
+const { models } = require('../models');
 const EmailService = require('../services/EmailService');
 const { Op } = require('sequelize');
 
@@ -537,11 +537,12 @@ async function main() {
 
 // Run the script
 if (require.main === module) {
+  const { sequelize } = require('../models');
   main().then(() => {
-    models.sequelize.close();
+    sequelize.close();
   }).catch((error) => {
     console.error('Unhandled error:', error);
-    models.sequelize.close();
+    sequelize.close();
     process.exit(1);
   });
 }

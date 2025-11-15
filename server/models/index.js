@@ -38,7 +38,14 @@ const sequelize = new Sequelize(
   dbConfig.database,
   dbConfig.username,
   dbConfig.password,
-  dbConfig
+  {
+    ...dbConfig,
+    // Ensure Sequelize uses field names correctly
+    define: {
+      underscored: false, // We use explicit field mappings
+      freezeTableName: true, // Don't pluralize table names
+    },
+  }
 );
 
 // Define Models
@@ -831,7 +838,7 @@ models.Timesheet = sequelize.define(
     indexes: [
       {
         unique: true,
-        fields: ["tenant_id", "employee_id", "week_start", "week_end"],
+        fields: ["tenant_id", "employee_id", "week_start_date", "week_end_date"],
       },
     ],
   }

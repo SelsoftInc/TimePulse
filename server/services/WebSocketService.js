@@ -4,12 +4,20 @@ const { models } = require("../models");
 
 class WebSocketService {
   constructor(server) {
+    // Get allowed origins from environment or use defaults
+    const allowedOrigins = process.env.FRONTEND_URL 
+      ? process.env.FRONTEND_URL.split(',').map(o => o.trim())
+      : ["http://localhost:3000", "https://app.timepulse.io"];
+    
     this.io = new Server(server, {
       cors: {
-        origin: process.env.FRONTEND_URL || "http://localhost:3000",
+        origin: allowedOrigins,
         methods: ["GET", "POST"],
         credentials: true,
+        allowedHeaders: ["Authorization", "Content-Type"],
       },
+      allowEIO3: true, // Support older Socket.IO clients
+      transports: ["polling", "websocket"], // Allow both, but prefer polling
     });
 
     this.connectedUsers = new Map(); // Map of userId -> socketId

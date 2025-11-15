@@ -42,7 +42,12 @@ export const WebSocketProvider = ({ children }) => {
               token: localStorage.getItem("token"),
               userInfo: user,
             },
-            transports: ["websocket", "polling"],
+            transports: ["polling"], // Use polling instead of WebSocket (App Runner compatibility)
+            upgrade: false, // Disable WebSocket upgrade attempts
+            reconnection: true,
+            reconnectionDelay: 1000,
+            reconnectionDelayMax: 5000,
+            reconnectionAttempts: Infinity,
           }
         );
 

@@ -7,6 +7,7 @@ Once you have the SMTP details from GoDaddy, we'll configure them. Here's what w
 ### Typical GoDaddy SMTP Settings:
 
 **Option 1: GoDaddy Workspace Email (if you have email hosting):**
+
 ```
 SMTP_HOST: smtpout.secureserver.net
 SMTP_PORT: 587 (or 465 for SSL)
@@ -15,6 +16,7 @@ SMTP_PASS: your-email-password
 ```
 
 **Option 2: GoDaddy Business Email:**
+
 ```
 SMTP_HOST: smtpout.secureserver.net
 SMTP_PORT: 587
@@ -23,6 +25,7 @@ SMTP_PASS: your-email-password
 ```
 
 **Option 3: GoDaddy Office 365 Email:**
+
 ```
 SMTP_HOST: smtp.office365.com
 SMTP_PORT: 587
@@ -59,6 +62,7 @@ I'll update the SMTP_HOST to match GoDaddy's settings once you provide them.
 ## 📝 What Information I Need From You
 
 Please provide:
+
 1. **SMTP Server/Host:** (e.g., `smtpout.secureserver.net`)
 2. **SMTP Port:** (usually 587 or 465)
 3. **Email Address:** (e.g., `noreply@timepulse.io` or `notifications@timepulse.io`)
@@ -69,6 +73,7 @@ Please provide:
 ## 🎯 Recommended Email Address
 
 For TimePulse notifications, I recommend using:
+
 - `noreply@timepulse.io` - For automated notifications
 - `notifications@timepulse.io` - For system notifications
 - `support@timepulse.io` - If you want replies
@@ -78,9 +83,9 @@ For TimePulse notifications, I recommend using:
 ## ⏳ Waiting for Your SMTP Details
 
 Once you have the GoDaddy SMTP information, share it with me and I'll:
+
 1. ✅ Update the AWS Secrets Manager
 2. ✅ Update apprunner.yaml with correct SMTP_HOST
 3. ✅ Configure everything to use timepulse.io domain
 
 **Ready when you are!** 🚀
-

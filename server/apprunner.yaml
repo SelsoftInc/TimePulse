@@ -35,7 +35,7 @@ run:
     - name: FRONTEND_URL
       value: "https://app.timepulse.io"
     - name: SMTP_HOST
-      value: "smtp.gmail.com"
+      value: "email-smtp.us-east-1.amazonaws.com"
     - name: SMTP_PORT
       value: "587"
     - name: AWS_REGION

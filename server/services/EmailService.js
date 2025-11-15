@@ -73,7 +73,7 @@ class EmailService {
       }
 
       const mailOptions = {
-        from: `"${tenantName} - TimePulse" <${process.env.SMTP_USER}>`,
+        from: `"${tenantName} - TimePulse" <noreply@timepulse.io>`,
         to: vendorEmail,
         subject: `Invoice ${invoiceNumber} - ${employeeName} - ${weekRange}`,
         html: this.getInvoiceEmailTemplate({
@@ -330,7 +330,7 @@ TimePulse Timesheet Management System
       }
 
       const mailOptions = {
-        from: `"${tenantName} - TimePulse" <${process.env.SMTP_USER}>`,
+        from: `"${tenantName} - TimePulse" <noreply@timepulse.io>`,
         to: reviewerEmail,
         subject: `Timesheet Submitted for Review - ${employeeName} - ${weekRange}`,
         html: this.getTimesheetSubmittedTemplate({
@@ -409,7 +409,7 @@ TimePulse Timesheet Management System
       }
 
       const mailOptions = {
-        from: `"${tenantName} - TimePulse" <${process.env.SMTP_USER}>`,
+        from: `"${tenantName} - TimePulse" <noreply@timepulse.io>`,
         to: employeeEmail,
         subject: `Timesheet Approved - ${weekRange}`,
         html: this.getTimesheetApprovedTemplate({
@@ -491,7 +491,7 @@ TimePulse Timesheet Management System
       }
 
       const mailOptions = {
-        from: `"${tenantName} - TimePulse" <${process.env.SMTP_USER}>`,
+        from: `"${tenantName} - TimePulse" <noreply@timepulse.io>`,
         to: employeeEmail,
         subject: `Timesheet Rejected - ${weekRange} - Action Required`,
         html: this.getTimesheetRejectedTemplate({
@@ -867,7 +867,7 @@ TimePulse Timesheet Management System
   async sendTestEmail(toEmail) {
     try {
       const mailOptions = {
-        from: process.env.SMTP_USER,
+        from: "TimePulse <noreply@timepulse.io>",
         to: toEmail,
         subject: 'TimePulse Email Service Test',
         text: 'This is a test email from TimePulse Email Service.',

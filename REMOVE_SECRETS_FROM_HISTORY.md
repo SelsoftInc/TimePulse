@@ -118,3 +118,4 @@ Since the credentials are exposed, the most secure approach is:
 - ⚠️ Credentials should be rotated for security
 
 
+

@@ -3,8 +3,9 @@
 ## ⚠️ Important
 
 Secrets were committed to git history in these commits:
+
 - `ee83547` - FIX_SES_SMTP_CREDENTIALS.md
-- `6b9b18e` - SES_SETUP_STATUS.md  
+- `6b9b18e` - SES_SETUP_STATUS.md
 - `41ab413` - TIMEPULSE_IO_SES_SETUP_COMPLETE.md
 
 GitHub push protection scans the entire history, so we need to remove secrets from history.
@@ -16,6 +17,7 @@ GitHub push protection scans the entire history, so we need to remove secrets fr
 If you just need to push now:
 
 1. Go to the GitHub link provided in the error:
+
    - Access Key: https://github.com/SelsoftInc/TimePulse/security/secret-scanning/unblock-secret/35Wvl1Ki5M7lROYutdVjzjZ4bzb
    - Secret Key: https://github.com/SelsoftInc/TimePulse/security/secret-scanning/unblock-secret/35Wvl4Q9iHV0Z9lghGT8XJFeFW3
 
@@ -44,18 +46,21 @@ git push origin --force --all
 ### Method B: Using BFG Repo-Cleaner (Easier)
 
 1. **Install BFG:**
+
    ```bash
    brew install bfg
    # Or download from: https://rtyley.github.io/bfg-repo-cleaner/
    ```
 
 2. **Create secrets.txt:**
+
    ```
    AKIA2SRZ26P5ZRH4EH77==>YOUR_ACCESS_KEY_ID
    rLGpb4DhvaR3oGkI1y0WKYEgrqGJYDKvkWwSbLc3==>YOUR_SECRET_ACCESS_KEY
    ```
 
 3. **Run BFG:**
+
    ```bash
    bfg --replace-text secrets.txt
    git reflog expire --expire=now --all
@@ -74,6 +79,7 @@ git push origin --force --all
 Since the credentials are exposed, the most secure approach is:
 
 1. **Delete the exposed Access Key:**
+
    ```bash
    aws iam delete-access-key \
      --user-name timepulse-ses-smtp-timepulse \
@@ -82,6 +88,7 @@ Since the credentials are exposed, the most secure approach is:
    ```
 
 2. **Create new Access Key:**
+
    ```bash
    aws iam create-access-key \
      --user-name timepulse-ses-smtp-timepulse \
@@ -116,6 +123,3 @@ Since the credentials are exposed, the most secure approach is:
 - ✅ New commit created without secrets
 - ⚠️ Secrets still exist in git history (needs cleanup)
 - ⚠️ Credentials should be rotated for security
-
-
-

@@ -9,6 +9,7 @@ import TimesheetSummary from "./components/timesheets/TimesheetSummary";
 import EmployeeTimesheet from "./components/timesheets/EmployeeTimesheet";
 import TimesheetSubmit from "./components/timesheets/TimesheetSubmit";
 import TimesheetApproval from "./components/timesheets/TimesheetApproval";
+import TimesheetHistory from "./components/timesheets/TimesheetHistory";
 import MobileTimesheetUpload from "./components/timesheets/MobileTimesheetUpload";
 import TimesheetToInvoice from "./components/timesheets/TimesheetToInvoice";
 import TimesheetAutoConvert from "./components/timesheets/TimesheetAutoConvert";
@@ -186,6 +187,16 @@ function App() {
                     <ProtectedRoute>
                       <EmployerLayout>
                         <TimesheetSubmit />
+                      </EmployerLayout>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/:subdomain/timesheets/history"
+                  element={
+                    <ProtectedRoute>
+                      <EmployerLayout>
+                        <TimesheetHistory />
                       </EmployerLayout>
                     </ProtectedRoute>
                   }

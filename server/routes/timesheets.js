@@ -705,6 +705,20 @@ router.post("/submit", async (req, res, next) => {
       });
     }
 
+    // Validate and sanitize clientId - must be valid UUID or null
+    let sanitizedClientId = null;
+    if (clientId) {
+      // Check if it's a valid UUID format
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (uuidRegex.test(clientId)) {
+        sanitizedClientId = clientId;
+      } else {
+        // If it's not a valid UUID (e.g., "1", "default", etc.), set to null
+        console.warn(`⚠️ Invalid clientId format: "${clientId}". Setting to null.`);
+        sanitizedClientId = null;
+      }
+    }
+
     // Check if timesheet already exists for this week
     const existing = await models.Timesheet.findOne({
       where: {
@@ -717,7 +731,7 @@ router.post("/submit", async (req, res, next) => {
 
     if (existing) {
       // Update existing timesheet
-      existing.clientId = clientId || existing.clientId;
+      existing.clientId = sanitizedClientId !== null ? sanitizedClientId : existing.clientId;
       existing.reviewerId = reviewerId || existing.reviewerId;
       existing.status = status || "submitted";
       existing.totalHours = totalHours || 0;
@@ -740,7 +754,7 @@ router.post("/submit", async (req, res, next) => {
     const newTimesheet = await models.Timesheet.create({
       tenantId,
       employeeId,
-      clientId: clientId || null,
+      clientId: sanitizedClientId,
       reviewerId: reviewerId || null,
       weekStart,
       weekEnd,

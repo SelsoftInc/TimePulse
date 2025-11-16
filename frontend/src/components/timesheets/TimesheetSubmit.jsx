@@ -130,17 +130,24 @@ const TimesheetSubmit = () => {
                 (c) => c.name === "Cognizant" || c.clientName === "Cognizant"
               );
               if (cognizant) {
-                // Use 'name' field from API and map to 'clientName'
-                clientData = [
-                  {
-                    id: cognizant.id,
-                    clientName: cognizant.name || "Cognizant", // Fixed: use 'name' from API
-                    project: (cognizant.name || "Cognizant") + " Project",
-                    hourlyRate: cognizant.hourlyRate || 0,
-                    clientType: cognizant.clientType || "internal",
-                    hours: Array(7).fill(0),
-                  },
-                ];
+                // Validate cognizant.id - only use if it's a valid UUID
+                const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+                if (cognizant.id && uuidRegex.test(cognizant.id)) {
+                  // Use 'name' field from API and map to 'clientName'
+                  clientData = [
+                    {
+                      id: cognizant.id,
+                      clientName: cognizant.name || "Cognizant", // Fixed: use 'name' from API
+                      project: (cognizant.name || "Cognizant") + " Project",
+                      hourlyRate: cognizant.hourlyRate || 0,
+                      clientType: cognizant.clientType || "internal",
+                      hours: Array(7).fill(0),
+                    },
+                  ];
+                } else {
+                  console.warn(`⚠️ Cognizant client has invalid ID: "${cognizant.id}". Skipping.`);
+                  clientData = [];
+                }
                 console.log(
                   " Showing only Cognizant for Selvakumar:",
                   clientData
@@ -149,7 +156,27 @@ const TimesheetSubmit = () => {
                 console.error(" Cognizant not found in clients list");
                 console.error("Available clients:", response.data.clients);
                 // Fallback to all clients
-                clientData = response.data.clients.map((client) => ({
+                // Validate client.id - only include if it's a valid UUID
+                const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+                clientData = response.data.clients
+                  .filter((client) => client.id && uuidRegex.test(client.id))
+                  .map((client) => ({
+                    id: client.id,
+                    clientName: client.name || "Unknown Client", // Fixed: use 'name' from API
+                    project: (client.name || "Unknown") + " Project",
+                    hourlyRate: client.hourlyRate || 0,
+                    clientType: client.clientType || "internal",
+                    hours: Array(7).fill(0),
+                  }));
+              }
+            } else {
+              // For other users, show all clients
+              console.log(" Showing all clients for other users");
+              // Validate client.id - only include if it's a valid UUID
+              const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+              clientData = response.data.clients
+                .filter((client) => client.id && uuidRegex.test(client.id))
+                .map((client) => ({
                   id: client.id,
                   clientName: client.name || "Unknown Client", // Fixed: use 'name' from API
                   project: (client.name || "Unknown") + " Project",
@@ -157,18 +184,6 @@ const TimesheetSubmit = () => {
                   clientType: client.clientType || "internal",
                   hours: Array(7).fill(0),
                 }));
-              }
-            } else {
-              // For other users, show all clients
-              console.log(" Showing all clients for other users");
-              clientData = response.data.clients.map((client) => ({
-                id: client.id,
-                clientName: client.name || "Unknown Client", // Fixed: use 'name' from API
-                project: (client.name || "Unknown") + " Project",
-                hourlyRate: client.hourlyRate || 0,
-                clientType: client.clientType || "internal",
-                hours: Array(7).fill(0),
-              }));
             }
 
             console.log(" Final clientHours to be set:", clientData);
@@ -377,9 +392,17 @@ const TimesheetSubmit = () => {
                     setClientHours(updatedClientHours);
                   } else {
                     // Create a default client entry with the hours
+                    // Validate clientId - only use if it's a valid UUID
+                    let validClientId = null;
+                    if (ts.clientId) {
+                      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+                      if (uuidRegex.test(ts.clientId)) {
+                        validClientId = ts.clientId;
+                      }
+                    }
                     setClientHours([{
-                      id: ts.clientId || 'default',
-                      clientId: ts.clientId || 'default',
+                      id: validClientId,
+                      clientId: validClientId,
                       clientName: ts.client?.clientName || 'Client',
                       hours: hoursArray
                     }]);
@@ -1004,12 +1027,24 @@ const TimesheetSubmit = () => {
       const weekEnd = new Date(endStr).toISOString().split("T")[0];
 
       // Prepare submission data
+      // Validate clientId - must be valid UUID or null
+      let validClientId = null;
+      if (clientHours.length > 0 && clientHours[0].id) {
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        if (uuidRegex.test(clientHours[0].id)) {
+          validClientId = clientHours[0].id;
+        } else {
+          console.warn(`⚠️ Invalid clientId format: "${clientHours[0].id}". Setting to null.`);
+          validClientId = null;
+        }
+      }
+
       const submissionData = {
         tenantId: user.tenantId,
         employeeId: employeeId,
         weekStart: weekStart,
         weekEnd: weekEnd,
-        clientId: clientHours.length > 0 ? clientHours[0].id : null,
+        clientId: validClientId,
         reviewerId: selectedApprover,
         status: "submitted",
         totalHours: getGrandTotal(),
@@ -1313,7 +1348,17 @@ const TimesheetSubmit = () => {
       }
 
       // Use the matching client or extracted client name
-      const clientId = matchingClient?.id || "1";
+      // Validate clientId - must be valid UUID or null
+      let clientId = null;
+      if (matchingClient?.id) {
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        if (uuidRegex.test(matchingClient.id)) {
+          clientId = matchingClient.id;
+        } else {
+          console.warn(`⚠️ Invalid clientId format: "${matchingClient.id}". Setting to null.`);
+          clientId = null;
+        }
+      }
       const clientName =
         extractedClientName || matchingClient?.clientName || "Unknown Client";
       const hourlyRate = matchingClient?.hourlyRate || 125;

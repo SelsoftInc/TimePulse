@@ -4,7 +4,7 @@ const { models } = require('../models');
 
 const { User } = models;
 
-// Get all approvers (users with 'approver' or 'admin' role)
+// Get all approvers (users with 'admin', 'manager', or 'hr' roles who can approve leaves)
 router.get('/', async (req, res) => {
   try {
     const { tenantId } = req.query;
@@ -13,14 +13,20 @@ router.get('/', async (req, res) => {
       return res.status(400).json({ error: 'Tenant ID is required' });
     }
 
+    // Fetch users with admin, manager, or hr roles who can approve leaves
     const approvers = await User.findAll({
       where: {
         tenantId,
-        role: ['approver', 'admin']
+        role: {
+          [require('sequelize').Op.in]: ['admin', 'manager', 'hr']
+        },
+        status: 'active'
       },
       attributes: ['id', 'firstName', 'lastName', 'email', 'role', 'department', 'title'],
       order: [['firstName', 'ASC'], ['lastName', 'ASC']]
     });
+
+    console.log(`✅ Found ${approvers.length} approvers for tenant ${tenantId}`);
 
     // Transform data for frontend
     const transformedApprovers = approvers.map(approver => ({

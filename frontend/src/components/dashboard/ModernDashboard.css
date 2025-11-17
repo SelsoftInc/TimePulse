@@ -1068,27 +1068,341 @@
   margin-left: 12px;
 }
 
-/* Responsive Design for Staffing Dashboard */
-@media (max-width: 1200px) {
-  .widgets-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (max-width: 768px) {
-  .widgets-grid {
-    grid-template-columns: 1fr;
-    padding: 16px;
-    gap: 16px;
+/* Comprehensive Responsive Design */
+@media (max-width: 1199px) {
+  .modern-dashboard {
+    padding: 20px;
   }
   
   .dashboard-header {
-    flex-direction: column;
+    padding: 28px 32px;
+    gap: 24px;
+  }
+  
+  .dashboard-title {
+    font-size: 1.875rem;
+  }
+  
+  .widgets-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+  }
+  
+  .metric-widget {
+    min-height: 220px;
+  }
+}
+
+@media (max-width: 991px) {
+  .modern-dashboard {
+    padding: 15px;
+    margin-top: 60px;
+  }
+  
+  .dashboard-header {
+    padding: 24px 28px;
+    gap: 20px;
+    grid-template-columns: 1fr;
+  }
+  
+  .dashboard-title {
+    font-size: 1.75rem;
+  }
+  
+  .dashboard-subtitle {
+    font-size: 0.8125rem;
+  }
+  
+  .dashboard-controls {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  
+  .toggle-buttons {
+    gap: 8px;
+  }
+  
+  .toggle-btn {
+    padding: 8px 18px;
+    font-size: 0.8125rem;
+  }
+  
+  .employee-dropdown {
+    min-width: 180px;
+  }
+  
+  .search-bar {
+    flex: 1;
+    min-width: 200px;
+  }
+  
+  .widgets-grid {
+    grid-template-columns: repeat(2, 1fr);
     gap: 16px;
+  }
+  
+  .metric-widget {
+    min-height: 200px;
+  }
+  
+  .widget-content {
+    padding: 20px;
+  }
+  
+  .metric-value {
+    font-size: 1.75rem;
+  }
+}
+
+@media (max-width: 767px) {
+  .modern-dashboard {
+    padding: 12px;
+    margin-top: 60px;
+  }
+  
+  .dashboard-header {
+    padding: 20px 24px;
+    gap: 16px;
+    border-radius: 16px;
+  }
+  
+  .dashboard-title {
+    font-size: 1.5rem;
+  }
+  
+  .dashboard-subtitle {
+    font-size: 0.75rem;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  
+  .scope-indicator,
+  .refresh-indicator {
+    font-size: 0.75rem;
+    padding: 6px 12px;
   }
   
   .dashboard-controls {
     width: 100%;
-    justify-content: space-between;
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .toggle-buttons {
+    width: 100%;
+    gap: 8px;
+  }
+  
+  .toggle-btn {
+    flex: 1;
+    padding: 10px 16px;
+    font-size: 0.875rem;
+  }
+  
+  .employee-dropdown {
+    width: 100%;
+    min-width: auto;
+  }
+  
+  .search-bar {
+    width: 100%;
+    min-width: auto;
+  }
+  
+  .widgets-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  
+  .metric-widget {
+    min-height: 180px;
+  }
+  
+  .widget-content {
+    padding: 16px;
+  }
+  
+  .widget-header {
+    margin-bottom: 12px;
+  }
+  
+  .widget-title {
+    font-size: 0.875rem;
+  }
+  
+  .metric-value {
+    font-size: 1.5rem;
+  }
+  
+  .metric-label {
+    font-size: 0.75rem;
+  }
+  
+  .metric-details {
+    margin-top: 12px;
+    padding-top: 12px;
+  }
+  
+  .metric-item {
+    font-size: 0.75rem;
+  }
+  
+  /* List widgets */
+  .list-container,
+  .activity-list {
+    max-height: 250px;
+  }
+  
+  .list-item,
+  .activity-item {
+    padding: 10px 0;
+  }
+  
+  .list-item-rank {
+    width: 28px;
+    height: 28px;
+    font-size: 0.75rem;
+    margin-right: 10px;
+  }
+  
+  .list-item-name,
+  .activity-title {
+    font-size: 0.875rem;
+  }
+  
+  .list-item-detail,
+  .list-item-value,
+  .activity-time {
+    font-size: 0.75rem;
+  }
+  
+  .activity-icon {
+    width: 36px;
+    height: 36px;
+    margin-right: 10px;
+  }
+  
+  /* Decorative overlays - hide on mobile */
+  .dashboard-header::before,
+  .dashboard-header::after {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .modern-dashboard {
+    padding: 10px;
+  }
+  
+  .dashboard-header {
+    padding: 16px 20px;
+    border-radius: 12px;
+  }
+  
+  .dashboard-title {
+    font-size: 1.25rem;
+  }
+  
+  .dashboard-subtitle {
+    font-size: 0.6875rem;
+    gap: 6px;
+  }
+  
+  .scope-indicator,
+  .refresh-indicator {
+    font-size: 0.6875rem;
+    padding: 4px 10px;
+  }
+  
+  .toggle-btn {
+    padding: 8px 14px;
+    font-size: 0.8125rem;
+  }
+  
+  .widgets-grid {
+    gap: 10px;
+  }
+  
+  .metric-widget {
+    min-height: 160px;
+  }
+  
+  .widget-content {
+    padding: 14px;
+  }
+  
+  .widget-title {
+    font-size: 0.8125rem;
+  }
+  
+  .metric-value {
+    font-size: 1.375rem;
+  }
+  
+  .metric-label {
+    font-size: 0.6875rem;
+  }
+  
+  .metric-details {
+    margin-top: 10px;
+    padding-top: 10px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  
+  .metric-item {
+    font-size: 0.6875rem;
+    min-width: calc(50% - 4px);
+  }
+  
+  .list-container,
+  .activity-list {
+    max-height: 200px;
+  }
+  
+  .list-item,
+  .activity-item {
+    padding: 8px 0;
+  }
+  
+  .list-item-rank {
+    width: 24px;
+    height: 24px;
+    font-size: 0.6875rem;
+    margin-right: 8px;
+  }
+  
+  .list-item-name,
+  .activity-title {
+    font-size: 0.8125rem;
+  }
+  
+  .list-item-detail,
+  .list-item-value,
+  .activity-time {
+    font-size: 0.6875rem;
+  }
+  
+  .activity-icon {
+    width: 32px;
+    height: 32px;
+    margin-right: 8px;
+    font-size: 0.875rem;
+  }
+}
+
+/* Landscape orientation on mobile */
+@media (max-width: 767px) and (orientation: landscape) {
+  .dashboard-header {
+    padding: 16px 20px;
+  }
+  
+  .widgets-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .metric-widget {
+    min-height: 160px;
   }
 }

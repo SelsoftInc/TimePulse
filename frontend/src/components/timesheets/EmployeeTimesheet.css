@@ -74,6 +74,15 @@ textarea.form-control {
   grid-template-columns: repeat(7, 1fr) auto;
   gap: 15px;
   align-items: center;
+  overflow-x: auto;
+  padding-bottom: 10px;
+}
+
+.timesheet-grid-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: 0 -1.5rem;
+  padding: 0 1.5rem;
 }
 
 .timesheet-day {
@@ -461,4 +470,254 @@ body.dark-mode .file-drop-text p {
 body.dark-mode .file-drop-text .file-types {
   background-color: var(--background-secondary);
   color: var(--text-muted);
+}
+
+/* Responsive Design */
+@media (max-width: 1199px) {
+  .card-inner {
+    padding: 1.25rem;
+  }
+  
+  .timesheet-grid {
+    gap: 12px;
+  }
+}
+
+@media (max-width: 991px) {
+  .nk-content {
+    margin-top: 60px;
+    padding: 15px;
+  }
+  
+  .card-inner {
+    padding: 1rem;
+  }
+  
+  .timesheet-grid {
+    grid-template-columns: repeat(7, minmax(80px, 1fr)) minmax(100px, auto);
+    gap: 10px;
+  }
+  
+  .timesheet-day label {
+    font-size: 0.75rem;
+  }
+  
+  .form-control {
+    font-size: 0.8125rem;
+    padding: 0.375rem 0.75rem;
+  }
+}
+
+@media (max-width: 767px) {
+  .nk-content {
+    margin-top: 60px;
+    padding: 12px;
+  }
+  
+  .container-fluid {
+    padding: 0;
+  }
+  
+  .card-inner {
+    padding: 0.875rem;
+  }
+  
+  .card-head {
+    margin: -0.25rem -0.5rem 0.75rem;
+    padding: 0 0.5rem 0.75rem;
+  }
+  
+  .card-head h5 {
+    font-size: 1rem;
+  }
+  
+  /* Make timesheet grid scrollable horizontally */
+  .timesheet-grid-wrapper {
+    margin: 0 -0.875rem;
+    padding: 0 0.875rem;
+  }
+  
+  .timesheet-grid {
+    grid-template-columns: repeat(7, minmax(70px, 1fr)) minmax(90px, auto);
+    gap: 8px;
+    min-width: 600px;
+  }
+  
+  .timesheet-day label {
+    font-size: 0.7rem;
+    margin-bottom: 3px;
+  }
+  
+  .timesheet-day input {
+    font-size: 0.75rem;
+    height: 36px;
+  }
+  
+  .timesheet-total {
+    padding: 0 10px;
+    height: 36px;
+  }
+  
+  .total-hours {
+    font-size: 0.875rem;
+  }
+  
+  /* Form elements */
+  .form-group {
+    margin-bottom: 1rem;
+  }
+  
+  .form-label {
+    font-size: 0.8125rem;
+    margin-bottom: 0.375rem;
+  }
+  
+  .form-control,
+  .form-select {
+    font-size: 0.8125rem;
+    padding: 0.375rem 0.75rem;
+    height: auto;
+    min-height: 38px;
+  }
+  
+  textarea.form-control {
+    min-height: 80px;
+  }
+  
+  /* Buttons */
+  .btn {
+    padding: 0.375rem 0.875rem;
+    font-size: 0.8125rem;
+  }
+  
+  .btn-sm {
+    padding: 0.25rem 0.625rem;
+    font-size: 0.75rem;
+  }
+  
+  /* File upload area */
+  .file-drop-area {
+    padding: 30px 15px;
+    min-height: 150px;
+  }
+  
+  .file-drop-icon {
+    font-size: 36px;
+  }
+  
+  .file-drop-text h4 {
+    font-size: 16px;
+  }
+  
+  .file-drop-text p {
+    font-size: 13px;
+  }
+  
+  /* Row and column layout */
+  .row {
+    margin-right: -8px;
+    margin-left: -8px;
+  }
+  
+  .col-12,
+  .col-lg-6 {
+    padding-right: 8px;
+    padding-left: 8px;
+  }
+  
+  /* Block head */
+  .nk-block-head {
+    margin-bottom: 1rem;
+  }
+  
+  .nk-block-title {
+    font-size: 1.25rem;
+  }
+  
+  .nk-block-des {
+    font-size: 0.8125rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .nk-content {
+    padding: 10px;
+  }
+  
+  .card-inner {
+    padding: 0.75rem;
+  }
+  
+  .timesheet-grid {
+    grid-template-columns: repeat(7, minmax(60px, 1fr)) minmax(80px, auto);
+    gap: 6px;
+    min-width: 550px;
+  }
+  
+  .timesheet-day label {
+    font-size: 0.65rem;
+  }
+  
+  .timesheet-day input {
+    font-size: 0.7rem;
+    height: 34px;
+    padding: 0.25rem 0.5rem;
+  }
+  
+  .timesheet-total {
+    padding: 0 8px;
+    height: 34px;
+  }
+  
+  .total-hours {
+    font-size: 0.8125rem;
+  }
+  
+  .form-control,
+  .form-select {
+    font-size: 0.8125rem;
+    padding: 0.375rem 0.625rem;
+  }
+  
+  .btn {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.8125rem;
+    width: 100%;
+    margin-bottom: 0.5rem;
+  }
+  
+  .btn:last-child {
+    margin-bottom: 0;
+  }
+  
+  .nk-block-between {
+    flex-direction: column;
+    align-items: flex-start !important;
+  }
+  
+  .nk-block-head-content {
+    width: 100%;
+    margin-bottom: 0.75rem;
+  }
+  
+  .toggle-wrap {
+    width: 100%;
+  }
+  
+  .file-drop-area {
+    padding: 20px 10px;
+    min-height: 120px;
+  }
+  
+  .file-drop-icon {
+    font-size: 32px;
+  }
+  
+  .file-drop-text h4 {
+    font-size: 14px;
+  }
+  
+  .file-drop-text p {
+    font-size: 12px;
+  }
 }

@@ -5,7 +5,7 @@ import PermissionGuard from "../common/PermissionGuard";
 import "./Sidebar.css";
 import WorkspaceSelector from "./WorkspaceSelector";
 
-const Sidebar = ({ collapsed, toggleSidebar, className = "" }) => {
+const Sidebar = ({ collapsed, toggleSidebar, mobileVisible = false, isMobile = false, className = "" }) => {
   const { subdomain } = useParams();
   const [currentSubdomain, setCurrentSubdomain] = useState("");
   const location = useLocation();
@@ -23,12 +23,17 @@ const Sidebar = ({ collapsed, toggleSidebar, className = "" }) => {
     }
   }, [subdomain]);
 
+  // Determine sidebar classes based on mobile/desktop state
+  const sidebarClasses = `app-sidebar ${
+    isMobile 
+      ? (mobileVisible ? 'mobile-visible' : '') 
+      : (collapsed ? 'collapsed' : '')
+  } ${className}`;
+
   return (
-    <aside
-      className={`app-sidebar ${collapsed ? "collapsed" : ""} ${className}`}
-    >
+    <aside className={sidebarClasses}>
       <div className="sidebar-header">
-        {!collapsed && <WorkspaceSelector />}
+        {(isMobile || !collapsed) && <WorkspaceSelector />}
         <div className="sidebar-collapse-button" onClick={toggleSidebar}>
           <i className={`fa fa-angle-${collapsed ? "right" : "left"}`}></i>
         </div>
@@ -49,7 +54,7 @@ const Sidebar = ({ collapsed, toggleSidebar, className = "" }) => {
               <div className="sidebar-icon">
                 <i className="fa fa-tachometer-alt"></i>
               </div>
-              {!collapsed && <span className="sidebar-text">Dashboard</span>}
+              {(isMobile || !collapsed) && <span className="sidebar-text">Dashboard</span>}
             </Link>
           </li>
 
@@ -70,7 +75,7 @@ const Sidebar = ({ collapsed, toggleSidebar, className = "" }) => {
                 <div className="sidebar-icon">
                   <i className="fa fa-clock"></i>
                 </div>
-                {!collapsed && <span className="sidebar-text">Timesheets</span>}
+                {(isMobile || !collapsed) && <span className="sidebar-text">Timesheets</span>}
               </Link>
             </li>
           </PermissionGuard>
@@ -117,7 +122,7 @@ const Sidebar = ({ collapsed, toggleSidebar, className = "" }) => {
                 <div className="sidebar-icon">
                   <i className="fa fa-file-invoice"></i>
                 </div>
-                {!collapsed && <span className="sidebar-text">Invoices</span>}
+                {(isMobile || !collapsed) && <span className="sidebar-text">Invoices</span>}
               </Link>
             </li>
           </PermissionGuard>
@@ -138,7 +143,7 @@ const Sidebar = ({ collapsed, toggleSidebar, className = "" }) => {
                 <div className="sidebar-icon">
                   <i className="fa fa-user-tie"></i>
                 </div>
-                {!collapsed && <span className="sidebar-text">Employees</span>}
+                {(isMobile || !collapsed) && <span className="sidebar-text">Employees</span>}
               </Link>
             </li>
           </PermissionGuard>
@@ -162,7 +167,7 @@ const Sidebar = ({ collapsed, toggleSidebar, className = "" }) => {
                 <div className="sidebar-icon">
                   <i className="fa fa-truck"></i>
                 </div>
-                {!collapsed && <span className="sidebar-text">Vendors</span>}
+                {(isMobile || !collapsed) && <span className="sidebar-text">Vendors</span>}
               </Link>
             </li>
           </PermissionGuard>
@@ -225,7 +230,7 @@ const Sidebar = ({ collapsed, toggleSidebar, className = "" }) => {
               <div className="sidebar-icon">
                 <i className="fa fa-calendar-alt"></i>
               </div>
-              {!collapsed && <span className="sidebar-text">Leave Management</span>}
+              {(isMobile || !collapsed) && <span className="sidebar-text">Leave Management</span>}
             </Link>
           </li>
 
@@ -245,7 +250,7 @@ const Sidebar = ({ collapsed, toggleSidebar, className = "" }) => {
                 <div className="sidebar-icon">
                   <i className="fa fa-chart-bar"></i>
                 </div>
-                {!collapsed && <span className="sidebar-text">Reports</span>}
+                {(isMobile || !collapsed) && <span className="sidebar-text">Reports</span>}
               </Link>
             </li>
           </PermissionGuard>
@@ -266,7 +271,7 @@ const Sidebar = ({ collapsed, toggleSidebar, className = "" }) => {
                 <div className="sidebar-icon">
                   <i className="fa fa-cog"></i>
                 </div>
-                {!collapsed && <span className="sidebar-text">Settings</span>}
+                {(isMobile || !collapsed) && <span className="sidebar-text">Settings</span>}
               </Link>
             </li>
           </PermissionGuard>

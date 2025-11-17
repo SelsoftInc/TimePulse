@@ -768,8 +768,41 @@ body.dark-mode .page-separator {
   }
 }
 
-/* Responsive adjustments */
+/* Comprehensive Mobile Responsive Design */
+@media (max-width: 991px) {
+  .nk-content {
+    margin-top: 60px;
+    padding: 15px;
+  }
+  
+  .card-inner {
+    padding: 1.25rem;
+  }
+  
+  .leave-requests-table {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .leave-requests-table .table {
+    min-width: 800px;
+  }
+}
+
 @media (max-width: 768px) {
+  .nk-content {
+    margin-top: 60px;
+    padding: 12px;
+  }
+  
+  .card-inner {
+    padding: 1rem;
+  }
+  
+  .card-title .title {
+    font-size: 16px;
+  }
+  
   .leave-request-card {
     padding: 12px !important;
   }
@@ -786,11 +819,17 @@ body.dark-mode .page-separator {
   
   .leave-requests-table {
     font-size: 12px;
+    overflow-x: auto;
+  }
+  
+  .leave-requests-table .table {
+    min-width: 900px;
   }
   
   .leave-requests-table .table thead th,
   .leave-requests-table .table tbody td {
-    padding: 10px 12px;
+    padding: 8px 10px;
+    font-size: 12px;
   }
   
   .leave-type-card {
@@ -799,5 +838,166 @@ body.dark-mode .page-separator {
   
   .leave-balance-item-new {
     padding: 16px;
+  }
+  
+  .leave-balance-item {
+    padding: 12px;
+  }
+  
+  /* Form elements */
+  .form-group {
+    margin-bottom: 16px;
+  }
+  
+  .form-label {
+    font-size: 13px;
+  }
+  
+  .form-control,
+  .form-select {
+    font-size: 14px;
+    padding: 10px 12px;
+  }
+  
+  /* Buttons */
+  .btn-primary {
+    padding: 10px 20px;
+    font-size: 14px;
+  }
+  
+  /* Leave cards */
+  .leave-card-modern {
+    padding: 14px 16px;
+  }
+  
+  .leave-card-modern h6 {
+    font-size: 14px;
+  }
+  
+  /* Tabs */
+  .nav-tabs .nav-link {
+    padding: 10px 16px;
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .nk-content {
+    padding: 10px;
+  }
+  
+  .card-inner {
+    padding: 0.875rem;
+  }
+  
+  .card-title .title {
+    font-size: 15px;
+  }
+  
+  /* Leave balance cards - stack vertically */
+  .leave-balance-vertical {
+    gap: 12px;
+  }
+  
+  .leave-card-modern {
+    padding: 12px 14px;
+  }
+  
+  .leave-card-modern h6 {
+    font-size: 13px;
+  }
+  
+  .leave-card-modern small {
+    font-size: 11px;
+  }
+  
+  /* Form elements */
+  .form-label {
+    font-size: 12px;
+    margin-bottom: 6px;
+  }
+  
+  .form-control,
+  .form-select {
+    font-size: 13px;
+    padding: 8px 10px;
+  }
+  
+  textarea.form-control {
+    min-height: 80px;
+  }
+  
+  /* Buttons */
+  .btn-primary {
+    width: 100%;
+    padding: 10px 16px;
+    font-size: 14px;
+  }
+  
+  /* Table - make fully scrollable */
+  .leave-requests-table {
+    margin: 0 -0.875rem;
+    padding: 0 0.875rem;
+  }
+  
+  .leave-requests-table .table {
+    min-width: 700px;
+    font-size: 11px;
+  }
+  
+  .leave-requests-table .table thead th,
+  .leave-requests-table .table tbody td {
+    padding: 6px 8px;
+    font-size: 11px;
+  }
+  
+  .leave-requests-table .badge {
+    padding: 4px 8px;
+    font-size: 10px;
+  }
+  
+  .leave-requests-table .btn-sm {
+    padding: 6px 10px;
+    font-size: 11px;
+    min-width: 30px;
+  }
+  
+  .leave-requests-table .btn-sm i {
+    font-size: 11px;
+  }
+  
+  /* Tabs */
+  .nav-tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .nav-tabs .nav-link {
+    padding: 8px 12px;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+  
+  /* Block head */
+  .nk-block-head {
+    margin-bottom: 1rem;
+  }
+  
+  .nk-block-title {
+    font-size: 1.125rem;
+  }
+  
+  .nk-block-des {
+    font-size: 12px;
+  }
+  
+  /* Action buttons in table */
+  .leave-requests-table tbody td:last-child {
+    min-width: 150px;
+  }
+  
+  .leave-requests-table .d-flex.gap-2 {
+    gap: 6px;
   }
 }

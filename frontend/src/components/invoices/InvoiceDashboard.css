@@ -345,3 +345,308 @@
     max-width: 33.333333%;
   }
 }
+
+/* ========================================
+   COMPREHENSIVE RESPONSIVE DESIGN
+   ======================================== */
+
+/* Ensure table container allows horizontal scrolling */
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Desktop (992px - 1199px) */
+@media (max-width: 1199px) {
+  .nk-tb-col {
+    padding: 0.875rem 0.5rem;
+    font-size: 0.875rem;
+  }
+  
+  .card-inner {
+    padding: 1.25rem;
+  }
+}
+
+/* Tablet (768px - 991px) */
+@media (max-width: 991px) {
+  /* Enable horizontal scrolling */
+  .table-responsive {
+    overflow-x: auto !important;
+    margin-bottom: 16px;
+  }
+  
+  /* Set minimum width for table to force scrolling */
+  .nk-tb-list {
+    min-width: 900px;
+  }
+  
+  .nk-tb-col {
+    padding: 0.75rem 0.5rem;
+    font-size: 0.8125rem;
+  }
+  
+  .card-inner {
+    padding: 1rem;
+  }
+  
+  .card-title-group {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+  
+  .amount {
+    font-size: 1.25rem;
+  }
+}
+
+/* Mobile (481px - 767px) */
+@media (max-width: 767px) {
+  /* Container adjustments */
+  .nk-content {
+    padding: 12px;
+    margin-top: 60px; /* Account for fixed header */
+  }
+  
+  .card {
+    border-radius: 10px;
+    margin-bottom: 16px;
+  }
+  
+  .card-inner {
+    padding: 1rem;
+  }
+  
+  /* Enable horizontal scrolling */
+  .table-responsive {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    margin: 0;
+    border-radius: 8px;
+  }
+  
+  /* Force minimum width to enable scrolling */
+  .nk-tb-list {
+    min-width: 900px !important;
+    width: 900px !important;
+  }
+  
+  /* Compact table cells */
+  .nk-tb-col {
+    padding: 0.75rem 0.5rem !important;
+    font-size: 0.8125rem !important;
+  }
+  
+  .nk-tb-head .nk-tb-col {
+    font-size: 0.6875rem !important;
+    padding: 0.875rem 0.5rem !important;
+  }
+  
+  /* Stats cards */
+  .row {
+    margin-right: -8px;
+    margin-left: -8px;
+  }
+  
+  .col-md-6,
+  .col-lg-4 {
+    padding-right: 8px;
+    padding-left: 8px;
+    margin-bottom: 12px;
+  }
+  
+  .amount {
+    font-size: 1.125rem;
+  }
+  
+  .sub-title {
+    font-size: 11px;
+  }
+  
+  /* Badges */
+  .badge {
+    font-size: 70%;
+    padding: 0.2em 0.5em;
+  }
+  
+  .badge-dot {
+    padding: 0.25rem 0.5rem 0.25rem 1.5rem;
+    font-size: 0.6875rem;
+    min-width: 50px;
+  }
+  
+  .badge-dot:before {
+    height: 0.5rem;
+    width: 0.5rem;
+    left: 0.5rem;
+  }
+  
+  /* Buttons */
+  .btn {
+    padding: 0.375rem 0.875rem;
+    font-size: 0.8125rem;
+  }
+  
+  .btn-icon {
+    width: 28px;
+    height: 28px;
+    font-size: 0.875rem;
+  }
+  
+  /* Form controls */
+  .form-select {
+    font-size: 0.8125rem;
+    padding: 0.375rem 1.75rem 0.375rem 0.75rem;
+  }
+  
+  .form-select-sm {
+    font-size: 0.6875rem;
+    padding: 0.25rem 1.5rem 0.25rem 0.5rem;
+  }
+  
+  /* Card title group */
+  .card-title-group {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+  
+  .title {
+    font-size: 0.9375rem;
+  }
+  
+  /* Actions */
+  .nk-tb-actions {
+    gap: 0.25rem;
+  }
+}
+
+/* Small Mobile (≤480px) */
+@media (max-width: 480px) {
+  /* Container */
+  .nk-content {
+    padding: 10px;
+  }
+  
+  .card {
+    border-radius: 8px;
+    margin-bottom: 12px;
+  }
+  
+  .card-inner {
+    padding: 0.875rem;
+  }
+  
+  /* Table scrolling */
+  .table-responsive {
+    border-radius: 6px;
+  }
+  
+  /* Force minimum width for scrolling */
+  .nk-tb-list {
+    min-width: 800px !important;
+    width: 800px !important;
+  }
+  
+  /* Ultra-compact cells */
+  .nk-tb-col {
+    padding: 0.625rem 0.375rem !important;
+    font-size: 0.75rem !important;
+  }
+  
+  .nk-tb-head .nk-tb-col {
+    font-size: 0.625rem !important;
+    padding: 0.75rem 0.375rem !important;
+  }
+  
+  /* Stats cards */
+  .row {
+    margin-right: -6px;
+    margin-left: -6px;
+  }
+  
+  .col-md-6,
+  .col-lg-4 {
+    padding-right: 6px;
+    padding-left: 6px;
+    margin-bottom: 10px;
+  }
+  
+  .amount {
+    font-size: 1rem;
+  }
+  
+  .sub-title {
+    font-size: 10px;
+  }
+  
+  /* Badges */
+  .badge {
+    font-size: 65%;
+    padding: 0.15em 0.4em;
+  }
+  
+  .badge-dot {
+    padding: 0.2rem 0.4rem 0.2rem 1.25rem;
+    font-size: 0.625rem;
+    min-width: 45px;
+  }
+  
+  .badge-dot:before {
+    height: 0.4rem;
+    width: 0.4rem;
+    left: 0.4rem;
+  }
+  
+  /* Buttons */
+  .btn {
+    padding: 0.3125rem 0.75rem;
+    font-size: 0.75rem;
+  }
+  
+  .btn-icon {
+    width: 26px;
+    height: 26px;
+    font-size: 0.8125rem;
+  }
+  
+  /* Form controls */
+  .form-select {
+    font-size: 0.75rem;
+    padding: 0.3125rem 1.5rem 0.3125rem 0.625rem;
+  }
+  
+  .title {
+    font-size: 0.875rem;
+  }
+  
+  /* Card title group */
+  .card-title-group {
+    margin-bottom: 0.75rem;
+  }
+}
+
+/* Landscape mode for mobile */
+@media (max-width: 767px) and (orientation: landscape) {
+  .nk-tb-list {
+    min-width: 800px !important;
+  }
+}
+
+/* Dark mode responsive adjustments */
+@media (max-width: 767px) {
+  .dark-mode .nk-tb-item:hover:not(.dropdown-open) {
+    background-color: #2e3a59;
+  }
+  
+  .dark-mode .card {
+    background-color: #1c2531;
+  }
+  
+  .dark-mode .nk-tb-head {
+    background-color: #1c2531;
+  }
+}

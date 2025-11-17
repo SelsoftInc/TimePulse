@@ -204,7 +204,64 @@ router.get("/balance", async (req, res) => {
       });
     }
 
+    // Check if employee exists, if not create one
+    let employee = await Employee.findOne({
+      where: { id: employeeId, tenantId },
+    });
+
+    if (!employee) {
+      // Get user details to create employee record
+      const user = await User.findOne({
+        where: { id: employeeId, tenantId },
+      });
+
+      if (!user) {
+        console.error(`❌ User not found: ${employeeId}`);
+        return res.status(404).json({
+          error: "User not found",
+        });
+      }
+
+      // Create employee record
+      employee = await Employee.create({
+        id: user.id,
+        tenantId: user.tenantId,
+        firstName: user.firstName || "Employee",
+        lastName: user.lastName || "",
+        email: user.email,
+        status: "active",
+        startDate: new Date(),
+      });
+
+      console.log(`✅ Created employee record for: ${user.email}`);
+    }
+
     const currentYear = new Date().getFullYear();
+    
+    // Initialize leave balances if they don't exist
+    const leaveTypes = [
+      { type: 'vacation', total: 10 },
+      { type: 'sick', total: 5 }
+    ];
+    
+    for (const { type, total } of leaveTypes) {
+      await LeaveBalance.findOrCreate({
+        where: {
+          employeeId,
+          tenantId,
+          year: currentYear,
+          leaveType: type,
+        },
+        defaults: {
+          totalDays: total,
+          usedDays: 0,
+          pendingDays: 0,
+          carryForwardDays: 0,
+        },
+      });
+    }
+    
+    // Fetch all balances
     const balances = await LeaveBalance.findAll({
       where: {
         employeeId,
@@ -212,6 +269,8 @@ router.get("/balance", async (req, res) => {
         year: currentYear,
       },
     });
+
+    console.log(`✅ Found ${balances.length} leave balances for employee ${employeeId}`);
 
     // Format balance data
     const balanceData = {};
@@ -228,19 +287,6 @@ router.get("/balance", async (req, res) => {
         pending: parseFloat(balance.pendingDays),
         remaining: remaining,
       };
-    });
-
-    // Ensure vacation and sick leave types have entries (Total 15 days: Vacation 10 + Sick 5)
-    ["vacation", "sick"].forEach((type) => {
-      if (!balanceData[type]) {
-        const defaultTotal = type === "vacation" ? 10 : 5;
-        balanceData[type] = {
-          total: defaultTotal,
-          used: 0,
-          pending: 0,
-          remaining: defaultTotal,
-        };
-      }
     });
 
     res.json({
@@ -741,6 +787,26 @@ router.delete("/cancel/:id", async (req, res) => {
       return res.status(404).json({
         error: "Leave request not found or cannot be cancelled",
       });
+    }
+
+    // Update leave balance - remove from pending days before deleting
+    const currentYear = new Date().getFullYear();
+    const leaveBalance = await LeaveBalance.findOne({
+      where: {
+        employeeId: leaveRequest.employeeId,
+        tenantId: leaveRequest.tenantId,
+        year: currentYear,
+        leaveType: leaveRequest.leaveType,
+      },
+    });
+
+    if (leaveBalance) {
+      await leaveBalance.update({
+        pendingDays:
+          parseFloat(leaveBalance.pendingDays) -
+          parseFloat(leaveRequest.totalDays),
+      });
+      console.log(`✅ Updated leave balance: Removed ${leaveRequest.totalDays} pending days for ${leaveRequest.leaveType}`);
     }
 
     // Delete the leave request

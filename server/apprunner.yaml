@@ -32,6 +32,20 @@ run:
       value: "true"
     - name: DB_SSL_REJECT_UNAUTHORIZED
       value: "false"
+    - name: FRONTEND_URL
+      value: "https://app.timepulse.io"
+    - name: SMTP_HOST
+      value: "email-smtp.us-east-1.amazonaws.com"
+    - name: SMTP_PORT
+      value: "587"
+    - name: AWS_REGION
+      value: "us-east-1"
+    - name: S3_BUCKET_NAME
+      value: "timepulse-timesheet-attachments"
   secrets:
     - name: DB_PASSWORD
       value-from: "arn:aws:secretsmanager:us-east-1:727044518907:secret:timepulse-db-password-ockLr9"
+    - name: SMTP_USER
+      value-from: "arn:aws:secretsmanager:us-east-1:727044518907:secret:timepulse-smtp-user-fWBmnf"
+    - name: SMTP_PASS
+      value-from: "arn:aws:secretsmanager:us-east-1:727044518907:secret:timepulse-smtp-password-GQGMmS"

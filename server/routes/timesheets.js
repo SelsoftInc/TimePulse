@@ -7,6 +7,12 @@ const router = express.Router();
 const { models } = require("../models");
 const { Op } = require("sequelize");
 const NotificationService = require("../services/NotificationService");
+const EmailService = require("../services/EmailService");
+const TimesheetAuditService = require("../services/TimesheetAuditService");
+const { getAuditInfo } = require("../middleware/auditHelper");
+const multer = require("multer");
+const S3Service = require("../services/S3Service");
+const { S3_CONFIG } = require("../config/aws");
 
 // Helpers
 // Format date as YYYY-MM-DD in local time to avoid UTC shift issues
@@ -701,6 +707,20 @@ router.post("/submit", async (req, res, next) => {
       });
     }
 
+    // Validate and sanitize clientId - must be valid UUID or null
+    let sanitizedClientId = null;
+    if (clientId) {
+      // Check if it's a valid UUID format
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (uuidRegex.test(clientId)) {
+        sanitizedClientId = clientId;
+      } else {
+        // If it's not a valid UUID (e.g., "1", "default", etc.), set to null
+        console.warn(`⚠️ Invalid clientId format: "${clientId}". Setting to null.`);
+        sanitizedClientId = null;
+      }
+    }
+
     // Check if timesheet already exists for this week
     const existing = await models.Timesheet.findOne({
       where: {
@@ -712,8 +732,18 @@ router.post("/submit", async (req, res, next) => {
     });
 
     if (existing) {
+      // Store old values for audit
+      const oldValues = {
+        status: existing.status,
+        totalHours: existing.totalHours,
+        notes: existing.notes,
+        dailyHours: existing.dailyHours,
+        clientId: existing.clientId,
+        reviewerId: existing.reviewerId,
+      };
+
       // Update existing timesheet
-      existing.clientId = clientId || existing.clientId;
+      existing.clientId = sanitizedClientId !== null ? sanitizedClientId : existing.clientId;
       existing.reviewerId = reviewerId || existing.reviewerId;
       existing.status = status || "submitted";
       existing.totalHours = totalHours || 0;
@@ -724,6 +754,34 @@ router.post("/submit", async (req, res, next) => {
       await existing.save();
 
       console.log("✅ Updated existing timesheet:", existing.id);
+
+      // Log audit entry
+      const auditInfo = getAuditInfo(req);
+      const changedFields = [];
+      if (oldValues.status !== existing.status) changedFields.push("status");
+      if (oldValues.totalHours !== existing.totalHours) changedFields.push("totalHours");
+      if (oldValues.notes !== existing.notes) changedFields.push("notes");
+      if (JSON.stringify(oldValues.dailyHours) !== JSON.stringify(existing.dailyHours)) changedFields.push("dailyHours");
+      if (oldValues.clientId !== existing.clientId) changedFields.push("clientId");
+      if (oldValues.reviewerId !== existing.reviewerId) changedFields.push("reviewerId");
+
+      await TimesheetAuditService.logChange({
+        timesheetId: existing.id,
+        action: status === "submitted" ? "submit" : "update",
+        oldValues,
+        newValues: {
+          status: existing.status,
+          totalHours: existing.totalHours,
+          notes: existing.notes,
+          dailyHours: existing.dailyHours,
+          clientId: existing.clientId,
+          reviewerId: existing.reviewerId,
+        },
+        changedFields,
+        ...auditInfo,
+        tenantId,
+        employeeId,
+      });
 
       return res.json({
         success: true,
@@ -736,7 +794,7 @@ router.post("/submit", async (req, res, next) => {
     const newTimesheet = await models.Timesheet.create({
       tenantId,
       employeeId,
-      clientId: clientId || null,
+      clientId: sanitizedClientId,
       reviewerId: reviewerId || null,
       weekStart,
       weekEnd,
@@ -756,6 +814,28 @@ router.post("/submit", async (req, res, next) => {
     });
 
     console.log("✅ Created new timesheet:", newTimesheet.id);
+
+    // Log audit entry for creation
+    const auditInfo = getAuditInfo(req);
+    await TimesheetAuditService.logChange({
+      timesheetId: newTimesheet.id,
+      action: status === "submitted" ? "submit" : "create",
+      oldValues: {},
+      newValues: {
+        status: newTimesheet.status,
+        totalHours: newTimesheet.totalHours,
+        notes: newTimesheet.notes,
+        dailyHours: newTimesheet.dailyHours,
+        clientId: newTimesheet.clientId,
+        reviewerId: newTimesheet.reviewerId,
+        weekStart: newTimesheet.weekStart,
+        weekEnd: newTimesheet.weekEnd,
+      },
+      changedFields: ["status", "totalHours", "notes", "dailyHours", "clientId", "reviewerId", "weekStart", "weekEnd"],
+      ...auditInfo,
+      tenantId,
+      employeeId,
+    });
 
     // Create notification for timesheet submission
     try {
@@ -814,6 +894,31 @@ router.post("/submit", async (req, res, next) => {
           message: `New timesheet submitted for week of ${weekStart}`,
           timestamp: new Date().toISOString(),
         });
+      }
+
+      // Send email notification to reviewer if reviewerId is set
+      if (reviewerId) {
+        try {
+          const reviewer = await models.User.findByPk(reviewerId);
+          const tenant = await models.Tenant.findByPk(tenantId);
+          
+          if (reviewer && tenant) {
+            const weekRange = `${weekStart} to ${weekEnd}`;
+            const timesheetLink = `${process.env.FRONTEND_URL || 'https://app.timepulse.io'}/${tenant.subdomain}/timesheets/submit/${newTimesheet.id}`;
+            
+            await EmailService.sendTimesheetSubmittedNotification({
+              reviewerEmail: reviewer.email,
+              reviewerName: `${reviewer.firstName} ${reviewer.lastName}`,
+              employeeName: employeeName,
+              weekRange: weekRange,
+              timesheetLink: timesheetLink,
+              tenantName: tenant.name || 'TimePulse',
+            });
+          }
+        } catch (emailError) {
+          console.error("Error sending timesheet submission email:", emailError);
+          // Don't fail the timesheet submission if email fails
+        }
       }
     } catch (notificationError) {
       console.error(
@@ -1010,9 +1115,24 @@ router.put("/:id", async (req, res, next) => {
         .status(404)
         .json({ success: false, message: "Timesheet not found" });
 
-    // Track if status is changing to approved
+    // Store old values for audit
+    const oldValues = {
+      status: row.status,
+      totalHours: row.totalHours,
+      notes: row.notes,
+      dailyHours: row.dailyHours,
+      clientId: row.clientId,
+      reviewerId: row.reviewerId,
+      approvedBy: row.approvedBy,
+      rejectionReason: row.rejectionReason,
+    };
+
+    // Track if status is changing to approved or rejected
     const wasNotApproved = row.status !== "approved";
+    const wasNotRejected = row.status !== "rejected";
     const isBeingApproved = status === "approved";
+    const isBeingRejected = status === "rejected";
+    const previousStatus = row.status;
 
     if (dailyHours && typeof dailyHours === "object") {
       const total = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
@@ -1047,6 +1167,101 @@ router.put("/:id", async (req, res, next) => {
     if (reviewerId !== undefined) row.reviewerId = reviewerId || null;
 
     await row.save();
+
+    // Log audit entry
+    const auditInfo = getAuditInfo(req);
+    const changedFields = [];
+    if (oldValues.status !== row.status) changedFields.push("status");
+    if (oldValues.totalHours !== row.totalHours) changedFields.push("totalHours");
+    if (oldValues.notes !== row.notes) changedFields.push("notes");
+    if (JSON.stringify(oldValues.dailyHours) !== JSON.stringify(row.dailyHours)) changedFields.push("dailyHours");
+    if (oldValues.clientId !== row.clientId) changedFields.push("clientId");
+    if (oldValues.reviewerId !== row.reviewerId) changedFields.push("reviewerId");
+    if (oldValues.approvedBy !== row.approvedBy) changedFields.push("approvedBy");
+    if (oldValues.rejectionReason !== row.rejectionReason) changedFields.push("rejectionReason");
+
+    let auditAction = "update";
+    if (isBeingApproved) auditAction = "approve";
+    else if (isBeingRejected) auditAction = "reject";
+    else if (status === "submitted" && previousStatus !== "submitted") auditAction = "submit";
+    else if (status === "draft" && previousStatus !== "draft") auditAction = "draft_save";
+
+    await TimesheetAuditService.logChange({
+      timesheetId: row.id,
+      action: auditAction,
+      oldValues,
+      newValues: {
+        status: row.status,
+        totalHours: row.totalHours,
+        notes: row.notes,
+        dailyHours: row.dailyHours,
+        clientId: row.clientId,
+        reviewerId: row.reviewerId,
+        approvedBy: row.approvedBy,
+        rejectionReason: row.rejectionReason,
+      },
+      changedFields,
+      ...auditInfo,
+      tenantId: row.tenantId,
+      employeeId: row.employeeId,
+      metadata: {
+        previousStatus,
+        newStatus: row.status,
+        ...(rejectionReason && { rejectionReason }),
+      },
+    });
+
+    // Send email notifications for approval/rejection
+    try {
+      const tenant = await models.Tenant.findByPk(row.tenantId);
+      const employee = await models.Employee.findByPk(row.employeeId, {
+        include: [
+          {
+            model: models.User,
+            as: "user",
+            required: false,
+          },
+        ],
+      });
+
+      const weekRange = `${row.weekStart} to ${row.weekEnd}`;
+      const timesheetLink = `${process.env.FRONTEND_URL || 'https://app.timepulse.io'}/${tenant?.subdomain || 'app'}/timesheets/submit/${row.id}`;
+      const tenantName = tenant?.name || 'TimePulse';
+
+      // Send approval email
+      if (wasNotApproved && isBeingApproved && employee?.user) {
+        const reviewer = approvedBy ? await models.User.findByPk(approvedBy) : null;
+        const reviewerName = reviewer ? `${reviewer.firstName} ${reviewer.lastName}` : 'Manager';
+        
+        await EmailService.sendTimesheetApprovedNotification({
+          employeeEmail: employee.user.email,
+          employeeName: `${employee.user.firstName} ${employee.user.lastName}`,
+          reviewerName: reviewerName,
+          weekRange: weekRange,
+          timesheetLink: timesheetLink,
+          tenantName: tenantName,
+        });
+      }
+
+      // Send rejection email
+      if (wasNotRejected && isBeingRejected && employee?.user) {
+        const reviewer = approvedBy ? await models.User.findByPk(approvedBy) : null;
+        const reviewerName = reviewer ? `${reviewer.firstName} ${reviewer.lastName}` : 'Manager';
+        
+        await EmailService.sendTimesheetRejectedNotification({
+          employeeEmail: employee.user.email,
+          employeeName: `${employee.user.firstName} ${employee.user.lastName}`,
+          reviewerName: reviewerName,
+          weekRange: weekRange,
+          rejectionReason: row.rejectionReason || 'No reason provided',
+          timesheetLink: timesheetLink,
+          tenantName: tenantName,
+        });
+      }
+    } catch (emailError) {
+      console.error("Error sending timesheet status email:", emailError);
+      // Don't fail the timesheet update if email fails
+    }
 
     // ✨ AUTOMATIC INVOICE GENERATION ✨
     // Trigger invoice generation when timesheet is approved
@@ -1953,6 +2168,591 @@ router.post("/:timesheetId/generate-invoice", async (req, res) => {
       message: "Failed to generate invoice",
       error: err.message,
     });
+  }
+});
+
+// =============================================
+// FILE UPLOAD/DOWNLOAD ENDPOINTS
+// =============================================
+
+// Configure multer for in-memory file uploads (we'll upload directly to S3)
+const upload = multer({
+  storage: multer.memoryStorage ? multer.memoryStorage() : multer.MemoryStorage(),
+  limits: {
+    fileSize: S3_CONFIG.maxFileSize,
+  },
+  fileFilter: (req, file, cb) => {
+    const validation = S3Service.validateFile(file);
+    if (validation.valid) {
+      cb(null, true);
+    } else {
+      cb(new Error(validation.errors.join(', ')));
+    }
+  },
+});
+
+// POST /api/timesheets/:id/upload
+// Upload file attachment to S3 and update timesheet
+router.post("/:id/upload", upload.single('file'), async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { tenantId } = req.query;
+
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        message: "tenantId is required",
+      });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: "No file provided",
+      });
+    }
+
+    // Get timesheet
+    const timesheet = await models.Timesheet.findByPk(id);
+    if (!timesheet) {
+      return res.status(404).json({
+        success: false,
+        message: "Timesheet not found",
+      });
+    }
+
+    // Verify tenant matches
+    if (timesheet.tenantId !== tenantId) {
+      return res.status(403).json({
+        success: false,
+        message: "Access denied",
+      });
+    }
+
+    // Upload file to S3
+    const fileMetadata = await S3Service.uploadFile(
+      req.file.buffer,
+      req.file.originalname,
+      req.file.mimetype,
+      id,
+      tenantId
+    );
+
+    // Get existing attachments
+    let attachments = [];
+    if (timesheet.attachments) {
+      if (typeof timesheet.attachments === 'string') {
+        try {
+          attachments = JSON.parse(timesheet.attachments);
+        } catch (e) {
+          attachments = [];
+        }
+      } else if (Array.isArray(timesheet.attachments)) {
+        attachments = timesheet.attachments;
+      }
+    }
+
+    // Add new file to attachments
+    attachments.push(fileMetadata);
+
+    // Update timesheet
+    timesheet.attachments = attachments;
+    await timesheet.save();
+
+    res.json({
+      success: true,
+      message: "File uploaded successfully",
+      file: fileMetadata,
+      timesheet: {
+        id: timesheet.id,
+        attachments: attachments,
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /api/timesheets/:id/files/:fileId/download
+// Get presigned URL for file download
+router.get("/:id/files/:fileId/download", async (req, res, next) => {
+  try {
+    const { id, fileId } = req.params;
+    const { tenantId } = req.query;
+
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        message: "tenantId is required",
+      });
+    }
+
+    // Get timesheet
+    const timesheet = await models.Timesheet.findByPk(id);
+    if (!timesheet) {
+      return res.status(404).json({
+        success: false,
+        message: "Timesheet not found",
+      });
+    }
+
+    // Verify tenant matches
+    if (timesheet.tenantId !== tenantId) {
+      return res.status(403).json({
+        success: false,
+        message: "Access denied",
+      });
+    }
+
+    // Get attachments
+    let attachments = [];
+    if (timesheet.attachments) {
+      if (typeof timesheet.attachments === 'string') {
+        try {
+          attachments = JSON.parse(timesheet.attachments);
+        } catch (e) {
+          attachments = [];
+        }
+      } else if (Array.isArray(timesheet.attachments)) {
+        attachments = timesheet.attachments;
+      }
+    }
+
+    // Find file
+    const file = attachments.find(f => f.id === fileId);
+    if (!file || !file.s3Key) {
+      return res.status(404).json({
+        success: false,
+        message: "File not found",
+      });
+    }
+
+    // Generate presigned URL
+    const downloadUrl = await S3Service.getDownloadUrl(file.s3Key);
+
+    res.json({
+      success: true,
+      downloadUrl: downloadUrl,
+      file: {
+        id: file.id,
+        originalName: file.originalName,
+        size: file.size,
+        mimeType: file.mimeType,
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// DELETE /api/timesheets/:id/files/:fileId
+// Delete file from S3 and update timesheet
+router.delete("/:id/files/:fileId", async (req, res, next) => {
+  try {
+    const { id, fileId } = req.params;
+    const { tenantId } = req.query;
+
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        message: "tenantId is required",
+      });
+    }
+
+    // Get timesheet
+    const timesheet = await models.Timesheet.findByPk(id);
+    if (!timesheet) {
+      return res.status(404).json({
+        success: false,
+        message: "Timesheet not found",
+      });
+    }
+
+    // Verify tenant matches
+    if (timesheet.tenantId !== tenantId) {
+      return res.status(403).json({
+        success: false,
+        message: "Access denied",
+      });
+    }
+
+    // Get attachments
+    let attachments = [];
+    if (timesheet.attachments) {
+      if (typeof timesheet.attachments === 'string') {
+        try {
+          attachments = JSON.parse(timesheet.attachments);
+        } catch (e) {
+          attachments = [];
+        }
+      } else if (Array.isArray(timesheet.attachments)) {
+        attachments = timesheet.attachments;
+      }
+    }
+
+    // Find file
+    const fileIndex = attachments.findIndex(f => f.id === fileId);
+    if (fileIndex === -1) {
+      return res.status(404).json({
+        success: false,
+        message: "File not found",
+      });
+    }
+
+    const file = attachments[fileIndex];
+
+    // Delete from S3
+    if (file.s3Key) {
+      await S3Service.deleteFile(file.s3Key);
+    }
+
+    // Remove from attachments array
+    attachments.splice(fileIndex, 1);
+
+    // Update timesheet
+    timesheet.attachments = attachments;
+    await timesheet.save();
+
+    res.json({
+      success: true,
+      message: "File deleted successfully",
+      timesheet: {
+        id: timesheet.id,
+        attachments: attachments,
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// =============================================
+// WEEK NAVIGATION & HISTORY ENDPOINTS
+// =============================================
+
+// GET /api/timesheets/history?tenantId=...&employeeId=...&from=...&to=...&status=...
+// Get timesheet history with optional filters
+router.get("/history", async (req, res, next) => {
+  try {
+    const { tenantId, employeeId, from, to, status, limit = 50, offset = 0 } = req.query;
+
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        message: "tenantId is required",
+      });
+    }
+
+    const whereClause = { tenantId };
+
+    if (employeeId) {
+      whereClause.employeeId = employeeId;
+    }
+
+    if (from) {
+      whereClause.weekStart = { [Op.gte]: from };
+    }
+
+    if (to) {
+      whereClause.weekEnd = { [Op.lte]: to };
+    }
+
+    if (status) {
+      whereClause.status = status;
+    }
+
+    const timesheets = await models.Timesheet.findAndCountAll({
+      where: whereClause,
+      include: [
+        {
+          model: models.Employee,
+          as: "employee",
+          attributes: ["id", "firstName", "lastName", "email"],
+          required: false,
+        },
+        {
+          model: models.Client,
+          as: "client",
+          attributes: ["id", "clientName"],
+          required: false,
+        },
+        {
+          model: models.User,
+          as: "reviewer",
+          attributes: ["id", "firstName", "lastName", "email"],
+          required: false,
+        },
+      ],
+      order: [["weekStart", "DESC"]],
+      limit: parseInt(limit),
+      offset: parseInt(offset),
+    });
+
+    // Parse attachments for each timesheet
+    const formattedTimesheets = timesheets.rows.map(ts => {
+      let attachments = [];
+      if (ts.attachments) {
+        if (typeof ts.attachments === "string") {
+          try {
+            attachments = JSON.parse(ts.attachments);
+          } catch (e) {
+            attachments = [];
+          }
+        } else if (Array.isArray(ts.attachments)) {
+          attachments = ts.attachments;
+        }
+      }
+
+      return {
+        ...ts.toJSON(),
+        attachments: attachments,
+      };
+    });
+
+    res.json({
+      success: true,
+      timesheets: formattedTimesheets,
+      total: timesheets.count,
+      limit: parseInt(limit),
+      offset: parseInt(offset),
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /api/timesheets/week/:date?tenantId=...&employeeId=...
+// Get timesheet for a specific week (date can be any date in that week)
+router.get("/week/:date", async (req, res, next) => {
+  try {
+    const { date } = req.params;
+    const { tenantId, employeeId } = req.query;
+
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        message: "tenantId is required",
+      });
+    }
+
+    const weekDate = new Date(date);
+    const { weekStart, weekEnd } = getWeekRangeMonToSun(weekDate);
+
+    const whereClause = {
+      tenantId,
+      weekStart,
+      weekEnd,
+    };
+
+    if (employeeId) {
+      whereClause.employeeId = employeeId;
+    }
+
+    const timesheet = await models.Timesheet.findOne({
+      where: whereClause,
+      include: [
+        {
+          model: models.Employee,
+          as: "employee",
+          attributes: ["id", "firstName", "lastName", "email"],
+          required: false,
+        },
+        {
+          model: models.Client,
+          as: "client",
+          attributes: ["id", "clientName"],
+          required: false,
+        },
+        {
+          model: models.User,
+          as: "reviewer",
+          attributes: ["id", "firstName", "lastName", "email"],
+          required: false,
+        },
+      ],
+    });
+
+    if (!timesheet) {
+      return res.json({
+        success: true,
+        timesheet: null,
+        weekStart,
+        weekEnd,
+        message: "No timesheet found for this week",
+      });
+    }
+
+    // Parse attachments
+    let attachments = [];
+    if (timesheet.attachments) {
+      if (typeof timesheet.attachments === "string") {
+        try {
+          attachments = JSON.parse(timesheet.attachments);
+        } catch (e) {
+          attachments = [];
+        }
+      } else if (Array.isArray(timesheet.attachments)) {
+        attachments = timesheet.attachments;
+      }
+    }
+
+    res.json({
+      success: true,
+      timesheet: {
+        ...timesheet.toJSON(),
+        attachments: attachments,
+      },
+      weekStart,
+      weekEnd,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /api/timesheets/weeks/available?tenantId=...&employeeId=...
+// Get list of weeks that have timesheets
+router.get("/weeks/available", async (req, res, next) => {
+  try {
+    const { tenantId, employeeId } = req.query;
+
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        message: "tenantId is required",
+      });
+    }
+
+    const whereClause = { tenantId };
+
+    if (employeeId) {
+      whereClause.employeeId = employeeId;
+    }
+
+    const timesheets = await models.Timesheet.findAll({
+      where: whereClause,
+      attributes: ["weekStart", "weekEnd"],
+      group: ["weekStart", "weekEnd"],
+      order: [["weekStart", "DESC"]],
+      raw: true,
+    });
+
+    const weeks = timesheets.map(ts => ({
+      weekStart: ts.weekStart,
+      weekEnd: ts.weekEnd,
+      label: `${ts.weekStart} to ${ts.weekEnd}`,
+    }));
+
+    res.json({
+      success: true,
+      weeks: weeks,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// =============================================
+// AUDIT LOG ENDPOINTS
+// =============================================
+
+// GET /api/timesheets/:id/audit - Get audit history for a specific timesheet
+router.get("/:id/audit", async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { action, limit = 100, offset = 0 } = req.query;
+
+    const timesheet = await models.Timesheet.findByPk(id);
+    if (!timesheet) {
+      return res.status(404).json({
+        success: false,
+        message: "Timesheet not found",
+      });
+    }
+
+    const auditLogs = await TimesheetAuditService.getAuditHistory(id, {
+      action: action || null,
+      limit: parseInt(limit),
+      offset: parseInt(offset),
+    });
+
+    return res.json({
+      success: true,
+      timesheetId: id,
+      auditLogs,
+      count: auditLogs.length,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// GET /api/timesheets/audit/employee/:employeeId - Get audit history for an employee
+router.get("/audit/employee/:employeeId", async (req, res, next) => {
+  try {
+    const { employeeId } = req.params;
+    const { tenantId, action, fromDate, toDate, limit = 100, offset = 0 } = req.query;
+
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        message: "tenantId is required",
+      });
+    }
+
+    const auditLogs = await TimesheetAuditService.getEmployeeAuditHistory(
+      employeeId,
+      tenantId,
+      {
+        action: action || null,
+        fromDate: fromDate || null,
+        toDate: toDate || null,
+        limit: parseInt(limit),
+        offset: parseInt(offset),
+      }
+    );
+
+    return res.json({
+      success: true,
+      employeeId,
+      tenantId,
+      auditLogs,
+      count: auditLogs.length,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// GET /api/timesheets/audit/tenant - Get audit history for a tenant
+router.get("/audit/tenant", async (req, res, next) => {
+  try {
+    const { tenantId, action, employeeId, fromDate, toDate, limit = 100, offset = 0 } = req.query;
+
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        message: "tenantId is required",
+      });
+    }
+
+    const auditLogs = await TimesheetAuditService.getTenantAuditHistory(tenantId, {
+      action: action || null,
+      employeeId: employeeId || null,
+      fromDate: fromDate || null,
+      toDate: toDate || null,
+      limit: parseInt(limit),
+      offset: parseInt(offset),
+    });
+
+    return res.json({
+      success: true,
+      tenantId,
+      auditLogs,
+      count: auditLogs.length,
+    });
+  } catch (error) {
+    next(error);
   }
 });
 

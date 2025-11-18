@@ -37,7 +37,9 @@ const TimesheetSubmit = () => {
     timeOff: Array(7).fill(0),
   });
   const [notes, setNotes] = useState("");
-  const [attachments, setAttachments] = useState([]);
+  const [attachments, setAttachments] = useState([]); // Local files to upload
+  const [uploadedFiles, setUploadedFiles] = useState([]); // Files already uploaded to S3
+  const [uploadingFiles, setUploadingFiles] = useState([]); // Files currently uploading
   const [previewImages, setPreviewImages] = useState([]);
 
   // AI Processing state
@@ -128,17 +130,24 @@ const TimesheetSubmit = () => {
                 (c) => c.name === "Cognizant" || c.clientName === "Cognizant"
               );
               if (cognizant) {
-                // Use 'name' field from API and map to 'clientName'
-                clientData = [
-                  {
-                    id: cognizant.id,
-                    clientName: cognizant.name || "Cognizant", // Fixed: use 'name' from API
-                    project: (cognizant.name || "Cognizant") + " Project",
-                    hourlyRate: cognizant.hourlyRate || 0,
-                    clientType: cognizant.clientType || "internal",
-                    hours: Array(7).fill(0),
-                  },
-                ];
+                // Validate cognizant.id - only use if it's a valid UUID
+                const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+                if (cognizant.id && uuidRegex.test(cognizant.id)) {
+                  // Use 'name' field from API and map to 'clientName'
+                  clientData = [
+                    {
+                      id: cognizant.id,
+                      clientName: cognizant.name || "Cognizant", // Fixed: use 'name' from API
+                      project: (cognizant.name || "Cognizant") + " Project",
+                      hourlyRate: cognizant.hourlyRate || 0,
+                      clientType: cognizant.clientType || "internal",
+                      hours: Array(7).fill(0),
+                    },
+                  ];
+                } else {
+                  console.warn(`⚠️ Cognizant client has invalid ID: "${cognizant.id}". Skipping.`);
+                  clientData = [];
+                }
                 console.log(
                   " Showing only Cognizant for Selvakumar:",
                   clientData
@@ -147,7 +156,27 @@ const TimesheetSubmit = () => {
                 console.error(" Cognizant not found in clients list");
                 console.error("Available clients:", response.data.clients);
                 // Fallback to all clients
-                clientData = response.data.clients.map((client) => ({
+                // Validate client.id - only include if it's a valid UUID
+                const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+                clientData = response.data.clients
+                  .filter((client) => client.id && uuidRegex.test(client.id))
+                  .map((client) => ({
+                    id: client.id,
+                    clientName: client.name || "Unknown Client", // Fixed: use 'name' from API
+                    project: (client.name || "Unknown") + " Project",
+                    hourlyRate: client.hourlyRate || 0,
+                    clientType: client.clientType || "internal",
+                    hours: Array(7).fill(0),
+                  }));
+              }
+            } else {
+              // For other users, show all clients
+              console.log(" Showing all clients for other users");
+              // Validate client.id - only include if it's a valid UUID
+              const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+              clientData = response.data.clients
+                .filter((client) => client.id && uuidRegex.test(client.id))
+                .map((client) => ({
                   id: client.id,
                   clientName: client.name || "Unknown Client", // Fixed: use 'name' from API
                   project: (client.name || "Unknown") + " Project",
@@ -155,18 +184,6 @@ const TimesheetSubmit = () => {
                   clientType: client.clientType || "internal",
                   hours: Array(7).fill(0),
                 }));
-              }
-            } else {
-              // For other users, show all clients
-              console.log(" Showing all clients for other users");
-              clientData = response.data.clients.map((client) => ({
-                id: client.id,
-                clientName: client.name || "Unknown Client", // Fixed: use 'name' from API
-                project: (client.name || "Unknown") + " Project",
-                hourlyRate: client.hourlyRate || 0,
-                clientType: client.clientType || "internal",
-                hours: Array(7).fill(0),
-              }));
             }
 
             console.log(" Final clientHours to be set:", clientData);
@@ -328,6 +345,20 @@ const TimesheetSubmit = () => {
               // Set notes
               if (ts.notes) setNotes(ts.notes);
               
+              // Load attachments from timesheet
+              if (ts.attachments && Array.isArray(ts.attachments) && ts.attachments.length > 0) {
+                setUploadedFiles(ts.attachments);
+              } else if (ts.attachments && typeof ts.attachments === 'string') {
+                try {
+                  const parsed = JSON.parse(ts.attachments);
+                  if (Array.isArray(parsed)) {
+                    setUploadedFiles(parsed);
+                  }
+                } catch (e) {
+                  console.error('Error parsing attachments:', e);
+                }
+              }
+              
               // Load daily hours if available
               if (ts.dailyHours) {
                 console.log('📊 Loading dailyHours:', ts.dailyHours);
@@ -361,9 +392,17 @@ const TimesheetSubmit = () => {
                     setClientHours(updatedClientHours);
                   } else {
                     // Create a default client entry with the hours
+                    // Validate clientId - only use if it's a valid UUID
+                    let validClientId = null;
+                    if (ts.clientId) {
+                      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+                      if (uuidRegex.test(ts.clientId)) {
+                        validClientId = ts.clientId;
+                      }
+                    }
                     setClientHours([{
-                      id: ts.clientId || 'default',
-                      clientId: ts.clientId || 'default',
+                      id: validClientId,
+                      clientId: validClientId,
                       clientName: ts.client?.clientName || 'Client',
                       hours: hoursArray
                     }]);
@@ -459,9 +498,169 @@ const TimesheetSubmit = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [weekId]); // Fixed: Only depend on weekId to avoid infinite loops
 
-  const handleWeekChange = (selectedWeekValue) => {
+  // Navigate to previous week
+  const navigateToPreviousWeek = async () => {
+    if (!selectedWeek || !user?.tenantId) return;
+    
+    try {
+      // Parse current week start date
+      const [startStr] = selectedWeek.split(" To ");
+      const startDate = parseWeekDate(startStr);
+      
+      // Calculate previous week (7 days before)
+      const previousWeekDate = new Date(startDate);
+      previousWeekDate.setDate(previousWeekDate.getDate() - 7);
+      
+      // Load timesheet for previous week using new API endpoint
+      const employeeId = isEmployee() ? user.id : selectedEmployee;
+      if (!employeeId) {
+        toast.error("Please select an employee first");
+        return;
+      }
+      
+      const response = await axios.get(
+        `${API_BASE}/api/timesheets/week/${previousWeekDate.toISOString().split('T')[0]}`,
+        { params: { tenantId: user.tenantId, employeeId } }
+      );
+      
+      if (response.data.success) {
+        if (response.data.timesheet) {
+          // Navigate to existing timesheet
+          navigate(`/${subdomain}/timesheets/submit/${response.data.timesheet.id}`);
+        } else {
+          // New week - create week string and load
+          const { weekStart, weekEnd } = response.data;
+          const weekValue = `${formatWeekDate(weekStart)} To ${formatWeekDate(weekEnd)}`;
+          await loadWeekTimesheet(weekValue);
+        }
+      }
+    } catch (error) {
+      console.error('Error navigating to previous week:', error);
+      toast.error('Failed to load previous week');
+    }
+  };
+
+  // Navigate to next week
+  const navigateToNextWeek = async () => {
+    if (!selectedWeek || !user?.tenantId) return;
+    
+    try {
+      // Parse current week start date
+      const [startStr] = selectedWeek.split(" To ");
+      const startDate = parseWeekDate(startStr);
+      
+      // Calculate next week (7 days after)
+      const nextWeekDate = new Date(startDate);
+      nextWeekDate.setDate(nextWeekDate.getDate() + 7);
+      
+      // Load timesheet for next week using new API endpoint
+      const employeeId = isEmployee() ? user.id : selectedEmployee;
+      if (!employeeId) {
+        toast.error("Please select an employee first");
+        return;
+      }
+      
+      const response = await axios.get(
+        `${API_BASE}/api/timesheets/week/${nextWeekDate.toISOString().split('T')[0]}`,
+        { params: { tenantId: user.tenantId, employeeId } }
+      );
+      
+      if (response.data.success) {
+        if (response.data.timesheet) {
+          // Navigate to existing timesheet
+          navigate(`/${subdomain}/timesheets/submit/${response.data.timesheet.id}`);
+        } else {
+          // New week - create week string and load
+          const { weekStart, weekEnd } = response.data;
+          const weekValue = `${formatWeekDate(weekStart)} To ${formatWeekDate(weekEnd)}`;
+          await loadWeekTimesheet(weekValue);
+        }
+      }
+    } catch (error) {
+      console.error('Error navigating to next week:', error);
+      toast.error('Failed to load next week');
+    }
+  };
+
+  // Helper to format date for week display
+  const formatWeekDate = (dateStr) => {
+    const date = new Date(dateStr);
+    const day = date.getDate();
+    const monthNames = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+    const month = monthNames[date.getMonth()];
+    const year = date.getFullYear();
+    return `${day}-${month}-${year}`;
+  };
+
+  // Helper to parse week date string
+  const parseWeekDate = (dateStr) => {
+    const parts = dateStr.split("-");
+    const day = parseInt(parts[0]);
+    const monthNames = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+    const month = monthNames.indexOf(parts[1]);
+    const year = parseInt(parts[2]);
+    return new Date(year, month, day);
+  };
+
+  // Load timesheet for a specific week
+  const loadWeekTimesheet = async (weekValue) => {
+    if (!weekValue || !user?.tenantId) return;
+    
+    setLoading(true);
+    try {
+      // Parse week dates
+      const [startStr] = weekValue.split(" To ");
+      const startDate = parseWeekDate(startStr);
+      
+      // Get timesheet for this week
+      const employeeId = isEmployee() ? user.id : selectedEmployee;
+      if (!employeeId) {
+        toast.error("Please select an employee first");
+        return;
+      }
+      
+      const response = await axios.get(
+        `${API_BASE}/api/timesheets/week/${startDate.toISOString().split('T')[0]}`,
+        { params: { tenantId: user.tenantId, employeeId } }
+      );
+      
+      if (response.data.success) {
+        if (response.data.timesheet) {
+          // Navigate to existing timesheet
+          navigate(`/${subdomain}/timesheets/submit/${response.data.timesheet.id}`);
+        } else {
+          // New week - update selected week and clear form
+          setSelectedWeek(weekValue);
+          setWeek(weekValue);
+          setClientHours(
+            clientHours.map((client) => ({
+              ...client,
+              hours: Array(7).fill(0),
+            }))
+          );
+          setHolidayHours({
+            holiday: Array(7).fill(0),
+            timeOff: Array(7).fill(0),
+          });
+          setNotes("");
+          setUploadedFiles([]);
+          setAttachments([]);
+          setPreviewImages([]);
+          setIsReadOnly(false);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading week timesheet:', error);
+      toast.error('Failed to load week timesheet');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleWeekChange = async (selectedWeekValue) => {
     setSelectedWeek(selectedWeekValue);
     setWeek(selectedWeekValue);
+    await loadWeekTimesheet(selectedWeekValue);
 
     // Clear AI processed data when week changes
     setAiProcessedData(null);
@@ -473,22 +672,8 @@ const TimesheetSubmit = () => {
     );
     if (selectedWeekData && selectedWeekData.readonly) {
       setIsReadOnly(true);
-      // Load existing timesheet data for read-only view
-      // In a real app, this would fetch from API
     } else {
       setIsReadOnly(false);
-      // Reset form for new timesheet
-      setClientHours(
-        clientHours.map((client) => ({
-          ...client,
-          hours: Array(7).fill(0),
-        }))
-      );
-      setHolidayHours({
-        holiday: Array(7).fill(0),
-        timeOff: Array(7).fill(0),
-      });
-      setNotes("");
     }
   };
 
@@ -552,61 +737,63 @@ const TimesheetSubmit = () => {
   };
 
   const handleFiles = async (files) => {
-    const newAttachments = [];
-    const newPreviews = [];
-
-    Array.from(files).forEach((file) => {
+    const filesArray = Array.from(files);
+    
+    // Validate files first
+    for (const file of filesArray) {
       if (file.size > 10 * 1024 * 1024) {
-        // 10MB limit
-        toast.error("File size must be less than 10MB");
+        toast.error(`${file.name}: File size must be less than 10MB`);
         return;
       }
 
-      // Validate file type
       const allowedTypes = [
         "image/jpeg",
+        "image/jpg",
         "image/png",
+        "image/gif",
+        "image/webp",
         "image/heic",
         "application/pdf",
         "application/msword",
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "application/vnd.ms-excel",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "text/csv",
+        "text/plain",
       ];
+      
       if (!allowedTypes.includes(file.type)) {
-        toast.error(
-          "Invalid file type. Please upload images (JPG, PNG, HEIC) or documents (PDF, DOC, DOCX)."
-        );
+        toast.error(`${file.name}: Invalid file type. Allowed: images, PDF, Word, Excel, CSV, TXT`);
         return;
       }
+    }
 
-      newAttachments.push(file);
-
-      // Create preview for images
-      if (file.type.startsWith("image/")) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          newPreviews.push({
-            file: file.name,
-            url: e.target.result,
-            type: file.type,
-          });
-          setPreviewImages((prev) => [...prev, ...newPreviews]);
-        };
-        reader.readAsDataURL(file);
-      } else {
-        newPreviews.push({
-          file: file.name,
-          url: null,
-          type: file.type,
-        });
-        setPreviewImages((prev) => [...prev, ...newPreviews]);
-      }
-    });
-
-    setAttachments((prev) => [...prev, ...newAttachments]);
+    // If we have a timesheet ID, upload files to S3 immediately
+    if (weekId) {
+      await uploadFilesToS3(filesArray);
+    } else {
+      // Store files locally for upload when timesheet is created
+      setAttachments((prev) => [...prev, ...filesArray]);
+      
+      // Create previews for images
+      filesArray.forEach((file) => {
+        if (file.type.startsWith("image/")) {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            setPreviewImages((prev) => [...prev, {
+              file: file.name,
+              url: e.target.result,
+              type: file.type,
+            }]);
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+    }
 
     // Auto-convert to invoice if enabled and file is an image or document
-    if (autoConvertToInvoice && files.length > 0) {
-      const file = files[0]; // Process the first file
+    if (autoConvertToInvoice && filesArray.length > 0) {
+      const file = filesArray[0];
       if (
         file.type.startsWith("image/") ||
         file.type === "application/pdf" ||
@@ -615,6 +802,108 @@ const TimesheetSubmit = () => {
       ) {
         await processTimesheetAndConvertToInvoice(file);
       }
+    }
+  };
+
+  // Upload files to S3
+  const uploadFilesToS3 = async (files) => {
+    if (!weekId || !user?.tenantId) {
+      toast.error("Cannot upload files: Timesheet not found");
+      return;
+    }
+
+    for (const file of files) {
+      const fileId = `upload-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      setUploadingFiles((prev) => [...prev, { id: fileId, name: file.name, progress: 0 }]);
+
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const response = await axios.post(
+          `${API_BASE}/api/timesheets/${weekId}/upload?tenantId=${user.tenantId}`,
+          formData,
+          {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            },
+            onUploadProgress: (progressEvent) => {
+              const progress = Math.round(
+                (progressEvent.loaded * 100) / progressEvent.total
+              );
+              setUploadingFiles((prev) =>
+                prev.map((f) =>
+                  f.id === fileId ? { ...f, progress } : f
+                )
+              );
+            },
+          }
+        );
+
+        if (response.data.success) {
+          setUploadedFiles((prev) => [...prev, response.data.file]);
+          toast.success(`File "${file.name}" uploaded successfully`);
+        } else {
+          throw new Error(response.data.message || 'Upload failed');
+        }
+      } catch (error) {
+        console.error('Error uploading file:', error);
+        toast.error(`Failed to upload "${file.name}": ${error.response?.data?.message || error.message}`);
+      } finally {
+        setUploadingFiles((prev) => prev.filter((f) => f.id !== fileId));
+      }
+    }
+  };
+
+  // Download file from S3
+  const downloadFile = async (fileId, fileName) => {
+    if (!weekId || !user?.tenantId) {
+      toast.error("Cannot download file: Timesheet not found");
+      return;
+    }
+
+    try {
+      const response = await axios.get(
+        `${API_BASE}/api/timesheets/${weekId}/files/${fileId}/download?tenantId=${user.tenantId}`
+      );
+
+      if (response.data.success && response.data.downloadUrl) {
+        // Open download URL in new tab
+        window.open(response.data.downloadUrl, '_blank');
+      } else {
+        throw new Error('Failed to get download URL');
+      }
+    } catch (error) {
+      console.error('Error downloading file:', error);
+      toast.error(`Failed to download "${fileName}": ${error.response?.data?.message || error.message}`);
+    }
+  };
+
+  // Delete file from S3
+  const deleteFile = async (fileId, fileName) => {
+    if (!weekId || !user?.tenantId) {
+      toast.error("Cannot delete file: Timesheet not found");
+      return;
+    }
+
+    if (!window.confirm(`Are you sure you want to delete "${fileName}"?`)) {
+      return;
+    }
+
+    try {
+      const response = await axios.delete(
+        `${API_BASE}/api/timesheets/${weekId}/files/${fileId}?tenantId=${user.tenantId}`
+      );
+
+      if (response.data.success) {
+        setUploadedFiles((prev) => prev.filter((f) => f.id !== fileId));
+        toast.success(`File "${fileName}" deleted successfully`);
+      } else {
+        throw new Error(response.data.message || 'Delete failed');
+      }
+    } catch (error) {
+      console.error('Error deleting file:', error);
+      toast.error(`Failed to delete "${fileName}": ${error.response?.data?.message || error.message}`);
     }
   };
 
@@ -738,12 +1027,24 @@ const TimesheetSubmit = () => {
       const weekEnd = new Date(endStr).toISOString().split("T")[0];
 
       // Prepare submission data
+      // Validate clientId - must be valid UUID or null
+      let validClientId = null;
+      if (clientHours.length > 0 && clientHours[0].id) {
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        if (uuidRegex.test(clientHours[0].id)) {
+          validClientId = clientHours[0].id;
+        } else {
+          console.warn(`⚠️ Invalid clientId format: "${clientHours[0].id}". Setting to null.`);
+          validClientId = null;
+        }
+      }
+
       const submissionData = {
         tenantId: user.tenantId,
         employeeId: employeeId,
         weekStart: weekStart,
         weekEnd: weekEnd,
-        clientId: clientHours.length > 0 ? clientHours[0].id : null,
+        clientId: validClientId,
         reviewerId: selectedApprover,
         status: "submitted",
         totalHours: getGrandTotal(),
@@ -1047,7 +1348,17 @@ const TimesheetSubmit = () => {
       }
 
       // Use the matching client or extracted client name
-      const clientId = matchingClient?.id || "1";
+      // Validate clientId - must be valid UUID or null
+      let clientId = null;
+      if (matchingClient?.id) {
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        if (uuidRegex.test(matchingClient.id)) {
+          clientId = matchingClient.id;
+        } else {
+          console.warn(`⚠️ Invalid clientId format: "${matchingClient.id}". Setting to null.`);
+          clientId = null;
+        }
+      }
       const clientName =
         extractedClientName || matchingClient?.clientName || "Unknown Client";
       const hourlyRate = matchingClient?.hourlyRate || 125;
@@ -1363,20 +1674,30 @@ const TimesheetSubmit = () => {
                     <div className="form-group mb-4">
                       <label className="form-label">Select Week</label>
                       <div className="form-control-wrap">
-                        <select
-                          className="form-select timesheet-dropdown"
-                          value={selectedWeek}
-                          onChange={(e) => handleWeekChange(e.target.value)}
-                          disabled={false}
-                        >
-                          <option value="">Select a week...</option>
-                          {availableWeeks
-                            .sort((a, b) => {
-                              // Sort by date descending (current week first)
-                              const dateA = new Date(a.value.split(" To ")[0]);
-                              const dateB = new Date(b.value.split(" To ")[0]);
-                              return dateB - dateA;
-                            })
+                        <div className="input-group">
+                          <button
+                            type="button"
+                            className="btn btn-outline-secondary"
+                            onClick={navigateToPreviousWeek}
+                            disabled={!selectedWeek || loading}
+                            title="Previous Week"
+                          >
+                            <em className="icon ni ni-chevron-left"></em>
+                          </button>
+                          <select
+                            className="form-select timesheet-dropdown"
+                            value={selectedWeek}
+                            onChange={(e) => handleWeekChange(e.target.value)}
+                            disabled={false}
+                          >
+                            <option value="">Select a week...</option>
+                            {availableWeeks
+                              .sort((a, b) => {
+                                // Sort by date descending (current week first)
+                                const dateA = new Date(a.value.split(" To ")[0]);
+                                const dateB = new Date(b.value.split(" To ")[0]);
+                                return dateB - dateA;
+                              })
                             .map((week) => (
                               <option key={week.value} value={week.value}>
                                 {week.label}
@@ -1386,14 +1707,35 @@ const TimesheetSubmit = () => {
                               </option>
                             ))}
                         </select>
-                      </div>
-                      {isReadOnly && (
-                        <div className="form-note text-warning mt-2">
-                          <em className="icon ni ni-info"></em>
-                          This timesheet is read-only because the invoice has
-                          been raised.
+                          <button
+                            type="button"
+                            className="btn btn-outline-secondary"
+                            onClick={navigateToNextWeek}
+                            disabled={!selectedWeek || loading}
+                            title="Next Week"
+                          >
+                            <em className="icon ni ni-chevron-right"></em>
+                          </button>
                         </div>
-                      )}
+                      </div>
+                      <div className="d-flex justify-content-between align-items-center mt-2">
+                        <div className="form-note">
+                          <button
+                            type="button"
+                            className="btn btn-link btn-sm p-0"
+                            onClick={() => navigate(`/${subdomain}/timesheets/history`)}
+                          >
+                            <em className="icon ni ni-history me-1"></em>
+                            View History
+                          </button>
+                        </div>
+                        {isReadOnly && (
+                          <div className="form-note text-warning">
+                            <em className="icon ni ni-info"></em>
+                            This timesheet is read-only
+                          </div>
+                        )}
+                      </div>
                     </div>
 
                     {/* External Client File Upload */}
@@ -2195,9 +2537,86 @@ const TimesheetSubmit = () => {
                             </div>
                           )}
 
-                          {previewImages.length > 0 && (
+                          {/* Uploading files progress */}
+                          {uploadingFiles.length > 0 && (
                             <div className="attached-files mt-3">
-                              <h6 className="title mb-2">Attached Files</h6>
+                              <h6 className="title mb-2">Uploading Files</h6>
+                              {uploadingFiles.map((file) => (
+                                <div key={file.id} className="file-item mb-2 p-2 border rounded">
+                                  <div className="d-flex align-items-center justify-content-between">
+                                    <div className="d-flex align-items-center">
+                                      <em className="icon ni ni-file me-2"></em>
+                                      <span>{file.name}</span>
+                                    </div>
+                                    <div className="d-flex align-items-center">
+                                      <div className="progress me-2" style={{ width: '100px', height: '20px' }}>
+                                        <div
+                                          className="progress-bar"
+                                          role="progressbar"
+                                          style={{ width: `${file.progress}%` }}
+                                          aria-valuenow={file.progress}
+                                          aria-valuemin="0"
+                                          aria-valuemax="100"
+                                        >
+                                          {file.progress}%
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Uploaded files from S3 */}
+                          {uploadedFiles.length > 0 && (
+                            <div className="attached-files mt-3">
+                              <h6 className="title mb-2">Uploaded Files</h6>
+                              <div className="row g-3">
+                                {uploadedFiles.map((file) => (
+                                  <div key={file.id} className="col-6 col-sm-4 col-md-3 col-lg-2">
+                                    <div className="attached-file">
+                                      <div className="attached-file-icon">
+                                        <em className="icon ni ni-file"></em>
+                                      </div>
+                                      <div className="attached-file-info">
+                                        <span className="attached-file-name" title={file.originalName}>
+                                          {file.originalName.length > 15
+                                            ? file.originalName.substring(0, 12) + "..."
+                                            : file.originalName}
+                                        </span>
+                                        <div className="d-flex gap-1 mt-1">
+                                          <button
+                                            type="button"
+                                            className="btn btn-xs btn-outline-primary"
+                                            onClick={() => downloadFile(file.id, file.originalName)}
+                                            title="Download"
+                                          >
+                                            <em className="icon ni ni-download"></em>
+                                          </button>
+                                          {!isReadOnly && (
+                                            <button
+                                              type="button"
+                                              className="btn btn-xs btn-outline-danger"
+                                              onClick={() => deleteFile(file.id, file.originalName)}
+                                              title="Delete"
+                                            >
+                                              <em className="icon ni ni-trash"></em>
+                                            </button>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Local preview images (for files not yet uploaded) */}
+                          {previewImages.length > 0 && attachments.length > 0 && (
+                            <div className="attached-files mt-3">
+                              <h6 className="title mb-2">Files to Upload</h6>
                               <div className="row g-3">
                                 {previewImages.map((preview, index) => (
                                   <div

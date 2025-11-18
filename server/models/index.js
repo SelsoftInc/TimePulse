@@ -38,7 +38,14 @@ const sequelize = new Sequelize(
   dbConfig.database,
   dbConfig.username,
   dbConfig.password,
-  dbConfig
+  {
+    ...dbConfig,
+    // Ensure Sequelize uses field names correctly
+    define: {
+      underscored: false, // We use explicit field mappings
+      freezeTableName: true, // Don't pluralize table names
+    },
+  }
 );
 
 // Define Models
@@ -750,12 +757,12 @@ models.Timesheet = sequelize.define(
     weekStart: {
       type: DataTypes.DATEONLY,
       allowNull: false,
-      field: "week_start",
+      field: "week_start_date",
     },
     weekEnd: {
       type: DataTypes.DATEONLY,
       allowNull: false,
-      field: "week_end",
+      field: "week_end_date",
     },
     timeEntries: {
       // Array of time entries
@@ -831,8 +838,112 @@ models.Timesheet = sequelize.define(
     indexes: [
       {
         unique: true,
-        fields: ["tenant_id", "employee_id", "week_start", "week_end"],
+        fields: ["tenant_id", "employee_id", "week_start_date", "week_end_date"],
       },
+    ],
+  }
+);
+
+// =============================================
+// TIMESHEET AUDIT MODEL
+// =============================================
+models.TimesheetAudit = sequelize.define(
+  "TimesheetAudit",
+  {
+    id: {
+      type: DataTypes.UUID,
+      defaultValue: DataTypes.UUIDV4,
+      primaryKey: true,
+    },
+    timesheetId: {
+      type: DataTypes.UUID,
+      allowNull: false,
+      field: "timesheet_id",
+      references: { model: "timesheets", key: "id" },
+    },
+    action: {
+      type: DataTypes.ENUM(
+        "create",
+        "update",
+        "delete",
+        "submit",
+        "approve",
+        "reject",
+        "draft_save"
+      ),
+      allowNull: false,
+    },
+    changedBy: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      field: "changed_by",
+      references: { model: "users", key: "id" },
+    },
+    changedByEmail: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+      field: "changed_by_email",
+    },
+    changedAt: {
+      type: DataTypes.DATE,
+      allowNull: false,
+      defaultValue: DataTypes.NOW,
+      field: "changed_at",
+    },
+    oldValues: {
+      type: DataTypes.JSONB,
+      defaultValue: {},
+      field: "old_values",
+    },
+    newValues: {
+      type: DataTypes.JSONB,
+      defaultValue: {},
+      field: "new_values",
+    },
+    changedFields: {
+      type: DataTypes.ARRAY(DataTypes.TEXT),
+      defaultValue: [],
+      field: "changed_fields",
+    },
+    ipAddress: {
+      type: DataTypes.STRING(45),
+      allowNull: true,
+      field: "ip_address",
+    },
+    userAgent: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+      field: "user_agent",
+    },
+    metadata: {
+      type: DataTypes.JSONB,
+      defaultValue: {},
+    },
+    tenantId: {
+      type: DataTypes.UUID,
+      allowNull: false,
+      field: "tenant_id",
+      references: { model: "tenants", key: "id" },
+    },
+    employeeId: {
+      type: DataTypes.UUID,
+      allowNull: false,
+      field: "employee_id",
+      references: { model: "employees", key: "id" },
+    },
+  },
+  {
+    tableName: "timesheet_audit",
+    timestamps: false, // We use changed_at instead
+    indexes: [
+      { fields: ["timesheet_id"] },
+      { fields: ["tenant_id"] },
+      { fields: ["employee_id"] },
+      { fields: ["changed_by"] },
+      { fields: ["changed_at"] },
+      { fields: ["action"] },
+      { fields: ["tenant_id", "employee_id"] },
+      { fields: ["timesheet_id", "action", "changed_at"] },
     ],
   }
 );
@@ -1127,6 +1238,28 @@ models.Invoice.belongsTo(models.User, {
 models.Invoice.belongsTo(models.User, {
   foreignKey: "approvedBy",
   as: "approver",
+});
+
+// Timesheet Audit associations
+models.Timesheet.hasMany(models.TimesheetAudit, {
+  foreignKey: "timesheetId",
+  as: "auditLogs",
+});
+models.TimesheetAudit.belongsTo(models.Timesheet, {
+  foreignKey: "timesheetId",
+  as: "timesheet",
+});
+models.TimesheetAudit.belongsTo(models.User, {
+  foreignKey: "changedBy",
+  as: "changedByUser",
+});
+models.TimesheetAudit.belongsTo(models.Tenant, {
+  foreignKey: "tenantId",
+  as: "tenant",
+});
+models.TimesheetAudit.belongsTo(models.Employee, {
+  foreignKey: "employeeId",
+  as: "employee",
 });
 
 // =============================================

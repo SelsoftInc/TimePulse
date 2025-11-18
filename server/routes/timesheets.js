@@ -8,6 +8,8 @@ const { models } = require("../models");
 const { Op } = require("sequelize");
 const NotificationService = require("../services/NotificationService");
 const EmailService = require("../services/EmailService");
+const TimesheetAuditService = require("../services/TimesheetAuditService");
+const { getAuditInfo } = require("../middleware/auditHelper");
 const multer = require("multer");
 const S3Service = require("../services/S3Service");
 const { S3_CONFIG } = require("../config/aws");
@@ -730,6 +732,16 @@ router.post("/submit", async (req, res, next) => {
     });
 
     if (existing) {
+      // Store old values for audit
+      const oldValues = {
+        status: existing.status,
+        totalHours: existing.totalHours,
+        notes: existing.notes,
+        dailyHours: existing.dailyHours,
+        clientId: existing.clientId,
+        reviewerId: existing.reviewerId,
+      };
+
       // Update existing timesheet
       existing.clientId = sanitizedClientId !== null ? sanitizedClientId : existing.clientId;
       existing.reviewerId = reviewerId || existing.reviewerId;
@@ -742,6 +754,34 @@ router.post("/submit", async (req, res, next) => {
       await existing.save();
 
       console.log("✅ Updated existing timesheet:", existing.id);
+
+      // Log audit entry
+      const auditInfo = getAuditInfo(req);
+      const changedFields = [];
+      if (oldValues.status !== existing.status) changedFields.push("status");
+      if (oldValues.totalHours !== existing.totalHours) changedFields.push("totalHours");
+      if (oldValues.notes !== existing.notes) changedFields.push("notes");
+      if (JSON.stringify(oldValues.dailyHours) !== JSON.stringify(existing.dailyHours)) changedFields.push("dailyHours");
+      if (oldValues.clientId !== existing.clientId) changedFields.push("clientId");
+      if (oldValues.reviewerId !== existing.reviewerId) changedFields.push("reviewerId");
+
+      await TimesheetAuditService.logChange({
+        timesheetId: existing.id,
+        action: status === "submitted" ? "submit" : "update",
+        oldValues,
+        newValues: {
+          status: existing.status,
+          totalHours: existing.totalHours,
+          notes: existing.notes,
+          dailyHours: existing.dailyHours,
+          clientId: existing.clientId,
+          reviewerId: existing.reviewerId,
+        },
+        changedFields,
+        ...auditInfo,
+        tenantId,
+        employeeId,
+      });
 
       return res.json({
         success: true,
@@ -774,6 +814,28 @@ router.post("/submit", async (req, res, next) => {
     });
 
     console.log("✅ Created new timesheet:", newTimesheet.id);
+
+    // Log audit entry for creation
+    const auditInfo = getAuditInfo(req);
+    await TimesheetAuditService.logChange({
+      timesheetId: newTimesheet.id,
+      action: status === "submitted" ? "submit" : "create",
+      oldValues: {},
+      newValues: {
+        status: newTimesheet.status,
+        totalHours: newTimesheet.totalHours,
+        notes: newTimesheet.notes,
+        dailyHours: newTimesheet.dailyHours,
+        clientId: newTimesheet.clientId,
+        reviewerId: newTimesheet.reviewerId,
+        weekStart: newTimesheet.weekStart,
+        weekEnd: newTimesheet.weekEnd,
+      },
+      changedFields: ["status", "totalHours", "notes", "dailyHours", "clientId", "reviewerId", "weekStart", "weekEnd"],
+      ...auditInfo,
+      tenantId,
+      employeeId,
+    });
 
     // Create notification for timesheet submission
     try {
@@ -1053,6 +1115,18 @@ router.put("/:id", async (req, res, next) => {
         .status(404)
         .json({ success: false, message: "Timesheet not found" });
 
+    // Store old values for audit
+    const oldValues = {
+      status: row.status,
+      totalHours: row.totalHours,
+      notes: row.notes,
+      dailyHours: row.dailyHours,
+      clientId: row.clientId,
+      reviewerId: row.reviewerId,
+      approvedBy: row.approvedBy,
+      rejectionReason: row.rejectionReason,
+    };
+
     // Track if status is changing to approved or rejected
     const wasNotApproved = row.status !== "approved";
     const wasNotRejected = row.status !== "rejected";
@@ -1093,6 +1167,49 @@ router.put("/:id", async (req, res, next) => {
     if (reviewerId !== undefined) row.reviewerId = reviewerId || null;
 
     await row.save();
+
+    // Log audit entry
+    const auditInfo = getAuditInfo(req);
+    const changedFields = [];
+    if (oldValues.status !== row.status) changedFields.push("status");
+    if (oldValues.totalHours !== row.totalHours) changedFields.push("totalHours");
+    if (oldValues.notes !== row.notes) changedFields.push("notes");
+    if (JSON.stringify(oldValues.dailyHours) !== JSON.stringify(row.dailyHours)) changedFields.push("dailyHours");
+    if (oldValues.clientId !== row.clientId) changedFields.push("clientId");
+    if (oldValues.reviewerId !== row.reviewerId) changedFields.push("reviewerId");
+    if (oldValues.approvedBy !== row.approvedBy) changedFields.push("approvedBy");
+    if (oldValues.rejectionReason !== row.rejectionReason) changedFields.push("rejectionReason");
+
+    let auditAction = "update";
+    if (isBeingApproved) auditAction = "approve";
+    else if (isBeingRejected) auditAction = "reject";
+    else if (status === "submitted" && previousStatus !== "submitted") auditAction = "submit";
+    else if (status === "draft" && previousStatus !== "draft") auditAction = "draft_save";
+
+    await TimesheetAuditService.logChange({
+      timesheetId: row.id,
+      action: auditAction,
+      oldValues,
+      newValues: {
+        status: row.status,
+        totalHours: row.totalHours,
+        notes: row.notes,
+        dailyHours: row.dailyHours,
+        clientId: row.clientId,
+        reviewerId: row.reviewerId,
+        approvedBy: row.approvedBy,
+        rejectionReason: row.rejectionReason,
+      },
+      changedFields,
+      ...auditInfo,
+      tenantId: row.tenantId,
+      employeeId: row.employeeId,
+      metadata: {
+        previousStatus,
+        newStatus: row.status,
+        ...(rejectionReason && { rejectionReason }),
+      },
+    });
 
     // Send email notifications for approval/rejection
     try {
@@ -2532,6 +2649,110 @@ router.get("/weeks/available", async (req, res, next) => {
     });
   } catch (err) {
     next(err);
+  }
+});
+
+// =============================================
+// AUDIT LOG ENDPOINTS
+// =============================================
+
+// GET /api/timesheets/:id/audit - Get audit history for a specific timesheet
+router.get("/:id/audit", async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { action, limit = 100, offset = 0 } = req.query;
+
+    const timesheet = await models.Timesheet.findByPk(id);
+    if (!timesheet) {
+      return res.status(404).json({
+        success: false,
+        message: "Timesheet not found",
+      });
+    }
+
+    const auditLogs = await TimesheetAuditService.getAuditHistory(id, {
+      action: action || null,
+      limit: parseInt(limit),
+      offset: parseInt(offset),
+    });
+
+    return res.json({
+      success: true,
+      timesheetId: id,
+      auditLogs,
+      count: auditLogs.length,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// GET /api/timesheets/audit/employee/:employeeId - Get audit history for an employee
+router.get("/audit/employee/:employeeId", async (req, res, next) => {
+  try {
+    const { employeeId } = req.params;
+    const { tenantId, action, fromDate, toDate, limit = 100, offset = 0 } = req.query;
+
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        message: "tenantId is required",
+      });
+    }
+
+    const auditLogs = await TimesheetAuditService.getEmployeeAuditHistory(
+      employeeId,
+      tenantId,
+      {
+        action: action || null,
+        fromDate: fromDate || null,
+        toDate: toDate || null,
+        limit: parseInt(limit),
+        offset: parseInt(offset),
+      }
+    );
+
+    return res.json({
+      success: true,
+      employeeId,
+      tenantId,
+      auditLogs,
+      count: auditLogs.length,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// GET /api/timesheets/audit/tenant - Get audit history for a tenant
+router.get("/audit/tenant", async (req, res, next) => {
+  try {
+    const { tenantId, action, employeeId, fromDate, toDate, limit = 100, offset = 0 } = req.query;
+
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        message: "tenantId is required",
+      });
+    }
+
+    const auditLogs = await TimesheetAuditService.getTenantAuditHistory(tenantId, {
+      action: action || null,
+      employeeId: employeeId || null,
+      fromDate: fromDate || null,
+      toDate: toDate || null,
+      limit: parseInt(limit),
+      offset: parseInt(offset),
+    });
+
+    return res.json({
+      success: true,
+      tenantId,
+      auditLogs,
+      count: auditLogs.length,
+    });
+  } catch (error) {
+    next(error);
   }
 });
 

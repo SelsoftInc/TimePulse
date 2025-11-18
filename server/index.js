@@ -117,6 +117,8 @@ app.get("/", (req, res) => {
 
 // API Routes
 console.log('📍 Loading timesheets routes...');
+const migrationsRoutes = require('./routes/migrations');
+app.use('/api/migrations', migrationsRoutes);
 app.use("/api/timesheets", timesheetRoutes);
 console.log('📍 Loading invoices routes...');
 app.use("/api/invoices", invoiceRoutes);

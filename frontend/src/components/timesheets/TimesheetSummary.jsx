@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { PERMISSIONS } from "../../utils/roles";
 import PermissionGuard from "../common/PermissionGuard";
 import DataGridFilter from "../common/DataGridFilter";
@@ -18,6 +18,7 @@ import "../common/Pagination.css";
 const TimesheetSummary = () => {
   const { subdomain } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const [timesheets, setTimesheets] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -220,6 +221,16 @@ const TimesheetSummary = () => {
       loadTimesheetData();
     }
   }, [user, loadTimesheetData]);
+
+  // Reload data when navigating from submit page with refresh flag
+  useEffect(() => {
+    if (location.state?.refresh && user?.tenantId) {
+      console.log('🔄 Refresh requested from navigation, reloading timesheet data...');
+      loadTimesheetData();
+      // Clear the state to prevent re-fetching on subsequent renders
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state, user?.tenantId, loadTimesheetData]);
 
   // Reload data when page becomes visible (e.g., returning from edit page)
   useEffect(() => {

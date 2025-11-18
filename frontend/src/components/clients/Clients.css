@@ -195,3 +195,216 @@
 .btn-create-client {
   margin-bottom: 1rem;
 }
+
+/* ========================================
+   COMPREHENSIVE RESPONSIVE DESIGN
+   ======================================== */
+
+/* Ensure table container allows horizontal scrolling on mobile */
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Desktop Large (>1200px) - Default styles above */
+
+/* Desktop (992px - 1199px) */
+@media (max-width: 1199px) {
+  .table-clients thead th,
+  .table-clients tbody td {
+    padding: 10px 12px;
+    font-size: 0.875rem;
+  }
+  
+  .table-clients thead th {
+    font-size: 0.8125rem;
+  }
+}
+
+/* Tablet (768px - 991px) */
+@media (max-width: 991px) {
+  /* Enable horizontal scrolling */
+  .table-responsive {
+    overflow-x: auto !important;
+    margin-bottom: 16px;
+  }
+  
+  /* Set minimum width for table to force scrolling */
+  .table-clients {
+    min-width: 900px;
+  }
+  
+  .table-clients thead th,
+  .table-clients tbody td {
+    padding: 10px;
+    font-size: 0.8125rem;
+  }
+  
+  .table-clients thead th {
+    font-size: 0.75rem;
+  }
+  
+  .btn-icon {
+    width: 28px;
+    height: 28px;
+  }
+}
+
+/* Mobile (481px - 767px) */
+@media (max-width: 767px) {
+  /* Container adjustments */
+  .clients-container {
+    padding: 12px;
+    margin-top: 60px; /* Account for fixed header */
+  }
+  
+  .card {
+    border-radius: 10px;
+  }
+  
+  .card-inner {
+    padding: 0;
+  }
+  
+  /* Enable horizontal scrolling */
+  .table-responsive {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    margin: 0;
+    border-radius: 8px;
+  }
+  
+  /* Force minimum width to enable scrolling */
+  .table-clients {
+    min-width: 800px !important;
+    width: 800px !important;
+  }
+  
+  /* Compact table cells */
+  .table-clients thead th {
+    padding: 12px 10px !important;
+    font-size: 0.6875rem !important;
+  }
+  
+  .table-clients tbody td {
+    padding: 12px 10px !important;
+    font-size: 0.8125rem !important;
+  }
+  
+  /* Client name */
+  .table-clients .client-name {
+    font-size: 0.8125rem !important;
+  }
+  
+  /* Badges */
+  .badge {
+    font-size: 70%;
+    padding: 0.2em 0.6em;
+  }
+  
+  /* Action buttons */
+  .btn-icon {
+    width: 26px;
+    height: 26px;
+    font-size: 0.875rem;
+  }
+  
+  /* Dropdown menu */
+  .dropdown-menu {
+    min-width: 160px;
+    font-size: 12px;
+  }
+  
+  .dropdown-item {
+    padding: 7px 12px;
+    font-size: 12px;
+  }
+  
+  /* Create button */
+  .btn-create-client {
+    width: 100%;
+    margin-bottom: 12px;
+  }
+}
+
+/* Small Mobile (≤480px) */
+@media (max-width: 480px) {
+  /* Container */
+  .clients-container {
+    padding: 10px;
+  }
+  
+  .card {
+    border-radius: 8px;
+  }
+  
+  /* Table scrolling */
+  .table-responsive {
+    border-radius: 6px;
+  }
+  
+  /* Force minimum width for scrolling */
+  .table-clients {
+    min-width: 750px !important;
+    width: 750px !important;
+  }
+  
+  /* Ultra-compact cells */
+  .table-clients thead th {
+    padding: 10px 8px !important;
+    font-size: 0.625rem !important;
+  }
+  
+  .table-clients tbody td {
+    padding: 10px 8px !important;
+    font-size: 0.75rem !important;
+  }
+  
+  /* Client name */
+  .table-clients .client-name {
+    font-size: 0.75rem !important;
+  }
+  
+  /* Badges */
+  .badge {
+    font-size: 65%;
+    padding: 0.15em 0.5em;
+  }
+  
+  /* Action buttons */
+  .btn-icon {
+    width: 24px;
+    height: 24px;
+    font-size: 0.8125rem;
+  }
+  
+  /* Dropdown */
+  .dropdown-menu {
+    min-width: 140px;
+  }
+  
+  .dropdown-item {
+    padding: 6px 10px;
+    font-size: 11px;
+  }
+  
+  .dropdown-item i {
+    width: 16px;
+    font-size: 0.875rem;
+  }
+}
+
+/* Landscape mode for mobile */
+@media (max-width: 767px) and (orientation: landscape) {
+  .table-clients {
+    min-width: 700px !important;
+  }
+}
+
+/* Dark mode responsive adjustments */
+@media (max-width: 767px) {
+  .dark-mode .table-clients tbody tr:hover:not(.dropdown-open) {
+    background-color: #2e3a59;
+  }
+}

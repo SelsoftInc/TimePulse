@@ -52,32 +52,96 @@
   font-size: 24px;
 }
 
+/* Mobile overlay for sidebar */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.sidebar-overlay.active {
+  display: block;
+  opacity: 1;
+}
+
 /* Responsive sidebar styles */
+@media (max-width: 1199px) {
+  .app-sidebar {
+    width: 220px;
+  }
+  
+  .app-sidebar.collapsed {
+    width: 70px;
+  }
+}
+
 @media (max-width: 991px) {
   .app-sidebar {
     z-index: 1001;
+    width: 260px;
+    left: -260px;
+    top: 60px;
+    height: calc(100vh - 60px);
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+  }
+  
+  .app-sidebar.mobile-visible {
+    left: 0;
+  }
+  
+  .app-sidebar.collapsed {
+    width: 260px;
+    left: -260px;
+  }
+  
+  .app-sidebar.collapsed.mobile-visible {
+    left: 0;
+    width: 260px;
+  }
+  
+  /* Always show full sidebar on mobile when visible */
+  .app-sidebar.mobile-visible .sidebar-text {
+    display: inline !important;
+  }
+  
+  .app-sidebar.mobile-visible .sidebar-icon {
+    margin-right: 15px !important;
   }
 }
 
 @media (max-width: 767px) {
   .app-sidebar {
-    width: 240px;
-    left: -240px;
-    top: 60px;
-    height: calc(100vh - 60px);
+    width: 280px;
+    left: -280px;
+    padding-top: 0;
   }
-
-  .app-sidebar.mobile-visible {
-    left: 0;
-  }
-
+  
   .app-sidebar.collapsed {
-    width: 240px;
-    left: -240px;
+    width: 280px;
+    left: -280px;
   }
+  
+  .sidebar-header {
+    padding: 15px;
+  }
+}
 
-  .app-sidebar.collapsed.mobile-visible {
-    left: 0;
+@media (max-width: 480px) {
+  .app-sidebar {
+    width: 100%;
+    left: -100%;
+  }
+  
+  .app-sidebar.collapsed {
+    width: 100%;
+    left: -100%;
   }
 }
 
@@ -156,6 +220,25 @@
 .sidebar-text {
   font-size: 14px;
   font-weight: 500 !important;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-/* Removed old footer since collapse button moved to top */
+/* Scrollbar styling for sidebar */
+.sidebar-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar-content::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.sidebar-content::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+.sidebar-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}

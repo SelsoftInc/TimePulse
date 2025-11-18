@@ -12,7 +12,7 @@ const LeaveManagement = () => {
   const { toast } = useToast();
 
   const userRole = user?.role || "employee";
-  const isApprover = userRole === "approver" || userRole === "admin";
+  const isApprover = userRole === "admin" || userRole === "manager" || userRole === "hr";
   const isAdmin = userRole === "admin";
   const isOwner = isAdmin; // Owners are admins who don't need personal leave balance
   const [loading, setLoading] = useState(true);
@@ -79,6 +79,12 @@ const LeaveManagement = () => {
         }
       );
 
+      if (!balanceResponse.ok) {
+        console.error('❌ Balance API error:', balanceResponse.status, balanceResponse.statusText);
+        const errorText = await balanceResponse.text();
+        console.error('❌ Balance error details:', errorText);
+      }
+      
       const balanceData = balanceResponse.ok
         ? await balanceResponse.json()
         : { balance: {} };
@@ -89,10 +95,19 @@ const LeaveManagement = () => {
         ? await pendingResponse.json()
         : { requests: [] };
 
+      console.log('📦 Raw balance data:', balanceData);
+      console.log('📦 Balance object:', balanceData.balance);
+
       setLeaveData({
         balance: balanceData.balance || {},
         history: historyData.requests || [],
         pending: pendingData.requests || [],
+      });
+      
+      console.log('✅ Leave data set:', {
+        balanceKeys: Object.keys(balanceData.balance || {}),
+        historyCount: historyData.requests?.length || 0,
+        pendingCount: pendingData.requests?.length || 0
       });
     } catch (error) {
       console.error("Error fetching leave data:", error);
@@ -117,10 +132,13 @@ const LeaveManagement = () => {
 
       if (response.ok) {
         const data = await response.json();
+        console.log('📋 Fetched approvers:', data.approvers);
         setApprovers(data.approvers || []);
+      } else {
+        console.error('❌ Failed to fetch approvers:', response.status);
       }
     } catch (error) {
-      console.error("Error fetching approvers:", error);
+      console.error("❌ Error fetching approvers:", error);
     }
   }, [user?.tenantId]);
 
@@ -269,8 +287,13 @@ const LeaveManagement = () => {
       const result = await response.json();
       console.log("✅ Success response:", result);
 
-      // Refresh leave data
+      // Show success toast first
+      toast.success("Leave request submitted successfully");
+
+      // Refresh leave data to update balance and tables
+      console.log("🔄 Refreshing leave data...");
       await fetchLeaveData();
+      console.log("✅ Leave data refreshed");
 
       // Reset form
       setFormData({
@@ -282,8 +305,9 @@ const LeaveManagement = () => {
         approverId: "",
       });
 
-      console.log("🎉 Showing success toast");
-      toast.success("Leave request submitted successfully");
+      // Reset file input
+      const fileInput = document.querySelector('input[type="file"]');
+      if (fileInput) fileInput.value = '';
     } catch (error) {
       console.error("❌ Error submitting leave request:", error);
       console.log("🔴 Showing error toast");
@@ -317,29 +341,6 @@ const LeaveManagement = () => {
 
       // Refresh leave data after successful cancellation
       await fetchLeaveData();
-      toast.success("Leave request cancelled successfully");
-
-      // Find the request for balance update
-      const request = leaveData.pending.find((req) => req.id === id);
-
-      if (!request) return;
-
-      // Update state
-      setLeaveData((prev) => ({
-        ...prev,
-        pending: prev.pending.filter((req) => req.id !== id),
-        balance: {
-          ...prev.balance,
-          [request.type.toLowerCase()]: {
-            ...prev.balance[request.type.toLowerCase()],
-            pending:
-              prev.balance[request.type.toLowerCase()].pending - request.days,
-            remaining:
-              prev.balance[request.type.toLowerCase()].remaining + request.days,
-          },
-        },
-      }));
-
       toast.success("Leave request cancelled successfully");
     } catch (error) {
       console.error("Error cancelling leave request:", error);
@@ -464,14 +465,14 @@ const LeaveManagement = () => {
                                             }%`,
                                           }}
                                         ></div>
-                                        <div
+                                        {/* <div
                                           className="progress-bar bg-warning"
                                           style={{
                                             width: `${
                                               (totalPending / totalDays) * 100
                                             }%`,
                                           }}
-                                        ></div>
+                                        ></div> */}
                                       </div>
                                       <div className="d-flex justify-content-between mt-2">
                                         <small className="text-muted">
@@ -480,11 +481,11 @@ const LeaveManagement = () => {
                                           </span>{" "}
                                           used
                                         </small>
-                                        {totalPending > 0 && (
+                                        {/* {totalPending > 0 && (
                                           <small className="text-warning fw-semibold">
-                                            {Math.round(totalPending)} pending
+                                            {Math.round(totalPending)} pending approvals
                                           </small>
-                                        )}
+                                        )} */}
                                         <small className="text-muted">
                                           Total: {totalDays} days
                                         </small>
@@ -533,7 +534,7 @@ const LeaveManagement = () => {
                                               }%`,
                                             }}
                                           ></div>
-                                          <div
+                                          {/* <div
                                             className="progress-bar bg-warning"
                                             style={{
                                               width: `${
@@ -542,7 +543,7 @@ const LeaveManagement = () => {
                                                 100
                                               }%`,
                                             }}
-                                          ></div>
+                                          ></div> */}
                                         </div>
                                         <div className="d-flex justify-content-between mt-2">
                                           <small className="text-muted">
@@ -551,12 +552,12 @@ const LeaveManagement = () => {
                                             </span>{" "}
                                             used
                                           </small>
-                                          {vacationData.pending > 0 && (
+                                          {/* {vacationData.pending > 0 && (
                                             <small className="text-warning fw-semibold">
                                               {Math.round(vacationData.pending)}{" "}
-                                              pending
+                                              pending approvals
                                             </small>
-                                          )}
+                                          )} */}
                                           <small className="text-muted">
                                             Total: {vacationData.total} days
                                           </small>
@@ -603,7 +604,7 @@ const LeaveManagement = () => {
                                               }%`,
                                             }}
                                           ></div>
-                                          <div
+                                          {/* <div
                                             className="progress-bar bg-warning"
                                             style={{
                                               width: `${
@@ -612,7 +613,7 @@ const LeaveManagement = () => {
                                                 100
                                               }%`,
                                             }}
-                                          ></div>
+                                          ></div> */}
                                         </div>
                                         <div className="d-flex justify-content-between mt-2">
                                           <small className="text-muted">
@@ -621,12 +622,12 @@ const LeaveManagement = () => {
                                             </span>{" "}
                                             used
                                           </small>
-                                          {sickData.pending > 0 && (
+                                          {/* {sickData.pending > 0 && (
                                             <small className="text-warning fw-semibold">
                                               {Math.round(sickData.pending)}{" "}
-                                              pending
+                                              pending approvals
                                             </small>
-                                          )}
+                                          )} */}
                                           <small className="text-muted">
                                             Total: {sickData.total} days
                                           </small>
@@ -705,7 +706,7 @@ const LeaveManagement = () => {
                                 />
                               </div>
                             </div>
-                            {allRequests.length > 0 && (
+                            {/* {allRequests.length > 0 && (
                               <div className="col-12">
                                 <div className="form-note">
                                   <strong>Existing Leave Requests:</strong>
@@ -723,7 +724,7 @@ const LeaveManagement = () => {
                                   </ul>
                                 </div>
                               </div>
-                            )}
+                            )} */}
                             <div className="col-12">
                               <div className="form-group">
                                 <label className="form-label">Approver *</label>
@@ -735,15 +736,24 @@ const LeaveManagement = () => {
                                   required
                                 >
                                   <option value="">Select Approver</option>
-                                  {approvers.map((approver) => (
-                                    <option
-                                      key={approver.id}
-                                      value={approver.id}
-                                    >
-                                      {approver.name || approver.email}
-                                    </option>
-                                  ))}
+                                  {approvers.length === 0 ? (
+                                    <option value="" disabled>No approvers available</option>
+                                  ) : (
+                                    approvers.map((approver) => (
+                                      <option
+                                        key={approver.id}
+                                        value={approver.id}
+                                      >
+                                        {approver.name} ({approver.role === 'admin' ? 'Admin' : approver.role === 'manager' ? 'Manager' : approver.role === 'hr' ? 'HR' : 'Approver'})
+                                      </option>
+                                    ))
+                                  )}
                                 </select>
+                                {approvers.length === 0 && (
+                                  <div className="form-note text-danger">
+                                    <small>No approvers found. Please contact your administrator.</small>
+                                  </div>
+                                )}
                               </div>
                             </div>
                             <div className="col-12">

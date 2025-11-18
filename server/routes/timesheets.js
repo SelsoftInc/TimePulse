@@ -581,6 +581,8 @@ router.get("/pending-approval", async (req, res, next) => {
         totalTimeHours: Number(ts.totalHours).toFixed(2),
         attachments: attachments,
         notes: ts.notes || "",
+        overtimeComment: ts.overtimeComment || null,
+        overtimeDays: ts.overtimeDays || null,
         submittedDate: ts.submittedAt
           ? new Date(ts.submittedAt).toLocaleDateString("en-US", {
               day: "2-digit",
@@ -694,9 +696,19 @@ router.post("/submit", async (req, res, next) => {
       totalHours,
       notes,
       dailyHours,
+      overtimeComment,
+      overtimeDays,
     } = req.body;
 
     console.log("📥 Received timesheet submission:", req.body);
+    
+    // Log overtime information if present
+    if (overtimeComment) {
+      console.log("⏰ Overtime detected:", {
+        days: overtimeDays,
+        comment: overtimeComment
+      });
+    }
 
     // Validate required fields
     if (!tenantId || !employeeId || !weekStart || !weekEnd) {
@@ -749,6 +761,8 @@ router.post("/submit", async (req, res, next) => {
       existing.totalHours = totalHours || 0;
       existing.notes = notes || existing.notes;
       existing.dailyHours = dailyHours || existing.dailyHours;
+      existing.overtimeComment = overtimeComment || existing.overtimeComment;
+      existing.overtimeDays = overtimeDays || existing.overtimeDays;
       existing.submittedAt = new Date();
 
       await existing.save();
@@ -810,6 +824,8 @@ router.post("/submit", async (req, res, next) => {
       totalHours: totalHours || 0,
       status: status || "submitted",
       notes: notes || "",
+      overtimeComment: overtimeComment || null,
+      overtimeDays: overtimeDays || null,
       submittedAt: new Date(),
     });
 

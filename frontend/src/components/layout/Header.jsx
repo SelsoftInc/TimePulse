@@ -1,6 +1,6 @@
 // src/components/layout/Header.jsx
 import React, { useState, useEffect } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { API_BASE } from "../../config/api";
 import { useTheme } from "../../contexts/ThemeContext";
@@ -158,6 +158,16 @@ const Header = ({ toggleSidebar }) => {
     <header className="nk-header">
       <div className="container-fluid">
         <div className="nk-header-wrap">
+          {/* Mobile menu toggle - MUST BE FIRST */}
+          <button
+            className="mobile-menu-toggle"
+            onClick={toggleSidebar}
+            aria-label="Toggle Menu"
+            title="Toggle Menu"
+          >
+            <i className="fas fa-bars"></i>
+          </button>
+          
           {/* Brand logo and name */}
           <div
             className="app-brand"
@@ -179,16 +189,6 @@ const Header = ({ toggleSidebar }) => {
               }
               title="Go to Employee Dashboard"
             />
-          </div>
-          {/* Mobile menu toggle */}
-          <div className="d-xl-none mr-3">
-            <button
-              className="btn btn-icon btn-sm btn-light"
-              onClick={toggleSidebar}
-              aria-label="Toggle Sidebar"
-            >
-              <i className="fas fa-bars"></i>
-            </button>
           </div>
 
           {/* Right side tools */}

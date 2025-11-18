@@ -12,6 +12,7 @@ import {
 } from "../../services/timesheetExtractor";
 import { API_BASE } from "../../config/api";
 import axios from "axios";
+import OvertimeConfirmationModal from "./OvertimeConfirmationModal";
 import "./Timesheet.css";
 
 const TimesheetSubmit = () => {
@@ -64,6 +65,15 @@ const TimesheetSubmit = () => {
 
   // External timesheet file state (for external clients)
   const [externalTimesheetFile, setExternalTimesheetFile] = useState(null);
+
+  // Overtime confirmation state
+  const [showOvertimeModal, setShowOvertimeModal] = useState(false);
+  const [overtimeDays, setOvertimeDays] = useState([]);
+  const [overtimeComment, setOvertimeComment] = useState("");
+
+  // Camera capture state
+  const [showCameraModal, setShowCameraModal] = useState(false);
+  const [cameraStream, setCameraStream] = useState(null);
 
   // Function to determine current client type based on clients with hours
   const getCurrentClientType = () => {
@@ -966,11 +976,46 @@ const TimesheetSubmit = () => {
     }
   };
 
+  // Check for overtime (more than 8 hours per day)
+  const checkForOvertime = () => {
+    const dayNames = ['Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+    const overtimeDaysDetected = [];
+
+    // Calculate daily totals
+    const dailyTotals = {
+      sat: clientHours.reduce((sum, c) => sum + (c.hours[0] || 0), 0),
+      sun: clientHours.reduce((sum, c) => sum + (c.hours[1] || 0), 0),
+      mon: clientHours.reduce((sum, c) => sum + (c.hours[2] || 0), 0),
+      tue: clientHours.reduce((sum, c) => sum + (c.hours[3] || 0), 0),
+      wed: clientHours.reduce((sum, c) => sum + (c.hours[4] || 0), 0),
+      thu: clientHours.reduce((sum, c) => sum + (c.hours[5] || 0), 0),
+      fri: clientHours.reduce((sum, c) => sum + (c.hours[6] || 0), 0),
+    };
+
+    // Check each day for overtime
+    Object.keys(dailyTotals).forEach((dayKey, index) => {
+      const hours = dailyTotals[dayKey];
+      if (hours > 8) {
+        overtimeDaysDetected.push({
+          day: dayNames[index],
+          hours: hours.toFixed(2)
+        });
+      }
+    });
+
+    return overtimeDaysDetected;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    console.log("🚀 handleSubmit called");
+    console.log("Selected Approver:", selectedApprover);
+    console.log("Client Type:", clientType);
+    console.log("Grand Total Hours:", getGrandTotal());
 
     // Validate approver selection
     if (!selectedApprover) {
+      console.log("❌ No approver selected");
       toast.error(
         "Please select an approver/reviewer before submitting",
         "error"
@@ -979,11 +1024,26 @@ const TimesheetSubmit = () => {
       return;
     }
 
+    // Check for overtime before submission
+    const overtimeDaysDetected = checkForOvertime();
+    console.log("Overtime days detected:", overtimeDaysDetected);
+    console.log("Overtime comment:", overtimeComment);
+    
+    if (overtimeDaysDetected.length > 0 && !overtimeComment) {
+      // Show overtime confirmation modal
+      console.log("⚠️ Showing overtime modal");
+      setOvertimeDays(overtimeDaysDetected);
+      setShowOvertimeModal(true);
+      return;
+    }
+
     // Validate based on client type
     if (clientType === "internal") {
       // For internal clients, validate hours entry
       const totalClientHours = getGrandTotal();
+      console.log("Total client hours:", totalClientHours);
       if (totalClientHours === 0) {
+        console.log("❌ No hours entered");
         toast.error(
           "Please enter at least one hour for any client or holiday/time off",
           "error"
@@ -992,7 +1052,9 @@ const TimesheetSubmit = () => {
       }
     } else {
       // For external clients, validate file upload
+      console.log("External timesheet file:", externalTimesheetFile);
       if (!externalTimesheetFile) {
+        console.log("❌ No file uploaded");
         toast.error("Please upload the client submitted timesheet file", "error");
         return;
       }
@@ -1000,10 +1062,12 @@ const TimesheetSubmit = () => {
 
     // Validate employee selection for non-employee roles
     if (!isEmployee() && !selectedEmployee) {
+      console.log("❌ No employee selected");
       toast.error("Please select an employee before submitting", "error");
       return;
     }
 
+    console.log("✅ All validations passed, proceeding with submission");
     setSubmitting(true);
 
     try {
@@ -1058,6 +1122,9 @@ const TimesheetSubmit = () => {
           thu: clientHours.reduce((sum, c) => sum + (c.hours[5] || 0), 0),
           fri: clientHours.reduce((sum, c) => sum + (c.hours[6] || 0), 0),
         },
+        // Include overtime comment if provided
+        overtimeComment: overtimeComment || null,
+        overtimeDays: overtimeDays.length > 0 ? overtimeDays : null,
         // Include AI extraction metadata if available
         aiExtraction: window.timesheetExtractionMetadata || null,
         clientHoursDetails: clientHours.map((client) => ({
@@ -1094,9 +1161,12 @@ const TimesheetSubmit = () => {
           "success"
         );
 
-        // Navigate immediately to timesheet summary
+        // Navigate immediately to timesheet summary with state to trigger refresh
         console.log("🔄 Navigating to timesheet summary...");
-        navigate(`/${subdomain}/timesheets`, { replace: true });
+        navigate(`/${subdomain}/timesheets`, { 
+          replace: true,
+          state: { refresh: true, timestamp: Date.now() }
+        });
       } else {
         toast.error(
           response.data.message || "Failed to submit timesheet",
@@ -1497,6 +1567,102 @@ const TimesheetSubmit = () => {
     }
   };
 
+  // Camera capture functions
+  const openCamera = async () => {
+    // Check if employee is selected for non-employee roles
+    if (!isEmployee() && !selectedEmployee) {
+      toast.warning(
+        "Please select an employee first before capturing their timesheet.",
+        {
+          title: "Employee Required",
+        }
+      );
+      return;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "environment" }, // Use back camera on mobile
+        audio: false,
+      });
+      setCameraStream(stream);
+      setShowCameraModal(true);
+    } catch (error) {
+      console.error("Error accessing camera:", error);
+      toast.error(
+        "Unable to access camera. Please check permissions or use file upload instead.",
+        {
+          title: "Camera Access Denied",
+        }
+      );
+    }
+  };
+
+  const closeCamera = () => {
+    if (cameraStream) {
+      cameraStream.getTracks().forEach((track) => track.stop());
+      setCameraStream(null);
+    }
+    setShowCameraModal(false);
+  };
+
+  const captureImage = () => {
+    const video = document.getElementById("cameraVideo");
+    const canvas = document.getElementById("cameraCanvas");
+    
+    if (!video || !canvas) return;
+
+    const context = canvas.getContext("2d");
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    // Convert canvas to blob
+    canvas.toBlob(async (blob) => {
+      if (!blob) {
+        toast.error("Failed to capture image");
+        return;
+      }
+
+      // Create a file from the blob
+      const timestamp = new Date().getTime();
+      const file = new File([blob], `timesheet_capture_${timestamp}.jpg`, {
+        type: "image/jpeg",
+      });
+
+      // Close camera
+      closeCamera();
+
+      // Process the captured image through AI
+      setAiProcessing(true);
+      setUploadedAiFile(file);
+
+      try {
+        const employeeId = !isEmployee() ? selectedEmployee : user.employeeId;
+        const result = await uploadAndProcessTimesheet(file, employeeId);
+
+        if (result.success) {
+          setAiProcessedData(result.data);
+          toast.success(
+            `Successfully extracted timesheet data from captured image!`,
+            {
+              title: "Image Processed",
+            }
+          );
+        } else {
+          toast.error(result.message || "Failed to process captured image");
+          setUploadedAiFile(null);
+        }
+      } catch (error) {
+        console.error("Error processing captured image:", error);
+        toast.error("An error occurred while processing the captured image");
+        setUploadedAiFile(null);
+      } finally {
+        setAiProcessing(false);
+      }
+    }, "image/jpeg", 0.95);
+  };
+
   const handleExternalTimesheetUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -1675,7 +1841,7 @@ const TimesheetSubmit = () => {
                       <label className="form-label">Select Week</label>
                       <div className="form-control-wrap">
                         <div className="input-group">
-                          <button
+                          {/* <button
                             type="button"
                             className="btn btn-outline-secondary"
                             onClick={navigateToPreviousWeek}
@@ -1683,7 +1849,7 @@ const TimesheetSubmit = () => {
                             title="Previous Week"
                           >
                             <em className="icon ni ni-chevron-left"></em>
-                          </button>
+                          </button> */}
                           <select
                             className="form-select timesheet-dropdown"
                             value={selectedWeek}
@@ -1707,7 +1873,7 @@ const TimesheetSubmit = () => {
                               </option>
                             ))}
                         </select>
-                          <button
+                          {/* <button
                             type="button"
                             className="btn btn-outline-secondary"
                             onClick={navigateToNextWeek}
@@ -1715,7 +1881,7 @@ const TimesheetSubmit = () => {
                             title="Next Week"
                           >
                             <em className="icon ni ni-chevron-right"></em>
-                          </button>
+                          </button> */}
                         </div>
                       </div>
                       <div className="d-flex justify-content-between align-items-center mt-2">
@@ -1831,14 +1997,26 @@ const TimesheetSubmit = () => {
                                 <i className="fa fa-robot"></i>
                                 AI-Powered Timesheet Upload
                               </h6>
-                              <button
-                                type="button"
-                                className="ai-upload-toggle-btn"
-                                onClick={() => setShowAiUpload(!showAiUpload)}
-                                disabled={isReadOnly}
-                              >
-                                {showAiUpload ? "Hide" : "Upload & Extract"}
-                              </button>
+                              <div className="ai-upload-actions">
+                                <button
+                                  type="button"
+                                  className="ai-camera-btn"
+                                  onClick={openCamera}
+                                  disabled={isReadOnly || (!isEmployee() && !selectedEmployee)}
+                                  title="Capture with Camera"
+                                >
+                                  <i className="fas fa-camera"></i>
+                                  <span>Capture</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  className="ai-upload-toggle-btn"
+                                  onClick={() => setShowAiUpload(!showAiUpload)}
+                                  disabled={isReadOnly}
+                                >
+                                  {showAiUpload ? "Hide" : "Upload & Extract"}
+                                </button>
+                              </div>
                             </div>
 
                             <p className="ai-upload-description">
@@ -2772,6 +2950,184 @@ const TimesheetSubmit = () => {
           </div>
         </div>
       </div>
+
+      {/* Overtime Confirmation Modal */}
+      <OvertimeConfirmationModal
+        isOpen={showOvertimeModal}
+        onClose={() => {
+          setShowOvertimeModal(false);
+          setOvertimeDays([]);
+          setOvertimeComment("");
+        }}
+        onConfirm={async (comment) => {
+          // Set the comment and close modal
+          setOvertimeComment(comment);
+          setShowOvertimeModal(false);
+          
+          // Wait a bit for state to update, then proceed with submission
+          setTimeout(async () => {
+            setSubmitting(true);
+            
+            try {
+              console.log("📤 Proceeding with overtime submission after comment provided");
+              
+              // Get employee ID
+              const employeeId = !isEmployee() ? selectedEmployee : user.employeeId;
+              
+              if (!employeeId) {
+                toast.error("Employee ID not found. Please try logging in again.", "error");
+                setSubmitting(false);
+                return;
+              }
+              
+              // Parse week range to get start and end dates
+              const [startStr, endStr] = selectedWeek.split(" To ");
+              const weekStart = new Date(startStr).toISOString().split("T")[0];
+              const weekEnd = new Date(endStr).toISOString().split("T")[0];
+              
+              // Validate clientId
+              let validClientId = null;
+              if (clientHours.length > 0 && clientHours[0].id) {
+                const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+                if (uuidRegex.test(clientHours[0].id)) {
+                  validClientId = clientHours[0].id;
+                }
+              }
+              
+              const submissionData = {
+                tenantId: user.tenantId,
+                employeeId: employeeId,
+                weekStart: weekStart,
+                weekEnd: weekEnd,
+                clientId: validClientId,
+                reviewerId: selectedApprover,
+                status: "submitted",
+                totalHours: getGrandTotal(),
+                notes: notes,
+                dailyHours: {
+                  sat: clientHours.reduce((sum, c) => sum + (c.hours[0] || 0), 0),
+                  sun: clientHours.reduce((sum, c) => sum + (c.hours[1] || 0), 0),
+                  mon: clientHours.reduce((sum, c) => sum + (c.hours[2] || 0), 0),
+                  tue: clientHours.reduce((sum, c) => sum + (c.hours[3] || 0), 0),
+                  wed: clientHours.reduce((sum, c) => sum + (c.hours[4] || 0), 0),
+                  thu: clientHours.reduce((sum, c) => sum + (c.hours[5] || 0), 0),
+                  fri: clientHours.reduce((sum, c) => sum + (c.hours[6] || 0), 0),
+                },
+                overtimeComment: comment,
+                overtimeDays: overtimeDays,
+                aiExtraction: window.timesheetExtractionMetadata || null,
+                clientHoursDetails: clientHours.map((client) => ({
+                  clientId: client.id,
+                  clientName: client.clientName,
+                  project: client.project,
+                  hourlyRate: client.hourlyRate,
+                  hours: client.hours,
+                })),
+              };
+              
+              console.log("📤 Submitting with overtime comment:", submissionData);
+              
+              // Submit to backend API
+              const response = await axios.post(
+                `${API_BASE}/api/timesheets/submit`,
+                submissionData
+              );
+              
+              console.log("✅ API Response:", response.data);
+              
+              if (response.data.success) {
+                const approverInfo = availableApprovers.find(
+                  (a) => a.id === selectedApprover
+                );
+                const approverName = approverInfo ? approverInfo.name : "Selected Approver";
+                
+                toast.success(
+                  `Timesheet with overtime submitted successfully! An approval request has been sent to ${approverName}.`,
+                  "success"
+                );
+                
+                // Clear overtime state
+                setOvertimeComment("");
+                setOvertimeDays([]);
+                
+                // Navigate to timesheet summary with state to trigger refresh
+                console.log("🔄 Navigating to timesheet summary...");
+                navigate(`/${subdomain}/timesheets`, { 
+                  replace: true,
+                  state: { refresh: true, timestamp: Date.now() }
+                });
+              } else {
+                toast.error(response.data.message || "Failed to submit timesheet", "error");
+              }
+            } catch (error) {
+              console.error("❌ Error submitting timesheet with overtime:", error);
+              console.error("Error details:", {
+                message: error.message,
+                response: error.response?.data,
+                status: error.response?.status,
+              });
+              
+              let errorMessage = "Failed to submit timesheet. Please try again.";
+              if (error.response?.data?.message) {
+                errorMessage = error.response.data.message;
+              }
+              
+              toast.error(errorMessage, "error");
+            } finally {
+              setSubmitting(false);
+            }
+          }, 100);
+        }}
+        overtimeDays={overtimeDays}
+      />
+
+      {/* Camera Capture Modal */}
+      {showCameraModal && (
+        <div className="camera-modal-overlay">
+          <div className="camera-modal">
+            <div className="camera-modal-header">
+              <h5>📸 Capture Timesheet</h5>
+              <button
+                type="button"
+                className="camera-close-btn"
+                onClick={closeCamera}
+              >
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+            <div className="camera-modal-body">
+              <video
+                id="cameraVideo"
+                autoPlay
+                playsInline
+                ref={(video) => {
+                  if (video && cameraStream) {
+                    video.srcObject = cameraStream;
+                  }
+                }}
+                className="camera-video"
+              />
+              <canvas id="cameraCanvas" style={{ display: "none" }} />
+            </div>
+            <div className="camera-modal-footer">
+              <button
+                type="button"
+                className="camera-cancel-btn"
+                onClick={closeCamera}
+              >
+                <i className="fas fa-times"></i> Cancel
+              </button>
+              <button
+                type="button"
+                className="camera-capture-btn"
+                onClick={captureImage}
+              >
+                <i className="fas fa-camera"></i> Capture
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

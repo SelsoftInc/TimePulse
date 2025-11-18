@@ -299,6 +299,35 @@ const TimesheetApproval = () => {
                   </div>
                 </div>
 
+                {timesheet.overtimeComment && (
+                  <div className="approval-info-section overtime-section">
+                    <h6 className="section-title">
+                      <i className="fas fa-exclamation-triangle text-warning"></i> ⚠️ Overtime Alert
+                    </h6>
+                    <div className="overtime-alert">
+                      <div className="overtime-warning-banner">
+                        <i className="fas fa-clock"></i>
+                        <span>This employee has worked overtime hours. Please review the explanation below before approving.</span>
+                      </div>
+                      <div className="overtime-days">
+                        <strong>Days with overtime (&gt;8 hours):</strong>
+                        <ul className="overtime-days-list">
+                          {timesheet.overtimeDays && timesheet.overtimeDays.map((day, index) => (
+                            <li key={index}>
+                              <span className="day-name">{day.day}:</span>
+                              <span className="day-hours">{day.hours} hours</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                      <div className="overtime-comment">
+                        <strong>Employee&apos;s Reason/Explanation:</strong>
+                        <p>{timesheet.overtimeComment}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <div className="approval-info-section notes-section">
                   <h6 className="section-title">Notes</h6>
                   <div className="notes-content">

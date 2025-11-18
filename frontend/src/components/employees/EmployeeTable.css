@@ -1,56 +1,32 @@
 /* Employee Table - Dedicated Styles */
 
-/* Container - Force overflow visible for dropdowns */
+/* Container - Allow horizontal scrolling on mobile */
 .employee-list-container .card {
   width: 100%;
-  overflow: visible !important;
 }
 
 .employee-list-container .card-inner {
   width: 100%;
   padding: 0;
-  overflow: visible !important;
 }
 
 .employee-list-container .table-responsive {
   width: 100%;
-  overflow: visible !important;
   margin: 0;
 }
 
-/* DashLite Table Structure - Force overflow visible */
+/* DashLite Table Structure */
 .employee-list-container .nk-tb-list {
-  overflow: visible !important;
+  width: 100%;
 }
 
 .employee-list-container .nk-tb-item {
-  overflow: visible !important;
-  position: relative !important;
-}
-
-.employee-list-container .nk-tb-col {
-  overflow: visible !important;
+  position: relative;
 }
 
 .employee-list-container .nk-tb-col-tools {
   overflow: visible !important;
   position: relative !important;
-}
-
-/* Force all parent containers to allow overflow */
-.employee-list-container,
-.employee-list-container > *,
-.employee-list-container .nk-block,
-.employee-list-container .container-fluid,
-body:has(.employee-list-container),
-html:has(.employee-list-container) {
-  overflow: visible !important;
-}
-
-/* Ensure main content area allows overflow */
-.nk-content:has(.employee-list-container),
-.nk-wrap:has(.employee-list-container) {
-  overflow: visible !important;
 }
 
 /* Table Base */
@@ -308,8 +284,14 @@ body .employee-list-container .table-responsive {
   max-width: 100% !important;
 }
 
-/* Responsive adjustments */
-@media (max-width: 1400px) {
+/* ========================================
+   COMPREHENSIVE RESPONSIVE DESIGN
+   ======================================== */
+
+/* Desktop Large (>1400px) - Default styles above */
+
+/* Desktop (1200px - 1399px) */
+@media (max-width: 1399px) {
   .employee-list-container .employee-table th,
   .employee-list-container .employee-table td {
     padding: 10px 6px !important;
@@ -319,12 +301,300 @@ body .employee-list-container .table-responsive {
   .employee-list-container .employee-table th {
     font-size: 10px !important;
   }
+  
+  .employee-list-container .dropdown-toggle {
+    min-width: 80px !important;
+    font-size: 11px !important;
+  }
 }
 
-@media (max-width: 1200px) {
+/* Tablet & Desktop Small (992px - 1199px) */
+@media (max-width: 1199px) {
   .employee-list-container .employee-table th,
   .employee-list-container .employee-table td {
     padding: 8px 4px !important;
     font-size: 11px !important;
+  }
+  
+  .employee-list-container .employee-table th {
+    font-size: 10px !important;
+  }
+  
+  .employee-list-container .dropdown-toggle {
+    min-width: 75px !important;
+    padding: 5px 10px !important;
+  }
+}
+
+/* Tablet (768px - 991px) */
+@media (max-width: 991px) {
+  /* Enable horizontal scrolling for table */
+  .employee-list-container .table-responsive {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    margin-bottom: 16px;
+  }
+  
+  /* Set minimum width for table to force scrolling */
+  .employee-list-container .employee-table {
+    min-width: 1000px !important;
+  }
+  
+  .employee-list-container .employee-table th,
+  .employee-list-container .employee-table td {
+    padding: 10px 8px !important;
+    font-size: 12px !important;
+  }
+  
+  .employee-list-container .employee-table th {
+    font-size: 11px !important;
+  }
+  
+  /* Adjust column widths for tablet */
+  .employee-list-container .employee-table th:nth-child(1),
+  .employee-list-container .employee-table td:nth-child(1) {
+    min-width: 150px;
+  }
+  
+  .employee-list-container .employee-table th:nth-child(7),
+  .employee-list-container .employee-table td:nth-child(7) {
+    min-width: 160px;
+  }
+}
+
+/* Mobile (481px - 767px) */
+@media (max-width: 767px) {
+  /* Container adjustments */
+  .employee-list-container {
+    padding: 12px;
+    margin-top: 60px; /* Account for fixed header */
+  }
+  
+  .employee-list-container .card {
+    border-radius: 10px;
+  }
+  
+  .employee-list-container .card-inner {
+    padding: 0;
+  }
+  
+  /* Enable horizontal scrolling */
+  .employee-list-container .table-responsive {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    margin: 0;
+    border-radius: 8px;
+  }
+  
+  /* Force minimum width to enable scrolling */
+  .employee-list-container .employee-table {
+    min-width: 1100px !important;
+    width: 1100px !important;
+  }
+  
+  /* Compact table cells */
+  .employee-list-container .employee-table th,
+  .employee-list-container .employee-table td {
+    padding: 10px 8px !important;
+    font-size: 12px !important;
+  }
+  
+  .employee-list-container .employee-table th {
+    font-size: 10px !important;
+    padding: 12px 8px !important;
+  }
+  
+  /* Maintain column widths for horizontal scroll */
+  .employee-list-container .employee-table th:nth-child(1),
+  .employee-list-container .employee-table td:nth-child(1) {
+    width: 160px !important;
+    min-width: 160px !important;
+  }
+  
+  .employee-list-container .employee-table th:nth-child(2),
+  .employee-list-container .employee-table td:nth-child(2),
+  .employee-list-container .employee-table th:nth-child(3),
+  .employee-list-container .employee-table td:nth-child(3),
+  .employee-list-container .employee-table th:nth-child(4),
+  .employee-list-container .employee-table td:nth-child(4) {
+    width: 100px !important;
+    min-width: 100px !important;
+  }
+  
+  .employee-list-container .employee-table th:nth-child(5),
+  .employee-list-container .employee-table td:nth-child(5) {
+    width: 110px !important;
+    min-width: 110px !important;
+  }
+  
+  .employee-list-container .employee-table th:nth-child(6),
+  .employee-list-container .employee-table td:nth-child(6) {
+    width: 90px !important;
+    min-width: 90px !important;
+  }
+  
+  .employee-list-container .employee-table th:nth-child(7),
+  .employee-list-container .employee-table td:nth-child(7) {
+    width: 170px !important;
+    min-width: 170px !important;
+  }
+  
+  .employee-list-container .employee-table th:nth-child(8),
+  .employee-list-container .employee-table td:nth-child(8) {
+    width: 110px !important;
+    min-width: 110px !important;
+  }
+  
+  .employee-list-container .employee-table th:nth-child(9),
+  .employee-list-container .employee-table td:nth-child(9) {
+    width: 90px !important;
+    min-width: 90px !important;
+  }
+  
+  .employee-list-container .employee-table th:nth-child(10),
+  .employee-list-container .employee-table td:nth-child(10) {
+    width: 100px !important;
+    min-width: 100px !important;
+  }
+  
+  /* Badges */
+  .employee-list-container .employee-table .badge {
+    font-size: 10px !important;
+    padding: 3px 6px !important;
+  }
+  
+  /* Dropdown button */
+  .employee-list-container .dropdown-toggle {
+    min-width: 70px !important;
+    padding: 5px 8px !important;
+    font-size: 11px !important;
+  }
+  
+  /* Dropdown menu */
+  .employee-list-container .dropdown-menu {
+    min-width: 180px !important;
+    font-size: 12px !important;
+  }
+  
+  .employee-list-container .dropdown-item {
+    padding: 8px 12px !important;
+    font-size: 12px !important;
+  }
+}
+
+/* Small Mobile (≤480px) */
+@media (max-width: 480px) {
+  /* Container */
+  .employee-list-container {
+    padding: 10px;
+  }
+  
+  .employee-list-container .card {
+    border-radius: 8px;
+  }
+  
+  /* Table scrolling */
+  .employee-list-container .table-responsive {
+    border-radius: 6px;
+  }
+  
+  /* Force minimum width for scrolling */
+  .employee-list-container .employee-table {
+    min-width: 1000px !important;
+    width: 1000px !important;
+  }
+  
+  /* Ultra-compact cells */
+  .employee-list-container .employee-table th,
+  .employee-list-container .employee-table td {
+    padding: 8px 6px !important;
+    font-size: 11px !important;
+  }
+  
+  .employee-list-container .employee-table th {
+    font-size: 9px !important;
+    padding: 10px 6px !important;
+  }
+  
+  /* Maintain fixed widths for horizontal scroll */
+  .employee-list-container .employee-table th:nth-child(1),
+  .employee-list-container .employee-table td:nth-child(1) {
+    width: 150px !important;
+    min-width: 150px !important;
+  }
+  
+  .employee-list-container .employee-table th:nth-child(2),
+  .employee-list-container .employee-table td:nth-child(2),
+  .employee-list-container .employee-table th:nth-child(3),
+  .employee-list-container .employee-table td:nth-child(3),
+  .employee-list-container .employee-table th:nth-child(4),
+  .employee-list-container .employee-table td:nth-child(4) {
+    width: 90px !important;
+    min-width: 90px !important;
+  }
+  
+  .employee-list-container .employee-table th:nth-child(5),
+  .employee-list-container .employee-table td:nth-child(5) {
+    width: 100px !important;
+    min-width: 100px !important;
+  }
+  
+  .employee-list-container .employee-table th:nth-child(6),
+  .employee-list-container .employee-table td:nth-child(6) {
+    width: 80px !important;
+    min-width: 80px !important;
+  }
+  
+  .employee-list-container .employee-table th:nth-child(7),
+  .employee-list-container .employee-table td:nth-child(7) {
+    width: 160px !important;
+    min-width: 160px !important;
+  }
+  
+  .employee-list-container .employee-table th:nth-child(8),
+  .employee-list-container .employee-table td:nth-child(8) {
+    width: 100px !important;
+    min-width: 100px !important;
+  }
+  
+  .employee-list-container .employee-table th:nth-child(9),
+  .employee-list-container .employee-table td:nth-child(9) {
+    width: 80px !important;
+    min-width: 80px !important;
+  }
+  
+  .employee-list-container .employee-table th:nth-child(10),
+  .employee-list-container .employee-table td:nth-child(10) {
+    width: 90px !important;
+    min-width: 90px !important;
+  }
+  
+  /* Badges */
+  .employee-list-container .employee-table .badge {
+    font-size: 9px !important;
+    padding: 2px 5px !important;
+  }
+  
+  /* Dropdown */
+  .employee-list-container .dropdown-toggle {
+    min-width: 65px !important;
+    padding: 4px 6px !important;
+    font-size: 10px !important;
+  }
+  
+  .employee-list-container .dropdown-menu {
+    min-width: 160px !important;
+  }
+  
+  .employee-list-container .dropdown-item {
+    padding: 6px 10px !important;
+    font-size: 11px !important;
+  }
+}
+
+/* Landscape mode for mobile */
+@media (max-width: 767px) and (orientation: landscape) {
+  .employee-list-container .employee-table {
+    min-width: 900px !important;
   }
 }

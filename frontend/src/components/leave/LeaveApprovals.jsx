@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import { API_BASE } from '../../config/api';
@@ -21,15 +21,9 @@ const LeaveApprovals = () => {
   const rowsPerPage = 5;
 
   const isAdmin = user?.role === 'admin';
-  const isApprover = user?.role === 'approver' || user?.role === 'admin';
+  const isApprover = user?.role === 'admin' || user?.role === 'manager' || user?.role === 'hr';
 
-  useEffect(() => {
-    if (isApprover) {
-      fetchLeaveRequests();
-    }
-  }, [user?.id, user?.tenantId, isApprover]);
-
-  const fetchLeaveRequests = async () => {
+  const fetchLeaveRequests = useCallback(async () => {
     try {
       setLoading(true);
       
@@ -70,7 +64,13 @@ const LeaveApprovals = () => {
       console.error('Error fetching leave requests:', error);
       setLoading(false);
     }
-  };
+  }, [user?.id, user?.tenantId, isAdmin]);
+
+  useEffect(() => {
+    if (isApprover) {
+      fetchLeaveRequests();
+    }
+  }, [isApprover, fetchLeaveRequests]);
 
   const handleApprove = async (requestId) => {
     try {

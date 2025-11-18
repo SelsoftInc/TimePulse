@@ -2276,3 +2276,220 @@ body.dark-mode .approval-op.timesheet-card:hover {
   margin: 0;
   color: #6b7280;
 }
+
+/* Overtime Section Styles */
+.overtime-section {
+  background-color: #fff3cd !important;
+  border-left: 4px solid #ffc107 !important;
+  padding: 20px !important;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+body.dark-mode .overtime-section {
+  background-color: #422006 !important;
+  border-left-color: #f59e0b !important;
+}
+
+.overtime-section .section-title {
+  color: #856404 !important;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px !important;
+}
+
+body.dark-mode .overtime-section .section-title {
+  color: #fbbf24 !important;
+}
+
+.overtime-section .text-warning {
+  color: #ffc107 !important;
+}
+
+body.dark-mode .overtime-section .text-warning {
+  color: #f59e0b !important;
+}
+
+.overtime-alert {
+  background: #ffffff;
+  border-radius: 6px;
+  padding: 16px;
+}
+
+body.dark-mode .overtime-alert {
+  background: #334155;
+}
+
+.overtime-days {
+  margin-bottom: 16px;
+}
+
+.overtime-days strong {
+  display: block;
+  margin-bottom: 12px;
+  color: #856404;
+  font-size: 15px;
+}
+
+body.dark-mode .overtime-days strong {
+  color: #fbbf24;
+}
+
+.overtime-days-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.overtime-days-list li {
+  padding: 10px 14px;
+  background: #fff8e1;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border: 1px solid #ffe082;
+}
+
+body.dark-mode .overtime-days-list li {
+  background: #1e3a5f;
+  border-color: #422006;
+}
+
+.overtime-days-list li:last-child {
+  margin-bottom: 0;
+}
+
+.day-name {
+  font-weight: 600;
+  color: #d63031;
+  margin-right: 8px;
+}
+
+body.dark-mode .day-name {
+  color: #fca5a5;
+}
+
+.day-hours {
+  font-weight: 700;
+  color: #d63031;
+  background: #ffebee;
+  padding: 4px 12px;
+  border-radius: 4px;
+}
+
+body.dark-mode .day-hours {
+  color: #fca5a5;
+  background: #422006;
+}
+
+.overtime-comment {
+  padding-top: 16px;
+  border-top: 1px solid #ffe082;
+}
+
+body.dark-mode .overtime-comment {
+  border-top-color: #422006;
+}
+
+.overtime-comment strong {
+  display: block;
+  margin-bottom: 8px;
+  color: #856404;
+  font-size: 15px;
+}
+
+body.dark-mode .overtime-comment strong {
+  color: #fbbf24;
+}
+
+.overtime-comment p {
+  margin: 0;
+  color: #333 !important;
+  line-height: 1.6;
+  font-size: 14px;
+  background: #fff8e1;
+  padding: 12px;
+  border-radius: 6px;
+  border-left: 3px solid #ffc107;
+}
+
+body.dark-mode .overtime-comment p {
+  color: #e2e8f0 !important;
+  background: #1e3a5f;
+  border-left-color: #f59e0b;
+}
+
+/* Overtime Warning Banner */
+.overtime-warning-banner {
+  background: linear-gradient(135deg, #fff3cd 0%, #ffe69c 100%);
+  border: 2px solid #ffc107;
+  border-radius: 8px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  animation: pulse-warning 2s ease-in-out infinite;
+}
+
+body.dark-mode .overtime-warning-banner {
+  background: linear-gradient(135deg, #422006 0%, #5a2a08 100%);
+  border-color: #f59e0b;
+}
+
+.overtime-warning-banner i {
+  font-size: 24px;
+  color: #ff9800;
+  animation: rotate-icon 3s linear infinite;
+}
+
+body.dark-mode .overtime-warning-banner i {
+  color: #fbbf24;
+}
+
+.overtime-warning-banner span {
+  color: #856404;
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+body.dark-mode .overtime-warning-banner span {
+  color: #fbbf24;
+}
+
+@keyframes pulse-warning {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(255, 193, 7, 0);
+  }
+}
+
+@keyframes rotate-icon {
+  0% {
+    transform: rotate(0deg);
+  }
+  10% {
+    transform: rotate(-10deg);
+  }
+  20% {
+    transform: rotate(10deg);
+  }
+  30% {
+    transform: rotate(-10deg);
+  }
+  40% {
+    transform: rotate(10deg);
+  }
+  50% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}

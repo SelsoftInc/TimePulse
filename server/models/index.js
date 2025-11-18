@@ -757,12 +757,12 @@ models.Timesheet = sequelize.define(
     weekStart: {
       type: DataTypes.DATEONLY,
       allowNull: false,
-      field: "week_start_date",
+      field: "week_start",
     },
     weekEnd: {
       type: DataTypes.DATEONLY,
       allowNull: false,
-      field: "week_end_date",
+      field: "week_end",
     },
     timeEntries: {
       // Array of time entries
@@ -828,6 +828,16 @@ models.Timesheet = sequelize.define(
       type: DataTypes.TEXT,
       allowNull: true,
       field: "rejection_reason",
+    },
+    overtimeComment: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+      field: "overtime_comment",
+    },
+    overtimeDays: {
+      type: DataTypes.JSONB,
+      allowNull: true,
+      field: "overtime_days",
     },
   },
   {

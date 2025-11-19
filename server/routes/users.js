@@ -7,7 +7,10 @@ router.get('/', async (req, res) => {
   try {
     const { tenantId } = req.query;
     
+    console.log('👥 Fetching users for tenantId:', tenantId);
+    
     if (!tenantId) {
+      console.error('❌ No tenantId provided');
       return res.status(400).json({ error: 'Tenant ID is required' });
     }
 
@@ -34,22 +37,30 @@ router.get('/', async (req, res) => {
       raw: true
     });
 
+    const transformedUsers = users.map(u => ({
+      id: u.id,
+      tenantId: u.tenantId,
+      firstName: u.firstName,
+      lastName: u.lastName,
+      email: u.email,
+      role: u.role,
+      department: u.department,
+      title: u.title,
+      status: u.status,
+      lastLogin: u.lastLogin,
+      createdAt: u.createdAt,
+      updatedAt: u.updatedAt
+    }));
+
+    const approvers = transformedUsers.filter(u => u.role === 'admin' || u.role === 'approver');
+    
+    console.log('✅ Found', transformedUsers.length, 'total users');
+    console.log('✅ Found', approvers.length, 'approvers (admin/approver role)');
+    console.log('📤 Approvers:', approvers.map(a => ({ id: a.id, name: `${a.firstName} ${a.lastName}`, role: a.role })));
+
     res.json({
       success: true,
-      users: users.map(u => ({
-        id: u.id,
-        tenantId: u.tenantId,
-        firstName: u.firstName,
-        lastName: u.lastName,
-        email: u.email,
-        role: u.role,
-        department: u.department,
-        title: u.title,
-        status: u.status,
-        lastLogin: u.lastLogin,
-        createdAt: u.createdAt,
-        updatedAt: u.updatedAt
-      }))
+      users: transformedUsers
     });
 
   } catch (error) {
@@ -127,13 +138,31 @@ router.put('/:id', async (req, res) => {
     const { tenantId } = req.query;
     const updateData = req.body;
 
+    console.log('📝 Update user request:', {
+      userId: id,
+      tenantId,
+      updateData
+    });
+
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID is required' });
+    }
+
     const user = await models.User.findOne({
       where: { id, tenantId }
     });
 
     if (!user) {
+      console.error('❌ User not found:', { id, tenantId });
       return res.status(404).json({ error: 'User not found' });
     }
+
+    console.log('👤 Found user:', {
+      id: user.id,
+      email: user.email,
+      currentRole: user.role,
+      currentStatus: user.status
+    });
 
     // Only allow updating certain fields
     const allowedFields = ['role', 'status', 'department', 'title', 'permissions'];
@@ -145,7 +174,17 @@ router.put('/:id', async (req, res) => {
       }
     });
 
+    console.log('🔄 Updating with data:', filteredData);
+
     await user.update(filteredData);
+
+    console.log('✅ User updated successfully:', {
+      id: user.id,
+      newRole: user.role,
+      newStatus: user.status,
+      newDepartment: user.department,
+      newTitle: user.title
+    });
 
     res.json({
       success: true,
@@ -163,7 +202,7 @@ router.put('/:id', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error updating user:', error);
+    console.error('❌ Error updating user:', error);
     res.status(500).json({ 
       error: 'Failed to update user',
       details: error.message 

@@ -87,7 +87,10 @@ router.get('/', async (req, res) => {
   try {
     const { tenantId } = req.query;
     
+    console.log('📋 Fetching clients for tenantId:', tenantId);
+    
     if (!tenantId) {
+      console.error('❌ No tenantId provided');
       return res.status(400).json({ error: 'Tenant ID is required' });
     }
 
@@ -168,6 +171,9 @@ router.get('/', async (req, res) => {
       employeeCount: employeeCountMap[String(client.id)] || 0,
       totalBilled: totalBilledMap[String(client.id)] || 0
     }));
+
+    console.log('✅ Found', transformedClients.length, 'clients for tenant:', tenantId);
+    console.log('📤 Sending clients:', transformedClients.map(c => ({ id: c.id, name: c.name })));
 
     res.json({
       success: true,

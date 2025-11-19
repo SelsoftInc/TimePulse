@@ -10,6 +10,8 @@ router.get("/", async (req, res) => {
   try {
     const { tenantId, status } = req.query;
 
+    console.log('👥 Fetching employees for tenantId:', tenantId, 'status:', status);
+
     if (!tenantId) {
       return res.status(400).json({ error: "Tenant ID is required" });
     }
@@ -82,11 +84,11 @@ router.get("/", async (req, res) => {
       ],
     });
 
-    // Filter out employees without user records and admin users at application level
+    // Filter out admin users at application level (but keep employees without user records)
     const employees = allEmployees.filter((emp) => {
-      // Only show employees that have user records
+      // If employee doesn't have a user record, include them (newly created employees)
       if (!emp.user) {
-        return false;
+        return true;
       }
       
       // For inactive employees, show them regardless of role (they might be admins who were deactivated)
@@ -96,6 +98,19 @@ router.get("/", async (req, res) => {
       // For active employees, exclude admin users
       return emp.user.role !== "admin";
     });
+
+    console.log('📊 Found', allEmployees.length, 'total employees in database');
+    console.log('📊 After filtering:', employees.length, 'employees');
+    console.log('📊 Employees without user records:', allEmployees.filter(e => !e.user).length);
+    
+    // Check for duplicate IDs
+    const employeeIds = employees.map(e => e.id);
+    const uniqueIds = [...new Set(employeeIds)];
+    if (employeeIds.length !== uniqueIds.length) {
+      console.log('⚠️ WARNING: Duplicate employee IDs found!');
+      console.log('📋 All IDs:', employeeIds);
+      console.log('📋 Unique IDs:', uniqueIds);
+    }
 
     // Transform the data to match frontend expectations
     const transformedEmployees = employees.map((emp) => ({
@@ -152,6 +167,8 @@ router.get("/", async (req, res) => {
       salaryAmount: emp.salaryAmount,
       contactInfo: emp.contactInfo,
     }));
+
+    console.log('✅ Sending', transformedEmployees.length, 'employees to frontend');
 
     res.json({
       success: true,
@@ -244,7 +261,28 @@ router.get("/:id", async (req, res) => {
     });
 
     if (!employee) {
+      console.log('❌ Employee not found - ID:', id, 'TenantId:', tenantId);
       return res.status(404).json({ error: "Employee not found" });
+    }
+
+    console.log('✅ Employee found:', {
+      id: employee.id,
+      firstName: employee.firstName,
+      lastName: employee.lastName,
+      vendorId: employee.vendorId,
+      clientId: employee.clientId,
+      hasVendor: !!employee.vendor,
+      hasClient: !!employee.client
+    });
+
+    if (employee.vendor) {
+      console.log('📦 Vendor details:', {
+        id: employee.vendor.id,
+        name: employee.vendor.name,
+        category: employee.vendor.category
+      });
+    } else {
+      console.log('⚠️ No vendor associated with employee');
     }
 
     // Transform the data
@@ -305,6 +343,9 @@ router.get("/:id", async (req, res) => {
       user: employee.user,
     };
 
+    console.log('📤 Sending response with vendorId:', transformedEmployee.vendorId);
+    console.log('📤 Sending response with vendor object:', transformedEmployee.vendor);
+    
     res.json({
       success: true,
       employee: transformedEmployee,
@@ -323,8 +364,33 @@ router.post("/", async (req, res) => {
   try {
     const employeeData = req.body;
 
+    console.log('➕ Creating new employee:', {
+      firstName: employeeData.firstName,
+      lastName: employeeData.lastName,
+      email: employeeData.email,
+      tenantId: employeeData.tenantId
+    });
+
+    // Check if employee with same email already exists
+    const existingEmployee = await Employee.findOne({
+      where: {
+        email: employeeData.email,
+        tenantId: employeeData.tenantId
+      }
+    });
+
+    if (existingEmployee) {
+      console.log('⚠️ Employee with this email already exists:', existingEmployee.id);
+      return res.status(409).json({
+        error: "Employee with this email already exists",
+        existingEmployeeId: existingEmployee.id
+      });
+    }
+
     // Create the employee record
     const employee = await Employee.create(employeeData);
+
+    console.log('✅ Employee created successfully:', employee.id);
 
     res.status(201).json({
       success: true,

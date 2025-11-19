@@ -206,7 +206,7 @@ models.User = sequelize.define(
       field: "last_login",
     },
     role: {
-      type: DataTypes.ENUM("admin", "manager", "employee", "accountant", "hr"),
+      type: DataTypes.ENUM("admin", "manager", "approver", "employee", "accountant", "hr"),
       defaultValue: "employee",
     },
     permissions: {

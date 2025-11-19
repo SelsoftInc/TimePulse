@@ -621,23 +621,34 @@ router.get("/:id", async (req, res) => {
       }
     }
 
-    // Fetch employee
+    // Fetch employee with vendor association
     const employeeId = invoice.employeeId || timesheet?.employeeId;
     if (employeeId) {
       try {
         employee = await models.Employee.findOne({
           where: { id: employeeId },
-          attributes: ["id", "firstName", "lastName", "email", "title", "position", "department", "hourlyRate", "vendorId"]
+          attributes: ["id", "firstName", "lastName", "email", "title", "position", "department", "hourlyRate", "vendorId"],
+          include: [{
+            model: models.Vendor,
+            as: 'vendor',
+            attributes: ["id", "name", "email", "phone", "address", "city", "state", "zipCode"],
+            required: false
+          }]
         });
         console.log('✅ Employee found:', employee?.firstName, employee?.lastName);
+        console.log('✅ Employee vendor (nested):', employee?.vendor?.name, employee?.vendor?.email);
 
-        // Fetch employee's vendor if we don't have vendor yet
-        if (employee?.vendorId && !vendor) {
+        // If employee has vendor and we don't have vendor yet, use employee's vendor
+        if (employee?.vendor && !vendor) {
+          vendor = employee.vendor;
+          console.log('✅ Using vendor from employee association:', vendor?.name, 'Email:', vendor?.email);
+        } else if (employee?.vendorId && !vendor) {
+          // Fallback: Fetch vendor separately if association didn't work
           vendor = await models.Vendor.findOne({
             where: { id: employee.vendorId },
             attributes: ["id", "name", "email", "phone", "address", "city", "state", "zipCode"]
           });
-          console.log('✅ Vendor found via employee.vendorId:', vendor?.name, 'Email:', vendor?.email);
+          console.log('✅ Vendor found via separate query:', vendor?.name, 'Email:', vendor?.email);
         } else if (!vendor) {
           console.log('⚠️ No vendor found - employee.vendorId:', employee?.vendorId);
         }

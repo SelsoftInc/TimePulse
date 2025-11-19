@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import ReactDOM from "react-dom";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useLocation } from "react-router-dom";
 import { PERMISSIONS } from "../../utils/roles";
 import PermissionGuard from "../common/PermissionGuard";
 import { useAuth } from "../../contexts/AuthContext";
@@ -20,6 +20,7 @@ import { apiFetch } from "../../config/api";
 
 const EmployeeList = () => {
   const { subdomain } = useParams();
+  const location = useLocation();
   const { checkPermission, user } = useAuth();
   const { toast } = useToast();
   const { confirmation, showConfirmation, confirm, cancel } = useConfirmation();
@@ -228,6 +229,9 @@ const EmployeeList = () => {
       setLoading(true);
       setError("");
 
+      console.log('🔄 Fetching employees list...');
+      console.log('📍 Current location:', location.pathname);
+
       if (!user?.tenantId) {
         setError("No tenant information available");
         setLoading(false);
@@ -252,6 +256,21 @@ const EmployeeList = () => {
       const data = await response.json();
 
       if (data.success) {
+        console.log('✅ Employees fetched:', data.employees?.length || 0, 'employees');
+        
+        // Check for duplicate IDs
+        const employeeIds = data.employees?.map(e => e.id) || [];
+        const uniqueIds = [...new Set(employeeIds)];
+        if (employeeIds.length !== uniqueIds.length) {
+          console.log('⚠️ WARNING: Duplicate employee IDs in response!');
+          console.log('📋 All IDs:', employeeIds);
+          console.log('📋 Unique IDs:', uniqueIds);
+          
+          // Find duplicates
+          const duplicates = employeeIds.filter((id, index) => employeeIds.indexOf(id) !== index);
+          console.log('🔍 Duplicate IDs:', [...new Set(duplicates)]);
+        }
+        
         setEmployees(data.employees || []);
       } else {
         setError(data.error || "Failed to fetch employees");
@@ -266,7 +285,7 @@ const EmployeeList = () => {
 
   useEffect(() => {
     fetchEmployees();
-  }, [user?.tenantId, filters.status]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [user?.tenantId, filters.status, location.pathname]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Fetch clients when opening modal
   const fetchClients = async () => {
@@ -778,9 +797,16 @@ const EmployeeList = () => {
                         )}
                       </div>
                       <div className="nk-tb-col tb-col-md">
-                        <span className="tb-sub">
-                          {employee.client || <span className="text-soft">Not assigned</span>}
-                        </span>
+                        {employee.client?.name ? (
+                          <Link
+                            to={`/${subdomain}/clients/${employee.clientId}`}
+                            className="tb-sub"
+                          >
+                            {employee.client.name}
+                          </Link>
+                        ) : (
+                          <span className="tb-sub text-soft">Not assigned</span>
+                        )}
                       </div>
                       <div className="nk-tb-col tb-col-md">
                         {employee.endClient ? (

@@ -17,12 +17,18 @@ const UserManagement = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [filterRole, setFilterRole] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [saving, setSaving] = useState(false);
+  const [roleOptions, setRoleOptions] = useState([]);
+  const [loadingRoles, setLoadingRoles] = useState(true);
 
-  const roleOptions = [
+  // Default role options as fallback
+  const defaultRoleOptions = [
     { value: 'admin', label: 'Admin', badge: 'danger' },
     { value: 'manager', label: 'Manager', badge: 'primary' },
     { value: 'approver', label: 'Approver', badge: 'info' },
-    { value: 'employee', label: 'Employee', badge: 'secondary' }
+    { value: 'employee', label: 'Employee', badge: 'secondary' },
+    { value: 'accountant', label: 'Accountant', badge: 'warning' },
+    { value: 'hr', label: 'HR', badge: 'success' }
   ];
 
   const statusOptions = [
@@ -32,8 +38,62 @@ const UserManagement = () => {
   ];
 
   useEffect(() => {
+    fetchRoles();
     fetchUsers();
   }, [user?.tenantId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const fetchRoles = async () => {
+    try {
+      setLoadingRoles(true);
+      console.log('📋 Fetching user roles from API...');
+      
+      const response = await apiFetch('/api/lookups/user_role', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch roles');
+      }
+
+      const data = await response.json();
+      console.log('✅ Roles fetched:', data);
+
+      if (data.success && data.lookups && data.lookups.length > 0) {
+        // Map lookups to role options format
+        const roles = data.lookups.map(lookup => ({
+          value: lookup.code,
+          label: lookup.label,
+          badge: getRoleBadge(lookup.code)
+        }));
+        setRoleOptions(roles);
+        console.log('✅ Role options set:', roles);
+      } else {
+        console.log('⚠️  No roles found in API, using defaults');
+        setRoleOptions(defaultRoleOptions);
+      }
+    } catch (error) {
+      console.error('❌ Error fetching roles:', error);
+      console.log('⚠️  Using default role options');
+      setRoleOptions(defaultRoleOptions);
+    } finally {
+      setLoadingRoles(false);
+    }
+  };
+
+  const getRoleBadge = (roleCode) => {
+    const badgeMap = {
+      'admin': 'danger',
+      'manager': 'primary',
+      'approver': 'info',
+      'employee': 'secondary',
+      'accountant': 'warning',
+      'hr': 'success'
+    };
+    return badgeMap[roleCode] || 'secondary';
+  };
 
   const fetchUsers = async () => {
     try {
@@ -65,7 +125,22 @@ const UserManagement = () => {
   };
 
   const handleSaveUser = async () => {
+    if (!editingUser) {
+      console.error('No user selected for editing');
+      toast.error('No user selected');
+      return;
+    }
+
     try {
+      setSaving(true);
+      console.log('💾 Saving user changes:', {
+        userId: editingUser.id,
+        role: editingUser.role,
+        status: editingUser.status,
+        department: editingUser.department,
+        title: editingUser.title
+      });
+
       const response = await apiFetch(`/api/users/${editingUser.id}?tenantId=${user.tenantId}`, {
         method: 'PUT',
         headers: {
@@ -80,16 +155,42 @@ const UserManagement = () => {
         })
       });
 
+      console.log('📡 Response status:', response.status);
+
       if (!response.ok) {
-        throw new Error('Failed to update user');
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        console.error('❌ Update failed:', errorData);
+        throw new Error(errorData.error || 'Failed to update user');
       }
+
+      const data = await response.json();
+      console.log('✅ User updated successfully:', data);
+
+      // Update the local state immediately
+      setUsers(prevUsers => 
+        prevUsers.map(u => 
+          u.id === editingUser.id 
+            ? { ...u, 
+                role: editingUser.role, 
+                status: editingUser.status,
+                department: editingUser.department,
+                title: editingUser.title 
+              }
+            : u
+        )
+      );
 
       toast.success('User updated successfully');
       setShowEditModal(false);
-      fetchUsers();
+      setEditingUser(null);
+      
+      // Refresh users list from server to ensure consistency
+      await fetchUsers();
     } catch (error) {
-      console.error('Error updating user:', error);
-      toast.error('Failed to update user');
+      console.error('❌ Error updating user:', error);
+      toast.error(error.message || 'Failed to update user');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -327,11 +428,28 @@ const UserManagement = () => {
                 </div>
               </div>
               <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={() => setShowEditModal(false)}>
+                <button 
+                  type="button" 
+                  className="btn btn-secondary" 
+                  onClick={() => setShowEditModal(false)}
+                  disabled={saving}
+                >
                   Cancel
                 </button>
-                <button type="button" className="btn btn-primary" onClick={handleSaveUser}>
-                  Save Changes
+                <button 
+                  type="button" 
+                  className="btn btn-primary" 
+                  onClick={handleSaveUser}
+                  disabled={saving}
+                >
+                  {saving ? (
+                    <>
+                      <span className="spinner-border spinner-border-sm mr-2" role="status" aria-hidden="true"></span>
+                      Saving...
+                    </>
+                  ) : (
+                    'Save Changes'
+                  )}
                 </button>
               </div>
             </div>

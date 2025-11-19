@@ -53,6 +53,9 @@ const EmployeeForm = () => {
   const [clients, setClients] = useState([]);
   const [clientsLoading, setClientsLoading] = useState(false);
   const [clientsError, setClientsError] = useState("");
+  const [approvers, setApprovers] = useState([]);
+  const [approversLoading, setApproversLoading] = useState(false);
+  const [approversError, setApproversError] = useState("");
 
   // Fetch clients from API
   useEffect(() => {
@@ -61,8 +64,11 @@ const EmployeeForm = () => {
       try {
         setClientsLoading(true);
         setClientsError("");
+        console.log('🔍 Fetching clients from API...');
+        console.log('🔍 API URL:', `${API_BASE}/api/clients?tenantId=${user.tenantId}`);
+        
         const resp = await fetch(
-          `http://localhost:5000/api/clients?tenantId=${user.tenantId}`,
+          `${API_BASE}/api/clients?tenantId=${user.tenantId}`,
           {
             headers: {
               "Content-Type": "application/json",
@@ -70,17 +76,23 @@ const EmployeeForm = () => {
             },
           }
         );
+        
+        console.log('📦 Response status:', resp.status);
+        
         if (!resp.ok) {
           const err = await resp.json().catch(() => ({}));
+          console.error('❌ Failed to fetch clients:', err);
           throw new Error(
-            err.details || `Failed to fetch clients (${resp.status})`
+            err.details || err.error || `Failed to fetch clients (${resp.status})`
           );
         }
         const data = await resp.json();
+        console.log('✅ Clients data received:', data);
         const list = data.clients || data || [];
+        console.log('✅ Clients list:', list.length, 'clients');
         setClients(list);
       } catch (e) {
-        console.error("Failed to fetch clients:", e);
+        console.error("❌ Failed to fetch clients:", e);
         setClientsError(e.message);
       } finally {
         setClientsLoading(false);
@@ -172,40 +184,55 @@ const EmployeeForm = () => {
     fetchEmployee();
   }, [isEditMode, id, user?.tenantId]);
 
-  // Sample client list - in a real app, this would come from an API
-  // Sample approver list - in a real app, this would come from an API
-  const approvers = [
-    {
-      id: 1,
-      name: "John Smith",
-      email: "john.smith@company.com",
-      department: "Engineering",
-    },
-    {
-      id: 2,
-      name: "Sarah Johnson",
-      email: "sarah.johnson@company.com",
-      department: "Design",
-    },
-    {
-      id: 3,
-      name: "Mike Wilson",
-      email: "mike.wilson@company.com",
-      department: "Operations",
-    },
-    {
-      id: 4,
-      name: "Lisa Brown",
-      email: "lisa.brown@company.com",
-      department: "Management",
-    },
-    {
-      id: 5,
-      name: "David Lee",
-      email: "david.lee@company.com",
-      department: "HR",
-    },
-  ];
+  // Fetch approvers (users with admin or approver role) from API
+  useEffect(() => {
+    const fetchApprovers = async () => {
+      if (!user?.tenantId) return;
+      try {
+        setApproversLoading(true);
+        setApproversError("");
+        console.log('🔍 Fetching approvers from API...');
+        console.log('🔍 API URL:', `${API_BASE}/api/users?tenantId=${user.tenantId}`);
+        
+        const resp = await fetch(
+          `${API_BASE}/api/users?tenantId=${user.tenantId}`,
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
+        );
+        
+        console.log('📦 Response status:', resp.status);
+        
+        if (!resp.ok) {
+          const err = await resp.json().catch(() => ({}));
+          console.error('❌ Failed to fetch approvers:', err);
+          throw new Error(
+            err.details || err.error || `Failed to fetch approvers (${resp.status})`
+          );
+        }
+        const data = await resp.json();
+        console.log('✅ Users data received:', data);
+        
+        // Filter users with admin or approver role
+        const allUsers = data.users || data || [];
+        const approverUsers = allUsers.filter(
+          u => u.role === 'admin' || u.role === 'approver'
+        );
+        
+        console.log('✅ Filtered approvers:', approverUsers.length, 'users');
+        setApprovers(approverUsers);
+      } catch (e) {
+        console.error("❌ Failed to fetch approvers:", e);
+        setApproversError(e.message);
+      } finally {
+        setApproversLoading(false);
+      }
+    };
+    fetchApprovers();
+  }, [user?.tenantId]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -700,11 +727,25 @@ const EmployeeForm = () => {
                           >
                             <option value="">Select Approver</option>
                             {approvers.map((approver) => (
-                              <option key={approver.id} value={approver.name}>
-                                {approver.name} - {approver.department}
+                              <option key={approver.id} value={approver.id}>
+                                {approver.firstName} {approver.lastName} - {approver.department || approver.role}
                               </option>
                             ))}
                           </select>
+                          {approversLoading && (
+                            <div className="form-note mt-1">
+                              <small className="text-soft">
+                                Loading approvers…
+                              </small>
+                            </div>
+                          )}
+                          {approversError && (
+                            <div className="form-note mt-1">
+                              <small className="text-danger">
+                                {approversError}
+                              </small>
+                            </div>
+                          )}
                           <div className="form-note mt-1">
                             <small className="text-soft">
                               This person will approve/reject employee

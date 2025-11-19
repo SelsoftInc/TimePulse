@@ -604,28 +604,76 @@ const TimesheetSummary = () => {
         status: timesheet.status
       });
 
-      // Fetch employee data to get vendor/client information
-      let employeeVendorId = timesheet.vendorId;
-      let employeeClientId = timesheet.clientId;
+      // ALWAYS fetch employee data to get vendor/client information
+      // Don't rely on timesheet.vendorId as it might not be populated
+      let employeeVendorId = null;
+      let employeeClientId = null;
+      let employeeData = null;
       
-      if (!employeeVendorId && !employeeClientId && timesheet.employeeId) {
+      if (timesheet.employeeId) {
         console.log('🔍 Fetching employee data to get vendor/client info...');
+        console.log('🔍 Employee ID:', timesheet.employeeId);
+        console.log('🔍 Tenant ID:', user.tenantId);
+        console.log('🔍 API URL:', `${API_BASE}/api/employees/${timesheet.employeeId}?tenantId=${user.tenantId}`);
+        
         try {
           const empResponse = await axios.get(
             `${API_BASE}/api/employees/${timesheet.employeeId}?tenantId=${user.tenantId}`
           );
+          
+          console.log('📦 Full API Response:', empResponse);
+          console.log('📦 Response Data:', empResponse.data);
+          console.log('📦 Response Success:', empResponse.data.success);
+          
           if (empResponse.data.success) {
-            const employeeData = empResponse.data.employee || empResponse.data.data;
+            employeeData = empResponse.data.employee || empResponse.data.data;
+            console.log('📦 Employee Data Object:', employeeData);
+            console.log('📦 Employee Data Keys:', Object.keys(employeeData || {}));
+            
             employeeVendorId = employeeData.vendorId;
             employeeClientId = employeeData.clientId;
+            
             console.log('✅ Employee data fetched:', {
+              employeeId: timesheet.employeeId,
+              employeeName: employeeData.firstName + ' ' + employeeData.lastName,
               vendorId: employeeVendorId,
-              clientId: employeeClientId
+              clientId: employeeClientId,
+              hasVendor: !!employeeData.vendor,
+              hasClient: !!employeeData.client
             });
+            
+            // Also check nested vendor/client objects
+            if (employeeData.vendor) {
+              console.log('📦 Nested Vendor Object:', employeeData.vendor);
+              if (!employeeVendorId && employeeData.vendor.id) {
+                employeeVendorId = employeeData.vendor.id;
+                console.log('✅ Using vendor ID from nested object:', employeeVendorId);
+              }
+            }
+            if (employeeData.client) {
+              console.log('📦 Nested Client Object:', employeeData.client);
+              if (!employeeClientId && employeeData.client.id) {
+                employeeClientId = employeeData.client.id;
+                console.log('✅ Using client ID from nested object:', employeeClientId);
+              }
+            }
+          } else {
+            console.error('❌ API returned success: false');
           }
         } catch (error) {
           console.error('❌ Error fetching employee data:', error);
+          console.error('❌ Error response:', error.response?.data);
         }
+      }
+      
+      // Fallback to timesheet vendor/client if employee doesn't have one
+      if (!employeeVendorId && timesheet.vendorId) {
+        employeeVendorId = timesheet.vendorId;
+        console.log('ℹ️ Using vendor from timesheet:', employeeVendorId);
+      }
+      if (!employeeClientId && timesheet.clientId) {
+        employeeClientId = timesheet.clientId;
+        console.log('ℹ️ Using client from timesheet:', employeeClientId);
       }
 
       // Pre-validation: Check if employee has vendor or client assigned
@@ -1398,11 +1446,16 @@ const TimesheetSummary = () => {
                     <span className="invoice-detail-label">Vendor:</span>
                     <span className="invoice-detail-value">
                       {(() => {
+                        console.log('🔍 Full selectedInvoice object:', selectedInvoice);
+                        console.log('🔍 selectedInvoice.vendor:', selectedInvoice.vendor);
+                        console.log('🔍 selectedInvoice.employee:', selectedInvoice.employee);
+                        console.log('🔍 selectedInvoice.timesheet:', selectedInvoice.timesheet);
+                        
                         // Try multiple paths to find vendor name
                         const vendorName = selectedInvoice.vendor?.name || 
                                           selectedInvoice.timesheet?.employee?.vendor?.name || 
                                           selectedInvoice.employee?.vendor?.name;
-                        console.log('🏢 Displaying vendor name:', vendorName);
+                        console.log('🏢 Final vendor name:', vendorName);
                         return vendorName || 'N/A';
                       })()}
                     </span>
@@ -1415,7 +1468,7 @@ const TimesheetSummary = () => {
                         const vendorEmail = selectedInvoice.vendor?.email || 
                                            selectedInvoice.timesheet?.employee?.vendor?.email || 
                                            selectedInvoice.employee?.vendor?.email;
-                        console.log('📧 Displaying vendor email:', vendorEmail);
+                        console.log('📧 Final vendor email:', vendorEmail);
                         return vendorEmail || 'N/A';
                       })()}
                     </span>
@@ -1431,7 +1484,7 @@ const TimesheetSummary = () => {
                         } else if (selectedInvoice.timesheet?.employee?.firstName && selectedInvoice.timesheet?.employee?.lastName) {
                           employeeName = `${selectedInvoice.timesheet.employee.firstName} ${selectedInvoice.timesheet.employee.lastName}`;
                         }
-                        console.log('👤 Displaying employee name:', employeeName);
+                        console.log('👤 Final employee name:', employeeName);
                         return employeeName;
                       })()}
                     </span>
@@ -1443,7 +1496,7 @@ const TimesheetSummary = () => {
                         // Try multiple paths to find employee email
                         const employeeEmail = selectedInvoice.employee?.email || 
                                              selectedInvoice.timesheet?.employee?.email;
-                        console.log('📧 Displaying employee email:', employeeEmail);
+                        console.log('📧 Final employee email:', employeeEmail);
                         return employeeEmail || 'N/A';
                       })()}
                     </span>

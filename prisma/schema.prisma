@@ -461,6 +461,7 @@ enum enum_timesheets_status {
 enum enum_users_role {
   admin
   manager
+  approver
   employee
   accountant
   hr

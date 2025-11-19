@@ -115,6 +115,7 @@ ALTER TYPE public.enum_timesheets_status OWNER TO postgres;
 CREATE TYPE public.enum_users_role AS ENUM (
     'admin',
     'manager',
+    'approver',
     'employee',
     'accountant',
     'hr'

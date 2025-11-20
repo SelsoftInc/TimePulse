@@ -2416,6 +2416,176 @@ body.dark-mode .overtime-comment strong {
   border-left: 3px solid #ffc107;
 }
 
+/* Overtime Category Styling */
+.overtime-category {
+  margin-bottom: 20px;
+  padding: 16px;
+  border-radius: 8px;
+  background: #f8f9fa;
+}
+
+.overtime-category strong {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  color: #856404;
+  font-size: 15px;
+}
+
+.overtime-category strong i {
+  font-size: 16px;
+}
+
+/* Weekend Work Styling */
+.weekend-days {
+  background: #e8f5e9;
+  border-left: 4px solid #4caf50;
+}
+
+.weekend-days strong {
+  color: #2e7d32;
+}
+
+.weekend-list li {
+  background: #c8e6c9;
+  border-color: #81c784;
+}
+
+.weekend-list .day-name,
+.weekend-list .day-hours {
+  color: #1b5e20;
+}
+
+.weekend-list .day-hours {
+  background: #a5d6a7;
+}
+
+/* Holiday Work Styling */
+.holiday-days {
+  background: #fce4ec;
+  border-left: 4px solid #e91e63;
+}
+
+.holiday-days strong {
+  color: #c2185b;
+}
+
+.holiday-list li {
+  background: #f8bbd0;
+  border-color: #f48fb1;
+}
+
+.holiday-list .day-name,
+.holiday-list .day-hours {
+  color: #880e4f;
+}
+
+.holiday-list .day-hours {
+  background: #f06292;
+}
+
+.holiday-name {
+  color: #880e4f;
+  font-style: italic;
+  font-size: 13px;
+  margin-left: 8px;
+}
+
+/* Category Notes */
+.category-note {
+  margin-top: 12px;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 6px;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+}
+
+.weekend-note {
+  color: #2e7d32;
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.holiday-note {
+  color: #c2185b;
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.category-note i {
+  font-size: 14px;
+}
+
+/* Dark Mode Support for Categories */
+body.dark-mode .overtime-category {
+  background: #1e293b;
+}
+
+body.dark-mode .weekend-days {
+  background: #1a3a2a;
+  border-left-color: #4caf50;
+}
+
+body.dark-mode .weekend-days strong {
+  color: #81c784;
+}
+
+body.dark-mode .weekend-list li {
+  background: #2d4a3a;
+  border-color: #4caf50;
+}
+
+body.dark-mode .weekend-list .day-name,
+body.dark-mode .weekend-list .day-hours {
+  color: #a5d6a7;
+}
+
+body.dark-mode .weekend-list .day-hours {
+  background: #1a3a2a;
+}
+
+body.dark-mode .holiday-days {
+  background: #3a1a2a;
+  border-left-color: #e91e63;
+}
+
+body.dark-mode .holiday-days strong {
+  color: #f48fb1;
+}
+
+body.dark-mode .holiday-list li {
+  background: #4a2a3a;
+  border-color: #e91e63;
+}
+
+body.dark-mode .holiday-list .day-name,
+body.dark-mode .holiday-list .day-hours {
+  color: #f8bbd0;
+}
+
+body.dark-mode .holiday-list .day-hours {
+  background: #3a1a2a;
+}
+
+body.dark-mode .holiday-name {
+  color: #f8bbd0;
+}
+
+body.dark-mode .category-note {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+body.dark-mode .weekend-note {
+  color: #81c784;
+}
+
+body.dark-mode .holiday-note {
+  color: #f48fb1;
+}
+
 body.dark-mode .overtime-comment p {
   color: #e2e8f0 !important;
   background: #1e3a5f;

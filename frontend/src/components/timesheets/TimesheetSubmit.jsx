@@ -976,7 +976,7 @@ const TimesheetSubmit = () => {
     }
   };
 
-  // Check for overtime (more than 8 hours per day)
+  // Check for overtime (more than 8 hours per day), weekend work, and holiday work
   const checkForOvertime = () => {
     const dayNames = ['Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
     const overtimeDaysDetected = [];
@@ -992,13 +992,97 @@ const TimesheetSubmit = () => {
       fri: clientHours.reduce((sum, c) => sum + (c.hours[6] || 0), 0),
     };
 
-    // Check each day for overtime
+    // Parse week dates to check for holidays
+    const getWeekDates = () => {
+      if (!selectedWeek) return [];
+      const [startStr] = selectedWeek.split(" To ");
+      const startParts = startStr.split("-");
+      const startDate = new Date(
+        parseInt(startParts[2]), // year
+        new Date(Date.parse(startParts[1] + " 1, 2000")).getMonth(), // month
+        parseInt(startParts[0]) // day
+      );
+      
+      const dates = [];
+      for (let i = 0; i < 7; i++) {
+        const date = new Date(startDate);
+        date.setDate(startDate.getDate() + i);
+        dates.push(date);
+      }
+      return dates;
+    };
+
+    // Define holidays (you can fetch this from API in future)
+    const holidays = [
+      { date: '2024-01-01', name: 'New Year\'s Day' },
+      { date: '2024-01-15', name: 'Martin Luther King Jr. Day' },
+      { date: '2024-02-19', name: 'Presidents\' Day' },
+      { date: '2024-05-27', name: 'Memorial Day' },
+      { date: '2024-07-04', name: 'Independence Day' },
+      { date: '2024-09-02', name: 'Labor Day' },
+      { date: '2024-10-14', name: 'Columbus Day' },
+      { date: '2024-11-11', name: 'Veterans Day' },
+      { date: '2024-11-28', name: 'Thanksgiving Day' },
+      { date: '2024-12-25', name: 'Christmas Day' },
+      { date: '2025-01-01', name: 'New Year\'s Day' },
+      { date: '2025-01-20', name: 'Martin Luther King Jr. Day' },
+      { date: '2025-02-17', name: 'Presidents\' Day' },
+      { date: '2025-05-26', name: 'Memorial Day' },
+      { date: '2025-07-04', name: 'Independence Day' },
+      { date: '2025-09-01', name: 'Labor Day' },
+      { date: '2025-10-13', name: 'Columbus Day' },
+      { date: '2025-11-11', name: 'Veterans Day' },
+      { date: '2025-11-27', name: 'Thanksgiving Day' },
+      { date: '2025-12-25', name: 'Christmas Day' },
+    ];
+
+    const weekDates = getWeekDates();
+
+    // Check each day for overtime, weekend work, or holiday work
     Object.keys(dailyTotals).forEach((dayKey, index) => {
       const hours = dailyTotals[dayKey];
-      if (hours > 8) {
+      
+      // Skip if no hours worked
+      if (hours === 0) return;
+
+      const dayName = dayNames[index];
+      const isWeekend = index === 0 || index === 1; // Saturday or Sunday
+      
+      // Check if this day is a holiday
+      let holidayName = null;
+      if (weekDates[index]) {
+        const dateStr = weekDates[index].toISOString().split('T')[0];
+        const holiday = holidays.find(h => h.date === dateStr);
+        if (holiday) {
+          holidayName = holiday.name;
+        }
+      }
+
+      // Add to overtime detection if:
+      // 1. Weekend work (any hours on Saturday/Sunday)
+      // 2. Holiday work (any hours on a holiday)
+      // 3. Overtime on weekday (more than 8 hours)
+      if (isWeekend && hours > 0) {
         overtimeDaysDetected.push({
-          day: dayNames[index],
-          hours: hours.toFixed(2)
+          day: dayName,
+          hours: hours.toFixed(2),
+          isWeekend: true,
+          isHoliday: false,
+        });
+      } else if (holidayName) {
+        overtimeDaysDetected.push({
+          day: dayName,
+          hours: hours.toFixed(2),
+          isWeekend: false,
+          isHoliday: true,
+          holidayName: holidayName,
+        });
+      } else if (hours > 8) {
+        overtimeDaysDetected.push({
+          day: dayName,
+          hours: hours.toFixed(2),
+          isWeekend: false,
+          isHoliday: false,
         });
       }
     });

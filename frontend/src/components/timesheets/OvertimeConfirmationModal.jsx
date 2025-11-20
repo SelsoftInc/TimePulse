@@ -7,9 +7,14 @@ const OvertimeConfirmationModal = ({ isOpen, onClose, onConfirm, overtimeDays })
 
   if (!isOpen) return null;
 
+  // Categorize days by type
+  const weekendDays = overtimeDays.filter(d => d.isWeekend);
+  const holidayDays = overtimeDays.filter(d => d.isHoliday);
+  const overtimeDaysOnly = overtimeDays.filter(d => !d.isWeekend && !d.isHoliday && d.hours > 8);
+
   const handleConfirm = () => {
     if (!comment.trim()) {
-      setError('Comment is mandatory. Please explain why you worked more than 8 hours.');
+      setError('Comment is mandatory. Please provide an explanation.');
       return;
     }
 
@@ -33,24 +38,63 @@ const OvertimeConfirmationModal = ({ isOpen, onClose, onConfirm, overtimeDays })
         </div>
 
         <div className="overtime-modal-body">
-          <div className="overtime-alert-message">
-            <p>You have worked more than 8 hours on the following day(s):</p>
-            <ul className="overtime-days-list">
-              {overtimeDays.map((day, index) => (
-                <li key={index}>
-                  <strong>{day.day}:</strong> {day.hours} hours
-                </li>
-              ))}
-            </ul>
-          </div>
+          {/* Overtime Days (>8 hours on weekdays) */}
+          {overtimeDaysOnly.length > 0 && (
+            <div className="overtime-alert-message">
+              <p><i className="fas fa-clock"></i> You have worked more than 8 hours on the following day(s):</p>
+              <ul className="overtime-days-list">
+                {overtimeDaysOnly.map((day, index) => (
+                  <li key={index}>
+                    <strong>{day.day}:</strong> {day.hours} hours
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Weekend Work Alert */}
+          {weekendDays.length > 0 && (
+            <div className="weekend-alert-message">
+              <p><i className="fas fa-calendar-week"></i> You have worked on weekend(s):</p>
+              <ul className="overtime-days-list">
+                {weekendDays.map((day, index) => (
+                  <li key={index}>
+                    <strong>{day.day}:</strong> {day.hours} hours
+                  </li>
+                ))}
+              </ul>
+              <div className="alert-note">
+                <i className="fas fa-info-circle"></i>
+                <span>Weekend work requires manager approval and explanation.</span>
+              </div>
+            </div>
+          )}
+
+          {/* Holiday Work Alert */}
+          {holidayDays.length > 0 && (
+            <div className="holiday-alert-message">
+              <p><i className="fas fa-umbrella-beach"></i> You have worked on holiday(s):</p>
+              <ul className="overtime-days-list">
+                {holidayDays.map((day, index) => (
+                  <li key={index}>
+                    <strong>{day.day}:</strong> {day.hours} hours {day.holidayName && <span className="holiday-name">({day.holidayName})</span>}
+                  </li>
+                ))}
+              </ul>
+              <div className="alert-note holiday-note">
+                <i className="fas fa-exclamation-circle"></i>
+                <span>Holiday work requires special authorization and explanation.</span>
+              </div>
+            </div>
+          )}
 
           <div className="overtime-question">
-            <p>Have you worked more than 8 hours on {overtimeDays.length > 1 ? 'these days' : 'this day'}?</p>
+            <p>Please confirm and provide an explanation for the above working hours.</p>
           </div>
 
           <div className="overtime-comment-section">
             <label htmlFor="overtime-comment" className="overtime-label">
-              <span className="required-star">*</span> Please provide a comment explaining the overtime:
+              <span className="required-star">*</span> Please provide a detailed explanation:
             </label>
             <textarea
               id="overtime-comment"
@@ -60,8 +104,8 @@ const OvertimeConfirmationModal = ({ isOpen, onClose, onConfirm, overtimeDays })
                 setComment(e.target.value);
                 if (error) setError('');
               }}
-              placeholder="Example: Project deadline, client meeting, urgent bug fix, etc."
-              rows="4"
+              placeholder="Example: Project deadline, client meeting, urgent production issue, manager approval received, etc."
+              rows="5"
             />
             {error && <div className="overtime-error-message">{error}</div>}
           </div>

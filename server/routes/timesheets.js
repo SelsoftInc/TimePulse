@@ -989,11 +989,13 @@ router.get("/approved-today", async (req, res, next) => {
       where: {
         tenantId,
         status: "approved",
-        approved_at: {
+        approvedAt: {
           [Op.between]: [startOfDay, endOfDay],
         },
       },
     });
+
+    console.log(`📊 Approved timesheets count for ${todayStr}:`, count);
 
     res.json({ success: true, count });
   } catch (err) {
@@ -1036,11 +1038,13 @@ router.get("/rejected-today", async (req, res, next) => {
       where: {
         tenantId,
         status: "rejected",
-        updated_at: {
+        updatedAt: {
           [Op.between]: [startOfDay, endOfDay],
         },
       },
     });
+
+    console.log(`📊 Rejected timesheets count for ${todayStr}:`, count);
 
     res.json({ success: true, count });
   } catch (err) {

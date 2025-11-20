@@ -1,9 +1,28 @@
 // src/components/reports/ReportsDashboard.jsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { API_BASE } from "../../config/api";
 import "./ReportsDashboard.css";
 import '../common/ActionsDropdown.css';
 import InvoicePDFPreviewModal from '../common/InvoicePDFPreviewModal';
+
+// Helper functions outside component to avoid dependency issues
+const getMonday = (date) => {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+  return new Date(d.setDate(diff));
+};
+
+const getSunday = (date) => {
+  const monday = getMonday(date);
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
+  return sunday;
+};
+
+const formatDate = (date) => {
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+};
 
 const ReportsDashboard = () => {
   const [activeTab, setActiveTab] = useState("client");
@@ -11,6 +30,15 @@ const ReportsDashboard = () => {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  
+  // Week range state
+  const [weekStart, setWeekStart] = useState(null);
+  const [weekEnd, setWeekEnd] = useState(null);
+  const [viewMode, setViewMode] = useState('month'); // 'month' or 'week'
+  
+  // Calendar picker state
+  const [showCalendar, setShowCalendar] = useState(false);
+  const [calendarDate, setCalendarDate] = useState(new Date());
 
   // Real data from API
   const [clientReportData, setClientReportData] = useState([]);
@@ -22,6 +50,132 @@ const ReportsDashboard = () => {
   const [openActionsId, setOpenActionsId] = useState(null);
   const [actionsType, setActionsType] = useState(null); // 'client', 'employee', 'invoice'
   
+  // Initialize week range on component mount
+  useEffect(() => {
+    const today = new Date();
+    const monday = getMonday(today);
+    const sunday = getSunday(today);
+    setWeekStart(monday);
+    setWeekEnd(sunday);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  
+  // Navigate to previous week
+  const goToPreviousWeek = () => {
+    const newStart = new Date(weekStart);
+    newStart.setDate(weekStart.getDate() - 7);
+    const newEnd = new Date(weekEnd);
+    newEnd.setDate(weekEnd.getDate() - 7);
+    setWeekStart(newStart);
+    setWeekEnd(newEnd);
+  };
+  
+  // Navigate to next week
+  const goToNextWeek = () => {
+    const newStart = new Date(weekStart);
+    newStart.setDate(weekStart.getDate() + 7);
+    const newEnd = new Date(weekEnd);
+    newEnd.setDate(weekEnd.getDate() + 7);
+    setWeekStart(newStart);
+    setWeekEnd(newEnd);
+  };
+  
+  // Go to current week
+  const goToCurrentWeek = () => {
+    const today = new Date();
+    const monday = getMonday(today);
+    const sunday = getSunday(today);
+    setWeekStart(monday);
+    setWeekEnd(sunday);
+  };
+  
+  // Check if current week is selected
+  const isCurrentWeek = () => {
+    if (!weekStart || !weekEnd) return false;
+    const today = new Date();
+    const currentMonday = getMonday(today);
+    const currentSunday = getSunday(today);
+    return weekStart.toDateString() === currentMonday.toDateString() && 
+           weekEnd.toDateString() === currentSunday.toDateString();
+  };
+  
+  // Navigate to previous month
+  const goToPreviousMonth = () => {
+    const currentDate = new Date(`${selectedMonth} 1, ${selectedYear}`);
+    currentDate.setMonth(currentDate.getMonth() - 1);
+    setSelectedMonth(currentDate.toLocaleDateString('en-US', { month: 'long' }));
+    setSelectedYear(currentDate.getFullYear().toString());
+  };
+  
+  // Navigate to next month
+  const goToNextMonth = () => {
+    const currentDate = new Date(`${selectedMonth} 1, ${selectedYear}`);
+    currentDate.setMonth(currentDate.getMonth() + 1);
+    setSelectedMonth(currentDate.toLocaleDateString('en-US', { month: 'long' }));
+    setSelectedYear(currentDate.getFullYear().toString());
+  };
+  
+  // Go to current month
+  const goToCurrentMonth = () => {
+    const today = new Date();
+    setSelectedMonth(today.toLocaleDateString('en-US', { month: 'long' }));
+    setSelectedYear(today.getFullYear().toString());
+  };
+  
+  // Check if current month is selected
+  const isCurrentMonth = () => {
+    const today = new Date();
+    const currentMonth = today.toLocaleDateString('en-US', { month: 'long' });
+    const currentYear = today.getFullYear().toString();
+    return selectedMonth === currentMonth && selectedYear === currentYear;
+  };
+  
+  // Calendar functions
+  const handleDateDisplayClick = () => {
+    setShowCalendar(!showCalendar);
+  };
+  
+  const handleCalendarMonthChange = (direction) => {
+    const newDate = new Date(calendarDate);
+    newDate.setMonth(calendarDate.getMonth() + direction);
+    setCalendarDate(newDate);
+  };
+  
+  const handleWeekSelect = (weekStartDate) => {
+    const weekEndDate = getSunday(weekStartDate);
+    setWeekStart(weekStartDate);
+    setWeekEnd(weekEndDate);
+    setShowCalendar(false);
+  };
+  
+  const handleMonthSelect = (month, year) => {
+    setSelectedMonth(month);
+    setSelectedYear(year.toString());
+    setShowCalendar(false);
+  };
+  
+  const getDaysInMonth = (date) => {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const daysInMonth = lastDay.getDate();
+    const startingDayOfWeek = firstDay.getDay();
+    
+    return { daysInMonth, startingDayOfWeek, year, month };
+  };
+  
+  const isDateInSelectedWeek = (date) => {
+    if (!weekStart || !weekEnd) return false;
+    return date >= weekStart && date <= weekEnd;
+  };
+  
+  const isDateInSelectedMonth = (date) => {
+    const dateMonth = date.toLocaleDateString('en-US', { month: 'long' });
+    const dateYear = date.getFullYear().toString();
+    return dateMonth === selectedMonth && dateYear === selectedYear;
+  };
+  
   // PDF Modal state
   const [showPDFModal, setShowPDFModal] = useState(false);
   const [selectedInvoiceForPDF, setSelectedInvoiceForPDF] = useState(null);
@@ -30,38 +184,8 @@ const ReportsDashboard = () => {
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedInvoiceForDetails, setSelectedInvoiceForDetails] = useState(null);
 
-  // Fetch data from API
-  useEffect(() => {
-    fetchReportsData();
-  }, [selectedMonth, selectedYear]);
-
-  // Close dropdown on outside click
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (!event.target.closest('.actions-dropdown')) {
-        setOpenActionsId(null);
-        setActionsType(null);
-      }
-    };
-
-    document.addEventListener('click', handleClickOutside);
-    return () => {
-      document.removeEventListener('click', handleClickOutside);
-    };
-  }, []);
-
-  // Toggle Actions dropdown
-  const toggleActions = (id, type) => {
-    if (openActionsId === id && actionsType === type) {
-      setOpenActionsId(null);
-      setActionsType(null);
-    } else {
-      setOpenActionsId(id);
-      setActionsType(type);
-    }
-  };
-
-  const fetchReportsData = async () => {
+  // Fetch data from API - wrapped in useCallback to prevent infinite loops
+  const fetchReportsData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -71,11 +195,21 @@ const ReportsDashboard = () => {
         throw new Error("No tenant information available");
       }
 
-      // Calculate date range based on selected month/year
-      const year = parseInt(selectedYear);
-      const monthIndex = new Date(`${selectedMonth} 1, ${year}`).getMonth();
-      const startDate = new Date(year, monthIndex, 1);
-      const endDate = new Date(year, monthIndex + 1, 0);
+      // Calculate date range based on view mode
+      let startDate, endDate;
+      
+      if (viewMode === 'week' && weekStart && weekEnd) {
+        startDate = new Date(weekStart);
+        startDate.setHours(0, 0, 0, 0);
+        endDate = new Date(weekEnd);
+        endDate.setHours(23, 59, 59, 999);
+      } else {
+        // Month view
+        const year = parseInt(selectedYear);
+        const monthIndex = new Date(`${selectedMonth} 1, ${year}`).getMonth();
+        startDate = new Date(year, monthIndex, 1);
+        endDate = new Date(year, monthIndex + 1, 0);
+      }
 
       const headers = {
         "Content-Type": "application/json",
@@ -165,7 +299,46 @@ const ReportsDashboard = () => {
     } finally {
       setLoading(false);
     }
+  }, [viewMode, weekStart, weekEnd, selectedMonth, selectedYear]);
+
+  useEffect(() => {
+    if (viewMode === 'week' && weekStart && weekEnd) {
+      fetchReportsData();
+    } else if (viewMode === 'month') {
+      fetchReportsData();
+    }
+  }, [viewMode, weekStart, weekEnd, selectedMonth, selectedYear, fetchReportsData]);
+
+  // Close dropdown and calendar on outside click
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (!event.target.closest('.actions-dropdown')) {
+        setOpenActionsId(null);
+        setActionsType(null);
+      }
+      if (!event.target.closest('.date-range-navigator') && !event.target.closest('.calendar-picker')) {
+        setShowCalendar(false);
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, []);
+
+  // Toggle Actions dropdown
+  const toggleActions = (id, type) => {
+    if (openActionsId === id && actionsType === type) {
+      setOpenActionsId(null);
+      setActionsType(null);
+    } else {
+      setOpenActionsId(id);
+      setActionsType(type);
+    }
   };
+
+  // fetchReportsData moved above as useCallback
 
   // Calculate total hours and amount for all clients
   const totalHours = clientReportData.reduce(
@@ -765,6 +938,7 @@ const ReportsDashboard = () => {
   };
 
   // Function to render analytics report
+  // eslint-disable-next-line no-unused-vars
   const renderAnalyticsReport = () => {
     if (!analyticsData) {
       return (
@@ -932,49 +1106,209 @@ const ReportsDashboard = () => {
                   </div>
                 </div>
                 <div className="nk-block-head-content">
-                  <div className="toggle-wrap nk-block-tools-toggle">
-                    <div className="form-inline flex-nowrap gx-3">
-                      <div className="form-wrap w-150px">
-                        <select
-                          className="form-select form-select-sm"
-                          value={selectedMonth}
-                          onChange={(e) => setSelectedMonth(e.target.value)}
-                        >
-                          {Array.from({ length: 12 }, (_, i) => {
-                            const date = new Date(0, i);
-                            const monthName = date.toLocaleDateString('en-US', { month: 'long' });
-                            return (
-                              <option key={monthName} value={monthName}>
-                                {monthName}
-                              </option>
-                            );
-                          })}
-                        </select>
+                  <div className="reports-header-controls">
+                    {/* View Mode Toggle */}
+                    <div className="view-mode-toggle">
+                      <button
+                        type="button"
+                        className={`toggle-btn ${viewMode === 'month' ? 'active' : ''}`}
+                        onClick={() => setViewMode('month')}
+                      >
+                        <i className="fas fa-calendar-alt"></i>
+                        <span>Month</span>
+                      </button>
+                      <button
+                        type="button"
+                        className={`toggle-btn ${viewMode === 'week' ? 'active' : ''}`}
+                        onClick={() => setViewMode('week')}
+                      >
+                        <i className="fas fa-calendar-week"></i>
+                        <span>Week</span>
+                      </button>
+                    </div>
+                    
+                    {/* Date Range Navigator */}
+                    <div className="date-range-navigator">
+                      {viewMode === 'month' ? (
+                        <>
+                          <button
+                            className="nav-btn"
+                            onClick={goToPreviousMonth}
+                            title="Previous Month"
+                          >
+                            <i className="fas fa-chevron-left"></i>
+                          </button>
+                          
+                          <div className="date-display" onClick={handleDateDisplayClick} style={{ cursor: 'pointer' }}>
+                            <i className="fas fa-calendar-alt"></i>
+                            <span className="date-text">{selectedMonth} {selectedYear}</span>
+                            <i className="fas fa-caret-down" style={{ fontSize: '12px', marginLeft: '8px', opacity: 0.7 }}></i>
+                          </div>
+                          
+                          <button
+                            className="nav-btn"
+                            onClick={goToNextMonth}
+                            title="Next Month"
+                          >
+                            <i className="fas fa-chevron-right"></i>
+                          </button>
+                          
+                          {!isCurrentMonth() && (
+                            <button
+                              className="today-btn"
+                              onClick={goToCurrentMonth}
+                              title="Go to Current Month"
+                            >
+                              <i className="fas fa-calendar-day"></i>
+                              <span>Today</span>
+                            </button>
+                          )}
+                        </>
+                      ) : (
+                        weekStart && weekEnd && (
+                          <>
+                            <button
+                              className="nav-btn"
+                              onClick={goToPreviousWeek}
+                              title="Previous Week"
+                            >
+                              <i className="fas fa-chevron-left"></i>
+                            </button>
+                            
+                            <div className="date-display" onClick={handleDateDisplayClick} style={{ cursor: 'pointer' }}>
+                              <i className="fas fa-calendar-week"></i>
+                              <span className="date-text">
+                                {formatDate(weekStart)} - {formatDate(weekEnd)}
+                              </span>
+                              <i className="fas fa-caret-down" style={{ fontSize: '12px', marginLeft: '8px', opacity: 0.7 }}></i>
+                            </div>
+                            
+                            <button
+                              className="nav-btn"
+                              onClick={goToNextWeek}
+                              title="Next Week"
+                            >
+                              <i className="fas fa-chevron-right"></i>
+                            </button>
+                            
+                            {!isCurrentWeek() && (
+                              <button
+                                className="today-btn"
+                                onClick={goToCurrentWeek}
+                                title="Go to Current Week"
+                              >
+                                <i className="fas fa-calendar-day"></i>
+                                <span>Today</span>
+                              </button>
+                            )}
+                          </>
+                        )
+                      )}
+                    </div>
+                    
+                    {/* Export Button */}
+                    <button className="export-btn">
+                      <i className="fas fa-download"></i>
+                      <span>Export</span>
+                    </button>
+                  </div>
+                  
+                  {/* Calendar Picker */}
+                  {showCalendar && (
+                    <div className="calendar-picker">
+                      <div className="calendar-header">
+                        <button className="calendar-nav-btn" onClick={() => handleCalendarMonthChange(-1)}>
+                          <i className="fas fa-chevron-left"></i>
+                        </button>
+                        <div className="calendar-title">
+                          {calendarDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                        </div>
+                        <button className="calendar-nav-btn" onClick={() => handleCalendarMonthChange(1)}>
+                          <i className="fas fa-chevron-right"></i>
+                        </button>
                       </div>
-                      <div className="form-wrap w-100px">
-                        <select
-                          className="form-select form-select-sm"
-                          value={selectedYear}
-                          onChange={(e) => setSelectedYear(e.target.value)}
-                        >
-                          {Array.from({ length: 5 }, (_, i) => {
-                            const year = new Date().getFullYear() - i;
-                            return (
-                              <option key={year} value={year.toString()}>
-                                {year}
-                              </option>
-                            );
-                          })}
-                        </select>
+                      
+                      <div className="calendar-body">
+                        <div className="calendar-weekdays">
+                          <div className="calendar-weekday">Sun</div>
+                          <div className="calendar-weekday">Mon</div>
+                          <div className="calendar-weekday">Tue</div>
+                          <div className="calendar-weekday">Wed</div>
+                          <div className="calendar-weekday">Thu</div>
+                          <div className="calendar-weekday">Fri</div>
+                          <div className="calendar-weekday">Sat</div>
+                        </div>
+                        
+                        <div className="calendar-days">
+                          {(() => {
+                            const { daysInMonth, startingDayOfWeek, year, month } = getDaysInMonth(calendarDate);
+                            const days = [];
+                            
+                            // Empty cells for days before month starts
+                            for (let i = 0; i < startingDayOfWeek; i++) {
+                              days.push(<div key={`empty-${i}`} className="calendar-day empty"></div>);
+                            }
+                            
+                            // Days of the month
+                            for (let day = 1; day <= daysInMonth; day++) {
+                              const date = new Date(year, month, day);
+                              const monday = getMonday(date);
+                              const isSelected = viewMode === 'week' 
+                                ? isDateInSelectedWeek(date)
+                                : isDateInSelectedMonth(date);
+                              const isToday = date.toDateString() === new Date().toDateString();
+                              const isWeekStart = date.toDateString() === monday.toDateString();
+                              
+                              days.push(
+                                <div
+                                  key={day}
+                                  className={`calendar-day ${
+                                    isSelected ? 'selected' : ''
+                                  } ${
+                                    isToday ? 'today' : ''
+                                  } ${
+                                    viewMode === 'week' && isWeekStart ? 'week-start' : ''
+                                  }`}
+                                  onClick={() => {
+                                    if (viewMode === 'week') {
+                                      handleWeekSelect(monday);
+                                    } else {
+                                      const monthName = date.toLocaleDateString('en-US', { month: 'long' });
+                                      handleMonthSelect(monthName, year);
+                                    }
+                                  }}
+                                >
+                                  <span className="day-number">{day}</span>
+                                  {viewMode === 'week' && isWeekStart && (
+                                    <span className="week-indicator">Week</span>
+                                  )}
+                                </div>
+                              );
+                            }
+                            
+                            return days;
+                          })()}
+                        </div>
                       </div>
-                      <div className="btn-wrap">
-                        <button className="btn btn-dim btn-outline-light btn-export">
-                          <em className="icon ni ni-download-cloud"></em>
-                          <span>Export</span>
+                      
+                      <div className="calendar-footer">
+                        <button 
+                          className="calendar-today-btn"
+                          onClick={() => {
+                            if (viewMode === 'week') {
+                              goToCurrentWeek();
+                            } else {
+                              goToCurrentMonth();
+                            }
+                            setShowCalendar(false);
+                          }}
+                        >
+                          <i className="fas fa-calendar-day"></i>
+                          <span>Today</span>
                         </button>
                       </div>
                     </div>
-                  </div>
+                  )}
                 </div>
               </div>
             </div>

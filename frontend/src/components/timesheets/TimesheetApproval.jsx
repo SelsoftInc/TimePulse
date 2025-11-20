@@ -18,6 +18,7 @@ const TimesheetApproval = () => {
   const [processingId, setProcessingId] = useState(null);
   const [approvedToday, setApprovedToday] = useState(0);
   const [rejectedToday, setRejectedToday] = useState(0);
+  const [pendingCount, setPendingCount] = useState(0);
 
   const loadPendingTimesheets = async () => {
     setLoading(true);
@@ -86,8 +87,17 @@ const TimesheetApproval = () => {
           };
         });
         setTimesheets(formattedTimesheets);
+        
+        // Update pending count based on actual pending timesheets
+        const pendingTimesheets = formattedTimesheets.filter(
+          t => t.status === 'Submitted for Approval'
+        );
+        setPendingCount(pendingTimesheets.length);
+        console.log('📊 Pending timesheets count:', pendingTimesheets.length);
       } else {
         console.error('❌ API returned success: false');
+        setTimesheets([]);
+        setPendingCount(0);
       }
     } catch (error) {
       console.error("❌ Error loading timesheets:", error);
@@ -107,6 +117,8 @@ const TimesheetApproval = () => {
       today.setHours(0, 0, 0, 0);
       const todayStr = today.toISOString().split('T')[0];
 
+      console.log('📊 Loading today\'s counts for date:', todayStr);
+
       // Fetch approved timesheets for today
       const approvedResponse = await axios.get(`${API_BASE}/api/timesheets/approved-today`, {
         params: { tenantId, date: todayStr }
@@ -117,16 +129,32 @@ const TimesheetApproval = () => {
         params: { tenantId, date: todayStr }
       });
 
+      console.log('✅ Approved count response:', approvedResponse.data);
+      console.log('✅ Rejected count response:', rejectedResponse.data);
+
       if (approvedResponse.data.success) {
-        setApprovedToday(approvedResponse.data.count || 0);
+        const approvedCount = approvedResponse.data.count || 0;
+        console.log('📈 Setting approved count to:', approvedCount);
+        setApprovedToday(approvedCount);
+      } else {
+        console.warn('⚠️ Approved count API returned success: false');
+        setApprovedToday(0);
       }
 
       if (rejectedResponse.data.success) {
-        setRejectedToday(rejectedResponse.data.count || 0);
+        const rejectedCount = rejectedResponse.data.count || 0;
+        console.log('📈 Setting rejected count to:', rejectedCount);
+        setRejectedToday(rejectedCount);
+      } else {
+        console.warn('⚠️ Rejected count API returned success: false');
+        setRejectedToday(0);
       }
     } catch (error) {
-      console.error('Error loading today\'s counts:', error);
-      // Don't fail the whole page if counts fail to load
+      console.error('❌ Error loading today\'s counts:', error);
+      console.error('Error details:', error.response?.data || error.message);
+      // Set to 0 on error but don't fail the whole page
+      setApprovedToday(0);
+      setRejectedToday(0);
     }
   };
 
@@ -150,17 +178,29 @@ const TimesheetApproval = () => {
       });
 
       if (response.data.success) {
-        // Update local state
+        // Update local state - remove from pending list
         setTimesheets(
-          (prevTimesheets) =>
-            prevTimesheets.filter((ts) => ts.id !== timesheetId) // Remove from pending list
+          (prevTimesheets) => {
+            const updatedTimesheets = prevTimesheets.filter((ts) => ts.id !== timesheetId);
+            // Update pending count
+            setPendingCount(updatedTimesheets.length);
+            return updatedTimesheets;
+          }
         );
 
-        // Update today's counts
+        // Update today's counts - increment the counter
         if (action === "approve") {
-          setApprovedToday(prev => prev + 1);
+          setApprovedToday(prev => {
+            const newCount = prev + 1;
+            console.log('✅ Approved count updated:', prev, '->', newCount);
+            return newCount;
+          });
         } else {
-          setRejectedToday(prev => prev + 1);
+          setRejectedToday(prev => {
+            const newCount = prev + 1;
+            console.log('✅ Rejected count updated:', prev, '->', newCount);
+            return newCount;
+          });
         }
 
         // Show success message using a toast notification instead of alert
@@ -302,26 +342,78 @@ const TimesheetApproval = () => {
                 {timesheet.overtimeComment && (
                   <div className="approval-info-section overtime-section">
                     <h6 className="section-title">
-                      <i className="fas fa-exclamation-triangle text-warning"></i> ⚠️ Overtime Alert
+                      <i className="fas fa-exclamation-triangle text-warning"></i> ⚠️ Special Hours Alert
                     </h6>
                     <div className="overtime-alert">
                       <div className="overtime-warning-banner">
                         <i className="fas fa-clock"></i>
-                        <span>This employee has worked overtime hours. Please review the explanation below before approving.</span>
+                        <span>This employee has worked special hours. Please review the details and explanation below before approving.</span>
                       </div>
-                      <div className="overtime-days">
-                        <strong>Days with overtime (&gt;8 hours):</strong>
-                        <ul className="overtime-days-list">
-                          {timesheet.overtimeDays && timesheet.overtimeDays.map((day, index) => (
-                            <li key={index}>
-                              <span className="day-name">{day.day}:</span>
-                              <span className="day-hours">{day.hours} hours</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
+                      
+                      {/* Categorize and display days by type */}
+                      {timesheet.overtimeDays && (() => {
+                        const weekendDays = timesheet.overtimeDays.filter(d => d.isWeekend);
+                        const holidayDays = timesheet.overtimeDays.filter(d => d.isHoliday);
+                        const overtimeDaysOnly = timesheet.overtimeDays.filter(d => !d.isWeekend && !d.isHoliday);
+                        
+                        return (
+                          <>
+                            {overtimeDaysOnly.length > 0 && (
+                              <div className="overtime-days overtime-category">
+                                <strong><i className="fas fa-clock"></i> Overtime Days (&gt;8 hours):</strong>
+                                <ul className="overtime-days-list">
+                                  {overtimeDaysOnly.map((day, index) => (
+                                    <li key={index}>
+                                      <span className="day-name">{day.day}:</span>
+                                      <span className="day-hours">{day.hours} hours</span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+                            
+                            {weekendDays.length > 0 && (
+                              <div className="weekend-days overtime-category">
+                                <strong><i className="fas fa-calendar-week"></i> Weekend Work:</strong>
+                                <ul className="overtime-days-list weekend-list">
+                                  {weekendDays.map((day, index) => (
+                                    <li key={index}>
+                                      <span className="day-name">{day.day}:</span>
+                                      <span className="day-hours">{day.hours} hours</span>
+                                    </li>
+                                  ))}
+                                </ul>
+                                <div className="category-note weekend-note">
+                                  <i className="fas fa-info-circle"></i>
+                                  <span>Weekend work requires manager approval</span>
+                                </div>
+                              </div>
+                            )}
+                            
+                            {holidayDays.length > 0 && (
+                              <div className="holiday-days overtime-category">
+                                <strong><i className="fas fa-umbrella-beach"></i> Holiday Work:</strong>
+                                <ul className="overtime-days-list holiday-list">
+                                  {holidayDays.map((day, index) => (
+                                    <li key={index}>
+                                      <span className="day-name">{day.day}:</span>
+                                      <span className="day-hours">{day.hours} hours</span>
+                                      {day.holidayName && <span className="holiday-name"> ({day.holidayName})</span>}
+                                    </li>
+                                  ))}
+                                </ul>
+                                <div className="category-note holiday-note">
+                                  <i className="fas fa-exclamation-circle"></i>
+                                  <span>Holiday work requires special authorization</span>
+                                </div>
+                              </div>
+                            )}
+                          </>
+                        );
+                      })()}
+                      
                       <div className="overtime-comment">
-                        <strong>Employee&apos;s Reason/Explanation:</strong>
+                        <strong>Employee&apos;s Explanation:</strong>
                         <p>{timesheet.overtimeComment}</p>
                       </div>
                     </div>
@@ -543,13 +635,7 @@ const TimesheetApproval = () => {
               <i className="fa fa-clock"></i>
             </div>
             <div className="stat-content">
-              <h3>
-                {
-                  filteredTimesheets.filter(
-                    (t) => t.status === "Submitted for Approval"
-                  ).length
-                }
-              </h3>
+              <h3>{pendingCount}</h3>
               <p>Pending</p>
             </div>
           </div>

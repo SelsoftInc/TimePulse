@@ -47,6 +47,9 @@ import TestLogin from "./components/auth/TestLogin";
 import SimpleLogin from "./components/auth/SimpleLogin";
 import Login from "./components/auth/Login";
 import Register from "./components/auth/Register";
+import ForgotPassword from "./components/auth/ForgotPassword";
+import ResetPassword from "./components/auth/ResetPassword";
+import ChangePassword from "./components/auth/ChangePassword";
 import Workspaces from "./components/workspaces/Workspaces";
 import EmployerLayout from "./components/layout/EmployerLayout";
 
@@ -96,6 +99,9 @@ function App() {
                 <Route path="/simple-login" element={<SimpleLogin />} />
                 <Route path="/register" element={<Register />} />
                 <Route path="/register/:token" element={<EmployeeRegister />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
+                <Route path="/change-password" element={<ChangePassword />} />
 
                 {/* Workspace management route */}
                 <Route

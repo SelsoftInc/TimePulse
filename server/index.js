@@ -39,6 +39,7 @@ const notificationRoutes = require("./routes/notifications");
 const subscriptionRoutes = require("./routes/subscriptions");
 const billingRoutes = require("./routes/billing");
 const dashboardRoutes = require("./routes/dashboard");
+const passwordResetRoutes = require("./routes/passwordReset");
 // const dashboardPrismaRoutes = require("./routes/dashboard-prisma"); // Disabled - requires Prisma setup
 
 // Middleware
@@ -159,6 +160,8 @@ app.use("/api/dashboard", dashboardRoutes);
 // app.use("/api/dashboard-prisma", dashboardPrismaRoutes); // Disabled - requires Prisma setup
 console.log('📍 Loading auth routes...');
 app.use("/api/auth", require("./routes/auth"));
+console.log('📍 Loading password-reset routes...');
+app.use("/api/password-reset", passwordResetRoutes);
 console.log('✅ All routes loaded successfully');
 
 // Error handling middleware

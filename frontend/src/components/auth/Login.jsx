@@ -116,6 +116,20 @@ const Login = () => {
         }
 
         if (response.ok && data.success) {
+          // Check if user must change password (temporary password)
+          if (data.user.mustChangePassword) {
+            // Store user info temporarily for password change
+            sessionStorage.setItem('tempUserId', data.user.id);
+            sessionStorage.setItem('tempUserEmail', data.user.email);
+            sessionStorage.setItem('tempUserName', `${data.user.firstName} ${data.user.lastName}`);
+            sessionStorage.setItem('tempToken', data.token);
+            sessionStorage.setItem('tempTenantId', data.user.tenantId);
+            
+            // Redirect to password change page
+            window.location.href = '/change-password';
+            return;
+          }
+
           // Store authentication token
           localStorage.setItem("token", data.token);
 
@@ -174,6 +188,20 @@ const Login = () => {
         const data = await response.json();
 
         if (response.ok && data.success) {
+          // Check if user must change password (temporary password)
+          if (data.user.mustChangePassword) {
+            // Store user info temporarily for password change
+            sessionStorage.setItem('tempUserId', data.user.id);
+            sessionStorage.setItem('tempUserEmail', data.user.email);
+            sessionStorage.setItem('tempUserName', `${data.user.firstName} ${data.user.lastName}`);
+            sessionStorage.setItem('tempToken', data.token);
+            sessionStorage.setItem('tempTenantId', data.user.tenantId);
+            
+            // Redirect to password change page
+            window.location.href = '/change-password';
+            return;
+          }
+
           // Store authentication token
           localStorage.setItem("token", data.token);
 

@@ -12,6 +12,7 @@ const XLSX = require('xlsx');
 const { v4: uuidv4 } = require('uuid');
 const bcrypt = require('bcryptjs');
 const { models, sequelize, setTenantContext } = require('../models');
+const { sendWelcomeEmail } = require('../utils/emailService');
 
 // Onboard folder path
 const ONBOARD_FOLDER = path.join(__dirname, '../Onboard');
@@ -427,9 +428,30 @@ router.post('/tenants/:tenantName/onboard', async (req, res) => {
     
     await transaction.commit();
     
+    // Send welcome emails to all created users (after transaction commit)
+    const loginUrl = process.env.APP_URL || 'http://localhost:3000';
+    const emailPromises = createdUsers.map(async (user) => {
+      try {
+        await sendWelcomeEmail({
+          to: user.email,
+          employeeName: `${user.firstName} ${user.lastName}`,
+          temporaryPassword: defaultPassword,
+          companyName: tenant.tenantName,
+          loginUrl: loginUrl
+        });
+        console.log(`✅ Welcome email sent to: ${user.email}`);
+      } catch (emailError) {
+        console.error(`⚠️ Failed to send welcome email to ${user.email}:`, emailError.message);
+        // Don't fail the onboarding if email fails
+      }
+    });
+    
+    // Wait for all emails to be sent (or fail)
+    await Promise.allSettled(emailPromises);
+    
     res.json({
       success: true,
-      message: 'Tenant onboarded successfully',
+      message: 'Tenant onboarded successfully. Welcome emails sent to all users.',
       tenant: {
         id: tenant.id,
         tenantName: tenant.tenantName,
@@ -440,7 +462,8 @@ router.post('/tenants/:tenantName/onboard', async (req, res) => {
         usersCreated: createdUsers.length,
         employeesCreated: createdEmployees.length,
         clientsCreated: createdClients.length,
-        defaultPassword
+        defaultPassword,
+        emailsSent: createdUsers.length
       },
       onboardingLog: onboardingLog.id
     });
@@ -657,9 +680,31 @@ router.post('/create-role-users', async (req, res) => {
     
     await transaction.commit();
     
+    // Send welcome emails to all created users (after transaction commit)
+    const loginUrl = process.env.APP_URL || 'http://localhost:3000';
+    const emailPromises = users.map(async (userData, index) => {
+      const user = createdUsers[index];
+      try {
+        await sendWelcomeEmail({
+          to: user.email,
+          employeeName: user.name,
+          temporaryPassword: defaultPassword,
+          companyName: tenant.tenantName,
+          loginUrl: loginUrl
+        });
+        console.log(`✅ Welcome email sent to: ${user.email}`);
+      } catch (emailError) {
+        console.error(`⚠️ Failed to send welcome email to ${user.email}:`, emailError.message);
+        // Don't fail the user creation if email fails
+      }
+    });
+    
+    // Wait for all emails to be sent (or fail)
+    await Promise.allSettled(emailPromises);
+    
     res.json({
       success: true,
-      message: `Successfully created ${createdUsers.length} users for tenant ${tenant.tenantName}`,
+      message: `Successfully created ${createdUsers.length} users for tenant ${tenant.tenantName}. Welcome emails sent.`,
       tenant: {
         id: tenant.id,
         tenantName: tenant.tenantName,
@@ -668,7 +713,8 @@ router.post('/create-role-users', async (req, res) => {
       users: createdUsers,
       employees: createdEmployees,
       defaultPassword: defaultPassword,
-      passwordNote: 'All users must change their password on first login'
+      passwordNote: 'All users must change their password on first login. Welcome emails have been sent.',
+      emailsSent: createdUsers.length
     });
     
   } catch (error) {
@@ -835,9 +881,30 @@ router.post('/create-default-users', async (req, res) => {
     
     await transaction.commit();
     
+    // Send welcome emails to all created users (after transaction commit)
+    const loginUrl = process.env.APP_URL || 'http://localhost:3000';
+    const emailPromises = createdUsers.map(async (user) => {
+      try {
+        await sendWelcomeEmail({
+          to: user.email,
+          employeeName: user.name,
+          temporaryPassword: defaultPassword,
+          companyName: tenant.tenantName,
+          loginUrl: loginUrl
+        });
+        console.log(`✅ Welcome email sent to: ${user.email}`);
+      } catch (emailError) {
+        console.error(`⚠️ Failed to send welcome email to ${user.email}:`, emailError.message);
+        // Don't fail the user creation if email fails
+      }
+    });
+    
+    // Wait for all emails to be sent (or fail)
+    await Promise.allSettled(emailPromises);
+    
     res.json({
       success: true,
-      message: `Successfully created ${createdUsers.length} default users for tenant ${tenant.tenantName}`,
+      message: `Successfully created ${createdUsers.length} default users for tenant ${tenant.tenantName}. Welcome emails sent.`,
       tenant: {
         id: tenant.id,
         tenantName: tenant.tenantName,
@@ -851,7 +918,8 @@ router.post('/create-default-users', async (req, res) => {
         password: defaultPassword,
         role: u.role
       })),
-      passwordNote: 'All users must change their password on first login'
+      passwordNote: 'All users must change their password on first login. Welcome emails have been sent.',
+      emailsSent: createdUsers.length
     });
     
   } catch (error) {

@@ -198,7 +198,7 @@ models.User = sequelize.define(
     },
     mustChangePassword: {
       type: DataTypes.BOOLEAN,
-      defaultValue: true,
+      defaultValue: false, // Only set to true for newly created users with temporary passwords
       field: "must_change_password",
     },
     lastLogin: {
@@ -230,6 +230,16 @@ models.User = sequelize.define(
     status: {
       type: DataTypes.ENUM("active", "inactive", "suspended"),
       defaultValue: "active",
+    },
+    resetPasswordToken: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+      field: "reset_password_token",
+    },
+    resetPasswordExpires: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      field: "reset_password_expires",
     },
   },
   {

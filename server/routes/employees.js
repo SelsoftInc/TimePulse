@@ -2,6 +2,8 @@ const express = require("express");
 const router = express.Router();
 const { models } = require("../models");
 const { Op } = require("sequelize");
+const bcrypt = require("bcrypt");
+const { generateTemporaryPassword, sendWelcomeEmail } = require("../utils/emailService");
 
 const { Employee, User, Client, Tenant, Vendor, EmploymentType } = models;
 
@@ -387,15 +389,74 @@ router.post("/", async (req, res) => {
       });
     }
 
+    // Check if user with same email already exists
+    const existingUser = await User.findOne({
+      where: {
+        email: employeeData.email,
+        tenantId: employeeData.tenantId
+      }
+    });
+
+    if (existingUser) {
+      console.log('⚠️ User with this email already exists:', existingUser.id);
+      return res.status(409).json({
+        error: "User with this email already exists"
+      });
+    }
+
+    // Generate temporary password
+    const temporaryPassword = generateTemporaryPassword();
+    const passwordHash = await bcrypt.hash(temporaryPassword, 10);
+
+    // Create user account for the employee
+    const user = await User.create({
+      tenantId: employeeData.tenantId,
+      firstName: employeeData.firstName,
+      lastName: employeeData.lastName,
+      email: employeeData.email,
+      passwordHash: passwordHash,
+      mustChangePassword: true, // Flag to force password change on first login
+      role: employeeData.role || 'employee',
+      department: employeeData.department,
+      title: employeeData.title,
+      status: 'active'
+    });
+
+    console.log('✅ User account created:', user.id);
+
+    // Link employee to user
+    employeeData.userId = user.id;
+
     // Create the employee record
     const employee = await Employee.create(employeeData);
 
     console.log('✅ Employee created successfully:', employee.id);
 
+    // Get tenant information for email
+    const tenant = await models.Tenant.findByPk(employeeData.tenantId);
+    const companyName = tenant ? tenant.tenantName : 'Your Company';
+    const loginUrl = process.env.APP_URL || 'http://localhost:3000';
+
+    // Send welcome email with temporary password
+    try {
+      await sendWelcomeEmail({
+        to: employeeData.email,
+        employeeName: `${employeeData.firstName} ${employeeData.lastName}`,
+        temporaryPassword: temporaryPassword,
+        companyName: companyName,
+        loginUrl: loginUrl
+      });
+      console.log('✅ Welcome email sent to:', employeeData.email);
+    } catch (emailError) {
+      console.error('⚠️ Failed to send welcome email:', emailError);
+      // Don't fail the employee creation if email fails
+    }
+
     res.status(201).json({
       success: true,
-      message: "Employee created successfully",
+      message: "Employee created successfully. Welcome email sent with temporary password.",
       employee,
+      emailSent: true
     });
   } catch (error) {
     console.error("Error creating employee:", error);

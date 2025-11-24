@@ -11,6 +11,7 @@ const BillingSettings = () => {
   const [billingPlan, setBillingPlan] = useState(null);
   const [loading, setLoading] = useState(false);
   const [subscription, setSubscription] = useState(null);
+  const [seats, setSeats] = useState(1);
 
   const plans = [
     {
@@ -19,7 +20,10 @@ const BillingSettings = () => {
       price: 1.99,
       period: "user/month",
       description: "Perfect for small teams getting started",
+      maxSeats: 10,
+      canUpgradeTo: ["professional", "enterprise"],
       features: [
+        "Up to 10 users",
         "AI-powered uploads",
         "MSA/SOW mapping",
         "Auto invoicing to QuickBooks/NetSuite",
@@ -35,10 +39,14 @@ const BillingSettings = () => {
       period: "user/month",
       description: "Advanced automation for growing teams",
       badge: "Most Popular",
+      maxSeats: 50,
+      canUpgradeTo: ["enterprise"],
       features: [
+        "Up to 50 users",
         "Everything in Starter",
         "Multi-level approvals",
         "Real-time analytics dashboard",
+        "Integrations",
         "Priority support",
       ],
     },
@@ -48,7 +56,10 @@ const BillingSettings = () => {
       price: "Custom",
       period: "pricing",
       description: "Tailored solutions for large organizations",
+      maxSeats: 999,
+      canUpgradeTo: [],
       features: [
+        "Unlimited users",
         "Everything in Professional",
         "Custom API integrations",
         "SLA support",
@@ -100,15 +111,33 @@ const BillingSettings = () => {
     fetchSubscription();
   }, [user?.tenantId]);
 
-  const handlePlanChange = async (planId) => {
+  const handlePlanChange = async (planId, seatCount = seats) => {
     if (planId === billingPlan) return;
 
+    console.log("handlePlanChange called with:", planId, "seats:", seatCount);
+    console.log("Current subscription:", subscription);
+
+    // Check if this is a downgrade (not allowed)
+    const currentPlan = plans.find(p => p.id === billingPlan);
+    const newPlan = plans.find(p => p.id === planId);
+    
+    if (currentPlan && newPlan) {
+      const planOrder = { starter: 1, professional: 2, enterprise: 3 };
+      if (planOrder[planId] < planOrder[billingPlan]) {
+        toast.error("Downgrades are not supported. Please contact support.");
+        return;
+      }
+    }
+
     // If no subscription exists, start checkout
-    if (!subscription || subscription.status === "none") {
-      await startCheckout(planId, "monthly");
+    if (!subscription || !subscription.stripeSubscriptionId || subscription.status === "none" || subscription.status === "inactive") {
+      console.log("No active subscription, starting checkout...");
+      await startCheckout(planId, "monthly", seatCount);
       return;
     }
 
+    // User has active subscription, so change the plan
+    console.log("Active subscription found, changing plan...");
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
@@ -152,9 +181,23 @@ const BillingSettings = () => {
   };
 
   // Start Stripe checkout for new subscriptions
-  const startCheckout = async (plan, interval) => {
+  const startCheckout = async (plan, interval, seatCount = 1) => {
     try {
+      console.log("Starting checkout for:", { plan, interval, seats: seatCount, user });
+      
+      if (!user || !user.tenantId || !user.email) {
+        toast.error("User information not available. Please log in again.");
+        return;
+      }
+
       const token = localStorage.getItem("token");
+      if (!token) {
+        toast.error("Authentication required. Please log in.");
+        return;
+      }
+
+      console.log("Making API call to:", `${API_BASE}/api/billing/checkout`);
+      
       const response = await fetch(`${API_BASE}/api/billing/checkout`, {
         method: "POST",
         headers: {
@@ -166,20 +209,24 @@ const BillingSettings = () => {
           email: user.email,
           plan,
           interval,
-          seats: 1, // Default to 1 seat, can be made configurable
+          seats: seatCount,
         }),
       });
 
+      console.log("API Response status:", response.status);
+
       if (response.ok) {
         const data = await response.json();
+        console.log("Checkout URL:", data.url);
         window.location.href = data.url;
       } else {
         const error = await response.json();
+        console.error("Checkout error:", error);
         toast.error(error.error || "Failed to start checkout");
       }
     } catch (error) {
       console.error("Error starting checkout:", error);
-      toast.error("Failed to start checkout");
+      toast.error("Failed to start checkout: " + error.message);
     }
   };
 
@@ -240,8 +287,7 @@ const BillingSettings = () => {
             } ${plan.id === "professional" && plan.id !== billingPlan ? "featured-plan" : ""} ${
               loading ? "loading" : ""
             }`}
-            onClick={() => plan.id !== billingPlan && !loading && handlePlanChange(plan.id)}
-            style={{ cursor: plan.id === billingPlan ? "default" : "pointer" }}
+            style={{ cursor: plan.id === billingPlan ? "default" : "auto" }}
           >
             {plan.badge && plan.id !== billingPlan && (
               <div className="plan-badge">{plan.badge}</div>
@@ -282,6 +328,75 @@ const BillingSettings = () => {
               </ul>
             </div>
             
+            {plan.id !== "enterprise" && plan.id !== billingPlan && (
+              <div className="seat-selector" style={{ padding: "0 20px 15px", borderTop: "1px solid #e5e7eb", marginTop: "15px", paddingTop: "15px" }}>
+                <label style={{ display: "block", fontSize: "14px", fontWeight: "500", marginBottom: "8px", color: "#374151" }}>
+                  Number of Users
+                </label>
+                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (seats > 1) setSeats(seats - 1);
+                    }}
+                    style={{
+                      padding: "8px 12px",
+                      border: "1px solid #d1d5db",
+                      borderRadius: "6px",
+                      background: "white",
+                      cursor: seats > 1 ? "pointer" : "not-allowed",
+                      fontSize: "16px",
+                      fontWeight: "bold"
+                    }}
+                    disabled={seats <= 1}
+                  >
+                    −
+                  </button>
+                  <input
+                    type="number"
+                    min="1"
+                    max={plan.maxSeats}
+                    value={seats}
+                    onChange={(e) => {
+                      e.stopPropagation();
+                      const val = parseInt(e.target.value) || 1;
+                      setSeats(Math.min(Math.max(1, val), plan.maxSeats));
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                    style={{
+                      width: "80px",
+                      padding: "8px",
+                      textAlign: "center",
+                      border: "1px solid #d1d5db",
+                      borderRadius: "6px",
+                      fontSize: "16px"
+                    }}
+                  />
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (seats < plan.maxSeats) setSeats(seats + 1);
+                    }}
+                    style={{
+                      padding: "8px 12px",
+                      border: "1px solid #d1d5db",
+                      borderRadius: "6px",
+                      background: "white",
+                      cursor: seats < plan.maxSeats ? "pointer" : "not-allowed",
+                      fontSize: "16px",
+                      fontWeight: "bold"
+                    }}
+                    disabled={seats >= plan.maxSeats}
+                  >
+                    +
+                  </button>
+                  <span style={{ marginLeft: "auto", fontSize: "14px", fontWeight: "600", color: "#1f2937" }}>
+                    {typeof plan.price === 'number' ? `$${(plan.price * seats).toFixed(2)}/month` : 'Custom'}
+                  </span>
+                </div>
+              </div>
+            )}
+            
             <div className="plan-action">
               {plan.id === billingPlan ? (
                 <button className="plan-btn current" disabled>
@@ -290,18 +405,35 @@ const BillingSettings = () => {
               ) : plan.id === "enterprise" ? (
                 <button
                   className="plan-btn"
-                  onClick={() => window.location.href = "mailto:sales@timepulse.com"}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    window.location.href = "mailto:sales@timepulse.com";
+                  }}
                 >
                   Contact Sales
                 </button>
               ) : (
-                <button
-                  className="plan-btn"
-                  onClick={() => !loading && handlePlanChange(plan.id)}
-                  disabled={loading}
-                >
-                  Start Free Trial
-                </button>
+                <>
+                  {billingPlan && plans.find(p => p.id === billingPlan) && 
+                   plans.findIndex(p => p.id === plan.id) < plans.findIndex(p => p.id === billingPlan) ? (
+                    <button className="plan-btn" disabled style={{ opacity: 0.5, cursor: "not-allowed" }}>
+                      Downgrade Not Available
+                    </button>
+                  ) : (
+                    <button
+                      className="plan-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        console.log("Button clicked for plan:", plan.id, "seats:", seats);
+                        console.log("User:", user);
+                        !loading && handlePlanChange(plan.id, seats);
+                      }}
+                      disabled={loading}
+                    >
+                      {billingPlan ? 'Upgrade Plan' : 'Start Free Trial'}
+                    </button>
+                  )}
+                </>
               )}
             </div>
           </div>

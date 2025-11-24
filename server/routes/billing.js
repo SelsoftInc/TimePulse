@@ -20,12 +20,12 @@ const isStripeConfigured =
 
 /* ------------------------- PRICE MAP (configure these in your Stripe dashboard) ------------------------- */
 const PRICE = {
-  starter_monthly: "price_starter_monthly",
-  starter_annual: "price_starter_annual",
-  pro_monthly: "price_pro_monthly",
-  pro_annual: "price_pro_annual",
-  enterprise_monthly: "price_enterprise_monthly",
-  enterprise_annual: "price_enterprise_annual",
+  starter_monthly: "price_1SWfJ4Qx9PTfPrh7W6bZrscq",
+  starter_annual: "price_1SWfJ4Qx9PTfPrh7jXfVhi9E",
+  pro_monthly: "price_1SWfJ5Qx9PTfPrh7DTwpHDxG",
+  pro_annual: "price_1SWfJ5Qx9PTfPrh7GpTAsHzL",
+  enterprise_monthly: "contact_sales",
+  enterprise_annual: "contact_sales",
 };
 
 /* ------------------------- Helpers --------------------------------------- */
@@ -101,12 +101,16 @@ router.post("/checkout", async (req, res, next) => {
 
     const customerId = await getOrCreateCustomer(tenantId, email);
 
+    // Calculate amount for URL params
+    const priceAmount = plan === 'starter' ? 1.99 : plan === 'professional' ? 3.99 : 0;
+    const totalAmount = (priceAmount * seats).toFixed(2);
+
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       customer: customerId,
       success_url: `${
         process.env.APP_BASE_URL || "http://localhost:3000"
-      }/billing/success?session_id={CHECKOUT_SESSION_ID}`,
+      }/billing/success?session_id={CHECKOUT_SESSION_ID}&plan=${plan}&seats=${seats}&amount=${totalAmount}`,
       cancel_url: `${
         process.env.APP_BASE_URL || "http://localhost:3000"
       }/billing/cancelled`,
@@ -121,12 +125,57 @@ router.post("/checkout", async (req, res, next) => {
         tenant_id: tenantId,
         plan,
         interval,
+        seats: seats.toString(),
       },
     });
 
     res.json({ url: session.url });
   } catch (error) {
     console.error("Checkout error:", error);
+    next(error);
+  }
+});
+
+/* ------------------------- Get Checkout Session -------------------------- */
+// GET /api/billing/session/:sessionId
+router.get("/session/:sessionId", async (req, res, next) => {
+  try {
+    if (!isStripeConfigured) {
+      return res.status(503).json({
+        error: "Stripe is not configured.",
+      });
+    }
+
+    const { sessionId } = req.params;
+
+    if (!sessionId) {
+      return res.status(400).json({ error: "Session ID is required" });
+    }
+
+    const session = await stripe.checkout.sessions.retrieve(sessionId, {
+      expand: ['subscription', 'line_items'],
+    });
+
+    res.json({
+      success: true,
+      session: {
+        id: session.id,
+        amount_total: session.amount_total,
+        amount_subtotal: session.amount_subtotal,
+        currency: session.currency,
+        metadata: session.metadata,
+        payment_status: session.payment_status,
+        subscription: session.subscription,
+        customer: session.customer,
+      },
+      subscription: session.subscription ? {
+        id: session.subscription.id,
+        quantity: session.subscription.items?.data[0]?.quantity || 1,
+        status: session.subscription.status,
+      } : null,
+    });
+  } catch (error) {
+    console.error("Session retrieval error:", error);
     next(error);
   }
 });
@@ -415,5 +464,85 @@ router.post(
     }
   }
 );
+
+/* ------------------------- Sync Users with Stripe ------------------------- */
+// POST /api/billing/sync-users
+// body: { tenantId }
+router.post("/sync-users", async (req, res, next) => {
+  try {
+    if (!isStripeConfigured) {
+      return res.status(503).json({
+        error: "Stripe is not configured.",
+      });
+    }
+
+    const { tenantId } = req.body;
+
+    if (!tenantId) {
+      return res.status(400).json({ error: "tenantId is required" });
+    }
+
+    // Get tenant
+    const tenant = await models.Tenant.findByPk(tenantId);
+    if (!tenant || !tenant.stripeSubscriptionId) {
+      return res.status(400).json({ 
+        error: "No active subscription found for this tenant" 
+      });
+    }
+
+    // Count actual users
+    const userCount = await models.User.count({
+      where: { tenantId }
+    });
+
+    // Get current Stripe subscription
+    const subscription = await stripe.subscriptions.retrieve(
+      tenant.stripeSubscriptionId
+    );
+
+    const currentQuantity = subscription.items.data[0].quantity;
+
+    // If already in sync, return
+    if (userCount === currentQuantity) {
+      return res.json({
+        success: true,
+        message: "Already in sync",
+        users: userCount,
+        seats: currentQuantity
+      });
+    }
+
+    // Update Stripe subscription quantity
+    const updated = await stripe.subscriptions.update(
+      tenant.stripeSubscriptionId,
+      {
+        items: [{
+          id: subscription.items.data[0].id,
+          quantity: userCount
+        }],
+        proration_behavior: 'create_prorations'
+      }
+    );
+
+    // Update tenant record
+    await tenant.update({
+      seatLimit: userCount
+    });
+
+    const newAmount = (updated.items.data[0].price.unit_amount * userCount / 100).toFixed(2);
+
+    res.json({
+      success: true,
+      message: "Synced successfully",
+      previousSeats: currentQuantity,
+      currentSeats: userCount,
+      newAmount: `$${newAmount}/month`
+    });
+
+  } catch (error) {
+    console.error("Sync error:", error);
+    next(error);
+  }
+});
 
 module.exports = router;

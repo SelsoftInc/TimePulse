@@ -43,6 +43,7 @@ import ImplementationPartnerDetail from "./components/implementationPartners/Imp
 import ImplementationPartnerEdit from "./components/implementationPartners/ImplementationPartnerEdit";
 import EmployerSettings from "./components/settings/EmployerSettings";
 import InvoiceSettings from "./components/settings/InvoiceSettings";
+import BillingSuccess from "./components/billing/BillingSuccess";
 import TestLogin from "./components/auth/TestLogin";
 import SimpleLogin from "./components/auth/SimpleLogin";
 import Login from "./components/auth/Login";
@@ -59,6 +60,7 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import { WebSocketProvider } from "./contexts/WebSocketContext";
 import { PERMISSIONS } from "./utils/roles";
 import { ToastProvider, ToastContainer } from "./contexts/ToastContext";
+import DemoControls from "./components/demo/DemoControls";
 
 // Protected route component that checks authentication and permissions
 const ProtectedRoute = ({ children, requiredPermission }) => {
@@ -102,6 +104,16 @@ function App() {
                 <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/change-password" element={<ChangePassword />} />
+                
+                {/* Billing success route */}
+                <Route
+                  path="/billing/success"
+                  element={
+                    <ProtectedRoute>
+                      <BillingSuccess />
+                    </ProtectedRoute>
+                  }
+                />
 
                 {/* Workspace management route */}
                 <Route
@@ -611,6 +623,7 @@ function App() {
             </WebSocketProvider>
           </AuthProvider>
           <ToastContainer />
+          <DemoControls />
         </ToastProvider>
       </ThemeProvider>
     </BrowserRouter>

@@ -25,14 +25,14 @@ router.post("/sync-users", async (req, res, next) => {
     // Get tenant
     const tenant = await models.Tenant.findByPk(tenantId);
     if (!tenant || !tenant.stripeSubscriptionId) {
-      return res.status(400).json({ 
-        error: "No active subscription found for this tenant" 
+      return res.status(400).json({
+        error: "No active subscription found for this tenant",
       });
     }
 
     // Count actual users
     const userCount = await models.User.count({
-      where: { tenantId }
+      where: { tenantId },
     });
 
     // Get current Stripe subscription
@@ -48,7 +48,7 @@ router.post("/sync-users", async (req, res, next) => {
         success: true,
         message: "Already in sync",
         users: userCount,
-        seats: currentQuantity
+        seats: currentQuantity,
       });
     }
 
@@ -56,32 +56,35 @@ router.post("/sync-users", async (req, res, next) => {
     const updated = await stripe.subscriptions.update(
       tenant.stripeSubscriptionId,
       {
-        items: [{
-          id: subscription.items.data[0].id,
-          quantity: userCount
-        }],
-        proration_behavior: 'create_prorations'
+        items: [
+          {
+            id: subscription.items.data[0].id,
+            quantity: userCount,
+          },
+        ],
+        proration_behavior: "create_prorations",
       }
     );
 
     // Update tenant record
     await tenant.update({
-      seatLimit: userCount
+      seatLimit: userCount,
     });
 
-    const newAmount = (updated.items.data[0].price.unit_amount * userCount / 100).toFixed(2);
+    const newAmount = (
+      (updated.items.data[0].price.unit_amount * userCount) /
+      100
+    ).toFixed(2);
 
     res.json({
       success: true,
       message: "Synced successfully",
       previousSeats: currentQuantity,
       currentSeats: userCount,
-      newAmount: `$${newAmount}/month`
+      newAmount: `$${newAmount}/month`,
     });
-
   } catch (error) {
     console.error("Sync error:", error);
     next(error);
   }
 });
-

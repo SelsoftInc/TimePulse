@@ -10,6 +10,7 @@ import "../common/Pagination.css";
 import "../common/TableScroll.css";
 import "../common/ActionsDropdown.css";
 import "../common/DropdownFix.css";
+import "./VendorsDropdownFix.css";
 
 const VendorList = () => {
   const { subdomain } = useParams();
@@ -172,7 +173,7 @@ const VendorList = () => {
             </div>
           ) : (
             <div className="card">
-              <div className="card-inne table-responsive">
+              <div className="card-inner table-responsive">
                 {vendors.length === 0 ? (
                   <div className="text-center text-muted py-5">
                     <p className="mb-2">No vendors found.</p>
@@ -250,7 +251,8 @@ const VendorList = () => {
                                   if (el && openMenuId === vendor.id) {
                                     const rect = el.getBoundingClientRect();
                                     const spaceBelow = window.innerHeight - rect.bottom;
-                                    if (spaceBelow < 250) {
+                                    // Open upward if less than 180px space below
+                                    if (spaceBelow < 180) {
                                       el.nextElementSibling?.classList.add('dropup');
                                     } else {
                                       el.nextElementSibling?.classList.remove('dropup');

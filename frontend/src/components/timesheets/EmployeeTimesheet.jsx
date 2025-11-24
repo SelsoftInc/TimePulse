@@ -28,6 +28,8 @@ const EmployeeTimesheet = () => {
     sun: 0
   });
   const [notes, setNotes] = useState('');
+  const [showFileTypeAlert, setShowFileTypeAlert] = useState(false);
+  const [rejectedFiles, setRejectedFiles] = useState([]);
   const [files, setFiles] = useState([]);
   const [status, setStatus] = useState('draft');
   const [reviewers, setReviewers] = useState([]);
@@ -179,17 +181,30 @@ const EmployeeTimesheet = () => {
     e.stopPropagation();
 
     const droppedFiles = Array.from(e.dataTransfer.files);
-    const validFiles = droppedFiles.filter(file =>
-      ['application/pdf', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'].includes(file.type) ||
-      file.name.toLowerCase().endsWith('.pdf') ||
-      file.name.toLowerCase().endsWith('.xlsx') ||
-      file.name.toLowerCase().endsWith('.xls') ||
-      file.name.toLowerCase().endsWith('.docx') ||
-      file.name.toLowerCase().endsWith('.doc')
-    );
+    const validFiles = [];
+    const invalidFiles = [];
+    
+    droppedFiles.forEach(file => {
+      const fileName = file.name.toLowerCase();
+      const fileType = file.type.toLowerCase();
+      
+      // Check for valid file types: Image, Word, Excel, PDF, CSV
+      const isValidImage = fileType.startsWith('image/') || /\.(jpg|jpeg|png|gif|bmp|webp|svg)$/.test(fileName);
+      const isValidPDF = fileType === 'application/pdf' || fileName.endsWith('.pdf');
+      const isValidWord = ['application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'].includes(fileType) || /\.(doc|docx)$/.test(fileName);
+      const isValidExcel = ['application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'].includes(fileType) || /\.(xls|xlsx)$/.test(fileName);
+      const isValidCSV = fileType === 'text/csv' || fileName.endsWith('.csv');
+      
+      if (isValidImage || isValidPDF || isValidWord || isValidExcel || isValidCSV) {
+        validFiles.push(file);
+      } else {
+        invalidFiles.push(file.name);
+      }
+    });
 
-    if (validFiles.length !== droppedFiles.length) {
-      toast.error('Some files were rejected. Only PDF, Excel, and Word files are allowed.');
+    if (invalidFiles.length > 0) {
+      setRejectedFiles(invalidFiles);
+      setShowFileTypeAlert(true);
     }
 
     if (validFiles.length > 0) {
@@ -201,23 +216,39 @@ const EmployeeTimesheet = () => {
   // Handle file upload (fallback for file input)
   const handleFileUpload = (e) => {
     const uploadedFiles = Array.from(e.target.files);
-    const validFiles = uploadedFiles.filter(file =>
-      ['application/pdf', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'].includes(file.type) ||
-      file.name.toLowerCase().endsWith('.pdf') ||
-      file.name.toLowerCase().endsWith('.xlsx') ||
-      file.name.toLowerCase().endsWith('.xls') ||
-      file.name.toLowerCase().endsWith('.docx') ||
-      file.name.toLowerCase().endsWith('.doc')
-    );
+    const validFiles = [];
+    const invalidFiles = [];
+    
+    uploadedFiles.forEach(file => {
+      const fileName = file.name.toLowerCase();
+      const fileType = file.type.toLowerCase();
+      
+      // Check for valid file types: Image, Word, Excel, PDF, CSV
+      const isValidImage = fileType.startsWith('image/') || /\.(jpg|jpeg|png|gif|bmp|webp|svg)$/.test(fileName);
+      const isValidPDF = fileType === 'application/pdf' || fileName.endsWith('.pdf');
+      const isValidWord = ['application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'].includes(fileType) || /\.(doc|docx)$/.test(fileName);
+      const isValidExcel = ['application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'].includes(fileType) || /\.(xls|xlsx)$/.test(fileName);
+      const isValidCSV = fileType === 'text/csv' || fileName.endsWith('.csv');
+      
+      if (isValidImage || isValidPDF || isValidWord || isValidExcel || isValidCSV) {
+        validFiles.push(file);
+      } else {
+        invalidFiles.push(file.name);
+      }
+    });
 
-    if (validFiles.length !== uploadedFiles.length) {
-      toast.error('Some files were rejected. Only PDF, Excel, and Word files are allowed.');
+    if (invalidFiles.length > 0) {
+      setRejectedFiles(invalidFiles);
+      setShowFileTypeAlert(true);
     }
 
     if (validFiles.length > 0) {
       setFiles(prev => [...prev, ...validFiles]);
       toast.success(`${validFiles.length} file(s) uploaded successfully`);
     }
+    
+    // Reset file input
+    e.target.value = '';
   };
   
   // Remove file
@@ -489,13 +520,13 @@ const EmployeeTimesheet = () => {
                               <div className="file-drop-text">
                                 <h4>Drag & Drop Files Here</h4>
                                 <p>Or click to browse files</p>
-                                <span className="file-types">Supported: PDF, Excel, Word</span>
+                                <span className="file-types">Supported: Images, PDF, Word, Excel, CSV</span>
                               </div>
                               <input
                                 type="file"
                                 className="file-input-hidden"
                                 multiple
-                                accept=".pdf,.xlsx,.docx"
+                                accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.csv"
                                 ref={fileInputRef}
                                 onChange={handleFileUpload}
                                 disabled={isSubmitted}
@@ -568,6 +599,70 @@ const EmployeeTimesheet = () => {
           </div>
         </div>
       </div>
+      
+      {/* File Type Validation Alert Modal */}
+      {showFileTypeAlert && (
+        <div className="modal-overlay" onClick={() => setShowFileTypeAlert(false)}>
+          <div className="file-alert-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="file-alert-header">
+              <div className="file-alert-icon">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="12" cy="12" r="10" stroke="#f59e0b" strokeWidth="2" fill="#fef3c7"/>
+                  <path d="M12 8V12M12 16H12.01" stroke="#f59e0b" strokeWidth="2" strokeLinecap="round"/>
+                </svg>
+              </div>
+              <h3>Invalid File Type</h3>
+            </div>
+            
+            <div className="file-alert-body">
+              <p className="file-alert-message">
+                The following file(s) cannot be uploaded because they are not in a supported format:
+              </p>
+              
+              <div className="rejected-files-list">
+                {rejectedFiles.map((fileName, index) => (
+                  <div key={index} className="rejected-file-item">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <circle cx="12" cy="12" r="10" fill="#fee2e2"/>
+                      <path d="M15 9L9 15M9 9L15 15" stroke="#dc2626" strokeWidth="2" strokeLinecap="round"/>
+                    </svg>
+                    <span>{fileName}</span>
+                  </div>
+                ))}
+              </div>
+              
+              <div className="file-alert-info">
+                <div className="info-icon">ℹ️</div>
+                <div className="info-content">
+                  <strong>Supported file formats:</strong>
+                  <div className="supported-formats">
+                    <span className="format-badge">📷 Images</span>
+                    <span className="format-badge">📄 PDF</span>
+                    <span className="format-badge">📝 Word</span>
+                    <span className="format-badge">📊 Excel</span>
+                    <span className="format-badge">📋 CSV</span>
+                  </div>
+                  <p className="format-details">
+                    (JPG, PNG, GIF, BMP, WebP, SVG, PDF, DOC, DOCX, XLS, XLSX, CSV)
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="file-alert-footer">
+              <button 
+                className="btn-alert-close"
+                onClick={() => setShowFileTypeAlert(false)}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M5 12H19M19 12L12 5M19 12L12 19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                Got it, try again
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

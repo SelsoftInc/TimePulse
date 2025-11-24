@@ -26,6 +26,17 @@ table tbody tr td:last-child,
   z-index: 100;
 }
 
+/* Ensure dropdown in table cells doesn't expand the cell */
+td .dropdown,
+th .dropdown {
+  position: static;
+}
+
+/* Ensure actions column doesn't expand */
+td:last-child .dropdown {
+  position: static;
+}
+
 /* Actions button with chevron */
 .btn.dropdown-toggle,
 .btn-sm.dropdown-toggle {
@@ -57,13 +68,14 @@ table tbody tr td:last-child,
 
 /* Dropdown menu */
 .dropdown-menu {
-  position: absolute;
-  top: calc(100% + 4px);
-  right: 0;
+  position: absolute !important;
+  top: calc(100% + 4px) !important;
+  right: 0 !important;
+  left: auto !important;
   z-index: 99999 !important;
   display: none;
-  min-width: 160px;
-  padding: 8px 0;
+  min-width: 180px;
+  padding: 4px 0;
   margin: 0;
   font-size: 14px;
   color: #364a63;
@@ -71,9 +83,9 @@ table tbody tr td:last-child,
   list-style: none;
   background-color: #fff;
   background-clip: padding-box;
-  border: 1px solid #dbdfea;
-  border-radius: 6px;
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   transform-origin: top right;
   animation: dropdownFadeIn 0.15s ease-out;
 }
@@ -91,18 +103,21 @@ table tbody tr td:last-child,
 
 /* Dropdown menu that opens upward when near bottom of screen */
 .dropdown-menu.dropup {
-  top: auto;
-  bottom: 100%;
-  margin: 0 0 4px;
+  top: auto !important;
+  bottom: calc(100% + 4px) !important;
+  margin: 0 !important;
+  transform-origin: bottom right;
 }
 
 .dropdown-menu.show {
-  display: block;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
 }
 
 .dropdown-menu-right {
-  right: 0;
-  left: auto;
+  right: 0 !important;
+  left: auto !important;
 }
 
 /* Dropdown items */
@@ -110,40 +125,60 @@ table tbody tr td:last-child,
   display: flex;
   align-items: center;
   width: 100%;
-  padding: 8px 16px;
+  padding: 10px 16px;
   clear: both;
   font-weight: 400;
-  color: #364a63;
+  font-size: 14px;
+  color: #4b5563;
   text-align: inherit;
   white-space: nowrap;
   background-color: transparent;
   border: 0;
   cursor: pointer;
   text-decoration: none;
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
+  border-radius: 0;
+}
+
+.dropdown-item:first-child {
+  border-radius: 8px 8px 0 0;
+}
+
+.dropdown-item:last-child {
+  border-radius: 0 0 8px 8px;
 }
 
 .dropdown-item:hover,
 .dropdown-item:focus {
-  color: #1c2b46;
-  background-color: #f5f6fa;
+  color: #1f2937;
+  background-color: #f3f4f6;
   text-decoration: none;
+  outline: none;
 }
 
 .dropdown-item.text-danger {
-  color: #e85347;
+  color: #dc2626;
 }
 
 .dropdown-item.text-danger:hover {
-  color: #fff;
-  background-color: #e85347;
+  color: #dc2626;
+  background-color: #fee2e2;
 }
 
 .dropdown-item i,
-.dropdown-item .fas {
-  margin-right: 8px;
-  width: 16px;
+.dropdown-item .fas,
+.dropdown-item .fa {
+  margin-right: 10px;
+  width: 18px;
+  font-size: 14px;
   text-align: center;
+  opacity: 0.7;
+}
+
+.dropdown-item:hover i,
+.dropdown-item:hover .fas,
+.dropdown-item:hover .fa {
+  opacity: 1;
 }
 
 /* Dark mode support */

@@ -25,6 +25,15 @@ const InvoicePDFPreviewModal = ({ invoice, onClose, onUpdate }) => {
     return String(value);
   };
   
+  // Debug: Log component lifecycle
+  useEffect(() => {
+    console.log('🎬 InvoicePDFPreviewModal MOUNTED');
+    return () => {
+      console.log('🔚 InvoicePDFPreviewModal UNMOUNTED');
+    };
+  }, []);
+  
+  
   const [formData, setFormData] = useState(() => {
     // Calculate invoice period from timesheet week data
     let calculatedStartDate = null;
@@ -191,7 +200,7 @@ const InvoicePDFPreviewModal = ({ invoice, onClose, onUpdate }) => {
               if (data.success && data.lineItems && data.lineItems.length > 0) {
                 const processedItems = data.lineItems.map(item => ({
                   employeeName: item.employeeName || invoice?.employeeName || 'Employee Name',
-                  description: `${invoice?.month || 'Period'} ${invoice?.year || new Date().getFullYear()} (${formData.invoiceDurationFrom} to ${formData.invoiceDurationTo})`,
+                  description: item.description || `${invoice?.month || 'Period'} ${invoice?.year || new Date().getFullYear()}`,
                   hoursWorked: parseFloat(item.hours || item.hoursWorked || 0),
                   hourlyRate: parseFloat(item.rate || item.hourlyRate || 45.00),
                   total: parseFloat(item.amount || item.total || 0)
@@ -202,17 +211,17 @@ const InvoicePDFPreviewModal = ({ invoice, onClose, onUpdate }) => {
                   lineItems: processedItems
                 };
                 
-                // Update vendor/client address if available
+                // Extract vendor/client details if available
                 if (data.invoice?.client) {
-                  updateData.billToName = data.invoice.client.clientName || formData.billToName;
-                  updateData.billToAddress = data.invoice.client.address || formData.billToAddress;
-                  updateData.billToCity = data.invoice.client.city || formData.billToCity;
-                  updateData.billToEmail = data.invoice.client.email || formData.billToEmail;
+                  updateData.billToName = data.invoice.client.clientName || invoice?.billToName || '';
+                  updateData.billToAddress = data.invoice.client.address || invoice?.billToAddress || '';
+                  updateData.billToCity = data.invoice.client.city || invoice?.billToCity || '';
+                  updateData.billToEmail = data.invoice.client.email || invoice?.billToEmail || '';
                 } else if (data.client) {
-                  updateData.billToName = data.client.clientName || formData.billToName;
-                  updateData.billToAddress = data.client.address || formData.billToAddress;
-                  updateData.billToCity = data.client.city || formData.billToCity;
-                  updateData.billToEmail = data.client.email || formData.billToEmail;
+                  updateData.billToName = data.client.clientName || invoice?.billToName || '';
+                  updateData.billToAddress = data.client.address || invoice?.billToAddress || '';
+                  updateData.billToCity = data.client.city || invoice?.billToCity || '';
+                  updateData.billToEmail = data.client.email || invoice?.billToEmail || '';
                 }
                 
                 setFormData(prev => ({
@@ -226,7 +235,7 @@ const InvoicePDFPreviewModal = ({ invoice, onClose, onUpdate }) => {
                 // Single employee data
                 const employeeItem = {
                   employeeName: data.employee.fullName || `${data.employee.firstName || ''} ${data.employee.lastName || ''}`.trim() || invoice?.employeeName || 'Employee Name',
-                  description: `${invoice?.month || 'Period'} ${invoice?.year || new Date().getFullYear()} (${formData.invoiceDurationFrom} to ${formData.invoiceDurationTo})`,
+                  description: `${invoice?.month || 'Period'} ${invoice?.year || new Date().getFullYear()}`,
                   hoursWorked: parseFloat(invoice.hours || 0),
                   hourlyRate: parseFloat(data.employee.hourlyRate || 45.00),
                   total: parseFloat(invoice.totalAmount || invoice.total || 0)
@@ -238,15 +247,15 @@ const InvoicePDFPreviewModal = ({ invoice, onClose, onUpdate }) => {
                 };
                 
                 if (data.invoice?.client) {
-                  updateData.billToName = data.invoice.client.clientName || formData.billToName;
-                  updateData.billToAddress = data.invoice.client.address || formData.billToAddress;
-                  updateData.billToCity = data.invoice.client.city || formData.billToCity;
-                  updateData.billToEmail = data.invoice.client.email || formData.billToEmail;
+                  updateData.billToName = data.invoice.client.clientName || invoice?.billToName || '';
+                  updateData.billToAddress = data.invoice.client.address || invoice?.billToAddress || '';
+                  updateData.billToCity = data.invoice.client.city || invoice?.billToCity || '';
+                  updateData.billToEmail = data.invoice.client.email || invoice?.billToEmail || '';
                 } else if (data.client) {
-                  updateData.billToName = data.client.clientName || formData.billToName;
-                  updateData.billToAddress = data.client.address || formData.billToAddress;
-                  updateData.billToCity = data.client.city || formData.billToCity;
-                  updateData.billToEmail = data.client.email || formData.billToEmail;
+                  updateData.billToName = data.client.clientName || invoice?.billToName || '';
+                  updateData.billToAddress = data.client.address || invoice?.billToAddress || '';
+                  updateData.billToCity = data.client.city || invoice?.billToCity || '';
+                  updateData.billToEmail = data.client.email || invoice?.billToEmail || '';
                 }
                 
                 setFormData(prev => ({
@@ -269,7 +278,7 @@ const InvoicePDFPreviewModal = ({ invoice, onClose, onUpdate }) => {
           
           const processedItems = invoice.lineItems.map(item => ({
             employeeName: item.employeeName || invoice?.employeeName || 'Employee Name',
-            description: `${invoice?.month || 'Period'} ${invoice?.year || new Date().getFullYear()} (${formData.invoiceDurationFrom} to ${formData.invoiceDurationTo})`,
+            description: item.description || `${invoice?.month || 'Period'} ${invoice?.year || new Date().getFullYear()}`,
             hoursWorked: parseFloat(item.hours || item.hoursWorked || 0),
             hourlyRate: parseFloat(item.rate || item.hourlyRate || 45.00),
             total: parseFloat(item.amount || item.total || 0)
@@ -420,13 +429,24 @@ const InvoicePDFPreviewModal = ({ invoice, onClose, onUpdate }) => {
 
   // Handle logo upload
   const handleLogoUpload = (e) => {
+    console.log('📤 handleLogoUpload called');
+    e.preventDefault();
+    e.stopPropagation();
+    
     const file = e.target.files[0];
+    console.log('📁 File selected:', file?.name, file?.size);
+    
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
+        console.log('✅ File read complete, setting logo preview');
         const base64String = reader.result;
         setCompanyLogo(base64String);
         setLogoPreview(base64String);
+        console.log('✅ Logo preview set');
+      };
+      reader.onerror = (error) => {
+        console.error('❌ Error reading file:', error);
       };
       reader.readAsDataURL(file);
     }
@@ -434,6 +454,9 @@ const InvoicePDFPreviewModal = ({ invoice, onClose, onUpdate }) => {
 
   // Handle document upload
   const handleDocumentUpload = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
     const file = e.target.files[0];
     if (file) {
       setTimesheetFileName(file.name);
@@ -999,7 +1022,7 @@ const InvoicePDFPreviewModal = ({ invoice, onClose, onUpdate }) => {
                         </button>
                       </div>
                     ) : (
-                      <label className="file-upload-label">
+                      <label className="file-upload-label" onClick={(e) => e.stopPropagation()}>
                         <input
                           type="file"
                           accept="image/*"
@@ -1039,7 +1062,7 @@ const InvoicePDFPreviewModal = ({ invoice, onClose, onUpdate }) => {
                         </button>
                       </div>
                     ) : (
-                      <label className="file-upload-label">
+                      <label className="file-upload-label" onClick={(e) => e.stopPropagation()}>
                         <input
                           type="file"
                           accept=".pdf,.doc,.docx,.xls,.xlsx"

@@ -306,11 +306,79 @@ body.dark-mode .table-vendors .dropdown-menu {
    COMPREHENSIVE RESPONSIVE DESIGN
    ======================================== */
 
-/* Ensure table container allows horizontal scrolling */
+/* CRITICAL: Prevent ALL scrolling except horizontal table scroll */
 .table-responsive {
   width: 100%;
-  overflow-x: auto;
+  overflow-x: auto !important;
+  overflow-y: visible !important;
   -webkit-overflow-scrolling: touch;
+  position: relative !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  height: auto !important;
+}
+
+/* Card must allow overflow for dropdown */
+.card {
+  overflow: visible !important;
+  position: relative !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  height: auto !important;
+}
+
+.card-inner {
+  overflow: visible !important;
+  position: relative !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  height: auto !important;
+  padding-bottom: 0 !important;
+}
+
+/* Table must not create any scroll */
+.table-vendors {
+  overflow: visible !important;
+  position: relative !important;
+  margin-bottom: 0 !important;
+  border-collapse: collapse !important;
+}
+
+.table-vendors thead,
+.table-vendors tbody,
+.table-vendors tfoot {
+  overflow: visible !important;
+  position: relative !important;
+}
+
+.table-vendors tbody tr {
+  overflow: visible !important;
+  position: relative !important;
+}
+
+.table-vendors tbody tr td,
+.table-vendors thead tr th {
+  overflow: visible !important;
+  position: relative !important;
+}
+
+/* Last row and cell specific fixes */
+.table-vendors tbody tr:last-child {
+  margin-bottom: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+.table-vendors tbody tr:last-child td {
+  padding-bottom: 12px !important;
+  border-bottom: none !important;
+}
+
+/* Actions column must allow overflow */
+.table-vendors td:last-child,
+.table-vendors th:last-child {
+  overflow: visible !important;
+  position: relative !important;
+  z-index: 1 !important;
 }
 
 /* Desktop (992px - 1199px) */
@@ -328,15 +396,26 @@ body.dark-mode .table-vendors .dropdown-menu {
 
 /* Tablet (768px - 991px) */
 @media (max-width: 991px) {
-  /* Enable horizontal scrolling */
+  /* Enable horizontal scrolling but keep vertical visible */
   .table-responsive {
     overflow-x: auto !important;
+    overflow-y: visible !important;
     margin-bottom: 16px;
+    max-height: none !important;
+    height: auto !important;
+  }
+  
+  .card,
+  .card-inner {
+    overflow: visible !important;
+    max-height: none !important;
+    height: auto !important;
   }
   
   /* Set minimum width for table to force scrolling */
   .table-vendors {
     min-width: 900px;
+    overflow: visible !important;
   }
   
   .table-vendors thead th,
@@ -369,24 +448,32 @@ body.dark-mode .table-vendors .dropdown-menu {
   
   .card {
     border-radius: 10px;
+    overflow: visible !important;
+    max-height: none !important;
   }
   
   .card-inner {
     padding: 0;
+    overflow: visible !important;
+    max-height: none !important;
   }
   
-  /* Enable horizontal scrolling */
+  /* Enable horizontal scrolling but keep vertical visible */
   .table-responsive {
     overflow-x: auto !important;
+    overflow-y: visible !important;
     -webkit-overflow-scrolling: touch;
     margin: 0;
     border-radius: 8px;
+    max-height: none !important;
+    height: auto !important;
   }
   
   /* Force minimum width to enable scrolling */
   .table-vendors {
     min-width: 800px !important;
     width: 800px !important;
+    overflow: visible !important;
   }
   
   /* Compact table cells */

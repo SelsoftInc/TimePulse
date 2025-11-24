@@ -1,9 +1,12 @@
-// src/components/clients/ClientOverview.jsx (renamed to ClientDetails)
+// src/components/clients/ClientDetails.jsx
 import React, { useState, useEffect, useCallback } from 'react';
-import { TAX_ID_LABELS } from '../../config/lookups';
+import { TAX_ID_LABELS, getPostalLabel } from '../../config/lookups';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
+import { API_BASE } from '../../config/api';
+import { PERMISSIONS } from '../../utils/roles';
+import PermissionGuard from '../common/PermissionGuard';
 import './ClientDetails.css';
 
 const ClientDetails = () => {
@@ -27,7 +30,7 @@ const ClientDetails = () => {
       setLoading(true);
       const tenantId = user?.tenantId;
       if (!tenantId) throw new Error('No tenant information');
-      const resp = await fetch(`http://localhost:5000/api/clients/${clientId}?tenantId=${tenantId}`, {
+      const resp = await fetch(`${API_BASE}/api/clients/${clientId}?tenantId=${tenantId}`, {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -51,7 +54,7 @@ const ClientDetails = () => {
     try {
       const tenantId = user?.tenantId;
       if (!tenantId) return;
-      const resp = await fetch(`http://localhost:5000/api/employees?tenantId=${tenantId}`, {
+      const resp = await fetch(`${API_BASE}/api/employees?tenantId=${tenantId}`, {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -97,7 +100,7 @@ const ClientDetails = () => {
         clientId: client.id,
         client: client.clientName || client.name || ''
       };
-      const resp = await fetch(`http://localhost:5000/api/employees/${employeeId}?tenantId=${tenantId}`, {
+      const resp = await fetch(`${API_BASE}/api/employees/${employeeId}?tenantId=${tenantId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

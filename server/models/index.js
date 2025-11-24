@@ -1096,6 +1096,21 @@ models.Invoice = sequelize.define(
       type: DataTypes.ENUM("active", "inactive", "deleted"),
       defaultValue: "active",
     },
+    companyLogo: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+      field: "company_logo",
+    },
+    timesheetFile: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+      field: "timesheet_file",
+    },
+    timesheetFileName: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+      field: "timesheet_file_name",
+    },
   },
   {
     tableName: "invoices",

@@ -10,6 +10,7 @@ import "../common/Pagination.css";
 import "../common/TableScroll.css";
 import "../common/ActionsDropdown.css";
 import "../common/DropdownFix.css";
+import "./ClientsDropdownFix.css";
 
 const ClientsList = () => {
   const { subdomain } = useParams();
@@ -244,7 +245,7 @@ const ClientsList = () => {
             </div>
           ) : (
             <div className="card">
-              <div className="card-inne table-responsive">
+              <div className="card-inner table-responsive">
                 <table className="table table-clients">
                   <thead>
                     <tr>
@@ -282,21 +283,38 @@ const ClientsList = () => {
                         </td>
                         <td>{client.employeeCount}</td>
                         <td className="text-right">
-                          <div className="dropdown" style={{ position: "relative" }}>
+                          <div 
+                            className="dropdown"
+                            data-dropdown-id={client.id}
+                            style={{ position: "relative" }}
+                          >
                             <button
                               type="button"
                               className="btn btn-sm btn-outline-secondary dropdown-toggle"
-                              onClick={() => toggleMenu(client.id)}
-                              aria-haspopup="true"
-                              aria-expanded={openMenuId === client.id}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleMenu(client.id);
+                              }}
+                              ref={(el) => {
+                                if (el && openMenuId === client.id) {
+                                  const rect = el.getBoundingClientRect();
+                                  const spaceBelow = window.innerHeight - rect.bottom;
+                                  // Open upward if less than 180px space below
+                                  if (spaceBelow < 180) {
+                                    el.nextElementSibling?.classList.add('dropup');
+                                  } else {
+                                    el.nextElementSibling?.classList.remove('dropup');
+                                  }
+                                }
+                              }}
                             >
                               Actions
                             </button>
-                            {openMenuId === client.id && (
-                              <div
-                                className="dropdown-menu dropdown-menu-right show"
-                                style={{ position: "absolute" }}
-                              >
+                            <div
+                              className={`dropdown-menu dropdown-menu-right ${
+                                openMenuId === client.id ? "show" : ""
+                              }`}
+                            >
                                 <Link
                                   to={`/${subdomain}/clients/${client.id}`}
                                   className="dropdown-item"
@@ -341,7 +359,6 @@ const ClientsList = () => {
                                   </button>
                                 </PermissionGuard>
                               </div>
-                            )}
                           </div>
                         </td>
                       </tr>

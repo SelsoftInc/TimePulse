@@ -37,11 +37,16 @@ const TimesheetSummary = () => {
   const [invoiceModalOpen, setInvoiceModalOpen] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   
-  // Edit invoice modal state
-  const [editModalOpen, setEditModalOpen] = useState(false);
-  const [editInvoiceData, setEditInvoiceData] = useState(null);
-  const [companyLogo, setCompanyLogo] = useState(null);
-  const [timesheetFile, setTimesheetFile] = useState(null);
+  // Debug: Log modal state changes
+  useEffect(() => {
+    console.log('🔔 Invoice Modal State Changed:', {
+      invoiceModalOpen,
+      hasSelectedInvoice: !!selectedInvoice,
+      selectedInvoiceId: selectedInvoice?.id
+    });
+  }, [invoiceModalOpen, selectedInvoice]);
+  
+  // Edit invoice modal state - REMOVED (not needed for timesheet module)
   
   // PDF Preview modal state
   const [pdfPreviewOpen, setPdfPreviewOpen] = useState(false);
@@ -399,125 +404,90 @@ const TimesheetSummary = () => {
     }
   };
   
-  // View invoice details modal - Fetch complete invoice data
-  const handleViewInvoiceDetails = async (invoiceId) => {
+  // View invoice details modal - Fetch complete invoice data (matches Invoice module)
+  const handleViewInvoiceDetails = async (invoice) => {
     try {
-      console.log('📄 Fetching invoice details for invoice:', invoiceId);
+      const tenantId = user?.tenantId;
+      const token = localStorage.getItem('token');
       
-      // Fetch complete invoice data with all associations
-      const response = await axios.get(
-        `${API_BASE}/api/invoices/${invoiceId}?tenantId=${user.tenantId}`
+      console.log('📥 Fetching complete invoice details for viewing:', invoice.id || invoice);
+      
+      // If invoice is just an ID string, convert it to object
+      const invoiceId = typeof invoice === 'string' ? invoice : invoice.id;
+      
+      // Fetch full invoice details including employee and vendor data from backend
+      const response = await fetch(
+        `${API_BASE}/api/invoices/${invoiceId}?tenantId=${tenantId}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
       );
       
-      if (response.data.success) {
-        const invoiceData = response.data.invoice;
-        console.log('✅ Invoice details loaded:', invoiceData);
-        console.log('📋 Vendor data:', invoiceData.vendor);
-        console.log('👤 Employee data:', invoiceData.employee);
-        console.log('📅 Timesheet data:', invoiceData.timesheet);
+      if (response.ok) {
+        const data = await response.json();
+        console.log('✅ Full invoice data fetched for viewing:', data);
         
-        // Open invoice details modal
-        setSelectedInvoice(invoiceData);
+        if (data.success && data.invoice) {
+          const inv = data.invoice;
+          
+          // Extract employee data from multiple sources
+          const employeeName = inv.employee 
+            ? `${inv.employee.firstName} ${inv.employee.lastName}`
+            : inv.timesheet?.employee
+            ? `${inv.timesheet.employee.firstName} ${inv.timesheet.employee.lastName}`
+            : inv.employeeName || 'N/A';
+          
+          const employeeEmail = inv.employee?.email 
+            || inv.timesheet?.employee?.email 
+            || inv.employeeEmail || 'N/A';
+          
+          // Merge full invoice data
+          const fullInvoice = {
+            ...(typeof invoice === 'object' ? invoice : {}),
+            ...inv,
+            employeeName: employeeName,
+            employeeEmail: employeeEmail,
+            employee: inv.employee,
+            vendor: inv.vendor,
+            timesheet: inv.timesheet,
+            client: inv.client
+          };
+          
+          console.log('📋 Opening view modal with complete data:', fullInvoice);
+          console.log('📋 Vendor data:', fullInvoice.vendor);
+          console.log('👤 Employee data:', fullInvoice.employee);
+          console.log('📅 Timesheet data:', fullInvoice.timesheet);
+          
+          // Open invoice details modal
+          setSelectedInvoice(fullInvoice);
+          setInvoiceModalOpen(true);
+        } else {
+          console.warn('API returned success:false, using fallback');
+          // Fallback to original invoice data
+          const fallbackInvoice = typeof invoice === 'object' ? invoice : { id: invoice };
+          setSelectedInvoice(fallbackInvoice);
+          setInvoiceModalOpen(true);
+        }
+      } else {
+        console.error('Failed to fetch invoice details:', response.status);
+        // Fallback to original invoice data
+        const fallbackInvoice = typeof invoice === 'object' ? invoice : { id: invoice };
+        setSelectedInvoice(fallbackInvoice);
         setInvoiceModalOpen(true);
       }
     } catch (error) {
       console.error('❌ Error fetching invoice details:', error);
-      showModal({
-        type: 'error',
-        title: 'Error',
-        message: 'Failed to load invoice details. Please try again.'
-      });
+      // Fallback to original invoice data instead of showing error
+      const fallbackInvoice = typeof invoice === 'object' ? invoice : { id: invoice };
+      setSelectedInvoice(fallbackInvoice);
+      setInvoiceModalOpen(true);
     }
   };
   
-  // Edit invoice - Fetch complete data with all associations
-  const handleEditInvoice = async (invoiceId) => {
-    try {
-      console.log('✏️ Fetching invoice data for editing:', invoiceId);
-      
-      // Fetch complete invoice data with all associations including employee and vendor
-      const response = await axios.get(
-        `${API_BASE}/api/invoices/${invoiceId}?tenantId=${user.tenantId}`
-      );
-      
-      if (response.data.success) {
-        const invoiceData = response.data.invoice;
-        console.log('✅ Invoice data loaded for editing:', invoiceData);
-        
-        // If employee data is missing, fetch it separately
-        if (invoiceData.timesheetId && (!invoiceData.employee || !invoiceData.vendor)) {
-          console.log('📡 Fetching additional employee and vendor data...');
-          
-          try {
-            // Fetch timesheet with employee and vendor associations
-            const timesheetResponse = await axios.get(
-              `${API_BASE}/api/timesheets/${invoiceData.timesheetId}?tenantId=${user.tenantId}`
-            );
-            
-            if (timesheetResponse.data.success && timesheetResponse.data.timesheet) {
-              const timesheet = timesheetResponse.data.timesheet;
-              console.log('✅ Timesheet data loaded:', timesheet);
-              
-              // Merge employee and vendor data
-              if (timesheet.employee) {
-                invoiceData.employee = timesheet.employee;
-                
-                // If employee has vendor, use it
-                if (timesheet.employee.vendor) {
-                  invoiceData.vendor = timesheet.employee.vendor;
-                }
-              }
-              
-              // Update timesheet reference
-              invoiceData.timesheet = timesheet;
-            }
-          } catch (timesheetError) {
-            console.error('⚠️ Error fetching timesheet data:', timesheetError);
-          }
-        }
-        
-        // If vendor is still missing, try to fetch from employee directly
-        if (invoiceData.employeeId && !invoiceData.vendor) {
-          console.log('📡 Fetching vendor from employee record...');
-          
-          try {
-            const employeeResponse = await axios.get(
-              `${API_BASE}/api/employees/${invoiceData.employeeId}?tenantId=${user.tenantId}`
-            );
-            
-            if (employeeResponse.data.success && employeeResponse.data.employee) {
-              const employee = employeeResponse.data.employee;
-              console.log('✅ Employee data loaded:', employee);
-              
-              if (!invoiceData.employee) {
-                invoiceData.employee = employee;
-              }
-              
-              if (employee.vendor) {
-                invoiceData.vendor = employee.vendor;
-              }
-            }
-          } catch (employeeError) {
-            console.error('⚠️ Error fetching employee data:', employeeError);
-          }
-        }
-        
-        console.log('📋 Final invoice data for editing:', invoiceData);
-        
-        // Set the edit data and open modal
-        setEditInvoiceData(invoiceData);
-        setInvoiceModalOpen(false); // Close details modal
-        setEditModalOpen(true);
-      }
-    } catch (error) {
-      console.error('❌ Error fetching invoice for editing:', error);
-      showModal({
-        type: 'error',
-        title: 'Error',
-        message: 'Failed to load invoice for editing. Please try again.'
-      });
-    }
-  };
+  // handleEditInvoice function - REMOVED (not needed for timesheet module)
   
   // View invoice PDF - Fetch data for PDF generation
   const handleViewInvoicePDF = async (invoiceId) => {
@@ -564,8 +534,8 @@ const TimesheetSummary = () => {
     setGeneratingInvoiceId(null);
     
     if (existingInvoice) {
-      // Invoice exists - show details modal
-      handleViewInvoiceDetails(existingInvoice.id);
+      // Invoice exists - show details modal with full invoice object
+      handleViewInvoiceDetails(existingInvoice);
     } else {
       // No invoice - show generate confirmation
       handleGenerateInvoiceFromTimesheet(timesheet);
@@ -1616,14 +1586,7 @@ const TimesheetSummary = () => {
                 <em className="icon ni ni-cross"></em>
                 Close
               </button>
-              <button 
-                className="btn btn-primary"
-                onClick={() => handleEditInvoice(selectedInvoice.id)}
-                style={{backgroundColor: '#6366f1'}}
-              >
-                <em className="icon ni ni-edit"></em>
-                Edit Invoice
-              </button>
+              {/* Edit Invoice button removed - not needed for timesheet module */}
               <button 
                 className="btn btn-success"
                 onClick={() => {
@@ -1670,562 +1633,7 @@ const TimesheetSummary = () => {
         </div>
       )}
       
-      {/* Edit Invoice Modal */}
-      {editModalOpen && editInvoiceData && (
-        <div className="invoice-modal-overlay" onClick={() => setEditModalOpen(false)}>
-          <div className="invoice-modal-content" onClick={(e) => e.stopPropagation()} style={{maxWidth: '1100px'}}>
-            <div className="invoice-modal-header">
-              <div className="invoice-modal-title">
-                <em className="icon ni ni-edit" style={{fontSize: '24px', color: '#ffffff'}}></em>
-                <h3>Edit Invoice</h3>
-              </div>
-              <button 
-                className="invoice-modal-close"
-                onClick={() => setEditModalOpen(false)}
-                title="Close"
-              >
-                <em className="icon ni ni-cross"></em>
-              </button>
-            </div>
-            
-            <div className="edit-invoice-modal-body">
-              {/* Company Logo and Timesheet Upload Section */}
-              <div className="invoice-upload-section">
-                {/* Company Logo Column */}
-                <div className="upload-column">
-                  <div className="upload-column-title">
-                    <em className="icon ni ni-building"></em>
-                    Company Logo
-                  </div>
-                  <div className="upload-box">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => {
-                        const file = e.target.files[0];
-                        if (file) {
-                          setCompanyLogo(file);
-                        }
-                      }}
-                    />
-                    {!companyLogo ? (
-                      <>
-                        <em className="upload-icon icon ni ni-upload-cloud"></em>
-                        <div className="upload-text">Upload Company Logo</div>
-                        <div className="upload-hint">PNG, JPG, SVG (Max 5MB)</div>
-                      </>
-                    ) : (
-                      <div className="upload-preview">
-                        <img 
-                          src={URL.createObjectURL(companyLogo)} 
-                          alt="Company Logo Preview" 
-                        />
-                        <div className="upload-preview-info">
-                          <div className="upload-preview-name">{companyLogo.name}</div>
-                          <div className="upload-preview-size">
-                            {(companyLogo.size / 1024).toFixed(2)} KB
-                          </div>
-                        </div>
-                        <button 
-                          className="upload-preview-remove"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setCompanyLogo(null);
-                          }}
-                        >
-                          Remove
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Timesheet Upload Column */}
-                <div className="upload-column">
-                  <div className="upload-column-title">
-                    <em className="icon ni ni-file-docs"></em>
-                    Timesheet Document
-                  </div>
-                  <div className="upload-box">
-                    <input
-                      type="file"
-                      accept=".pdf,.doc,.docx,.xlsx,.xls"
-                      onChange={(e) => {
-                        const file = e.target.files[0];
-                        if (file) {
-                          setTimesheetFile(file);
-                        }
-                      }}
-                    />
-                    {!timesheetFile ? (
-                      <>
-                        <em className="upload-icon icon ni ni-upload-cloud"></em>
-                        <div className="upload-text">Upload Timesheet</div>
-                        <div className="upload-hint">PDF, DOC, DOCX, XLS, XLSX (Max 10MB)</div>
-                      </>
-                    ) : (
-                      <div className="upload-preview">
-                        <em className="icon ni ni-file-text" style={{fontSize: '48px', color: '#3b82f6'}}></em>
-                        <div className="upload-preview-info">
-                          <div className="upload-preview-name">{timesheetFile.name}</div>
-                          <div className="upload-preview-size">
-                            {(timesheetFile.size / 1024).toFixed(2)} KB
-                          </div>
-                        </div>
-                        <button 
-                          className="upload-preview-remove"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setTimesheetFile(null);
-                          }}
-                        >
-                          Remove
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Invoice Edit Form */}
-              <div className="invoice-edit-form">
-                {/* Basic Information */}
-                <div className="form-section">
-                  <div className="form-section-title">
-                    <em className="icon ni ni-file-text"></em>
-                    Invoice Information
-                  </div>
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label className="form-label">Invoice Number</label>
-                      <input
-                        type="text"
-                        className="form-input"
-                        value={editInvoiceData.invoiceNumber || ''}
-                        onChange={(e) => setEditInvoiceData({...editInvoiceData, invoiceNumber: e.target.value})}
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label className="form-label">Invoice Date</label>
-                      <input
-                        type="date"
-                        className="form-input"
-                        value={editInvoiceData.invoiceDate ? new Date(editInvoiceData.invoiceDate).toISOString().split('T')[0] : ''}
-                        onChange={(e) => setEditInvoiceData({...editInvoiceData, invoiceDate: e.target.value})}
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label className="form-label">Due Date</label>
-                      <input
-                        type="date"
-                        className="form-input"
-                        value={editInvoiceData.dueDate ? new Date(editInvoiceData.dueDate).toISOString().split('T')[0] : ''}
-                        onChange={(e) => setEditInvoiceData({...editInvoiceData, dueDate: e.target.value})}
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label className="form-label">Total Amount</label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        className="form-input"
-                        value={editInvoiceData.totalAmount || editInvoiceData.total || ''}
-                        onChange={(e) => setEditInvoiceData({...editInvoiceData, totalAmount: e.target.value})}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Vendor & Employee Information */}
-                <div className="form-section">
-                  <div className="form-section-title">
-                    <em className="icon ni ni-users"></em>
-                    Vendor & Employee Details
-                  </div>
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label className="form-label">Vendor Name</label>
-                      <input
-                        type="text"
-                        className="form-input"
-                        value={
-                          editInvoiceData.vendor?.name || 
-                          editInvoiceData.timesheet?.employee?.vendor?.name || 
-                          editInvoiceData.employee?.vendor?.name || 
-                          'N/A'
-                        }
-                        onChange={(e) => setEditInvoiceData({
-                          ...editInvoiceData,
-                          vendor: {...(editInvoiceData.vendor || {}), name: e.target.value}
-                        })}
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label className="form-label">Vendor Contact</label>
-                      <input
-                        type="text"
-                        className="form-input"
-                        value={
-                          editInvoiceData.vendor?.email || 
-                          editInvoiceData.vendor?.contactEmail ||
-                          editInvoiceData.timesheet?.employee?.vendor?.email || 
-                          editInvoiceData.timesheet?.employee?.vendor?.contactEmail ||
-                          editInvoiceData.employee?.vendor?.email ||
-                          editInvoiceData.employee?.vendor?.contactEmail ||
-                          'N/A'
-                        }
-                        onChange={(e) => setEditInvoiceData({
-                          ...editInvoiceData,
-                          vendor: {...(editInvoiceData.vendor || {}), email: e.target.value, contactEmail: e.target.value}
-                        })}
-                      />
-                    </div>
-                  </div>
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label className="form-label">Employee Name</label>
-                      <input
-                        type="text"
-                        className="form-input"
-                        value={
-                          editInvoiceData.employee 
-                            ? `${editInvoiceData.employee.firstName || ''} ${editInvoiceData.employee.lastName || ''}`.trim()
-                            : editInvoiceData.timesheet?.employee
-                            ? `${editInvoiceData.timesheet.employee.firstName || ''} ${editInvoiceData.timesheet.employee.lastName || ''}`.trim()
-                            : 'N/A'
-                        }
-                        readOnly
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label className="form-label">Employee Email</label>
-                      <input
-                        type="email"
-                        className="form-input"
-                        value={
-                          editInvoiceData.employee?.email || 
-                          editInvoiceData.timesheet?.employee?.email || 
-                          'N/A'
-                        }
-                        readOnly
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Line Items */}
-                {editInvoiceData.lineItems && editInvoiceData.lineItems.length > 0 && (
-                  <div className="form-section">
-                    <div className="form-section-title">
-                      <em className="icon ni ni-list"></em>
-                      Line Items
-                    </div>
-                    <table className="line-items-edit-table">
-                      <thead>
-                        <tr>
-                          <th>Description</th>
-                          <th>Hours/Qty</th>
-                          <th>Rate</th>
-                          <th>Amount</th>
-                          <th>Action</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {editInvoiceData.lineItems.map((item, index) => (
-                          <tr key={index}>
-                            <td>
-                              <input
-                                type="text"
-                                value={item.description || ''}
-                                onChange={(e) => {
-                                  const newItems = [...editInvoiceData.lineItems];
-                                  newItems[index].description = e.target.value;
-                                  setEditInvoiceData({...editInvoiceData, lineItems: newItems});
-                                }}
-                              />
-                            </td>
-                            <td>
-                              <input
-                                type="number"
-                                step="0.01"
-                                value={item.hours || item.quantity || 0}
-                                onChange={(e) => {
-                                  const newItems = [...editInvoiceData.lineItems];
-                                  const newHours = parseFloat(e.target.value) || 0;
-                                  newItems[index].hours = newHours;
-                                  newItems[index].quantity = newHours;
-                                  newItems[index].hoursWorked = newHours;
-                                  const rate = parseFloat(newItems[index].rate || newItems[index].hourlyRate || 0);
-                                  const calculatedTotal = newHours * rate;
-                                  newItems[index].amount = calculatedTotal;
-                                  newItems[index].total = calculatedTotal;
-                                  setEditInvoiceData({...editInvoiceData, lineItems: newItems});
-                                }}
-                              />
-                            </td>
-                            <td>
-                              <input
-                                type="number"
-                                step="0.01"
-                                value={item.rate || item.hourlyRate || 0}
-                                onChange={(e) => {
-                                  const newItems = [...editInvoiceData.lineItems];
-                                  const newRate = parseFloat(e.target.value) || 0;
-                                  newItems[index].rate = newRate;
-                                  newItems[index].hourlyRate = newRate;
-                                  const hours = parseFloat(newItems[index].hours || newItems[index].quantity || newItems[index].hoursWorked || 0);
-                                  const calculatedTotal = hours * newRate;
-                                  newItems[index].amount = calculatedTotal;
-                                  newItems[index].total = calculatedTotal;
-                                  setEditInvoiceData({...editInvoiceData, lineItems: newItems});
-                                }}
-                              />
-                            </td>
-                            <td>
-                              <input
-                                type="number"
-                                step="0.01"
-                                value={item.amount || 0}
-                                readOnly
-                              />
-                            </td>
-                            <td>
-                              <button
-                                className="remove-line-item-btn"
-                                onClick={() => {
-                                  const newItems = editInvoiceData.lineItems.filter((_, i) => i !== index);
-                                  setEditInvoiceData({...editInvoiceData, lineItems: newItems});
-                                }}
-                              >
-                                Remove
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                    <button
-                      className="add-line-item-btn"
-                      onClick={() => {
-                        const newItems = [
-                          ...editInvoiceData.lineItems,
-                          { description: '', hours: 0, rate: 0, amount: 0 }
-                        ];
-                        setEditInvoiceData({...editInvoiceData, lineItems: newItems});
-                      }}
-                    >
-                      <em className="icon ni ni-plus"></em>
-                      Add Line Item
-                    </button>
-                  </div>
-                )}
-
-                {/* Notes */}
-                <div className="form-section">
-                  <div className="form-section-title">
-                    <em className="icon ni ni-notes"></em>
-                    Notes
-                  </div>
-                  <div className="form-group">
-                    <textarea
-                      className="form-textarea"
-                      placeholder="Add any additional notes or comments..."
-                      value={editInvoiceData.notes || ''}
-                      onChange={(e) => setEditInvoiceData({...editInvoiceData, notes: e.target.value})}
-                    />
-                  </div>
-                </div>
-
-                {/* PDF Actions */}
-                {/* <div className="pdf-actions">
-                  <button 
-                    className="btn-preview-pdf"
-                    onClick={() => {
-                      console.log('Preview PDF clicked, editInvoiceData:', editInvoiceData);
-                      
-                      // Normalize line items data before passing to PDF modal
-                      const normalizedData = {
-                        ...editInvoiceData,
-                        // Add vendor/client info
-                        vendorName: editInvoiceData.vendor?.name || editInvoiceData.timesheet?.employee?.vendor?.name || 'Vendor Name',
-                        clientName: editInvoiceData.client?.name || 'Client Name',
-                        // Normalize line items
-                        lineItems: (editInvoiceData.lineItems || []).map(item => {
-                          const hours = parseFloat(item.hours || item.hoursWorked || item.quantity || 0);
-                          const rate = parseFloat(item.rate || item.hourlyRate || 0);
-                          const total = parseFloat(item.amount || item.total || (hours * rate) || 0);
-                          
-                          return {
-                            // For PDF display
-                            employeeName: item.employeeName || item.employee?.name || item.description || 'Employee',
-                            position: item.position || item.title || 'Position',
-                            hoursWorked: hours,
-                            hourlyRate: rate,
-                            total: total,
-                            // Keep original fields
-                            description: item.description || item.employeeName || 'Service',
-                            hours: hours,
-                            rate: rate,
-                            amount: total,
-                            quantity: hours
-                          };
-                        })
-                      };
-                      
-                      console.log('Normalized data for PDF:', normalizedData);
-                      setInvoiceForPDF(normalizedData);
-                      setPdfPreviewOpen(true);
-                    }}
-                  >
-                    <em className="icon ni ni-eye"></em>
-                    Preview PDF
-                  </button>
-                  <button 
-                    className="btn-download-pdf"
-                    onClick={() => {
-                      console.log('Download PDF clicked, editInvoiceData:', editInvoiceData);
-                      
-                      // Normalize line items data before passing to PDF modal
-                      const normalizedData = {
-                        ...editInvoiceData,
-                        // Add vendor/client info
-                        vendorName: editInvoiceData.vendor?.name || editInvoiceData.timesheet?.employee?.vendor?.name || 'Vendor Name',
-                        clientName: editInvoiceData.client?.name || 'Client Name',
-                        // Normalize line items
-                        lineItems: (editInvoiceData.lineItems || []).map(item => {
-                          const hours = parseFloat(item.hours || item.hoursWorked || item.quantity || 0);
-                          const rate = parseFloat(item.rate || item.hourlyRate || 0);
-                          const total = parseFloat(item.amount || item.total || (hours * rate) || 0);
-                          
-                          return {
-                            // For PDF display
-                            employeeName: item.employeeName || item.employee?.name || item.description || 'Employee',
-                            position: item.position || item.title || 'Position',
-                            hoursWorked: hours,
-                            hourlyRate: rate,
-                            total: total,
-                            // Keep original fields
-                            description: item.description || item.employeeName || 'Service',
-                            hours: hours,
-                            rate: rate,
-                            amount: total,
-                            quantity: hours
-                          };
-                        })
-                      };
-                      
-                      console.log('Normalized data for PDF:', normalizedData);
-                      setInvoiceForPDF(normalizedData);
-                      setPdfPreviewOpen(true);
-                    }}
-                  >
-                    <em className="icon ni ni-download"></em>
-                    Download PDF
-                  </button>
-                </div> */}
-              </div>
-            </div>
-            
-            <div className="invoice-modal-footer">
-              <button 
-                className="btn btn-secondary"
-                onClick={() => setEditModalOpen(false)}
-              >
-                <em className="icon ni ni-cross"></em>
-                Cancel
-              </button>
-              <button 
-                className="btn btn-primary"
-                onClick={async () => {
-                  try {
-                    const tenantId = user?.tenantId;
-                    const token = localStorage.getItem('token');
-                    
-                    if (!tenantId) {
-                      throw new Error('Tenant ID not found');
-                    }
-                    
-                    console.log('💾 Saving invoice changes...', editInvoiceData);
-                    
-                    // Prepare the invoice data for API
-                    const invoiceUpdateData = {
-                      invoiceNumber: editInvoiceData.invoiceNumber,
-                      invoiceDate: editInvoiceData.invoiceDate,
-                      dueDate: editInvoiceData.dueDate,
-                      totalAmount: editInvoiceData.totalAmount || editInvoiceData.total,
-                      status: editInvoiceData.status || 'pending',
-                      notes: editInvoiceData.notes,
-                      lineItems: editInvoiceData.lineItems.map(item => ({
-                        description: item.description,
-                        hours: parseFloat(item.hours || item.quantity || 0),
-                        rate: parseFloat(item.rate || item.hourlyRate || 0),
-                        amount: parseFloat(item.amount || item.total || 0)
-                      })),
-                      vendor: editInvoiceData.vendor,
-                      tenantId: tenantId
-                    };
-                    
-                    console.log('📤 Sending update to API:', invoiceUpdateData);
-                    
-                    // Call API to update invoice
-                    const response = await axios.put(
-                      `${API_BASE}/api/invoices/${editInvoiceData.id}?tenantId=${tenantId}`,
-                      invoiceUpdateData,
-                      {
-                        headers: {
-                          'Content-Type': 'application/json',
-                          'Authorization': `Bearer ${token}`
-                        }
-                      }
-                    );
-                    
-                    console.log('✅ Invoice updated successfully:', response.data);
-                    
-                    // Update the selectedInvoice with the response data
-                    const updatedInvoice = response.data.invoice || {
-                      ...selectedInvoice,
-                      ...editInvoiceData,
-                      lineItems: editInvoiceData.lineItems
-                    };
-                    setSelectedInvoice(updatedInvoice);
-                    
-                    // Close edit modal
-                    setEditModalOpen(false);
-                    
-                    // Reload all timesheet data from API to refresh the screen
-                    console.log('🔄 Reloading timesheet data...');
-                    await loadTimesheetData();
-                    
-                    // Show success modal with invoice details
-                    showModal({
-                      type: 'success',
-                      title: 'Invoice Updated Successfully!',
-                      message: `${updatedInvoice.invoiceNumber || editInvoiceData.invoiceNumber} has been updated.`,
-                      details: {
-                        'Invoice Number': updatedInvoice.invoiceNumber || editInvoiceData.invoiceNumber,
-                        'Amount': `$${parseFloat(updatedInvoice.totalAmount || editInvoiceData.totalAmount || editInvoiceData.total || 0).toFixed(2)}`,
-                        'Status': (updatedInvoice.status || editInvoiceData.status || 'active').toUpperCase()
-                      }
-                    });
-                  } catch (error) {
-                    console.error('❌ Error updating invoice:', error);
-                    console.error('Error details:', error.response?.data);
-                    
-                    showModal({
-                      type: 'error',
-                      title: 'Update Failed',
-                      message: error.response?.data?.message || 'Failed to update invoice. Please try again.'
-                    });
-                  }
-                }}
-              >
-                <em className="icon ni ni-save"></em>
-                Save Changes
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Edit Invoice Modal - REMOVED (not needed for timesheet module) */}
       
       {/* PDF Preview Modal */}
       {pdfPreviewOpen && invoiceForPDF && (
@@ -2234,6 +1642,53 @@ const TimesheetSummary = () => {
           onClose={() => {
             setPdfPreviewOpen(false);
             setInvoiceForPDF(null);
+          }}
+          onUpdate={async (updatedInvoice) => {
+            try {
+              console.log('💾 Saving invoice updates to backend...', updatedInvoice);
+              
+              // Save to backend
+              const response = await axios.put(
+                `${API_BASE}/api/invoices/${updatedInvoice.id}?tenantId=${user.tenantId}`,
+                {
+                  ...updatedInvoice,
+                  tenantId: user.tenantId
+                },
+                {
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                  }
+                }
+              );
+              
+              if (response.data.success) {
+                console.log('✅ Invoice saved successfully!');
+                
+                // Close the modal
+                setPdfPreviewOpen(false);
+                setInvoiceForPDF(null);
+                
+                // Show success message
+                showModal({
+                  type: 'success',
+                  title: 'Success',
+                  message: 'Invoice updated successfully!'
+                });
+                
+                // Reload timesheet data to refresh the invoice list
+                await loadTimesheetData();
+              } else {
+                throw new Error(response.data.message || 'Failed to save invoice');
+              }
+            } catch (error) {
+              console.error('❌ Error saving invoice:', error);
+              showModal({
+                type: 'error',
+                title: 'Error',
+                message: error.response?.data?.message || error.message || 'Failed to save invoice'
+              });
+            }
           }}
         />
       )}

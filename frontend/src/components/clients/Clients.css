@@ -200,11 +200,46 @@
    COMPREHENSIVE RESPONSIVE DESIGN
    ======================================== */
 
-/* Ensure table container allows horizontal scrolling on mobile */
+/* Ensure table container allows horizontal scrolling on mobile - NO VERTICAL SCROLL */
 .table-responsive {
   width: 100%;
-  overflow-x: auto;
+  overflow-x: auto !important;
+  overflow-y: visible !important;
   -webkit-overflow-scrolling: touch;
+  max-height: none !important;
+  height: auto !important;
+  min-height: 0 !important;
+  position: relative !important;
+}
+
+/* Card containers must allow overflow - NO SCROLLBAR */
+.card,
+.card-inner {
+  overflow: visible !important;
+  max-height: none !important;
+  height: auto !important;
+  min-height: 0 !important;
+  position: relative !important;
+}
+
+/* Table and all children must allow overflow */
+.table-clients,
+.table-clients thead,
+.table-clients tbody,
+.table-clients tfoot,
+.table-clients tr,
+.table-clients th,
+.table-clients td {
+  overflow: visible !important;
+  position: relative !important;
+}
+
+/* Actions column specific */
+.table-clients td:last-child,
+.table-clients th:last-child {
+  overflow: visible !important;
+  position: relative !important;
+  z-index: 10 !important;
 }
 
 /* Desktop Large (>1200px) - Default styles above */

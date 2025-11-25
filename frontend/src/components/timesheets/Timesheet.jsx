@@ -177,6 +177,8 @@ const TimesheetHistory = ({ timesheets, isApprover = false }) => {
   const [dateFilter, setDateFilter] = useState("all");
   const [selectedTimesheet, setSelectedTimesheet] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [openDropdownId, setOpenDropdownId] = useState(null);
+  const dropdownRef = useRef(null);
 
   // Filter timesheets based on status and date
   const filterTimesheets = () => {
@@ -245,6 +247,25 @@ const TimesheetHistory = ({ timesheets, isApprover = false }) => {
     console.log("Flagging timesheet:", selectedTimesheet);
     setShowDetailModal(false);
   };
+
+  // Toggle dropdown
+  const toggleDropdown = (timesheetId) => {
+    setOpenDropdownId(openDropdownId === timesheetId ? null : timesheetId);
+  };
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setOpenDropdownId(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   // Apply filters when they change
   useEffect(() => {
@@ -325,11 +346,15 @@ const TimesheetHistory = ({ timesheets, isApprover = false }) => {
                 <div className="nk-tb-col nk-tb-col-tools">
                   <ul className="nk-tb-actions gx-1">
                     <li>
-                      <div className="dropdown">
-                        <button className="dropdown-toggle btn btn-sm btn-icon btn-trigger" data-bs-toggle="dropdown">
+                      <div className="dropdown" ref={openDropdownId === timesheet.id ? dropdownRef : null}>
+                        <button 
+                          className="dropdown-toggle btn btn-sm btn-icon btn-trigger" 
+                          onClick={() => toggleDropdown(timesheet.id)}
+                          aria-expanded={openDropdownId === timesheet.id}
+                        >
                           <em className="icon ni ni-more-h"></em>
                         </button>
-                        <div className="dropdown-menu dropdown-menu-end">
+                        <div className={`dropdown-menu dropdown-menu-end ${openDropdownId === timesheet.id ? 'show' : ''}`}>
                           <ul className="link-list-opt no-bdr">
                             <li>
                               <button 

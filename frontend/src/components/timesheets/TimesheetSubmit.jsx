@@ -1157,7 +1157,7 @@ const TimesheetSubmit = () => {
     try {
       console.log("📤 Submitting timesheet with approver:", selectedApprover);
 
-      // Get employee ID
+      // Get employee ID and name
       const employeeId = !isEmployee() ? selectedEmployee : user.employeeId;
 
       if (!employeeId) {
@@ -1168,6 +1168,21 @@ const TimesheetSubmit = () => {
         setSubmitting(false);
         return;
       }
+
+      // Get employee name
+      let employeeName = "";
+      if (!isEmployee()) {
+        // Admin/Manager submitting for employee - get from availableEmployees
+        const selectedEmp = availableEmployees.find(emp => emp.id === employeeId);
+        employeeName = selectedEmp ? selectedEmp.name : "";
+      } else {
+        // Employee submitting their own timesheet - get from user object
+        employeeName = user.firstName && user.lastName 
+          ? `${user.firstName} ${user.lastName}` 
+          : user.name || "";
+      }
+
+      console.log("👤 Employee Info:", { employeeId, employeeName });
 
       // Parse week range to get start and end dates
       const [startStr, endStr] = selectedWeek.split(" To ");
@@ -1190,6 +1205,7 @@ const TimesheetSubmit = () => {
       const submissionData = {
         tenantId: user.tenantId,
         employeeId: employeeId,
+        employeeName: employeeName,
         weekStart: weekStart,
         weekEnd: weekEnd,
         clientId: validClientId,

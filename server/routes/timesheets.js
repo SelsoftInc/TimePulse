@@ -119,15 +119,19 @@ router.get("/", async (req, res, next) => {
 
     // Transform data for frontend
     const transformedTimesheets = await Promise.all(timesheets.map(async (ts) => {
-      // Get employee name - fallback to User if Employee doesn't exist
-      let employeeName = "Unknown";
-      if (ts.employee) {
-        employeeName = `${ts.employee.firstName} ${ts.employee.lastName}`;
-      } else {
-        // Try to get user directly if employee record doesn't exist
-        const user = await models.User.findByPk(ts.employeeId);
-        if (user) {
-          employeeName = `${user.firstName} ${user.lastName}`;
+      // Get employee name - use stored employeeName first, then fallback to Employee/User
+      let employeeName = ts.employeeName || "Unknown";
+      
+      // If no stored name, try to get from Employee or User
+      if (!employeeName || employeeName === "Unknown") {
+        if (ts.employee) {
+          employeeName = `${ts.employee.firstName} ${ts.employee.lastName}`;
+        } else {
+          // Try to get user directly if employee record doesn't exist
+          const user = await models.User.findByPk(ts.employeeId);
+          if (user) {
+            employeeName = `${user.firstName} ${user.lastName}`;
+          }
         }
       }
 
@@ -541,26 +545,34 @@ router.get("/pending-approval", async (req, res, next) => {
         }
       }
 
-      // Get employee info - fallback to User if Employee doesn't exist
-      let employeeName = "Unknown Employee";
+      // Get employee info - use stored employeeName first, then fallback to Employee/User
+      let employeeName = ts.employeeName || "Unknown Employee";
       let employeeEmail = "N/A";
       let department = "N/A";
 
-      if (ts.employee) {
-        employeeName = `${ts.employee.firstName || ""} ${ts.employee.lastName || ""}`.trim();
-        employeeEmail = ts.employee.email || "N/A";
-        department = ts.employee.department || "N/A";
-      } else {
-        // Try to get user directly if employee record doesn't exist
-        const user = await models.User.findByPk(ts.employeeId);
-        if (user) {
-          employeeName = `${user.firstName} ${user.lastName}`;
-          employeeEmail = user.email;
+      // If no stored name or need email/department, get from Employee or User
+      if (!ts.employeeName || !employeeEmail || employeeEmail === "N/A") {
+        if (ts.employee) {
+          if (!ts.employeeName) {
+            employeeName = `${ts.employee.firstName || ""} ${ts.employee.lastName || ""}`.trim();
+          }
+          employeeEmail = ts.employee.email || "N/A";
+          department = ts.employee.department || "N/A";
+        } else {
+          // Try to get user directly if employee record doesn't exist
+          const user = await models.User.findByPk(ts.employeeId);
+          if (user) {
+            if (!ts.employeeName) {
+              employeeName = `${user.firstName} ${user.lastName}`;
+            }
+            employeeEmail = user.email;
+          }
         }
       }
 
       return {
         id: ts.id,
+        employeeId: ts.employeeId,
         employeeName: employeeName,
         employeeEmail: employeeEmail,
         department: department,
@@ -688,6 +700,7 @@ router.post("/submit", async (req, res, next) => {
     const {
       tenantId,
       employeeId,
+      employeeName,
       weekStart,
       weekEnd,
       clientId,
@@ -756,6 +769,7 @@ router.post("/submit", async (req, res, next) => {
 
       // Update existing timesheet
       existing.clientId = sanitizedClientId !== null ? sanitizedClientId : existing.clientId;
+      existing.employeeName = employeeName || existing.employeeName;
       existing.reviewerId = reviewerId || existing.reviewerId;
       existing.status = status || "submitted";
       existing.totalHours = totalHours || 0;
@@ -808,6 +822,7 @@ router.post("/submit", async (req, res, next) => {
     const newTimesheet = await models.Timesheet.create({
       tenantId,
       employeeId,
+      employeeName: employeeName || null,
       clientId: sanitizedClientId,
       reviewerId: reviewerId || null,
       weekStart,
@@ -1497,11 +1512,13 @@ router.get("/employee/approved", async (req, res, next) => {
         }
       }
 
+      // Use stored employeeName first, then fallback to Employee
+      const employeeName = ts.employeeName || `${ts.employee?.firstName || ""} ${ts.employee?.lastName || ""}`.trim();
+
       return {
         id: ts.id,
-        employeeName: `${ts.employee?.firstName || ""} ${
-          ts.employee?.lastName || ""
-        }`.trim(),
+        employeeId: ts.employeeId,
+        employeeName: employeeName,
         employeeEmail: ts.employee?.email,
         department: ts.employee?.department,
         weekRange: `${new Date(ts.weekStart).toLocaleDateString("en-US", {
@@ -1632,11 +1649,13 @@ router.get("/employee/rejected", async (req, res, next) => {
         }
       }
 
+      // Use stored employeeName first, then fallback to Employee
+      const employeeName = ts.employeeName || `${ts.employee?.firstName || ""} ${ts.employee?.lastName || ""}`.trim();
+
       return {
         id: ts.id,
-        employeeName: `${ts.employee?.firstName || ""} ${
-          ts.employee?.lastName || ""
-        }`.trim(),
+        employeeId: ts.employeeId,
+        employeeName: employeeName,
         employeeEmail: ts.employee?.email,
         department: ts.employee?.department,
         weekRange: `${new Date(ts.weekStart).toLocaleDateString("en-US", {

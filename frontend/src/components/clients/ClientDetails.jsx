@@ -387,17 +387,17 @@ const ClientDetails = () => {
                         <h5 className="title">Employee List</h5>
                       </div>
                       <div className="card-tools">
-                        <div className="form-inline flex-nowrap gx-3">
-                          <div className="form-wrap mr-2">
+                        <div className="form-inline">
+                          <div className="form-wrap">
                             <Link
                               to={`/${tenantInfo?.subdomain || subdomain}/employees/new?clientId=${encodeURIComponent(client?.id)}&clientName=${encodeURIComponent(client?.clientName || client?.name || '')}`}
                               className="btn btn-sm btn-primary"
                             >
                               <em className="icon ni ni-plus"></em>
-                              <span className="ml-1">Add Employee</span>
+                              <span>Add Employee</span>
                             </Link>
                           </div>
-                          <div className="form-wrap mr-2 w-250px">
+                          <div className="form-wrap w-250px">
                             <select
                               className="form-select form-select-sm"
                               value={assignEmployeeId}
@@ -414,7 +414,7 @@ const ClientDetails = () => {
                                 ))}
                             </select>
                           </div>
-                          <div className="form-wrap mr-2">
+                          <div className="form-wrap">
                             <button
                               type="button"
                               className="btn btn-sm btn-outline-primary"
@@ -425,7 +425,7 @@ const ClientDetails = () => {
                             </button>
                           </div>
                           {assignError && (
-                            <div className="form-wrap mr-2">
+                            <div className="form-wrap">
                               <span className="text-danger small">{assignError}</span>
                             </div>
                           )}

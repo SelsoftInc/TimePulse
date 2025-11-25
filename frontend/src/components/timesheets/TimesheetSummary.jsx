@@ -46,6 +46,20 @@ const TimesheetSummary = () => {
     });
   }, [invoiceModalOpen, selectedInvoice]);
   
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    if (invoiceModalOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    
+    // Cleanup on unmount
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [invoiceModalOpen]);
+  
   // Edit invoice modal state - REMOVED (not needed for timesheet module)
   
   // PDF Preview modal state
@@ -562,142 +576,151 @@ const TimesheetSummary = () => {
     setInvoiceSuccess("");
 
     try {
-      console.log('📄 Generating invoice for timesheet:', timesheet.id);
-      console.log('📋 Timesheet details:', {
-        id: timesheet.id,
-        employeeId: timesheet.employeeId,
-        employeeName: timesheet.employeeName,
-        vendorId: timesheet.vendorId,
-        vendor: timesheet.vendor,
-        clientId: timesheet.clientId,
-        client: timesheet.client,
+      console.log('📄 Starting invoice generation for timesheet:', timesheet.id);
+      console.log('📦 Timesheet object:', timesheet);
+      
+      // ============================================================
+      // STEP 1: Get employee email/name from timesheet
+      // ============================================================
+      const employeeEmail = timesheet.employeeEmail;
+      const employeeName = timesheet.employeeName;
+      
+      console.log('📋 Timesheet data:', {
+        timesheetId: timesheet.id,
+        employeeEmail: employeeEmail,
+        employeeName: employeeName,
+        weekRange: timesheet.weekRange,
+        totalHours: timesheet.totalTimeHours || timesheet.billableProjectHrs,
         status: timesheet.status
       });
-
-      // ALWAYS fetch employee data to get vendor/client information
-      // Don't rely on timesheet.vendorId as it might not be populated
-      let employeeVendorId = null;
-      let employeeClientId = null;
-      let employeeData = null;
       
-      if (timesheet.employeeId) {
-        console.log('🔍 Fetching employee data to get vendor/client info...');
-        console.log('🔍 Employee ID:', timesheet.employeeId);
-        console.log('🔍 Tenant ID:', user.tenantId);
-        console.log('🔍 API URL:', `${API_BASE}/api/employees/${timesheet.employeeId}?tenantId=${user.tenantId}`);
-        
-        try {
-          const empResponse = await axios.get(
-            `${API_BASE}/api/employees/${timesheet.employeeId}?tenantId=${user.tenantId}`
-          );
-          
-          console.log('📦 Full API Response:', empResponse);
-          console.log('📦 Response Data:', empResponse.data);
-          console.log('📦 Response Success:', empResponse.data.success);
-          
-          if (empResponse.data.success) {
-            employeeData = empResponse.data.employee || empResponse.data.data;
-            console.log('📦 Employee Data Object:', employeeData);
-            console.log('📦 Employee Data Keys:', Object.keys(employeeData || {}));
-            
-            employeeVendorId = employeeData.vendorId;
-            employeeClientId = employeeData.clientId;
-            
-            console.log('✅ Employee data fetched:', {
-              employeeId: timesheet.employeeId,
-              employeeName: employeeData.firstName + ' ' + employeeData.lastName,
-              vendorId: employeeVendorId,
-              clientId: employeeClientId,
-              hasVendor: !!employeeData.vendor,
-              hasClient: !!employeeData.client
-            });
-            
-            // Also check nested vendor/client objects
-            if (employeeData.vendor) {
-              console.log('📦 Nested Vendor Object:', employeeData.vendor);
-              if (!employeeVendorId && employeeData.vendor.id) {
-                employeeVendorId = employeeData.vendor.id;
-                console.log('✅ Using vendor ID from nested object:', employeeVendorId);
-              }
-            }
-            if (employeeData.client) {
-              console.log('📦 Nested Client Object:', employeeData.client);
-              if (!employeeClientId && employeeData.client.id) {
-                employeeClientId = employeeData.client.id;
-                console.log('✅ Using client ID from nested object:', employeeClientId);
-              }
-            }
-          } else {
-            console.error('❌ API returned success: false');
-          }
-        } catch (error) {
-          console.error('❌ Error fetching employee data:', error);
-          console.error('❌ Error response:', error.response?.data);
-        }
-      }
-      
-      // Fallback to timesheet vendor/client if employee doesn't have one
-      if (!employeeVendorId && timesheet.vendorId) {
-        employeeVendorId = timesheet.vendorId;
-        console.log('ℹ️ Using vendor from timesheet:', employeeVendorId);
-      }
-      if (!employeeClientId && timesheet.clientId) {
-        employeeClientId = timesheet.clientId;
-        console.log('ℹ️ Using client from timesheet:', employeeClientId);
-      }
-
-      // Pre-validation: Check if employee has vendor or client assigned
-      if (!employeeVendorId && !employeeClientId) {
-        console.error('❌ Validation failed: No vendor or client assigned');
+      if (!employeeEmail && !employeeName) {
+        console.error('❌ CRITICAL: No employee email or name found in timesheet');
         setGeneratingInvoiceId(null);
-        
-        // Close confirmation modal first, then show error
         closeModal();
         setTimeout(() => {
           showModal({
             type: 'error',
-            title: 'Vendor/Client Not Assigned',
-            message: `Employee "${timesheet.employeeName || 'Unknown'}" must be associated with a vendor or client to generate invoice.\n\nAction Required:\n1. Go to Employees menu\n2. Edit employee: ${timesheet.employeeName || 'Unknown'}\n3. Assign a vendor OR client with email address\n4. Save and try generating invoice again`
+            title: 'Employee Information Missing',
+            message: 'Unable to generate invoice: Employee email/name is missing from timesheet.\n\nPlease ensure the timesheet has valid employee information.'
+          });
+        }, 100);
+        return;
+      }
+      
+      console.log('✅ Employee identifier found:', { employeeEmail, employeeName });
+      
+      // ============================================================
+      // STEP 2: Fetch ALL employees from Employee API
+      // ============================================================
+      console.log('🔍 Fetching all employees from Employee API...');
+      
+      let employeeData = null;
+      let employeeId = null;
+      let vendorClientInfo = null;
+      let vendorClientType = '';
+      
+      try {
+        const employeesResponse = await axios.get(
+          `${API_BASE}/api/employees?tenantId=${user.tenantId}`
+        );
+        
+        console.log('📦 Employees API Response:', employeesResponse.data);
+        
+        if (!employeesResponse.data.success || !employeesResponse.data.employees) {
+          throw new Error('Failed to fetch employees from Employee API');
+        }
+        
+        // Find the employee by email or name
+        const allEmployees = employeesResponse.data.employees;
+        
+        if (employeeEmail) {
+          employeeData = allEmployees.find(emp => 
+            emp.email && emp.email.toLowerCase() === employeeEmail.toLowerCase()
+          );
+          console.log('🔍 Searched by email:', employeeEmail, 'Found:', !!employeeData);
+        }
+        
+        // If not found by email, try by name
+        if (!employeeData && employeeName) {
+          employeeData = allEmployees.find(emp => {
+            const empFullName = `${emp.firstName || ''} ${emp.lastName || ''}`.trim();
+            return empFullName.toLowerCase() === employeeName.toLowerCase();
+          });
+          console.log('🔍 Searched by name:', employeeName, 'Found:', !!employeeData);
+        }
+        
+        if (!employeeData) {
+          throw new Error(`Employee not found in Employee API with email: ${employeeEmail} or name: ${employeeName}`);
+        }
+        
+        employeeId = employeeData.id;
+        console.log('✅ Found employee in Employee API:', {
+          id: employeeData.id,
+          name: `${employeeData.firstName} ${employeeData.lastName}`,
+          email: employeeData.email,
+          hasVendor: !!employeeData.vendor,
+          hasClient: !!employeeData.client
+        });
+        
+        // ============================================================
+        // STEP 3: Validate vendor/client assignment from Employee API data
+        // ============================================================
+        // Check for vendor assignment (prioritize nested vendor object with email)
+        if (employeeData.vendor && employeeData.vendor.id) {
+          vendorClientInfo = employeeData.vendor;
+          vendorClientType = 'Vendor';
+          console.log('✅ Found vendor from employee API:', {
+            id: vendorClientInfo.id,
+            name: vendorClientInfo.name || vendorClientInfo.vendorName,
+            email: vendorClientInfo.email
+          });
+        } 
+        // Check for client assignment (prioritize nested client object with email)
+        else if (employeeData.client && employeeData.client.id) {
+          vendorClientInfo = employeeData.client;
+          vendorClientType = 'Client';
+          console.log('✅ Found client from employee API:', {
+            id: vendorClientInfo.id,
+            name: vendorClientInfo.clientName,
+            email: vendorClientInfo.email
+          });
+        }
+        // No vendor or client found
+        else {
+          console.error('❌ No vendor or client assigned to employee');
+          console.error('Employee data:', employeeData);
+          setGeneratingInvoiceId(null);
+          closeModal();
+          setTimeout(() => {
+            showModal({
+              type: 'error',
+              title: 'Vendor/Client Not Assigned',
+              message: `Employee "${employeeData.firstName} ${employeeData.lastName}" must be associated with a vendor or client to generate invoice.\n\nAction Required:\n1. Go to Employees menu\n2. Edit employee: ${employeeData.firstName} ${employeeData.lastName}\n3. Assign a vendor OR client with email address\n4. Save and try generating invoice again`
+            });
+          }, 100);
+          return;
+        }
+
+      } catch (error) {
+        console.error('❌ Error fetching employee data:', error);
+        console.error('❌ Error details:', error.response?.data);
+        setGeneratingInvoiceId(null);
+        closeModal();
+        setTimeout(() => {
+          showModal({
+            type: 'error',
+            title: 'Error Fetching Employee Data',
+            message: `Failed to fetch employee information: ${error.message}\n\nPlease try again or contact support.`
           });
         }, 100);
         return;
       }
 
-      // Validate vendor/client has email address
-      let vendorClientInfo = null;
-      let vendorClientType = '';
-      
-      if (employeeVendorId) {
-        try {
-          const vendorResponse = await axios.get(
-            `${API_BASE}/api/vendors/${employeeVendorId}?tenantId=${user.tenantId}`
-          );
-          if (vendorResponse.data.success) {
-            vendorClientInfo = vendorResponse.data.vendor || vendorResponse.data.data;
-            vendorClientType = 'Vendor';
-            console.log('✅ Vendor info fetched:', vendorClientInfo);
-          }
-        } catch (error) {
-          console.error('❌ Error fetching vendor:', error);
-        }
-      } else if (employeeClientId) {
-        try {
-          const clientResponse = await axios.get(
-            `${API_BASE}/api/clients/${employeeClientId}?tenantId=${user.tenantId}`
-          );
-          if (clientResponse.data.success) {
-            vendorClientInfo = clientResponse.data.client || clientResponse.data.data;
-            vendorClientType = 'Client';
-            console.log('✅ Client info fetched:', vendorClientInfo);
-          }
-        } catch (error) {
-          console.error('❌ Error fetching client:', error);
-        }
-      }
-
-      // Check if vendor/client has email
-      if (vendorClientInfo && !vendorClientInfo.email) {
-        console.error('❌ Validation failed: Vendor/Client email missing');
+      // Step 4: Validate that vendor/client has email address
+      // Email is required to send invoice
+      if (!vendorClientInfo.email) {
+        console.error('❌ Validation failed: Vendor/Client email missing from Employee API data');
         console.error('Vendor/Client info:', vendorClientInfo);
         setGeneratingInvoiceId(null);
         
@@ -709,9 +732,9 @@ const TimesheetSummary = () => {
             title: `${vendorClientType} Email Missing`,
             message: `${vendorClientType} "${vendorClientInfo.vendorName || vendorClientInfo.clientName || vendorClientInfo.name || 'Unknown'}" does not have an email address configured.\n\nAction Required:\n1. Go to ${vendorClientType}s menu\n2. Edit ${vendorClientType}: ${vendorClientInfo.vendorName || vendorClientInfo.clientName || vendorClientInfo.name || 'Unknown'}\n3. Add a valid email address\n4. Save and try generating invoice again`,
             details: {
-              'Employee': timesheet.employeeName || 'Unknown',
+              'Employee': `${employeeData.firstName} ${employeeData.lastName}`,
               [`${vendorClientType} Name`]: vendorClientInfo.vendorName || vendorClientInfo.clientName || vendorClientInfo.name || 'Unknown',
-              [`${vendorClientType} ID`]: employeeVendorId || employeeClientId,
+              [`${vendorClientType} ID`]: vendorClientInfo.id,
               'Email Status': '❌ Missing'
             }
           });
@@ -719,7 +742,11 @@ const TimesheetSummary = () => {
         return;
       }
       
-      console.log('✅ Validation passed, proceeding with invoice generation');
+      console.log('✅ All validations passed!');
+      console.log('✅ Employee details fetched from Employee API');
+      console.log('✅ Vendor/Client assignment confirmed');
+      console.log('✅ Vendor/Client email verified');
+      console.log('📤 Proceeding with invoice generation...');
 
       const response = await axios.post(
         `${API_BASE}/api/timesheets/${timesheet.id}/generate-invoice`,

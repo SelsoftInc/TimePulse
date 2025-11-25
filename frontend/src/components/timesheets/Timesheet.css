@@ -1533,3 +1533,112 @@ body.dark-mode .ai-upload-toggle-switch.off {
 .btn-save-for-later:hover{
   color: darkgreen;
 }
+
+/* Action Dropdown Styles */
+.dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.dropdown-toggle {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0.375rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+
+.dropdown-toggle:hover {
+  background-color: #f5f6fa;
+}
+
+.dropdown-toggle:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(9, 113, 241, 0.2);
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  z-index: 1000;
+  display: none;
+  min-width: 180px;
+  padding: 0.5rem 0;
+  margin: 0.25rem 0 0;
+  background-color: #fff;
+  border: 1px solid #dbdfea;
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.dropdown-menu.show {
+  display: block;
+}
+
+.dropdown-menu-end {
+  right: 0;
+  left: auto;
+}
+
+.link-list-opt {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.link-list-opt.no-bdr li {
+  border: none;
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 0.625rem 1rem;
+  clear: both;
+  font-weight: 400;
+  color: #526484;
+  text-align: inherit;
+  white-space: nowrap;
+  background-color: transparent;
+  border: 0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.875rem;
+}
+
+.dropdown-item:hover,
+.dropdown-item:focus {
+  color: #364a63;
+  background-color: #f5f6fa;
+  outline: none;
+}
+
+.dropdown-item em.icon {
+  margin-right: 0.625rem;
+  font-size: 1rem;
+  color: #8094ae;
+}
+
+.dropdown-item:hover em.icon {
+  color: #526484;
+}
+
+/* Ensure dropdown appears above other content */
+.nk-tb-col-tools {
+  position: relative;
+  z-index: 1;
+}
+
+.nk-tb-actions {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  gap: 0.25rem;
+}

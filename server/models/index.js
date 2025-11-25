@@ -758,6 +758,11 @@ models.Timesheet = sequelize.define(
       field: "employee_id",
       references: { model: "employees", key: "id" },
     },
+    employeeName: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+      field: "employee_name",
+    },
     clientId: {
       type: DataTypes.UUID,
       allowNull: true,

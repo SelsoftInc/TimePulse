@@ -62,28 +62,21 @@ router.get("/", async (req, res) => {
         {
           model: models.Client,
           as: "client",
-          attributes: ["id", "clientName", "legalName"],
+          attributes: ["id", "clientName", "legalName", "email"],
           required: false,
         },
         {
           model: models.Vendor,
           as: "vendor",
-          attributes: ["id", "name", "category"],
-          required: false,
-        },
-        {
-          model: models.ImplementationPartner,
-          as: "implPartner",
-          attributes: ["id", "name", "specialization"],
-          required: false,
-        },
-        {
-          model: models.EmploymentType,
-          as: "employmentType",
-          attributes: ["id", "name", "description"],
+          attributes: ["id", "name", "category", "email"],
           required: false,
         },
       ],
+    }).catch(error => {
+      console.error('❌ Error fetching employees:', error);
+      console.error('❌ Error details:', error.message);
+      console.error('❌ Error stack:', error.stack);
+      throw error;
     });
 
     // Filter out admin users at application level (but keep employees without user records)
@@ -138,24 +131,19 @@ router.get("/", async (req, res) => {
           }
         : null,
       clientId: emp.clientId,
-      employmentType: emp.employmentType?.name || "W2",
+      employmentType: "W2", // Default value since employmentType model is not included
       // Vendor relationship data
       vendor: emp.vendor
         ? {
             id: emp.vendor.id,
             name: emp.vendor.name,
             category: emp.vendor.category,
+            email: emp.vendor.email,
           }
         : null,
       vendorId: emp.vendorId,
-      // Implementation partner relationship data
-      implPartner: emp.implPartner
-        ? {
-            id: emp.implPartner.id,
-            name: emp.implPartner.name,
-            specialization: emp.implPartner.specialization,
-          }
-        : null,
+      // Implementation partner relationship data (not included in query)
+      implPartner: null,
       implPartnerId: emp.implPartnerId,
       endClient: emp.client
         ? {
@@ -234,32 +222,25 @@ router.get("/:id", async (req, res) => {
             "department",
             "title",
           ],
+          required: false,
         },
         {
           model: models.Client,
           as: "client",
-          attributes: ["id", "clientName", "legalName"],
+          attributes: ["id", "clientName", "legalName", "email"],
           required: false,
         },
         {
           model: models.Vendor,
           as: "vendor",
-          attributes: ["id", "name", "category"],
-          required: false,
-        },
-        {
-          model: models.ImplementationPartner,
-          as: "implPartner",
-          attributes: ["id", "name", "specialization"],
-          required: false,
-        },
-        {
-          model: models.EmploymentType,
-          as: "employmentType",
-          attributes: ["id", "name", "description"],
+          attributes: ["id", "name", "category", "email"],
           required: false,
         },
       ],
+    }).catch(error => {
+      console.error('❌ Error fetching employee by ID:', error);
+      console.error('❌ Error details:', error.message);
+      throw error;
     });
 
     if (!employee) {
@@ -312,24 +293,19 @@ router.get("/:id", async (req, res) => {
           }
         : null,
       clientId: employee.clientId,
-      employmentType: employee.employmentType?.name || "W2",
+      employmentType: "W2", // Default value since employmentType model is not included
       // Vendor relationship data
       vendor: employee.vendor
         ? {
             id: employee.vendor.id,
             name: employee.vendor.name,
             category: employee.vendor.category,
+            email: employee.vendor.email,
           }
         : null,
       vendorId: employee.vendorId,
-      // Implementation partner relationship data
-      implPartner: employee.implPartner
-        ? {
-            id: employee.implPartner.id,
-            name: employee.implPartner.name,
-            specialization: employee.implPartner.specialization,
-          }
-        : null,
+      // Implementation partner relationship data (not included in query)
+      implPartner: null,
       implPartnerId: employee.implPartnerId,
       endClient: employee.client
         ? {
@@ -515,22 +491,13 @@ router.put("/:id", async (req, res) => {
         {
           model: models.Vendor,
           as: "vendor",
-          attributes: ["id", "name", "category"],
-          required: false,
-        },
-        {
-          model: models.ImplementationPartner,
-          as: "implPartner",
-          attributes: ["id", "name", "specialization"],
-          required: false,
-        },
-        {
-          model: models.EmploymentType,
-          as: "employmentType",
-          attributes: ["id", "name", "description"],
+          attributes: ["id", "name", "category", "email"],
           required: false,
         },
       ],
+    }).catch(error => {
+      console.error('❌ Error fetching updated employee:', error);
+      throw error;
     });
 
     res.json({

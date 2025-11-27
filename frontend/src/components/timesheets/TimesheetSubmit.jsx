@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { useToast } from "../../contexts/ToastContext";
 import {
@@ -18,6 +18,7 @@ import "./Timesheet.css";
 const TimesheetSubmit = () => {
   const { subdomain, weekId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { isAdmin, isEmployee, user } = useAuth();
   const { toast } = useToast();
   const fileInputRef = useRef(null);
@@ -27,11 +28,15 @@ const TimesheetSubmit = () => {
   const [showCamera, setShowCamera] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
+  // Check if mode is 'view' from query parameters
+  const queryParams = new URLSearchParams(location.search);
+  const mode = queryParams.get('mode');
+
   // Form state
   const [week, setWeek] = useState("");
   const [availableWeeks, setAvailableWeeks] = useState([]);
   const [selectedWeek, setSelectedWeek] = useState("");
-  const [isReadOnly, setIsReadOnly] = useState(false);
+  const [isReadOnly, setIsReadOnly] = useState(mode === 'view');
   const [clientHours, setClientHours] = useState([]);
   const [holidayHours, setHolidayHours] = useState({
     holiday: Array(7).fill(0),
@@ -91,6 +96,13 @@ const TimesheetSubmit = () => {
   );
 
   // Mock data removed - using clientHours state instead
+
+  // Update isReadOnly when mode changes
+  useEffect(() => {
+    const queryParams = new URLSearchParams(location.search);
+    const currentMode = queryParams.get('mode');
+    setIsReadOnly(currentMode === 'view');
+  }, [location.search]);
 
   useEffect(() => {
     // Check if device is mobile

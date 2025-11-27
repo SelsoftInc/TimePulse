@@ -1,7 +1,5 @@
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
-import { PERMISSIONS } from "../../utils/roles";
-import PermissionGuard from "../common/PermissionGuard";
 import DataGridFilter from "../common/DataGridFilter";
 import Modal from "../common/Modal";
 import InvoicePDFPreviewModal from "../common/InvoicePDFPreviewModal";
@@ -98,6 +96,37 @@ const TimesheetSummary = () => {
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
+  
+  // Track which timesheets have invoices
+  const [timesheetsWithInvoices, setTimesheetsWithInvoices] = useState(new Set());
+
+  // Check which timesheets have invoices
+  const checkTimesheetsForInvoices = async (timesheets) => {
+    const tenantId = user?.tenantId;
+    if (!tenantId) return;
+
+    const timesheetIdsWithInvoices = new Set();
+
+    // Check each approved timesheet for an invoice
+    for (const timesheet of timesheets) {
+      if (timesheet.status === 'Approved') {
+        try {
+          const response = await axios.get(
+            `${API_BASE}/api/invoices/by-timesheet/${timesheet.id}?tenantId=${tenantId}`
+          );
+          
+          if (response.data.success && response.data.invoice) {
+            timesheetIdsWithInvoices.add(timesheet.id);
+          }
+        } catch (error) {
+          // Invoice doesn't exist, skip
+          console.log(`No invoice for timesheet ${timesheet.id}`);
+        }
+      }
+    }
+
+    setTimesheetsWithInvoices(timesheetIdsWithInvoices);
+  };
 
   // Define loadTimesheetData before useEffect to avoid hoisting issues
   const loadTimesheetData = useCallback(async () => {
@@ -217,6 +246,11 @@ const TimesheetSummary = () => {
 
           console.log('📊 Formatted timesheets:', formattedTimesheets);
           setTimesheets(formattedTimesheets);
+          
+          // Check which timesheets have invoices (for employee view)
+          if (userRole !== 'admin' && userRole !== 'manager') {
+            checkTimesheetsForInvoices(formattedTimesheets);
+          }
         } else {
           console.error('❌ API returned success: false');
           setTimesheets([]);
@@ -320,21 +354,6 @@ const TimesheetSummary = () => {
     });
   };
 
-  const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef(null);
-
-  // Close dropdown if clicked outside
-  useEffect(() => {
-    function handleClickOutside(event) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setIsOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
 
   // Define filter configuration
   const filterConfig = [
@@ -528,6 +547,35 @@ const TimesheetSummary = () => {
         title: 'Error',
         message: 'Failed to load invoice PDF. Please try again.'
       });
+    }
+  };
+  
+  // Handle view invoice for employee (read-only)
+  const handleViewInvoiceForEmployee = async (timesheet) => {
+    setGeneratingInvoiceId(timesheet.id);
+    
+    try {
+      const existingInvoice = await checkInvoiceExists(timesheet.id);
+      
+      if (existingInvoice) {
+        // Show invoice details in view-only mode
+        handleViewInvoiceDetails(existingInvoice);
+      } else {
+        showModal({
+          type: 'info',
+          title: 'No Invoice',
+          message: 'No invoice has been generated for this timesheet yet.'
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching invoice:', error);
+      showModal({
+        type: 'error',
+        title: 'Error',
+        message: 'Failed to fetch invoice details.'
+      });
+    } finally {
+      setGeneratingInvoiceId(null);
     }
   };
   
@@ -981,183 +1029,15 @@ const TimesheetSummary = () => {
                     </div>
                   </div>
                 </div>
-                <div className="actions-dropdown" ref={dropdownRef}>
-                  {/* Dropdown toggle button */}
-                  <button
-                    className="dropdown-toggle-btn"
-                    onClick={() => setIsOpen(!isOpen)}
-                    aria-expanded={isOpen}
-                    aria-haspopup="true"
-                    aria-label="Toggle actions menu"
-                  >
-                    <em className="icon ni ni-menu"></em> Actions
-                  </button>
-
-                  {/* Dropdown menu */}
-                  {isOpen && (
-                    <ul className="dropdown-menu">
-                      {/* Refresh Data - Available to all users */}
-                      <li>
-                        <button
-                          className="dropdown-item"
-                          onClick={() => {
-                            loadTimesheetData();
-                            setIsOpen(false);
-                          }}
-                        >
-                          <em className="icon ni ni-reload"></em> Refresh Data
-                        </button>
-                      </li>
-                      <li><hr className="dropdown-divider" /></li>
-                      
-                      <PermissionGuard
-                        requiredPermission={PERMISSIONS.CREATE_TIMESHEET}
-                        fallback={null}
-                      >
-                        {clientType === "internal" ? (
-                          <li>
-                            <button
-                              className="dropdown-item"
-                              onClick={() => {
-                                handleNewTimesheet();
-                                setIsOpen(false);
-                              }}
-                            >
-                              <em className="icon ni ni-edit"></em> Enter
-                              Timesheet
-                            </button>
-                          </li>
-                        ) : (
-                          <li>
-                            <button
-                              className="dropdown-item"
-                              onClick={() => {
-                                handleNewTimesheet();
-                                setIsOpen(false);
-                              }}
-                            >
-                              <em className="icon ni ni-upload"></em> Upload
-                              Timesheet
-                            </button>
-                          </li>
-                        )}
-                      </PermissionGuard>
-
-                      <PermissionGuard
-                        requiredPermission={PERMISSIONS.APPROVE_TIMESHEETS}
-                        fallback={null}
-                      >
-                        <li>
-                          <button
-                            className="dropdown-item"
-                            onClick={() => {
-                              navigate(`/${subdomain}/timesheets/approval`);
-                              setIsOpen(false);
-                            }}
-                          >
-                            <em className="icon ni ni-check-circle"></em>{" "}
-                            Approve Timesheets
-                          </button>
-                        </li>
-
-                        <li>
-                          <button
-                            className="dropdown-item"
-                            onClick={() => {
-                              navigate(`/${subdomain}/timesheets/to-invoice`);
-                              setIsOpen(false);
-                            }}
-                          >
-                            <em className="icon ni ni-file-docs"></em> Convert
-                            to Invoice
-                          </button>
-                        </li>
-
-                        <li>
-                          <button
-                            className="dropdown-item"
-                            onClick={() => {
-                              navigate(`/${subdomain}/timesheets/auto-convert`);
-                              setIsOpen(false);
-                            }}
-                          >
-                            <em className="icon ni ni-upload"></em> Test
-                            Auto-Convert
-                          </button>
-                        </li>
-                      </PermissionGuard>
-
-                      <PermissionGuard
-                        requiredPermission={PERMISSIONS.CREATE_INVOICE}
-                        fallback={null}
-                      >
-                        <li>
-                          <label
-                            htmlFor="invoiceFileInput"
-                            className="dropdown-item file-upload-label"
-                            title="Upload timesheet and generate invoice using AI"
-                          >
-                            <em className="icon ni ni-file-plus"></em>
-                            <span>
-                              {generatingInvoice
-                                ? "Generating..."
-                                : "Generate Invoice"}
-                            </span>
-                          </label>
-                          <input
-                            type="file"
-                            id="invoiceFileInput"
-                            accept=".pdf,.docx,.doc,.png,.jpg,.jpeg"
-                            style={{ display: "none" }}
-                            onChange={(e) => {
-                              const file = e.target.files[0];
-                              if (file) {
-                                handleGenerateInvoice(file);
-                                setIsOpen(false);
-                              }
-                            }}
-                            disabled={generatingInvoice}
-                          />
-                        </li>
-
-                        {generatingInvoice && (
-                          <li className="dropdown-info">
-                            <em className="icon ni ni-loader"></em> Processing
-                            timesheet and generating invoice...
-                          </li>
-                        )}
-
-                        {invoiceSuccess && (
-                          <li className="dropdown-success">
-                            <em className="icon ni ni-check-circle"></em>{" "}
-                            {invoiceSuccess}
-                          </li>
-                        )}
-
-                        {invoiceError && (
-                          <li className="dropdown-error">
-                            <em className="icon ni ni-cross-circle"></em>{" "}
-                            {invoiceError}
-                          </li>
-                        )}
-
-                        <li>
-                          <button
-                            className="dropdown-item"
-                            onClick={() => {
-                              navigate(`/${subdomain}/timesheets/to-invoice`);
-                              setIsOpen(false);
-                            }}
-                            title="Convert timesheet documents to invoices using AI"
-                          >
-                            <em className="icon ni ni-file-text"></em> Convert
-                            to Invoice
-                          </button>
-                        </li>
-                      </PermissionGuard>
-                    </ul>
-                  )}
-                </div>
+                {/* Submit Timesheet Button - Matching Employee Dashboard Design */}
+                <button
+                  className="btn-submit-timesheet"
+                  onClick={handleNewTimesheet}
+                  title="Submit a new timesheet"
+                >
+                  <em className="icon ni ni-file-plus"></em>
+                  <span>Submit Timesheet</span>
+                </button>
               </div>
             </div>
           </div>
@@ -1246,34 +1126,57 @@ const TimesheetSummary = () => {
                                   className="btn btn-outline-primary btn-sm"
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    navigate(`/${subdomain}/timesheets/submit/${timesheet.id}`);
+                                    navigate(`/${subdomain}/timesheets/submit/${timesheet.id}?mode=edit`);
                                   }}
                                   title="Edit Timesheet"
                                   style={{minWidth: '55px', padding: '4px 8px', fontSize: '13px'}}
                                 >
+                                  <em className="icon ni ni-edit" style={{marginRight: '4px'}}></em>
                                   Edit
                                 </button>
 
-                                {/* Invoice Button - Show for Approved status */}
+                                {/* Invoice Button - For employees: only show if invoice exists. For admin/manager: show for all approved */}
                                 {timesheet.status === "Approved" && (
-                                  <button
-                                    className="btn btn-outline-success btn-sm"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleInvoiceButtonClick(timesheet);
-                                    }}
-                                    disabled={generatingInvoiceId === timesheet.id}
-                                    title={generatingInvoiceId === timesheet.id ? "Checking..." : "View or Generate Invoice"}
-                                    style={{minWidth: '70px', padding: '4px 8px', fontSize: '13px'}}
-                                  >
-                                    {generatingInvoiceId === timesheet.id ? (
-                                      <span>
-                                        <em className="icon ni ni-loader" style={{animation: 'spin 1s linear infinite'}}></em>
-                                      </span>
-                                    ) : (
-                                      'Invoice'
-                                    )}
-                                  </button>
+                                  (user?.role === 'admin' || user?.role === 'manager') ? (
+                                    // Admin/Manager: Show button for all approved timesheets (can generate or view)
+                                    <button
+                                      className="btn btn-outline-success btn-sm"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleInvoiceButtonClick(timesheet);
+                                      }}
+                                      disabled={generatingInvoiceId === timesheet.id}
+                                      title={generatingInvoiceId === timesheet.id ? "Checking..." : "View or Generate Invoice"}
+                                      style={{minWidth: '70px', padding: '4px 8px', fontSize: '13px'}}
+                                    >
+                                      {generatingInvoiceId === timesheet.id ? (
+                                        <span>
+                                          <em className="icon ni ni-loader" style={{animation: 'spin 1s linear infinite'}}></em>
+                                        </span>
+                                      ) : (
+                                        <>
+                                          <em className="icon ni ni-file-docs" style={{marginRight: '4px'}}></em>
+                                          Invoice
+                                        </>
+                                      )}
+                                    </button>
+                                  ) : (
+                                    // Employee: Only show if invoice exists (view-only)
+                                    timesheetsWithInvoices.has(timesheet.id) && (
+                                      <button
+                                        className="btn btn-outline-info btn-sm"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleViewInvoiceForEmployee(timesheet);
+                                        }}
+                                        title="View Invoice"
+                                        style={{minWidth: '70px', padding: '4px 8px', fontSize: '13px'}}
+                                      >
+                                        <em className="icon ni ni-eye" style={{marginRight: '4px'}}></em>
+                                        Invoice
+                                      </button>
+                                    )
+                                  )
                                 )}
 
                                 {/* View Button - Always visible */}
@@ -1281,11 +1184,12 @@ const TimesheetSummary = () => {
                                   className="btn btn-outline-info btn-sm"
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    navigate(`/${subdomain}/timesheets/submit/${timesheet.id}`);
+                                    navigate(`/${subdomain}/timesheets/submit/${timesheet.id}?mode=view`);
                                   }}
                                   title="View Details"
                                   style={{minWidth: '55px', padding: '4px 8px', fontSize: '13px'}}
                                 >
+                                  <em className="icon ni ni-eye" style={{marginRight: '4px'}}></em>
                                   View
                                 </button>
                               </div>
@@ -1313,6 +1217,7 @@ const TimesheetSummary = () => {
                             disabled={currentPage === 1}
                           >
                             <em className="icon ni ni-chevron-left"></em>
+                            <span style={{marginLeft: '4px'}}>Previous</span>
                           </button>
                         </li>
                         {[...Array(totalPages)].map((_, i) => (
@@ -1331,6 +1236,7 @@ const TimesheetSummary = () => {
                             onClick={() => handlePageChange(currentPage + 1)}
                             disabled={currentPage === totalPages}
                           >
+                            <span style={{marginRight: '4px'}}>Next</span>
                             <em className="icon ni ni-chevron-right"></em>
                           </button>
                         </li>

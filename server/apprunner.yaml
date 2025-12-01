@@ -17,23 +17,23 @@ run:
     - name: PORT
       value: "8080"
     - name: PYTHON_ENGINE_URL
-      value: "https://fitqus53gn.us-east-1.awsapprunner.com"
+      value: "https://pe7adpgmnq.us-east-1.awsapprunner.com"
     - name: CORS_ORIGIN
-      value: "https://app.timepulse.io,https://main.dolfu0p2owxyr.amplifyapp.com,https://www.timepulse.io,https://timepulse.io"
+      value: "https://qa.d95gve04w8uvp.amplifyapp.com"
     - name: DB_HOST
       value: "timepulse-cluster.cluster-chb4yd9ykrnf.us-east-1.rds.amazonaws.com"
     - name: DB_PORT
       value: "5432"
     - name: DB_NAME
-      value: "timepulse_db"
+      value: "qa_timepulse"
     - name: DB_USER
-      value: "postgres"
+      value: "qa_app"
     - name: DB_SSL
       value: "true"
     - name: DB_SSL_REJECT_UNAUTHORIZED
       value: "false"
     - name: FRONTEND_URL
-      value: "https://app.timepulse.io"
+      value: "https://qa.d95gve04w8uvp.amplifyapp.com"
     - name: SMTP_HOST
       value: "email-smtp.us-east-1.amazonaws.com"
     - name: SMTP_PORT
@@ -44,7 +44,7 @@ run:
       value: "timepulse-timesheet-attachments"
   secrets:
     - name: DB_PASSWORD
-      value-from: "arn:aws:secretsmanager:us-east-1:727044518907:secret:timepulse-db-password-ockLr9"
+      value-from: "arn:aws:secretsmanager:us-east-1:727044518907:secret:timepulse/qa/db-wO9PpC"
     - name: SMTP_USER
       value-from: "arn:aws:secretsmanager:us-east-1:727044518907:secret:timepulse-smtp-user-fWBmnf"
     - name: SMTP_PASS

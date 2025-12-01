@@ -20,7 +20,6 @@ const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '24h';
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
-    console.log('[AUTH DEBUG] Login attempt for:', email);
 
     if (!email || !password) {
       return res.status(400).json({
@@ -38,8 +37,6 @@ router.post('/login', async (req, res) => {
       }]
     });
 
-    console.log('[AUTH DEBUG] User found:', user ? user.email : 'NOT FOUND');
-
     if (!user) {
       return res.status(401).json({
         success: false,
@@ -48,7 +45,6 @@ router.post('/login', async (req, res) => {
     }
 
     // Check if user is active
-    console.log('[AUTH DEBUG] User status:', user.status);
     if (user.status !== 'active') {
       return res.status(401).json({
         success: false,
@@ -57,9 +53,7 @@ router.post('/login', async (req, res) => {
     }
 
     // Verify password
-    console.log('[AUTH DEBUG] Password hash length:', user.passwordHash?.length);
     const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
-    console.log('[AUTH DEBUG] Password valid:', isPasswordValid);
     if (!isPasswordValid) {
       return res.status(401).json({
         success: false,

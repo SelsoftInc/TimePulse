@@ -1,0 +1,187 @@
+.data-grid-filter {
+  background: var(--timesheet-card-bg);
+  border: 1px solid var(--timesheet-border);
+  border-radius: 6px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.filter-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--timesheet-border);
+  transition: border-color 0.3s ease;
+}
+
+.filter-title {
+  font-weight: 600;
+  color: var(--text-color);
+  display: flex;
+  align-items: center;
+  transition: color 0.3s ease;
+}
+
+.filter-title i {
+  color: var(--text-secondary);
+  transition: color 0.3s ease;
+}
+
+.active-filters-count {
+  background: #0971f1;
+  color: white;
+  font-size: 0.75rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 12px;
+  margin-left: 0.5rem;
+  font-weight: 500;
+}
+
+.result-count {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  transition: color 0.3s ease;
+}
+
+.filter-controls {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  align-items: end;
+}
+
+.filter-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.filter-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-color);
+  margin-bottom: 0.5rem;
+  transition: color 0.3s ease;
+}
+
+.filter-select,
+.filter-input {
+  font-size: 0.875rem;
+  border: 1px solid var(--timesheet-border);
+  border-radius: 4px;
+  padding: 0.5rem 0.75rem;
+  background: var(--timesheet-card-bg);
+  color: var(--text-color);
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out, background-color 0.3s ease, color 0.3s ease;
+}
+
+.filter-select:focus,
+.filter-input:focus {
+  border-color: #0971f1;
+  box-shadow: 0 0 0 0.2rem rgba(9, 113, 241, 0.25);
+  outline: 0;
+}
+
+.date-range-filter {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.date-range-filter .filter-input {
+  flex: 1;
+}
+
+.date-separator {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  white-space: nowrap;
+  transition: color 0.3s ease;
+}
+
+@media (max-width: 768px) {
+  .filter-controls {
+    grid-template-columns: 1fr;
+  }
+
+  .filter-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .date-range-filter {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .date-separator {
+    text-align: center;
+    padding: 0.25rem 0;
+  }
+}
+
+.filter-item {
+  transition: opacity 0.2s ease-in-out;
+}
+
+.filter-item:hover {
+  opacity: 0.9;
+}
+
+.btn-outline-secondary {
+  border-color: var(--timesheet-border);
+  color: var(--text-secondary);
+  transition: border-color 0.3s ease, color 0.3s ease;
+}
+
+.btn-outline-secondary:hover {
+  background-color: var(--timesheet-row-hover);
+  border-color: var(--timesheet-border);
+  color: var(--text-color);
+  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+}
+
+.btn-outline-secondary-clear-all {
+  background-color: #0a4cf5;
+}
+
+.custom-btn {
+  background-color: transparent;
+  color: #dc3545;
+  border: 2px solid #dc3545;
+  padding: 4px 10px;
+  font-size: 13px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.custom-btn .custom-icon {
+  color: #dc3545;
+  font-size: 14px;
+  margin-right: 8px;
+  transition: color 0.3s ease;
+}
+
+.custom-btn:hover {
+  background-color: #dc3545;
+  color: white;
+  border-color: #dc3545;
+  transform: translateY(-2px);
+}
+
+.custom-btn:hover .custom-icon {
+  color: white;
+}
+
+.custom-btn:focus {
+  outline: none;
+  box-shadow: 0 0 5px rgba(220, 53, 69, 0.5);
+}

@@ -1,0 +1,1025 @@
+/* EmployeeTimesheet.css */
+
+/* Form styles */
+.form-group {
+  margin-bottom: 1.25rem;
+}
+
+.form-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: 0.5rem;
+  display: block;
+  transition: color 0.3s ease;
+}
+
+.form-control {
+  display: block;
+  width: 100%;
+  height: calc(2.125rem + 2px);
+  padding: 0.4375rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 400;
+  line-height: 1.25rem;
+  color: var(--text-color);
+  background-color: var(--form-bg);
+  background-clip: padding-box;
+  border: 1px solid var(--form-border);
+  border-radius: 4px;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out, background-color 0.3s ease, color 0.3s ease;
+}
+
+.form-control:focus {
+  color: var(--text-color);
+  background-color: var(--form-bg);
+  border-color: var(--form-focus-border);
+  outline: 0;
+  box-shadow: 0 0 0 3px var(--form-focus-shadow);
+}
+
+.form-control[readonly] {
+  background-color: var(--form-disabled-bg);
+  opacity: 1;
+  color: var(--form-disabled-text);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+textarea.form-control {
+  height: auto;
+}
+
+.form-select {
+  display: block;
+  width: 100%;
+  height: calc(2.125rem + 2px);
+  padding: 0.4375rem 2rem 0.4375rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 400;
+  line-height: 1.25rem;
+  color: #3c4d62;
+  background-color: #fff;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  background-size: 16px 12px;
+  border: 1px solid #dbdfea;
+  border-radius: 4px;
+  appearance: none;
+}
+
+/* Timesheet grid */
+.timesheet-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr) auto;
+  gap: 15px;
+  align-items: center;
+  overflow-x: auto;
+  padding-bottom: 10px;
+}
+
+.timesheet-grid-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: 0 -1.5rem;
+  padding: 0 1.5rem;
+}
+
+.timesheet-day {
+  display: flex;
+  flex-direction: column;
+}
+
+.timesheet-day label {
+  font-size: 0.85rem;
+  margin-bottom: 5px;
+  font-weight: 500;
+  text-align: center;
+}
+
+.timesheet-day input {
+  text-align: center;
+}
+
+.timesheet-total {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--timesheet-total-bg);
+  border-radius: 4px;
+  padding: 0 15px;
+  height: calc(2.125rem + 2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.3s ease;
+}
+
+.total-hours {
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.text-success {
+  color: #1ee0ac;
+}
+
+.text-warning {
+  color: #f4bd0e;
+}
+
+.text-danger {
+  color: #e85347;
+}
+
+.text-soft {
+  color: #8094ae;
+  font-size: 12px;
+}
+
+/* File upload */
+.custom-file {
+  position: relative;
+  display: inline-block;
+  width: 100%;
+  height: calc(2.125rem + 2px);
+  margin-bottom: 0;
+}
+
+.custom-file-input {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  height: calc(2.125rem + 2px);
+  margin: 0;
+  opacity: 0;
+}
+
+.custom-file-label {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 1;
+  height: calc(2.125rem + 2px);
+  padding: 0.4375rem 1rem;
+  font-weight: 400;
+  line-height: 1.25rem;
+  color: #3c4d62;
+  background-color: #fff;
+  border: 1px solid #dbdfea;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+}
+
+.custom-file-label::after {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 3;
+  display: block;
+  height: calc(2.125rem + 2px);
+  padding: 0.4375rem 1rem;
+  line-height: 1.25rem;
+  color: #3c4d62;
+  content: "Browse";
+  background-color: #f5f6fa;
+  border-left: 1px solid #dbdfea;
+  border-radius: 0 4px 4px 0;
+}
+
+/* Attached files */
+.attached-files {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.file-item {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #e5e9f2;
+}
+
+.file-name {
+  flex-grow: 1;
+  font-size: 0.875rem;
+}
+
+.file-size {
+  color: #8094ae;
+  font-size: 0.75rem;
+  margin-right: 1rem;
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.4375rem 1.125rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1.25rem;
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: middle;
+  user-select: none;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+  cursor: pointer;
+}
+
+.btn-primary {
+  color: #fff;
+  background-color: #6576ff;
+  border-color: #6576ff;
+}
+
+.btn-primary:hover {
+  color: #fff;
+  background-color: #4b61ff;
+  border-color: #4b61ff;
+}
+
+.btn-outline-light {
+  color: #526484;
+  background-color: transparent;
+  border-color: #dbdfea;
+}
+
+.btn-outline-light:hover {
+  color: #526484;
+  background-color: #f5f6fa;
+  border-color: #dbdfea;
+}
+
+.btn-outline-danger {
+  color: #e85347;
+  background-color: transparent;
+  border-color: #e85347;
+}
+
+.btn-outline-danger:hover {
+  color: #fff;
+  background-color: #e85347;
+  border-color: #e85347;
+}
+
+.btn-sm {
+  padding: 0.25rem 0.75rem;
+  font-size: 0.75rem;
+  line-height: 1.25;
+}
+
+.btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: calc(1.5rem + 2px);
+  width: calc(1.5rem + 2px);
+  padding: 0;
+}
+
+.mr-1 {
+  margin-right: 0.25rem;
+}
+
+.mr-3 {
+  margin-right: 1rem;
+}
+
+.mt-4 {
+  margin-top: 1.5rem;
+}
+
+/* Layout */
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  margin-right: -12px;
+  margin-left: -12px;
+}
+
+.col-12,
+.col-lg-6 {
+  position: relative;
+  width: 100%;
+  padding-right: 12px;
+  padding-left: 12px;
+}
+
+@media (min-width: 992px) {
+  .col-lg-6 {
+    flex: 0 0 50%;
+    max-width: 50%;
+  }
+}
+
+.g-4 > * {
+  padding: 0.5rem;
+}
+
+/* Card */
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  word-wrap: break-word;
+  background-color: var(--timesheet-card-bg);
+  background-clip: border-box;
+  transition: background-color 0.3s ease;
+  color: var(--text-color);
+}
+
+.card-bordered {
+  border: 1px solid var(--timesheet-border);
+  border-radius: 4px;
+  transition: border-color 0.3s ease;
+}
+
+.card-inner {
+  padding: 1.5rem;
+}
+
+.card-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  margin: -0.25rem -0.75rem 1rem;
+  padding: 0 0.75rem 1rem;
+  border-bottom: 1px solid var(--timesheet-border);
+  transition: border-color 0.3s ease;
+}
+
+/* Drag and Drop File Upload Area */
+.file-drop-area {
+  position: relative;
+  border: 2px dashed var(--timesheet-border);
+  border-radius: 8px;
+  padding: 40px 20px;
+  text-align: center;
+  background-color: var(--timesheet-card-bg);
+  transition: all 0.3s ease;
+  cursor: pointer;
+  min-height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.file-drop-area:hover {
+  border-color: var(--timesheet-search-focus);
+  background-color: rgba(59, 130, 246, 0.02);
+}
+
+.file-drop-area.has-files {
+  border-color: var(--timesheet-stat-approved);
+  background-color: rgba(16, 185, 129, 0.02);
+}
+
+.file-drop-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.file-drop-icon {
+  font-size: 48px;
+  color: var(--text-secondary);
+  transition: color 0.3s ease;
+}
+
+.file-drop-area:hover .file-drop-icon {
+  color: var(--timesheet-search-focus);
+}
+
+.file-drop-text h4 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-color);
+  transition: color 0.3s ease;
+}
+
+.file-drop-text p {
+  margin: 8px 0 0 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+  transition: color 0.3s ease;
+}
+
+.file-drop-text .file-types {
+  font-size: 12px;
+  color: var(--text-muted);
+  background-color: var(--background-secondary);
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+}
+
+.file-input-hidden {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 2;
+}
+
+/* Dark mode styling for drag and drop */
+body.dark-mode .file-drop-area {
+  background-color: var(--timesheet-card-bg);
+  border-color: var(--timesheet-border);
+}
+
+body.dark-mode .file-drop-area:hover {
+  border-color: var(--timesheet-search-focus);
+  background-color: rgba(59, 130, 246, 0.05);
+}
+
+body.dark-mode .file-drop-area.has-files {
+  border-color: var(--timesheet-stat-approved);
+  background-color: rgba(16, 185, 129, 0.05);
+}
+
+body.dark-mode .file-drop-icon {
+  color: var(--text-secondary);
+}
+
+body.dark-mode .file-drop-area:hover .file-drop-icon {
+  color: var(--timesheet-search-focus);
+}
+
+body.dark-mode .file-drop-text h4 {
+  color: var(--text-color);
+}
+
+body.dark-mode .file-drop-text p {
+  color: var(--text-secondary);
+}
+
+body.dark-mode .file-drop-text .file-types {
+  background-color: var(--background-secondary);
+  color: var(--text-muted);
+}
+
+/* Responsive Design */
+@media (max-width: 1199px) {
+  .card-inner {
+    padding: 1.25rem;
+  }
+  
+  .timesheet-grid {
+    gap: 12px;
+  }
+}
+
+@media (max-width: 991px) {
+  .nk-content {
+    margin-top: 60px;
+    padding: 15px;
+  }
+  
+  .card-inner {
+    padding: 1rem;
+  }
+  
+  .timesheet-grid {
+    grid-template-columns: repeat(7, minmax(80px, 1fr)) minmax(100px, auto);
+    gap: 10px;
+  }
+  
+  .timesheet-day label {
+    font-size: 0.75rem;
+  }
+  
+  .form-control {
+    font-size: 0.8125rem;
+    padding: 0.375rem 0.75rem;
+  }
+}
+
+@media (max-width: 767px) {
+  .nk-content {
+    margin-top: 60px;
+    padding: 12px;
+  }
+  
+  .container-fluid {
+    padding: 0;
+  }
+  
+  .card-inner {
+    padding: 0.875rem;
+  }
+  
+  .card-head {
+    margin: -0.25rem -0.5rem 0.75rem;
+    padding: 0 0.5rem 0.75rem;
+  }
+  
+  .card-head h5 {
+    font-size: 1rem;
+  }
+  
+  /* Make timesheet grid scrollable horizontally */
+  .timesheet-grid-wrapper {
+    margin: 0 -0.875rem;
+    padding: 0 0.875rem;
+  }
+  
+  .timesheet-grid {
+    grid-template-columns: repeat(7, minmax(70px, 1fr)) minmax(90px, auto);
+    gap: 8px;
+    min-width: 600px;
+  }
+  
+  .timesheet-day label {
+    font-size: 0.7rem;
+    margin-bottom: 3px;
+  }
+  
+  .timesheet-day input {
+    font-size: 0.75rem;
+    height: 36px;
+  }
+  
+  .timesheet-total {
+    padding: 0 10px;
+    height: 36px;
+  }
+  
+  .total-hours {
+    font-size: 0.875rem;
+  }
+  
+  /* Form elements */
+  .form-group {
+    margin-bottom: 1rem;
+  }
+  
+  .form-label {
+    font-size: 0.8125rem;
+    margin-bottom: 0.375rem;
+  }
+  
+  .form-control,
+  .form-select {
+    font-size: 0.8125rem;
+    padding: 0.375rem 0.75rem;
+    height: auto;
+    min-height: 38px;
+  }
+  
+  textarea.form-control {
+    min-height: 80px;
+  }
+  
+  /* Buttons */
+  .btn {
+    padding: 0.375rem 0.875rem;
+    font-size: 0.8125rem;
+  }
+  
+  .btn-sm {
+    padding: 0.25rem 0.625rem;
+    font-size: 0.75rem;
+  }
+  
+  /* File upload area */
+  .file-drop-area {
+    padding: 30px 15px;
+    min-height: 150px;
+  }
+  
+  .file-drop-icon {
+    font-size: 36px;
+  }
+  
+  .file-drop-text h4 {
+    font-size: 16px;
+  }
+  
+  .file-drop-text p {
+    font-size: 13px;
+  }
+  
+  /* Row and column layout */
+  .row {
+    margin-right: -8px;
+    margin-left: -8px;
+  }
+  
+  .col-12,
+  .col-lg-6 {
+    padding-right: 8px;
+    padding-left: 8px;
+  }
+  
+  /* Block head */
+  .nk-block-head {
+    margin-bottom: 1rem;
+  }
+  
+  .nk-block-title {
+    font-size: 1.25rem;
+  }
+  
+  .nk-block-des {
+    font-size: 0.8125rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .nk-content {
+    padding: 10px;
+  }
+  
+  .card-inner {
+    padding: 0.75rem;
+  }
+  
+  .timesheet-grid {
+    grid-template-columns: repeat(7, minmax(60px, 1fr)) minmax(80px, auto);
+    gap: 6px;
+    min-width: 550px;
+  }
+  
+  .timesheet-day label {
+    font-size: 0.65rem;
+  }
+  
+  .timesheet-day input {
+    font-size: 0.7rem;
+    height: 34px;
+    padding: 0.25rem 0.5rem;
+  }
+  
+  .timesheet-total {
+    padding: 0 8px;
+    height: 34px;
+  }
+  
+  .total-hours {
+    font-size: 0.8125rem;
+  }
+  
+  .form-control,
+  .form-select {
+    font-size: 0.8125rem;
+    padding: 0.375rem 0.625rem;
+  }
+  
+  .btn {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.8125rem;
+    width: 100%;
+    margin-bottom: 0.5rem;
+  }
+  
+  .btn:last-child {
+    margin-bottom: 0;
+  }
+  
+  .nk-block-between {
+    flex-direction: column;
+    align-items: flex-start !important;
+  }
+  
+  .nk-block-head-content {
+    width: 100%;
+    margin-bottom: 0.75rem;
+  }
+  
+  .toggle-wrap {
+    width: 100%;
+  }
+  
+  .file-drop-area {
+    padding: 20px 10px;
+    min-height: 120px;
+  }
+  
+  .file-drop-icon {
+    font-size: 32px;
+  }
+  
+  .file-drop-text h4 {
+    font-size: 14px;
+  }
+  
+  .file-drop-text p {
+    font-size: 12px;
+  }
+}
+
+/* ============================================
+   File Type Validation Alert Modal Styles
+   ============================================ */
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.file-alert-modal {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  max-width: 500px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.file-alert-header {
+  padding: 32px 32px 24px;
+  text-align: center;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.file-alert-icon {
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: center;
+  animation: bounce 0.6s ease-out;
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.file-alert-header h3 {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0;
+}
+
+.file-alert-body {
+  padding: 24px 32px;
+}
+
+.file-alert-message {
+  font-size: 15px;
+  color: #6b7280;
+  margin: 0 0 20px;
+  line-height: 1.6;
+}
+
+.rejected-files-list {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 24px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.rejected-file-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  margin-bottom: 8px;
+  background: white;
+  border-radius: 6px;
+  font-size: 14px;
+  color: #dc2626;
+  font-weight: 500;
+}
+
+.rejected-file-item:last-child {
+  margin-bottom: 0;
+}
+
+.rejected-file-item svg {
+  flex-shrink: 0;
+}
+
+.rejected-file-item span {
+  word-break: break-all;
+}
+
+.file-alert-info {
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  border: 1px solid #bfdbfe;
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  gap: 16px;
+}
+
+.info-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.info-content {
+  flex: 1;
+}
+
+.info-content strong {
+  display: block;
+  font-size: 15px;
+  color: #1e40af;
+  margin-bottom: 12px;
+  font-weight: 600;
+}
+
+.supported-formats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.format-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  background: white;
+  border: 1px solid #93c5fd;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #1e40af;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.format-details {
+  font-size: 12px;
+  color: #6b7280;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.file-alert-footer {
+  padding: 20px 32px 32px;
+  display: flex;
+  justify-content: center;
+}
+
+.btn-alert-close {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 32px;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.btn-alert-close:hover {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
+}
+
+.btn-alert-close:active {
+  transform: translateY(0);
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .file-alert-modal {
+    background: #1f2937;
+  }
+  
+  .file-alert-header {
+    border-bottom-color: #374151;
+  }
+  
+  .file-alert-header h3 {
+    color: #f9fafb;
+  }
+  
+  .file-alert-message {
+    color: #d1d5db;
+  }
+  
+  .rejected-files-list {
+    background: #7f1d1d;
+    border-color: #991b1b;
+  }
+  
+  .rejected-file-item {
+    background: #1f2937;
+    color: #fca5a5;
+  }
+  
+  .file-alert-info {
+    background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
+    border-color: #3b82f6;
+  }
+  
+  .info-content strong {
+    color: #93c5fd;
+  }
+  
+  .format-badge {
+    background: #1f2937;
+    border-color: #3b82f6;
+    color: #93c5fd;
+  }
+  
+  .format-details {
+    color: #d1d5db;
+  }
+}
+
+/* Responsive design */
+@media (max-width: 576px) {
+  .file-alert-modal {
+    width: 95%;
+    margin: 20px;
+  }
+  
+  .file-alert-header,
+  .file-alert-body,
+  .file-alert-footer {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+  
+  .file-alert-header {
+    padding-top: 24px;
+    padding-bottom: 20px;
+  }
+  
+  .file-alert-header h3 {
+    font-size: 20px;
+  }
+  
+  .file-alert-info {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .supported-formats {
+    gap: 6px;
+  }
+  
+  .format-badge {
+    font-size: 12px;
+    padding: 5px 10px;
+  }
+  
+  .btn-alert-close {
+    width: 100%;
+    justify-content: center;
+  }
+}

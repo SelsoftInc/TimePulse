@@ -1,0 +1,48 @@
+.workspace-selector {
+  padding: 15px 10px;
+  flex: 1;
+  min-width: 0;
+  max-width: calc(100% - 40px);
+}
+
+.workspace-current {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  max-width: 100%;
+}
+
+.workspace-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  margin-right: 10px;
+  margin-bottom: 20px;
+  font-size: 12px;
+}
+
+.workspace-details {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.workspace-name {
+  font-weight: 600;
+  overflow: hidden;
+  font-size: 14px;
+  color: var(--sidebar-text, #ffffff) !important;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.workspace-tagline {
+  font-size: 12px;
+  color: var(--sidebar-text, #ffffff) !important;
+  opacity: 0.7;
+}

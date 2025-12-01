@@ -1,0 +1,438 @@
+/* Typography Override - Ensures consistent fonts across the entire application */
+
+/* Preserve icon functionality first */
+i, .fa, [class*="fa-"], [class*="icon"], .icon, .material-icons, [class*="material-icons"] {
+  font-family: "Font Awesome 5 Free", "Font Awesome 5 Pro", "Font Awesome 5 Brands", "FontAwesome", "Material Icons", "MaterialIcons" !important;
+  font-style: normal !important;
+  font-weight: 900 !important;
+  text-rendering: auto !important;
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
+}
+
+/* Specific sidebar icon fixes */
+.sidebar-icon i,
+.sidebar-icon .fa,
+.sidebar-icon [class*="fa-"] {
+  font-family: "Font Awesome 5 Free", "FontAwesome" !important;
+  font-weight: 900 !important;
+  font-style: normal !important;
+}
+
+/* Ensure all Font Awesome icons work properly */
+.fa-tachometer-alt:before { content: "\f3fd"; }
+.fa-clock:before { content: "\f017"; }
+.fa-user-tie:before { content: "\f508"; }
+.fa-truck:before { content: "\f0d1"; }
+.fa-users:before { content: "\f0c0"; }
+.fa-handshake:before { content: "\f2b5"; }
+.fa-calendar-alt:before { content: "\f073"; }
+.fa-chart-bar:before { content: "\f080"; }
+.fa-cog:before { content: "\f013"; }
+.fa-angle-left:before { content: "\f104"; }
+.fa-angle-right:before { content: "\f105"; }
+
+/* Override template fonts with our consistent system */
+* {
+  font-family: var(--font-family-primary) !important;
+}
+
+/* Override all heading elements */
+h1, h2, h3, h4, h5, h6,
+.h1, .h2, .h3, .h4, .h5, .h6,
+.nk-block-title,
+.card-title,
+.modal-title {
+  font-family: var(--font-family-primary) !important;
+  font-weight: var(--font-weight-semibold) !important;
+  line-height: var(--line-height-snug) !important;
+  color: var(--color-text-primary) !important;
+}
+
+/* Sidebar protection - ensure sidebar elements maintain their original styling */
+.app-sidebar,
+.app-sidebar *,
+.sidebar-link,
+.sidebar-text,
+.sidebar-icon,
+.sidebar-icon i,
+.sidebar-icon .fa,
+.sidebar-icon [class*="fa-"] {
+  /* Let sidebar maintain its original colors and styling */
+  /* Only apply font family, not colors */
+  font-family: var(--font-family-primary) !important;
+}
+
+/* Header protection - ensure header elements maintain their original styling */
+.nk-header,
+.nk-header *,
+.nk-header-tools,
+.nk-header-tools *,
+.header-action-item,
+.header-action-icon,
+.app-brand,
+.app-brand-text,
+.user-dropdown,
+.user-avatar,
+.trial-badge,
+.bell-button {
+  /* Let header maintain its original colors and styling */
+  /* Only apply font family, not colors */
+  font-family: var(--font-family-primary) !important;
+}
+
+/* Override all paragraph and text elements - but exclude sidebar and header elements */
+p:not(.sidebar-text):not(.sidebar-link):not(.app-brand-text):not(.trial-badge), 
+span:not(.sidebar-text):not(.sidebar-link):not(.app-brand-text):not(.trial-badge), 
+div:not(.sidebar-text):not(.sidebar-link):not(.app-brand):not(.user-avatar):not(.trial-badge), 
+a:not(.sidebar-link):not(.header-action-item), 
+label:not(.sidebar-text):not(.sidebar-link):not(.app-brand-text),
+.nk-block-subtitle,
+.card-subtitle,
+.form-label,
+.text-muted,
+.text-soft,
+.text-primary,
+.text-secondary,
+.text-success,
+.text-warning,
+.text-danger,
+.text-info {
+  font-family: var(--font-family-primary) !important;
+  color: var(--color-text-primary) !important;
+}
+
+/* Override table elements */
+table, th, td,
+.table th,
+.table td,
+.table-header,
+.table-cell {
+  font-family: var(--font-family-primary) !important;
+}
+
+/* Override form elements */
+input, select, textarea, button,
+.form-control,
+.form-select,
+.btn,
+.btn-primary,
+.btn-secondary,
+.btn-outline-primary,
+.btn-outline-secondary,
+.btn-sm,
+.btn-xs {
+  font-family: var(--font-family-primary) !important;
+  font-weight: var(--font-weight-regular) !important;
+}
+
+/* Override badge elements */
+.badge,
+.status-badge,
+.employment-type-badge {
+  font-family: var(--font-family-primary) !important;
+  font-weight: var(--font-weight-medium) !important;
+  font-size: var(--font-size-xs) !important;
+  line-height: var(--line-height-tight) !important;
+  letter-spacing: var(--letter-spacing-wide) !important;
+}
+
+/* Override navigation elements */
+.navbar,
+.nav,
+.nav-link,
+.navbar-brand,
+.navbar-nav,
+.sidebar,
+.sidebar-link,
+.sidebar-text {
+  font-family: var(--font-family-primary) !important;
+}
+
+/* Override pagination elements */
+.pagination,
+.pagination-btn,
+.pagination-info,
+.page-link,
+.current-page {
+  font-family: var(--font-family-primary) !important;
+}
+
+/* Override modal elements */
+.modal,
+.modal-header,
+.modal-body,
+.modal-footer,
+.modal-title {
+  font-family: var(--font-family-primary) !important;
+}
+
+/* Override alert elements */
+.alert,
+.alert-success,
+.alert-warning,
+.alert-danger,
+.alert-info {
+  font-family: var(--font-family-primary) !important;
+}
+
+/* Override dropdown elements */
+.dropdown,
+.dropdown-menu,
+.dropdown-item {
+  font-family: var(--font-family-primary) !important;
+}
+
+/* Override card elements */
+.card,
+.card-header,
+.card-body,
+.card-footer,
+.card-title,
+.card-subtitle {
+  font-family: var(--font-family-primary) !important;
+}
+
+/* Override list elements */
+.list-group,
+.list-group-item {
+  font-family: var(--font-family-primary) !important;
+}
+
+/* Override breadcrumb elements */
+.breadcrumb,
+.breadcrumb-item {
+  font-family: var(--font-family-primary) !important;
+}
+
+/* Override progress elements */
+.progress,
+.progress-bar {
+  font-family: var(--font-family-primary) !important;
+}
+
+/* Override tooltip elements */
+.tooltip,
+.tooltip-inner {
+  font-family: var(--font-family-primary) !important;
+}
+
+/* Override popover elements */
+.popover,
+.popover-header,
+.popover-body {
+  font-family: var(--font-family-primary) !important;
+}
+
+/* Override spinner elements */
+.spinner-border,
+.spinner-grow {
+  font-family: var(--font-family-primary) !important;
+}
+
+/* Override toast elements */
+.toast,
+.toast-header,
+.toast-body {
+  font-family: var(--font-family-primary) !important;
+}
+
+/* Override offcanvas elements */
+.offcanvas,
+.offcanvas-header,
+.offcanvas-body {
+  font-family: var(--font-family-primary) !important;
+}
+
+/* Override accordion elements */
+.accordion,
+.accordion-item,
+.accordion-header,
+.accordion-body {
+  font-family: var(--font-family-primary) !important;
+}
+
+/* Override tab elements */
+.nav-tabs,
+.tab-content,
+.tab-pane {
+  font-family: var(--font-family-primary) !important;
+}
+
+/* Override carousel elements */
+.carousel,
+.carousel-item,
+.carousel-caption {
+  font-family: var(--font-family-primary) !important;
+}
+
+/* Override collapse elements */
+.collapse {
+  font-family: var(--font-family-primary) !important;
+}
+
+/* Override utilities */
+.text-center,
+.text-left,
+.text-right,
+.text-justify,
+.text-nowrap,
+.text-truncate {
+  font-family: var(--font-family-primary) !important;
+}
+
+/* Override display utilities */
+.d-block,
+.d-inline,
+.d-inline-block,
+.d-flex,
+.d-grid,
+.d-none {
+  font-family: var(--font-family-primary) !important;
+}
+
+/* Override spacing utilities */
+.m-0, .m-1, .m-2, .m-3, .m-4, .m-5,
+.p-0, .p-1, .p-2, .p-3, .p-4, .p-5 {
+  font-family: var(--font-family-primary) !important;
+}
+
+/* Override color utilities */
+.text-primary,
+.text-secondary,
+.text-success,
+.text-danger,
+.text-warning,
+.text-info,
+.text-light,
+.text-dark,
+.text-muted,
+.text-white {
+  font-family: var(--font-family-primary) !important;
+}
+
+/* Override background utilities */
+.bg-primary,
+.bg-secondary,
+.bg-success,
+.bg-danger,
+.bg-warning,
+.bg-info,
+.bg-light,
+.bg-dark,
+.bg-white,
+.bg-transparent {
+  font-family: var(--font-family-primary) !important;
+}
+
+/* Override border utilities */
+.border,
+.border-0,
+.border-top,
+.border-right,
+.border-bottom,
+.border-left {
+  font-family: var(--font-family-primary) !important;
+}
+
+/* Override shadow utilities */
+.shadow,
+.shadow-sm,
+.shadow-lg,
+.shadow-none {
+  font-family: var(--font-family-primary) !important;
+}
+
+/* Override position utilities */
+.position-static,
+.position-relative,
+.position-absolute,
+.position-fixed,
+.position-sticky {
+  font-family: var(--font-family-primary) !important;
+}
+
+/* Override size utilities */
+.w-25, .w-50, .w-75, .w-100,
+.h-25, .h-50, .h-75, .h-100 {
+  font-family: var(--font-family-primary) !important;
+}
+
+/* Override flexbox utilities */
+.d-flex,
+.flex-row,
+.flex-column,
+.justify-content-start,
+.justify-content-end,
+.justify-content-center,
+.justify-content-between,
+.justify-content-around,
+.align-items-start,
+.align-items-end,
+.align-items-center,
+.align-items-baseline,
+.align-items-stretch {
+  font-family: var(--font-family-primary) !important;
+}
+
+/* Override float utilities */
+.float-start,
+.float-end,
+.float-none {
+  font-family: var(--font-family-primary) !important;
+}
+
+/* Override clearfix utilities */
+.clearfix {
+  font-family: var(--font-family-primary) !important;
+}
+
+/* Override visibility utilities */
+.visible,
+.invisible {
+  font-family: var(--font-family-primary) !important;
+}
+
+/* Override screen reader utilities */
+.sr-only,
+.sr-only-focusable {
+  font-family: var(--font-family-primary) !important;
+}
+
+/* Override print utilities */
+@media print {
+  * {
+    font-family: var(--font-family-primary) !important;
+  }
+}
+
+/* Override responsive utilities */
+@media (max-width: 575.98px) {
+  * {
+    font-family: var(--font-family-primary) !important;
+  }
+}
+
+@media (min-width: 576px) and (max-width: 767.98px) {
+  * {
+    font-family: var(--font-family-primary) !important;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 991.98px) {
+  * {
+    font-family: var(--font-family-primary) !important;
+  }
+}
+
+@media (min-width: 992px) and (max-width: 1199.98px) {
+  * {
+    font-family: var(--font-family-primary) !important;
+  }
+}
+
+@media (min-width: 1200px) {
+  * {
+    font-family: var(--font-family-primary) !important;
+  }
+}

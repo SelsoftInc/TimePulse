@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Clear Storage</title>
+</head>
+<body>
+    <h1>Clearing localStorage...</h1>
+    <p>Removing all stored data...</p>
+    <script>
+        // Clear all localStorage items
+        localStorage.removeItem('token');
+        localStorage.removeItem('userInfo');
+        localStorage.removeItem('user');
+        localStorage.removeItem('currentEmployer');
+        localStorage.removeItem('currentTenant');
+        localStorage.clear();
+        
+        console.log('localStorage cleared');
+        console.log('Remaining items:', Object.keys(localStorage));
+        
+        // Redirect to login after a short delay
+        setTimeout(() => {
+            window.location.href = '/login';
+        }, 2000);
+    </script>
+</body>
+</html>

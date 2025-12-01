@@ -1,0 +1,405 @@
+/* ----------------- General Layout ----------------- */
+.employer-settings-container {
+  display: flex;
+  gap: 2rem;
+  padding: 2rem;
+  background-color: var(--background-tertiary);
+  min-height: 100vh;
+  box-sizing: border-box;
+  font-family: "Inter", sans-serif;
+}
+
+/* ----------------- Sidebar ----------------- */
+.settings-sidebar {
+  flex: 0 0 250px;
+}
+
+.settings-menu {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  background-color: var(--settings-menu-bg);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: var(--shadow-lg);
+}
+
+.settings-menu li {
+  border-bottom: 1px solid var(--border-light);
+}
+
+.settings-menu li:last-child {
+  border-bottom: none;
+}
+
+.settings-menu li button {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 1rem 1.25rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  color: var(--text-color);
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.settings-menu li button i {
+  margin-right: 14px;
+  font-size: 1.25rem;
+  color: var(--text-muted);
+  transition: color 0.3s ease;
+}
+
+.settings-menu li button:hover,
+.settings-menu li.active button {
+  background-color: var(--hover-bg);
+  color: var(--settings-menu-border);
+}
+
+.settings-menu li button:hover i,
+.settings-menu li.active button i {
+  color: var(--settings-menu-border);
+}
+
+.settings-menu li.active button {
+  border-left: 4px solid var(--settings-menu-border);
+}
+
+/* ----------------- Main Content ----------------- */
+.employer-settings-content {
+  flex: 1;
+  background-color: var(--settings-content-bg);
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: var(--shadow-lg);
+}
+
+/* ----------------- Form Section ----------------- */
+.form-section {
+  margin-bottom: 2rem;
+}
+
+.form-section-title {
+  font-size: 1.375rem;
+  font-weight: 600;
+  color: var(--text-dark);
+  margin-bottom: 1.25rem;
+  border-bottom: 2px solid var(--divider-color);
+  padding-bottom: 0.5rem;
+}
+
+/* ----------------- Form Elements ----------------- */
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-dark);
+  margin-bottom: 0.5rem;
+}
+
+.form-control {
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  border: 1px solid var(--form-border);
+  border-radius: 8px;
+  background-color: var(--form-bg);
+  color: var(--text-color);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.form-control:focus {
+  border-color: var(--form-focus-border);
+  box-shadow: 0 0 0 3px var(--form-focus-shadow);
+  background-color: var(--form-bg);
+  outline: none;
+}
+
+.form-control:disabled {
+  background-color: var(--form-disabled-bg);
+  color: var(--form-disabled-text);
+  cursor: not-allowed;
+}
+
+.form-hint {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-top: 0.25rem;
+  font-style: italic;
+}
+
+/* ----------------- Drag & Drop Area ----------------- */
+#company-logo-container {
+  border: 2px dashed var(--form-focus-border);
+  padding: 2rem;
+  border-radius: 10px;
+  text-align: center;
+  background-color: var(--hover-bg);
+  color: var(--text-dark);
+  transition: border-color 0.3s ease;
+}
+
+#company-logo-container:hover {
+  border-color: var(--form-focus-border);
+}
+
+/* ----------------- Buttons ----------------- */
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--divider-color);
+  margin-top: 2rem;
+}
+
+.btn-primary {
+  background-color: var(--btn-primary-bg);
+  color: var(--btn-primary-text);
+  border: none;
+  border-radius: 8px;
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.btn-primary:hover {
+  background-color: var(--btn-primary-hover);
+}
+
+.btn-outline-secondary {
+  background: transparent;
+  border: 1px solid var(--btn-secondary-border);
+  color: var(--btn-secondary-text);
+  border-radius: 8px;
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-outline-secondary:hover {
+  background-color: var(--btn-secondary-hover-bg);
+  color: var(--btn-secondary-hover-text);
+}
+
+/* ----------------- Profile Section ----------------- */
+.account-overview {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: var(--background-secondary);
+  border-radius: 10px;
+  border: 1px solid var(--divider-color);
+  font-family: Arial, sans-serif;
+}
+
+.profile-avatar {
+  flex-shrink: 0;
+}
+
+.avatar-circle {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 2rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Ensure icon is visible in both light and dark modes */
+.avatar-circle svg,
+.avatar-circle i {
+  color: white !important;
+  fill: white !important;
+}
+
+.profile-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.profile-name {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: var(--text-dark);
+}
+
+/* NEW: Align email and badge in a single row */
+.email-and-badge {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.profile-email {
+  font-size: 1rem;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* Generic role badge */
+.role-badge {
+  padding: 0.4rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+/* Admin role styling */
+.role-badge.admin {
+  background-color: rgba(22, 163, 74, 0.1);
+  color: green;
+  border: 1px solid green;
+}
+
+/* Other role colors if needed */
+.role-badge.approver {
+  background-color: rgba(249, 115, 22, 0.1);
+  color: #f97316;
+  border: 1px solid #f97316;
+}
+
+.role-badge.employee {
+  background-color: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+  border: 1px solid #10b981;
+}
+
+.role-description {
+  font-size: 0.9rem;
+  color: var(--text-dark);
+  margin-top: 0.5rem;
+}
+
+
+/* ----------------- Notification Settings ----------------- */
+.notification-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.notification-label {
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--text-dark);
+}
+
+.notification-label input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--form-focus-border);
+}
+
+.notification-description {
+  margin-left: 2rem;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+/* ----------------- Error Message ----------------- */
+.error-message {
+  color: var(--danger-color);
+  font-weight: 500;
+  font-size: 1rem;
+  margin-top: 1rem;
+}
+
+/* ----------------- Responsive ----------------- */
+@media (max-width: 768px) {
+  .employer-settings-container {
+    flex-direction: column;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .form-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .btn-primary,
+  .btn-outline-secondary {
+    width: 100%;
+  }
+
+  .account-overview {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .profile-role {
+    justify-content: center;
+  }
+}
+
+.profile-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+}
+
+.settings-section-title {
+  font-size: 1.5rem;
+  margin: 0;
+  color: var(--text-color);
+}
+
+.btn-outline-primary {
+  display: flex;
+  align-items: center;
+  background-color: var(--btn-outline-bg);
+  border: 1px solid var(--btn-outline-border);
+  color: var(--btn-outline-text);
+}
+
+.btn-outline-primary .fas.fa-edit {
+  color: green;  /* Red color for the edit icon */
+  margin-right: 5px; /* Space between the icon and text */
+}
+
+.btn-outline-primary {
+  border: 1px solid var(--btn-outline-border);
+  color: var(--btn-outline-text);
+  padding: 5px 10px;
+}
+
+.btn-outline-primary:hover {
+  background-color: var(--btn-outline-hover);
+  color: var(--danger-color);
+}

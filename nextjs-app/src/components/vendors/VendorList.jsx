@@ -23,11 +23,20 @@ const VendorList = () => {
     "implPartner"
   );
   const { toast } = useToast();
+
+  // Hydration fix: Track if component is mounted on client
+  const [isMounted, setIsMounted] = useState(false);
+
   const [vendors, setVendors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [openMenuId, setOpenMenuId] = useState(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
+
+  // Hydration fix: Set mounted state on client
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
   const [pendingDeleteId, setPendingDeleteId] = useState(null);
 
   // Pagination state
@@ -35,6 +44,7 @@ const VendorList = () => {
   const itemsPerPage = 5;
 
   useEffect(() => {
+    if (!isMounted) return;
     const fetchVendors = async () => {
       try {
         setLoading(true);
@@ -66,7 +76,7 @@ const VendorList = () => {
       }
     };
     fetchVendors();
-  }, [user?.tenantId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isMounted, user?.tenantId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -127,6 +137,17 @@ const VendorList = () => {
       setPendingDeleteId(null);
     }
   };
+
+  // Prevent hydration mismatch - don't render until mounted
+  if (!isMounted) {
+    return (
+      <div style={{ padding: '40px', textAlign: 'center' }}>
+        <div className="spinner-border text-primary" role="status">
+          <span className="sr-only">Loading...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="nk-conten">

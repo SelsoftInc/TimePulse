@@ -66,92 +66,126 @@
   font-weight: bold;
 }
 
-/* Pagination Styling */
-.pagination {
+/* Modern Pagination Styling - Matching LeaveManagement */
+.pagination-wrapper {
   display: flex;
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  gap: 6px;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 20px;
+  padding: 16px 20px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
 }
 
-.page-item {
-  display: inline-block;
-}
-
-.page-item.disabled .page-link {
-  opacity: 0.5;
-  cursor: not-allowed;
-  pointer-events: none;
-  background-color: #f8f9fa;
-  color: #6c757d;
-}
-
-.page-item.active .page-link {
-  background-color: #007bff;
-  color: white;
-  border-color: #007bff;
-  font-weight: 600;
-  box-shadow: 0 2px 4px rgba(0, 123, 255, 0.3);
-}
-
-.page-link {
-  padding: 8px 14px;
-  border: 1px solid #dee2e6;
-  border-radius: 6px;
-  background-color: white;
-  color: #007bff;
-  cursor: pointer;
-  transition: all 0.2s ease;
+.pagination-info {
   font-size: 14px;
+  color: #6b7280;
   font-weight: 500;
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.pagination-btn {
+  width: 36px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 38px;
-  min-height: 38px;
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  color: #374151;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 12px;
 }
 
-.page-link:hover:not(.disabled) {
-  background-color: #007bff;
+.pagination-btn:hover:not(:disabled) {
+  background: #007bff;
   border-color: #007bff;
-  color: white;
+  color: #ffffff;
   transform: translateY(-1px);
   box-shadow: 0 2px 6px rgba(0, 123, 255, 0.25);
 }
 
-.page-link em {
+.pagination-btn:disabled {
+  background: #f3f4f6;
+  border-color: #e5e7eb;
+  color: #9ca3af;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.pagination-pages {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 8px;
+  min-width: 80px;
+  justify-content: center;
+}
+
+.current-page {
+  font-size: 15px;
+  font-weight: 700;
+  color: #007bff;
+  min-width: 24px;
+  text-align: center;
+}
+
+.page-separator {
   font-size: 14px;
-  color: inherit;
-  line-height: 1;
+  color: #9ca3af;
+  font-weight: 400;
+}
+
+.total-pages {
+  font-size: 15px;
+  font-weight: 600;
+  color: #6b7280;
+  min-width: 24px;
+  text-align: center;
 }
 
 /* Dark mode pagination */
-body.dark-mode .page-link {
-  background-color: #334155;
+body.dark-mode .pagination-wrapper {
+  background: #1e293b;
+  border-color: #334155;
+}
+
+body.dark-mode .pagination-info {
+  color: #94a3b8;
+}
+
+body.dark-mode .pagination-btn {
+  background: #334155;
   color: #e2e8f0;
   border-color: #475569;
 }
 
-body.dark-mode .page-item.disabled .page-link {
-  background-color: #1e293b;
+body.dark-mode .pagination-btn:hover:not(:disabled) {
+  background: #3b82f6;
+  border-color: #3b82f6;
+  color: #ffffff;
+}
+
+body.dark-mode .pagination-btn:disabled {
+  background: #1e293b;
   color: #64748b;
   border-color: #334155;
 }
 
-body.dark-mode .page-item.active .page-link {
-  background-color: #3b82f6;
-  color: white;
-  border-color: #3b82f6;
-  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
+body.dark-mode .current-page {
+  color: #60a5fa;
 }
 
-body.dark-mode .page-link:hover:not(.disabled) {
-  background-color: #3b82f6;
-  border-color: #3b82f6;
-  color: white;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 6px rgba(59, 130, 246, 0.25);
+body.dark-mode .total-pages {
+  color: #94a3b8;
 }
 
 /* Dark mode action buttons */
@@ -350,6 +384,49 @@ body.dark-mode .btn-outline-info:hover em.icon {
   .btn-group .btn {
     padding: 4px 6px;
     font-size: 12px;
+  }
+
+  /* Responsive header */
+  .nk-block-between {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 15px;
+  }
+
+  .nk-block-head-content:last-child {
+    justify-content: flex-start;
+  }
+
+  .btn-submit-timesheet {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Responsive pagination */
+  .pagination-wrapper {
+    flex-direction: column;
+    gap: 12px;
+    padding: 12px 16px;
+  }
+
+  .pagination-info {
+    text-align: center;
+    font-size: 13px;
+  }
+
+  .pagination-btn {
+    width: 32px;
+    height: 32px;
+    font-size: 11px;
+  }
+
+  .pagination-pages {
+    min-width: 70px;
+  }
+
+  .current-page,
+  .total-pages {
+    font-size: 14px;
   }
 }
 
@@ -555,6 +632,27 @@ body.dark-mode .btn-outline-info:hover em.icon {
   width: 140px;
 }
 
+/* Header Layout - Ensure proper alignment */
+.nk-block-between {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.nk-block-head-content {
+  flex: 1;
+  min-width: 200px;
+}
+
+.nk-block-head-content:last-child {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+}
+
 /* Submit Timesheet Button - Matching Employee Dashboard Design */
 .btn-submit-timesheet {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -572,6 +670,7 @@ body.dark-mode .btn-outline-info:hover em.icon {
   transition: all 0.3s ease;
   position: relative;
   z-index: 10;
+  white-space: nowrap;
 }
 
 .btn-submit-timesheet:hover {

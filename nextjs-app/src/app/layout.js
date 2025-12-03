@@ -12,10 +12,23 @@ import { ThemeProvider } from '@/contexts/ThemeContext';
 import { WebSocketProvider } from '@/contexts/WebSocketContext';
 import { ToastProvider, ToastContainer } from '@/contexts/ToastContext';
 import DemoControls from '@/components/demo/DemoControls';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { useState } from 'react';
 
 const inter = Inter({ subsets: ['latin'] });
 
 export default function RootLayout({ children }) {
+  // Create a client instance for React Query
+  const [queryClient] = useState(() => new QueryClient({
+    defaultOptions: {
+      queries: {
+        staleTime: 60 * 1000, // 1 minute
+        refetchOnWindowFocus: false,
+        retry: 1,
+      },
+    },
+  }));
+
   return (
     <html lang="en">
       <head>
@@ -25,17 +38,19 @@ export default function RootLayout({ children }) {
         />
       </head>
       <body className={inter.className}>
-        <ThemeProvider>
-          <ToastProvider>
-            <AuthProvider>
-              <WebSocketProvider>
-                {children}
-                <ToastContainer />
-                <DemoControls />
-              </WebSocketProvider>
-            </AuthProvider>
-          </ToastProvider>
-        </ThemeProvider>
+        <QueryClientProvider client={queryClient}>
+          <ThemeProvider>
+            <ToastProvider>
+              <AuthProvider>
+                <WebSocketProvider>
+                  {children}
+                  <ToastContainer />
+                  <DemoControls />
+                </WebSocketProvider>
+              </AuthProvider>
+            </ToastProvider>
+          </ThemeProvider>
+        </QueryClientProvider>
       </body>
     </html>
   );

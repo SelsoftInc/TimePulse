@@ -10,7 +10,7 @@ import WorkspaceSelector from './WorkspaceSelector';
 
 const Sidebar = ({ collapsed, toggleSidebar, mobileVisible = false, isMobile = false, className = "" }) => {
   const { subdomain } = useParams();
-  const [currentSubdomain, setCurrentSubdomain] = useState("");
+  const [currentSubdomain, setCurrentSubdomain] = useState("selsoft");
   const pathname = usePathname();
   const currentPath = pathname;
 
@@ -21,7 +21,7 @@ const Sidebar = ({ collapsed, toggleSidebar, mobileVisible = false, isMobile = f
       const storedTenant = localStorage.getItem("currentTenant");
       if (storedTenant) {
         const tenant = JSON.parse(storedTenant);
-        setCurrentSubdomain(tenant.subdomain);
+        setCurrentSubdomain(tenant.subdomain || "selsoft");
       }
     }
   }, [subdomain]);

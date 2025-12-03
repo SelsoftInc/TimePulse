@@ -4,6 +4,321 @@
   width: 90%;
 }
 
+/* Invoice Summary Cards in Header */
+.invoice-summary-card-header {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.invoice-summary-card-header:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.invoice-summary-card-header .card-inner {
+  padding: 20px;
+}
+
+.summary-header-content {
+  text-align: left;
+}
+
+.summary-header-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: capitalize;
+  margin-bottom: 8px;
+  letter-spacing: 0.3px;
+}
+
+.summary-header-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1f2937;
+  line-height: 1.2;
+  margin-bottom: 4px;
+}
+
+.summary-header-period {
+  font-size: 11px;
+  color: #9ca3af;
+  font-weight: 500;
+}
+
+/* Dark mode support for header summary cards */
+body.dark-mode .invoice-summary-card-header {
+  background: #1e293b;
+  border-color: #334155;
+}
+
+body.dark-mode .invoice-summary-card-header:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+body.dark-mode .summary-header-label {
+  color: #94a3b8;
+}
+
+body.dark-mode .summary-header-value {
+  color: #f1f5f9;
+}
+
+body.dark-mode .summary-header-period {
+  color: #64748b;
+}
+
+/* Responsive design for header summary cards */
+@media (max-width: 768px) {
+  .invoice-summary-card-header .card-inner {
+    padding: 16px;
+  }
+
+  .summary-header-value {
+    font-size: 22px;
+  }
+
+  .summary-header-label {
+    font-size: 11px;
+  }
+
+  .summary-header-period {
+    font-size: 10px;
+  }
+}
+
+/* Pagination Styles */
+.pagination-wrapper {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  margin-top: 20px;
+}
+
+.pagination-info {
+  font-size: 14px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.pagination-btn {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  color: #374151;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 12px;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  background: #007bff;
+  border-color: #007bff;
+  color: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0, 123, 255, 0.25);
+}
+
+.pagination-btn:disabled {
+  background: #f3f4f6;
+  border-color: #e5e7eb;
+  color: #9ca3af;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.pagination-pages {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 8px;
+  min-width: 80px;
+  justify-content: center;
+}
+
+.current-page {
+  font-size: 15px;
+  font-weight: 700;
+  color: #007bff;
+  min-width: 24px;
+  text-align: center;
+}
+
+.page-separator {
+  font-size: 14px;
+  color: #9ca3af;
+  font-weight: 400;
+}
+
+.total-pages {
+  font-size: 15px;
+  font-weight: 600;
+  color: #6b7280;
+  min-width: 24px;
+  text-align: center;
+}
+
+/* Dark mode pagination */
+body.dark-mode .pagination-wrapper {
+  background: #1e293b;
+  border-color: #334155;
+}
+
+body.dark-mode .pagination-info {
+  color: #94a3b8;
+}
+
+body.dark-mode .pagination-btn {
+  background: #334155;
+  border-color: #475569;
+  color: #cbd5e1;
+}
+
+body.dark-mode .pagination-btn:hover:not(:disabled) {
+  background: #3b82f6;
+  border-color: #3b82f6;
+  color: #ffffff;
+}
+
+body.dark-mode .pagination-btn:disabled {
+  background: #1e293b;
+  border-color: #334155;
+  color: #64748b;
+}
+
+body.dark-mode .current-page {
+  color: #60a5fa;
+}
+
+body.dark-mode .total-pages {
+  color: #94a3b8;
+}
+
+/* Responsive pagination */
+@media (max-width: 768px) {
+  .pagination-wrapper {
+    flex-direction: column;
+    gap: 12px;
+    padding: 12px 16px;
+  }
+
+  .pagination-info {
+    font-size: 13px;
+  }
+
+  .pagination-btn {
+    width: 32px;
+    height: 32px;
+  }
+
+  .pagination-pages {
+    min-width: 70px;
+  }
+}
+
+/* Filter toolbar layout */
+.card-tools .btn-toolbar {
+  display: flex !important;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: nowrap;
+}
+
+.card-tools .btn-toolbar li {
+  list-style: none;
+  margin: 0;
+}
+
+.card-tools .form-group {
+  margin-bottom: 0 !important;
+}
+
+.card-tools .form-select {
+  min-width: 130px;
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  background-color: #ffffff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.card-tools .form-select:hover {
+  border-color: #9ca3af;
+}
+
+.card-tools .form-select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Ensure table allows dropdown overflow */
+.nk-tb-list,
+.nk-tb-orders,
+.card-inner {
+  overflow: visible !important;
+}
+
+.nk-tb-item {
+  position: relative;
+  overflow: visible !important;
+}
+
+/* Actions dropdown positioning fix */
+.nk-tb-col-tools {
+  position: relative;
+  overflow: visible !important;
+}
+
+.nk-tb-col-tools .dropdown {
+  position: relative;
+  z-index: 100;
+}
+
+.nk-tb-col-tools .dropdown-menu {
+  position: absolute !important;
+  top: calc(100% + 4px) !important;
+  right: 0 !important;
+  left: auto !important;
+  z-index: 99999 !important;
+}
+
+/* Dark mode filters */
+body.dark-mode .card-tools .form-select {
+  background-color: #1e293b;
+  border-color: #334155;
+  color: #f1f5f9;
+}
+
+body.dark-mode .card-tools .form-select:hover {
+  border-color: #475569;
+}
+
+body.dark-mode .card-tools .form-select:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+
 /* Pagination Styles */
 .pagination-wrapper {
   display: flex;

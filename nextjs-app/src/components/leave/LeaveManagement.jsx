@@ -21,14 +21,16 @@ const LeaveManagement = () => {
   const [leaveData, setLeaveData] = useState({
     balance: {},
     history: [],
-    pending: []});
+    pending: [],
+  });
   const [formData, setFormData] = useState({
     leaveType: "",
     startDate: "",
     endDate: "",
     reason: "",
     attachment: null,
-    approverId: ""});
+    approverId: "",
+  });
   const [approvers, setApprovers] = useState([]);
   const [submitting, setSubmitting] = useState(false);
 
@@ -54,7 +56,9 @@ const LeaveManagement = () => {
         `${API_BASE}/api/leave-management/balance?employeeId=${user.id}&tenantId=${user.tenantId}`,
         {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`}}
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
       );
 
       // Fetch leave history
@@ -62,7 +66,9 @@ const LeaveManagement = () => {
         `${API_BASE}/api/leave-management/history?employeeId=${user.id}&tenantId=${user.tenantId}`,
         {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`}}
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
       );
 
       // Fetch pending requests
@@ -70,7 +76,9 @@ const LeaveManagement = () => {
         `${API_BASE}/api/leave-management/my-requests?employeeId=${user.id}&tenantId=${user.tenantId}&status=pending`,
         {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`}}
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
       );
 
       if (!balanceResponse.ok) {
@@ -95,7 +103,8 @@ const LeaveManagement = () => {
       setLeaveData({
         balance: balanceData.balance || {},
         history: historyData.requests || [],
-        pending: pendingData.requests || []});
+        pending: pendingData.requests || [],
+      });
       
       console.log('✅ Leave data set:', {
         balanceKeys: Object.keys(balanceData.balance || {}),
@@ -118,7 +127,9 @@ const LeaveManagement = () => {
         `${API_BASE}/api/approvers?tenantId=${user.tenantId}`,
         {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`}}
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
       );
 
       if (response.ok) {
@@ -142,13 +153,15 @@ const LeaveManagement = () => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: value}));
+      [name]: value,
+    }));
   };
 
   const handleFileChange = (e) => {
     setFormData((prev) => ({
       ...prev,
-      attachment: e.target.files[0]}));
+      attachment: e.target.files[0],
+    }));
   };
 
   const handleSubmit = async (e) => {
@@ -240,7 +253,8 @@ const LeaveManagement = () => {
         totalDays: days,
         reason: formData.reason,
         approverId: formData.approverId,
-        attachmentName: formData.attachment?.name || null};
+        attachmentName: formData.attachment?.name || null,
+      };
 
       console.log("📤 Submitting data:", submitData);
       console.log("🌐 API URL:", `${API_BASE}/api/leave-management/request`);
@@ -250,8 +264,10 @@ const LeaveManagement = () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`},
-        body: JSON.stringify(submitData)});
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify(submitData),
+      });
 
       console.log("📥 Response status:", response.status);
 
@@ -288,7 +304,8 @@ const LeaveManagement = () => {
         endDate: "",
         reason: "",
         attachment: null,
-        approverId: ""});
+        approverId: "",
+      });
 
       // Reset file input
       const fileInput = document.querySelector('input[type="file"]');
@@ -311,10 +328,13 @@ const LeaveManagement = () => {
           method: "DELETE",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`},
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
           body: JSON.stringify({
             employeeId: user.id,
-            tenantId: user.tenantId})}
+            tenantId: user.tenantId,
+          }),
+        }
       );
 
       if (!response.ok) {
@@ -376,7 +396,7 @@ const LeaveManagement = () => {
                   {/* Leave Balance */}
                   <div className="col-lg-5 col-md-12">
                     <div className="card card-bordered h-100">
-                      <div className="card-inne">
+                      <div className="card-inner">
                         <div className="card-title-group align-start mb-4">
                           <div className="card-title">
                             <h6 className="title">Leave Balance</h6>
@@ -393,12 +413,14 @@ const LeaveManagement = () => {
                                   total: 0,
                                   used: 0,
                                   pending: 0,
-                                  remaining: 0};
+                                  remaining: 0,
+                                };
                                 const sickData = leaveData.balance.sick || {
                                   total: 0,
                                   used: 0,
                                   pending: 0,
-                                  remaining: 0};
+                                  remaining: 0,
+                                };
                                 const totalDays =
                                   vacationData.total + sickData.total;
                                 const totalUsed =
@@ -414,12 +436,13 @@ const LeaveManagement = () => {
                                     <div className="leave-card-modern total-card mb-3">
                                       <div className="d-flex justify-content-between align-items-center mb-3">
                                         <div className="flex-grow-1">
-                                          <h6 className="mb-1 fw-bold text-dark">
+                                          <h6 className="mb-1 fw-bold text-dark" style={{ fontSize: "14px" }}>
+                                            <i className="fas fa-calendar-check text-success me-2"></i>
                                             Total Leaves
                                           </h6>
                                           <p
                                             className="text-muted mb-0"
-                                            style={{ fontSize: "13px" }}
+                                            style={{ fontSize: "11.5px" }}
                                           >
                                             {Math.round(totalRemaining)} of{" "}
                                             {totalDays} days remaining
@@ -429,40 +452,31 @@ const LeaveManagement = () => {
                                             {Math.round(totalRemaining)}
                                           </div> */}
                                       </div>
-                                      <div
-                                        className="progress"
-                                        style={{
-                                          height: "10px",
-                                          borderRadius: "5px",
-                                          backgroundColor: "#e9ecef"}}
-                                      >
+                                      <div className="progress">
                                         <div
                                           className="progress-bar bg-success"
                                           style={{
                                             width: `${
                                               (totalUsed / totalDays) * 100
-                                            }%`}}
+                                            }%`,
+                                          }}
                                         ></div>
                                         {/* <div
                                           className="progress-bar bg-warning"
                                           style={{
                                             width: `${
                                               (totalPending / totalDays) * 100
-                                            }%`}}
+                                            }%`,
+                                          }}
                                         ></div> */}
                                       </div>
-                                      <div className="d-flex justify-content-between mt-2">
+                                      <div className="d-flex justify-content-between mt-2" style={{ fontSize: "10.5px" }}>
                                         <small className="text-muted">
                                           <span className="text-success fw-semibold">
                                             {Math.round(totalUsed)}
                                           </span>{" "}
                                           used
                                         </small>
-                                        {/* {totalPending > 0 && (
-                                          <small className="text-warning fw-semibold">
-                                            {Math.round(totalPending)} pending approvals
-                                          </small>
-                                        )} */}
                                         <small className="text-muted">
                                           Total: {totalDays} days
                                         </small>
@@ -474,13 +488,13 @@ const LeaveManagement = () => {
                                       <div className="leave-card-modern vacation-card mb-3">
                                         <div className="d-flex justify-content-between align-items-center mb-3">
                                           <div className="flex-grow-1">
-                                            <h6 className="mb-1 fw-bold text-dark">
+                                            <h6 className="mb-1 fw-bold text-dark" style={{ fontSize: "14px" }}>
                                               <i className="fas fa-plane text-primary me-2"></i>
                                               Vacation
                                             </h6>
                                             <p
                                               className="text-muted mb-0"
-                                              style={{ fontSize: "13px" }}
+                                              style={{ fontSize: "11.5px" }}
                                             >
                                               {Math.round(
                                                 vacationData.remaining
@@ -493,13 +507,7 @@ const LeaveManagement = () => {
                                               {Math.round(vacationData.remaining)}
                                             </div> */}
                                         </div>
-                                        <div
-                                          className="progress"
-                                          style={{
-                                            height: "10px",
-                                            borderRadius: "5px",
-                                            backgroundColor: "#e9ecef"}}
-                                        >
+                                        <div className="progress">
                                           <div
                                             className="progress-bar bg-primary"
                                             style={{
@@ -507,7 +515,8 @@ const LeaveManagement = () => {
                                                 (vacationData.used /
                                                   vacationData.total) *
                                                 100
-                                              }%`}}
+                                              }%`,
+                                            }}
                                           ></div>
                                           {/* <div
                                             className="progress-bar bg-warning"
@@ -516,22 +525,17 @@ const LeaveManagement = () => {
                                                 (vacationData.pending /
                                                   vacationData.total) *
                                                 100
-                                              }%`}}
+                                              }%`,
+                                            }}
                                           ></div> */}
                                         </div>
-                                        <div className="d-flex justify-content-between mt-2">
+                                        <div className="d-flex justify-content-between mt-2" style={{ fontSize: "10.5px" }}>
                                           <small className="text-muted">
                                             <span className="text-primary fw-semibold">
                                               {Math.round(vacationData.used)}
                                             </span>{" "}
                                             used
                                           </small>
-                                          {/* {vacationData.pending > 0 && (
-                                            <small className="text-warning fw-semibold">
-                                              {Math.round(vacationData.pending)}{" "}
-                                              pending approvals
-                                            </small>
-                                          )} */}
                                           <small className="text-muted">
                                             Total: {vacationData.total} days
                                           </small>
@@ -544,13 +548,13 @@ const LeaveManagement = () => {
                                       <div className="leave-card-modern sick-card mb-3">
                                         <div className="d-flex justify-content-between align-items-center mb-3">
                                           <div className="flex-grow-1">
-                                            <h6 className="mb-1 fw-bold text-dark">
+                                            <h6 className="mb-1 fw-bold text-dark" style={{ fontSize: "14px" }}>
                                               <i className="fas fa-heartbeat text-danger me-2"></i>
                                               Sick Leave
                                             </h6>
                                             <p
                                               className="text-muted mb-0"
-                                              style={{ fontSize: "13px" }}
+                                              style={{ fontSize: "11.5px" }}
                                             >
                                               {Math.round(sickData.remaining)}{" "}
                                               of {sickData.total} days remaining
@@ -560,13 +564,7 @@ const LeaveManagement = () => {
                                               {Math.round(sickData.remaining)}
                                             </div> */}
                                         </div>
-                                        <div
-                                          className="progress"
-                                          style={{
-                                            height: "10px",
-                                            borderRadius: "5px",
-                                            backgroundColor: "#e9ecef"}}
-                                        >
+                                        <div className="progress">
                                           <div
                                             className="progress-bar bg-danger"
                                             style={{
@@ -574,7 +572,8 @@ const LeaveManagement = () => {
                                                 (sickData.used /
                                                   sickData.total) *
                                                 100
-                                              }%`}}
+                                              }%`,
+                                            }}
                                           ></div>
                                           {/* <div
                                             className="progress-bar bg-warning"
@@ -583,22 +582,17 @@ const LeaveManagement = () => {
                                                 (sickData.pending /
                                                   sickData.total) *
                                                 100
-                                              }%`}}
+                                              }%`,
+                                            }}
                                           ></div> */}
                                         </div>
-                                        <div className="d-flex justify-content-between mt-2">
+                                        <div className="d-flex justify-content-between mt-2" style={{ fontSize: "10.5px" }}>
                                           <small className="text-muted">
                                             <span className="text-danger fw-semibold">
                                               {Math.round(sickData.used)}
                                             </span>{" "}
                                             used
                                           </small>
-                                          {/* {sickData.pending > 0 && (
-                                            <small className="text-warning fw-semibold">
-                                              {Math.round(sickData.pending)}{" "}
-                                              pending approvals
-                                            </small>
-                                          )} */}
                                           <small className="text-muted">
                                             Total: {sickData.total} days
                                           </small>
@@ -624,15 +618,15 @@ const LeaveManagement = () => {
                   {/* Request Leave Form */}
                   <div className="col-lg-7 col-md-12">
                     <div className="card card-bordered h-100">
-                      <div className="card-inne">
+                      <div className="card-inner">
                         <div className="card-title-group align-start mb-3">
                           <div className="card-title">
                             <h6 className="title">Request Leave</h6>
                           </div>
                         </div>
 
-                        <form onSubmit={handleSubmit}>
-                          <div className="row g-3">
+                        <form onSubmit={handleSubmit} className="d-flex flex-column flex-grow-1">
+                          <div className="row g-2">
                             <div className="col-12">
                               <div className="form-group">
                                 <label className="form-label">Leave Type</label>
@@ -735,7 +729,7 @@ const LeaveManagement = () => {
                                   name="reason"
                                   value={formData.reason}
                                   onChange={handleInputChange}
-                                  rows="3"
+                                  rows="2"
                                 ></textarea>
                               </div>
                             </div>
@@ -798,7 +792,7 @@ const LeaveManagement = () => {
                   <>
                     <div className="col-12">
                       <div className="card card-bordered">
-                        <div className="card-inne">
+                        <div className="card-inner">
                           <div className="card-title-group align-start mb-3">
                             <div className="card-title">
                               <h6 className="title">Pending Requests</h6>
@@ -933,9 +927,9 @@ const LeaveManagement = () => {
                     </div>
 
                     {/* Leave History - Only show for non-owners */}
-                    <div className="col-12">
+                    <div className="col-12 leave-history-section">
                       <div className="card card-bordered">
-                        <div className="card-inne">
+                        <div className="card-inner">
                           <div className="card-title-group align-start mb-3">
                             <div className="card-title">
                               <h6 className="title">Leave History</h6>

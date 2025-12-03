@@ -11,6 +11,9 @@ import "../common/ActionsDropdown.css";
 const InvoiceDashboard = () => {
   const { subdomain } = useParams();
 
+  // Hydration fix: Track if component is mounted on client
+  const [isMounted, setIsMounted] = useState(false);
+
   // Real data from API
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -20,11 +23,18 @@ const InvoiceDashboard = () => {
   const [filterMonth, setFilterMonth] = useState("all");
   const [openMenuId, setOpenMenuId] = useState(null);
 
+  // Hydration fix: Set mounted state on client
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   // Fetch invoices from API
   useEffect(() => {
-    fetchInvoices();
+    if (isMounted) {
+      fetchInvoices();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [isMounted]);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -102,6 +112,24 @@ const InvoiceDashboard = () => {
   console.log("Filter status:", filterStatus);
   console.log("Filter month:", filterMonth);
 
+  // Prevent hydration mismatch - don't render until mounted
+  if (!isMounted) {
+    return (
+      <div className="nk-content">
+        <div className="container-fluid">
+          <div className="nk-content-inner">
+            <div className="nk-content-body">
+              <div style={{ padding: '40px', textAlign: 'center' }}>
+                <div className="spinner-border text-primary" role="status">
+                  <span className="sr-only">Loading...</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="nk-content">

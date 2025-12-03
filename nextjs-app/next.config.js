@@ -2,6 +2,12 @@
 const nextConfig = {
   reactStrictMode: true,
   
+  // Disable caching in development for instant UI updates
+  onDemandEntries: {
+    maxInactiveAge: 25 * 1000,
+    pagesBufferLength: 2,
+  },
+  
   // API proxy to backend server
   async rewrites() {
     return [
@@ -25,21 +31,42 @@ const nextConfig = {
   },
   
   // Webpack configuration for PDF and other file handling
-  webpack: (config, { isServer }) => {
+  webpack: (config, { isServer, dev }) => {
     // Handle canvas for jspdf
     config.resolve.alias.canvas = false;
     
     // Handle PDF.js worker
     config.resolve.alias['pdfjs-dist'] = 'pdfjs-dist/legacy/build/pdf';
     
+    // Disable caching in development
+    if (dev) {
+      config.cache = false;
+    }
+    
     return config;
   },
   
+  // Disable static optimization for better hot reload
+  ...(process.env.NODE_ENV === 'development' && {
+    generateBuildId: async () => {
+      return 'development-' + Date.now();
+    },
+  }),
+  
+  // Compiler options for better performance
+  compiler: {
+    removeConsole: process.env.NODE_ENV === 'production',
+  },
+  
   // Experimental features
-  // Server Actions are enabled by default in Next.js 14
-  // experimental: {
-  //   serverActions: true,
-  // },
+  experimental: {
+    // Enable faster refresh
+    optimizeCss: false,
+    // Disable SWC minification in dev for faster builds
+    ...(process.env.NODE_ENV === 'development' && {
+      swcMinify: false,
+    }),
+  },
 };
 
 module.exports = nextConfig;

@@ -747,6 +747,9 @@ const DiscrepancyMatching = ({ discrepancy }) => {
 const Invoice = () => {
   const [invoices, setInvoices] = useState([]);
   const [selectedInvoice, setSelectedInvoice] = useState(null);
+  // Hydration fix: Track if component is mounted on client
+  const [isMounted, setIsMounted] = useState(false);
+  
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [filterStatus, setFilterStatus] = useState("all");
@@ -787,12 +790,19 @@ const Invoice = () => {
       Client: { hours: 36, notes: "From SAP dump" },
       Mismatch: { hours: "", notes: "Needs employer review" }}};
 
+  // Hydration fix: Set mounted state on client
   useEffect(() => {
-    console.log('🚀 Invoice component mounted');
-    loadInvoiceSettings();
-    fetchInvoices();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    setIsMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (isMounted) {
+      console.log('🚀 Invoice component mounted');
+      loadInvoiceSettings();
+      fetchInvoices();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isMounted]);
 
   // Refetch when filter changes
   useEffect(() => {
@@ -1175,6 +1185,25 @@ const Invoice = () => {
     }
   };
 
+  // Prevent hydration mismatch - don't render until mounted
+  if (!isMounted) {
+    return (
+      <div className="nk-conten">
+        <div className="container-flui">
+          <div className="nk-content-innr">
+            <div className="nk-content-body">
+              <div style={{ padding: '40px', textAlign: 'center' }}>
+                <div className="spinner-border text-primary" role="status">
+                  <span className="sr-only">Loading...</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="nk-conten">
       <div className="container-flui">
@@ -1204,6 +1233,54 @@ const Invoice = () => {
                         </button>
                       </li>
                     </ul>
+                  </div>
+                </div>
+              </div>
+
+              {/* Summary Cards in Header */}
+              <div className="row g-gs" style={{ marginTop: '24px' }}>
+                {/* Total Invoiced Card */}
+                <div className="col-md-4">
+                  <div className="card card-bordered invoice-summary-card-header">
+                    <div className="card-inner">
+                      <div className="summary-header-content">
+                        <div className="summary-header-label">Total Invoiced</div>
+                        <div className="summary-header-value">
+                          ${invoices.reduce((sum, inv) => sum + (parseFloat(inv.total) || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </div>
+                        <div className="summary-header-period">This Month</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Payments Received Card */}
+                <div className="col-md-4">
+                  <div className="card card-bordered invoice-summary-card-header">
+                    <div className="card-inner">
+                      <div className="summary-header-content">
+                        <div className="summary-header-label">Payments Received</div>
+                        <div className="summary-header-value">
+                          ${invoices.filter(inv => inv.status.toLowerCase() === 'paid').reduce((sum, inv) => sum + (parseFloat(inv.total) || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </div>
+                        <div className="summary-header-period">This Month</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Outstanding Amount Card */}
+                <div className="col-md-4">
+                  <div className="card card-bordered invoice-summary-card-header">
+                    <div className="card-inner">
+                      <div className="summary-header-content">
+                        <div className="summary-header-label">Outstanding Amount</div>
+                        <div className="summary-header-value">
+                          ${invoices.filter(inv => inv.status.toLowerCase() !== 'paid').reduce((sum, inv) => sum + (parseFloat(inv.total) || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </div>
+                        <div className="summary-header-period">Total</div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1519,34 +1596,42 @@ const Invoice = () => {
                         )}
                       </div>
 
-                      {/* Pagination */}
-                      {filteredInvoices.length > itemsPerPage && (
+                      {/* Pagination - Employee Module Style */}
+                      {filteredInvoices.length > 0 && (
                         <div className="card-inner">
-                          <div className="pagination-wrapper">
+                          <div className="invoice-pagination">
                             <div className="pagination-info">
-                              Showing {startIndex + 1} to {Math.min(endIndex, filteredInvoices.length)} of {filteredInvoices.length} entries
+                              Showing {startIndex + 1} to {Math.min(endIndex, filteredInvoices.length)} of {filteredInvoices.length} invoices
                             </div>
                             <div className="pagination-controls">
                               <button
-                                className="pagination-btn"
+                                className="btn btn-sm btn-outline-light"
                                 onClick={handlePreviousPage}
                                 disabled={currentPage === 1}
-                                title="Previous page"
                               >
-                                <i className="fas fa-chevron-left"></i>
+                                <em className="icon ni ni-chevron-left"></em> Previous
                               </button>
-                              <div className="pagination-pages">
-                                <span className="current-page">{currentPage}</span>
-                                <span className="page-separator">/</span>
-                                <span className="total-pages">{totalPages}</span>
-                              </div>
+                              
+                              {/* Page Numbers */}
+                              <ul className="pagination-numbers">
+                                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                                  <li key={page}>
+                                    <button
+                                      className={`page-number ${currentPage === page ? 'active' : ''}`}
+                                      onClick={() => setCurrentPage(page)}
+                                    >
+                                      {page}
+                                    </button>
+                                  </li>
+                                ))}
+                              </ul>
+
                               <button
-                                className="pagination-btn"
+                                className="btn btn-sm btn-outline-light"
                                 onClick={handleNextPage}
                                 disabled={currentPage === totalPages}
-                                title="Next page"
                               >
-                                <i className="fas fa-chevron-right"></i>
+                                Next <em className="icon ni ni-chevron-right"></em>
                               </button>
                             </div>
                           </div>

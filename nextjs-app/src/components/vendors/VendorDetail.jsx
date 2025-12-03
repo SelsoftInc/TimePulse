@@ -13,12 +13,22 @@ import './Vendors.css';
 const VendorDetail = () => {
   const { subdomain, id } = useParams();
   const { user, checkPermission } = useAuth();
+  
+  // Hydration fix: Track if component is mounted on client
+  const [isMounted, setIsMounted] = useState(false);
+  
   const [vendor, setVendor] = useState(null);
   const [vendorEmployees, setVendorEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  // Hydration fix: Set mounted state on client
   useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isMounted) return;
     const fetchVendor = async () => {
       try {
         setLoading(true);
@@ -52,7 +62,18 @@ const VendorDetail = () => {
       }
     };
     fetchVendor();
-  }, [id, user?.tenantId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isMounted, id, user?.tenantId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Prevent hydration mismatch - don't render until mounted
+  if (!isMounted) {
+    return (
+      <div style={{ padding: '40px', textAlign: 'center' }}>
+        <div className="spinner-border text-primary" role="status">
+          <span className="sr-only">Loading...</span>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (

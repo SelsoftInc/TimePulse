@@ -15,6 +15,9 @@ const EmployeeTimesheet = () => {
   const { toast } = useToast();
   const fileInputRef = useRef(null);
   
+  // Hydration fix: Track if component is mounted on client
+  const [isMounted, setIsMounted] = useState(false);
+  
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [timesheetId, setTimesheetId] = useState(null);
@@ -38,8 +41,14 @@ const EmployeeTimesheet = () => {
   const [reviewers, setReviewers] = useState([]);
   const [selectedReviewer, setSelectedReviewer] = useState('');
   
+  // Hydration fix: Set mounted state on client
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+  
   // Fetch timesheet data for current week
   useEffect(() => {
+    if (!isMounted) return;
     const fetchTimesheet = async () => {
       if (!employeeId || !user?.tenantId) {
         console.warn('⚠️ Missing employeeId or tenantId');
@@ -147,7 +156,7 @@ const EmployeeTimesheet = () => {
     };
 
     fetchTimesheet();
-  }, [employeeId, user?.tenantId, toast]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isMounted, employeeId, user?.tenantId, toast]); // eslint-disable-line react-hooks/exhaustive-deps
   const totalHours = Object.values(weeklyHours).reduce((sum, hours) => sum + (parseFloat(hours) || 0), 0);
 
   // Debug logging for troubleshooting
@@ -321,7 +330,8 @@ const EmployeeTimesheet = () => {
     }
   };
   
-  if (loading) {
+  // Prevent hydration mismatch - don't render until mounted
+  if (!isMounted || loading) {
     return (
       <div className="nk-content">
         <div className="container-fluid">

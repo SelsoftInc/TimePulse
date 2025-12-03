@@ -13,11 +13,21 @@ const VendorEdit = () => {
   const { id, subdomain } = useParams();
   const router = useRouter();
   const { user } = useAuth();
+  
+  // Hydration fix: Track if component is mounted on client
+  const [isMounted, setIsMounted] = useState(false);
+  
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [initialVendor, setInitialVendor] = useState(null);
 
+  // Hydration fix: Set mounted state on client
   useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isMounted) return;
     const fetchVendor = async () => {
       try {
         setLoading(true);
@@ -41,7 +51,7 @@ const VendorEdit = () => {
       }
     };
     fetchVendor();
-  }, [id, user?.tenantId]);
+  }, [isMounted, id, user?.tenantId]);
 
   const handleUpdate = async (payload) => {
     const tenantId = user?.tenantId;
@@ -57,6 +67,17 @@ const VendorEdit = () => {
     }
     router.push(`/${subdomain}/vendors/${id}`);
   };
+
+  // Prevent hydration mismatch - don't render until mounted
+  if (!isMounted) {
+    return (
+      <div style={{ padding: '40px', textAlign: 'center' }}>
+        <div className="spinner-border text-primary" role="status">
+          <span className="sr-only">Loading...</span>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) return <div className="nk-content"><div className="container-fluid">Loading vendor...</div></div>;
   if (error) return <div className="nk-content"><div className="container-fluid text-danger">{error}</div></div>;

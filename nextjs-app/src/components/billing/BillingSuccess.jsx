@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -10,6 +9,7 @@ import './BillingSuccess.css';
 const BillingSuccess = () => {
   const [searchParams] = useSearchParams();
   const router = useRouter();
+  const params = useParams();
   const { user } = useAuth();
   const [sessionData, setSessionData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -46,11 +46,13 @@ const BillingSuccess = () => {
   }, [sessionId, user?.tenantId]);
 
   const handleGoToUserManagement = () => {
-    router.push('/settings?tab=users');
+    const subdomain = params?.subdomain || 'selsoft';
+    router.push(`/${subdomain}/settings?tab=users`);
   };
 
   const handleGoToDashboard = () => {
-    router.push('/dashboard');
+    const subdomain = params?.subdomain || 'selsoft';
+    router.push(`/${subdomain}/dashboard`);
   };
 
   if (loading) {

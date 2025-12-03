@@ -20,6 +20,10 @@ const TimesheetSummary = () => {
   const router = useRouter();
   const pathname = usePathname();
   const { user } = useAuth();
+  
+  // Hydration fix: Track if component is mounted on client
+  const [isMounted, setIsMounted] = useState(false);
+  
   const [timesheets, setTimesheets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [clientType, setClientType] = useState("internal");
@@ -36,8 +40,14 @@ const TimesheetSummary = () => {
   const [invoiceModalOpen, setInvoiceModalOpen] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   
+  // Hydration fix: Set mounted state on client
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+  
   // Debug: Log modal state changes
   useEffect(() => {
+    if (!isMounted) return;
     console.log('🔔 Invoice Modal State Changed:', {
       invoiceModalOpen,
       hasSelectedInvoice: !!selectedInvoice,
@@ -271,14 +281,14 @@ const TimesheetSummary = () => {
 
   // Load data on mount
   useEffect(() => {
-    if (user?.tenantId) {
+    if (isMounted && user?.tenantId) {
       loadTimesheetData();
     }
-  }, [user, loadTimesheetData]);
+  }, [isMounted, user, loadTimesheetData]);
 
   // Reload data when navigating from submit page with refresh flag
   useEffect(() => {
-    if (location.state?.refresh && user?.tenantId) {
+    if (isMounted && location.state?.refresh && user?.tenantId) {
       console.log('🔄 Refresh requested from navigation, reloading timesheet data...');
       loadTimesheetData();
       // Clear the state to prevent re-fetching on subsequent renders
@@ -944,7 +954,8 @@ const TimesheetSummary = () => {
     localStorage.setItem("userClientType", newClientType);
   };
 
-  if (loading) {
+  // Prevent hydration mismatch - don't render until mounted
+  if (!isMounted || loading) {
     return (
       <div className="nk-conten">
         <div className="container-fluid">

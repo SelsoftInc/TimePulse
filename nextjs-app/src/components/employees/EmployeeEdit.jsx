@@ -16,9 +16,18 @@ const EmployeeEdit = () => {
   const { user, checkPermission } = useAuth();
   const { toast } = useToast();
 
+  // Hydration fix: Track if component is mounted on client
+  const [isMounted, setIsMounted] = useState(false);
+
   const [employee, setEmployee] = useState(null);
   const tenantId = user?.tenantId;
   const queryClient = useQueryClient();
+
+  // Hydration fix: Set mounted state on client
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   // React Query: fetch clients
   const {
     data: clientsData = [],
@@ -36,7 +45,7 @@ const EmployeeEdit = () => {
       const data = await resp.json();
       return data.clients || [];
     },
-    enabled: !!tenantId
+    enabled: isMounted && !!tenantId
   });
 
   // React Query: fetch vendors (also used for impl partners)
@@ -56,7 +65,7 @@ const EmployeeEdit = () => {
       const data = await resp.json();
       return data.vendors || [];
     },
-    enabled: !!tenantId
+    enabled: isMounted && !!tenantId
   });
 
   const [form, setForm] = useState({
@@ -81,7 +90,7 @@ const EmployeeEdit = () => {
       const data = await resp.json();
       return data.employee || data;
     },
-    enabled: !!tenantId && !!id
+    enabled: isMounted && !!tenantId && !!id
   });
 
   // Sync local state when employee query resolves
@@ -152,7 +161,8 @@ const EmployeeEdit = () => {
     );
   }
 
-  if (employeeLoading || clientsLoading || vendorsLoading) {
+  // Prevent hydration mismatch - don't render until mounted
+  if (!isMounted || employeeLoading || clientsLoading || vendorsLoading) {
     return (
       <div className="nk-content">
         <div className="container-fluid">

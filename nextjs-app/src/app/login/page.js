@@ -7,13 +7,18 @@ import LoginComponent from '@/components/auth/Login';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, currentEmployer } = useAuth();
 
   useEffect(() => {
-    if (isAuthenticated) {
-      router.push('/workspaces');
+    if (isAuthenticated && currentEmployer) {
+      // Redirect to appropriate dashboard based on role
+      const subdomain = currentEmployer.subdomain || 'selsoft';
+      const dashboardPath = currentEmployer.role === 'employee' 
+        ? `/${subdomain}/employee-dashboard`
+        : `/${subdomain}/dashboard`;
+      router.push(dashboardPath);
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, currentEmployer, router]);
 
   return <LoginComponent />;
 }

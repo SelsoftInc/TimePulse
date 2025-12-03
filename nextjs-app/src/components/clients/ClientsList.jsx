@@ -20,10 +20,19 @@ const ClientsList = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
+
+  // Hydration fix: Track if component is mounted on client
+  const [isMounted, setIsMounted] = useState(false);
+
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [openMenuId, setOpenMenuId] = useState(null);
+
+  // Hydration fix: Set mounted state on client
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -70,8 +79,10 @@ const ClientsList = () => {
   };
 
   useEffect(() => {
-    fetchClients();
-  }, [user?.tenantId]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (isMounted) {
+      fetchClients();
+    }
+  }, [isMounted, user?.tenantId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Close menu on outside click
   useEffect(() => {
@@ -191,6 +202,17 @@ const ClientsList = () => {
       setOpenMenuId(null);
     }
   };
+
+  // Prevent hydration mismatch - don't render until mounted
+  if (!isMounted) {
+    return (
+      <div style={{ padding: '40px', textAlign: 'center' }}>
+        <div className="spinner-border text-primary" role="status">
+          <span className="sr-only">Loading...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="nk-conten">

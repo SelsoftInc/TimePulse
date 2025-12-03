@@ -107,8 +107,8 @@ const Header = ({ toggleSidebar }) => {
       console.log("Navigating to main settings:", settingsPath);
       router.push(settingsPath);
     } else {
-      console.log("No tenant found, navigating to workspaces");
-      router.push("/workspaces");
+      console.log("No tenant found, redirecting to login");
+      router.push("/login");
     }
   };
 
@@ -122,8 +122,8 @@ const Header = ({ toggleSidebar }) => {
       console.log("Navigating to profile settings:", profilePath);
       router.push(profilePath);
     } else {
-      console.log("No tenant found, navigating to workspaces");
-      router.push("/workspaces");
+      console.log("No tenant found, redirecting to login");
+      router.push("/login");
     }
   };
 
@@ -187,27 +187,29 @@ const Header = ({ toggleSidebar }) => {
             />
           </div>
 
-          {/* Right side tools */}
+          {/* Right side tools - Aligned to top right */}
           <div className="nk-header-tools">
             {/* Ask AI Button */}
             <div className="header-action-item">
               <AskAIButton />
             </div>
 
-            {/* Action icons */}
-            <div className="header-action-item dropdown">
+            {/* Notification Bell */}
+            <div className="header-action-item">
               <TimesheetAlerts subdomain={subdomain} />
             </div>
+
+            {/* Theme Toggle */}
             <div
               className="header-action-item"
               onClick={toggleTheme}
               style={{ cursor: "pointer" }}
+              title={`Switch to ${isDarkMode ? "light" : "dark"} mode`}
             >
               <i
                 className={`fas ${
                   isDarkMode ? "fa-sun" : "fa-moon"
                 } header-action-icon`}
-                title={`Switch to ${isDarkMode ? "light" : "dark"} mode`}
               ></i>
             </div>
 
@@ -218,11 +220,6 @@ const Header = ({ toggleSidebar }) => {
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
-                  console.log("Gear icon clicked!");
-                  console.log(
-                    "Current URL before navigation:",
-                    window.location.href
-                  );
                   goToSettings();
                 }}
                 style={{ cursor: "pointer" }}
@@ -232,9 +229,9 @@ const Header = ({ toggleSidebar }) => {
               </div>
             ) : null}
 
-            {/* User dropdown */}
+            {/* User Avatar */}
             <div
-              className="user-dropdown"
+              className="header-action-item user-dropdown"
               onClick={goToProfileSettings}
               style={{ cursor: "pointer" }}
               title="Edit Profile"

@@ -6,17 +6,22 @@ import { useAuth } from '@/contexts/AuthContext';
 
 export default function ProtectedRoute({ children, requiredPermission }) {
   const router = useRouter();
-  const { isAuthenticated, checkPermission, loading } = useAuth();
+  const { isAuthenticated, checkPermission, loading, currentEmployer } = useAuth();
 
   useEffect(() => {
     if (!loading) {
       if (!isAuthenticated) {
         router.push('/login');
       } else if (requiredPermission && !checkPermission(requiredPermission)) {
-        router.push('/workspaces');
+        // Redirect to appropriate dashboard based on role
+        const subdomain = currentEmployer?.subdomain || 'selsoft';
+        const dashboardPath = currentEmployer?.role === 'employee' 
+          ? `/${subdomain}/employee-dashboard`
+          : `/${subdomain}/dashboard`;
+        router.push(dashboardPath);
       }
     }
-  }, [isAuthenticated, loading, requiredPermission, checkPermission, router]);
+  }, [isAuthenticated, loading, requiredPermission, checkPermission, currentEmployer, router]);
 
   // Show loading state while auth is being initialized
   if (loading) {

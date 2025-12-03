@@ -10,16 +10,7 @@
 /* Row spacing for leave cards */
 .leave-cards-row {
   margin-bottom: 24px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
-}
-
-/* Remove default Bootstrap padding for custom gap */
-.leave-cards-row > .col-lg-5,
-.leave-cards-row > .col-lg-7 {
-  padding-left: 0;
-  padding-right: 0;
+  --bs-gutter-x: 1.5rem;
 }
 
 /* Leave Balance Card Styling */
@@ -203,27 +194,9 @@ body.dark-mode .leave-balance-item .progress {
 /* Responsive Design */
 @media (min-width: 992px) {
   /* On LG screens and above, ensure cards are side by side */
-  .leave-cards-row > .col-lg-5 {
-    flex: 0 0 calc(41.666667% - 10px);
-    max-width: calc(41.666667% - 10px);
-  }
-  
-  .leave-cards-row > .col-lg-7 {
-    flex: 0 0 calc(58.333333% - 10px);
-    max-width: calc(58.333333% - 10px);
-  }
-}
-
-@media (max-width: 991px) {
-  /* On screens smaller than LG, cards stack */
   .leave-cards-row {
-    gap: 20px;
-  }
-  
-  .leave-cards-row > .col-lg-5,
-  .leave-cards-row > .col-lg-7 {
-    flex: 0 0 100%;
-    max-width: 100%;
+    display: flex;
+    flex-wrap: nowrap;
   }
 }
 

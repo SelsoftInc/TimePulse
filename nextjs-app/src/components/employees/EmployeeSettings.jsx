@@ -12,6 +12,10 @@ const EmployeeSettings = () => {
   const { subdomain, id } = useParams();
   const router = useRouter();
   const { user } = useAuth();
+  
+  // Hydration fix: Track if component is mounted on client
+  const [isMounted, setIsMounted] = useState(false);
+  
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [employee, setEmployee] = useState(null);
@@ -25,6 +29,11 @@ const EmployeeSettings = () => {
     overtimeEligible: true
   });
   
+  // Hydration fix: Set mounted state on client
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+  
   // Sample client list - in a real app, this would come from an API
   const clients = [
     { id: 1, name: 'JPMC', type: 'internal' },
@@ -36,6 +45,7 @@ const EmployeeSettings = () => {
   
   // Fetch approvers from API
   useEffect(() => {
+    if (!isMounted) return;
     const fetchApprovers = async () => {
       if (!user?.tenantId) return;
       
@@ -58,7 +68,7 @@ const EmployeeSettings = () => {
     };
     
     fetchApprovers();
-  }, [user?.tenantId]);
+  }, [isMounted, user?.tenantId]);
 
   // Use useCallback to memoize the function and avoid dependency issues in useEffect
   const loadEmployeeData = useCallback(async () => {
@@ -107,8 +117,10 @@ const EmployeeSettings = () => {
   }, [id]);
   
   useEffect(() => {
-    loadEmployeeData();
-  }, [loadEmployeeData]);
+    if (isMounted) {
+      loadEmployeeData();
+    }
+  }, [isMounted, loadEmployeeData]);
 
 
 
@@ -162,6 +174,17 @@ const EmployeeSettings = () => {
       setSaving(false);
     }
   };
+
+  // Prevent hydration mismatch - don't render until mounted
+  if (!isMounted) {
+    return (
+      <div style={{ padding: '40px', textAlign: 'center' }}>
+        <div className="spinner-border text-primary" role="status">
+          <span className="sr-only">Loading...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <PermissionGuard requiredPermission={PERMISSIONS.EDIT_EMPLOYEE}>

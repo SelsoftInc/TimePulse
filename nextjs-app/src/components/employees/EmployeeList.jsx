@@ -27,6 +27,10 @@ const EmployeeList = () => {
   const { checkPermission, user } = useAuth();
   const { toast } = useToast();
   const { confirmation, showConfirmation, confirm, cancel } = useConfirmation();
+  
+  // Hydration fix: Track if component is mounted on client
+  const [isMounted, setIsMounted] = useState(false);
+  
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -34,6 +38,11 @@ const EmployeeList = () => {
     employmentType: "all",
     status: "all", // Default to all employees (active and inactive)
     search: ""});
+
+  // Hydration fix: Set mounted state on client
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -277,8 +286,10 @@ const EmployeeList = () => {
   };
 
   useEffect(() => {
-    fetchEmployees();
-  }, [user?.tenantId, filters.status, pathname]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (isMounted) {
+      fetchEmployees();
+    }
+  }, [isMounted, user?.tenantId, filters.status, pathname]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Fetch clients when opening modal
   const fetchClients = async () => {
@@ -677,6 +688,17 @@ const EmployeeList = () => {
       defaultValue: "",
       placeholder: "Search by name, email, or position..."},
   ];
+
+  // Prevent hydration mismatch - don't render until mounted
+  if (!isMounted) {
+    return (
+      <div style={{ padding: '40px', textAlign: 'center' }}>
+        <div className="spinner-border text-primary" role="status">
+          <span className="sr-only">Loading...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="employee-list-container">

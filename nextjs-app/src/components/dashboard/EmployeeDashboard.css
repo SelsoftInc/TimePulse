@@ -43,7 +43,7 @@ body.dark-mode .dashboard-header {
 }
 
 .header-info .dashboard-subtitle {
-  color: black(255, 255, 255, 0.9);
+  color: rgba(0, 0, 0, 0.7);
   font-size: 16px;
   margin: 0;
   font-weight: 400;
@@ -57,7 +57,7 @@ body.dark-mode .dashboard-header {
   padding: 12px 24px;
   border-radius: 12px;
   font-weight: 600;
-  font-size: 4px;
+  font-size: 12px;
   text-decoration: none;
   transition: all 0.3s ease;
   border: none;
@@ -69,6 +69,7 @@ body.dark-mode .dashboard-header {
   color: white;
   border: 1px solid #3b82f6;
   font-weight: 600;
+  font-size: 12px;
 }
 
 .btn-modern.btn-primary:hover {

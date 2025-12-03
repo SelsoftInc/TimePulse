@@ -154,9 +154,12 @@ const Login = () => {
             localStorage.setItem("currentEmployer", JSON.stringify(tenantInfo));
           }
 
-          // Redirect directly to dashboard
+          // Redirect based on user role
           const subdomain = data.tenant?.subdomain || "selsoft";
-          window.location.href = `/${subdomain}/dashboard`;
+          const dashboardPath = data.user.role === 'employee' 
+            ? `/${subdomain}/employee-dashboard`
+            : `/${subdomain}/dashboard`;
+          window.location.href = dashboardPath;
         } else {
           // Check if error is due to token expiration
           if (data.message && (data.message.includes('token') || data.message.includes('expired') || data.message.includes('unauthorized'))) {
@@ -221,9 +224,12 @@ const Login = () => {
             localStorage.setItem("currentEmployer", JSON.stringify(tenantInfo));
           }
 
-          // Redirect directly to dashboard
+          // Redirect based on user role
           const subdomain = data.tenant?.subdomain || "selsoft";
-          window.location.href = `/${subdomain}/dashboard`;
+          const dashboardPath = data.user.role === 'employee' 
+            ? `/${subdomain}/employee-dashboard`
+            : `/${subdomain}/dashboard`;
+          window.location.href = dashboardPath;
         } else {
           // Check if error is due to token expiration
           if (data.message && (data.message.includes('token') || data.message.includes('expired') || data.message.includes('unauthorized'))) {

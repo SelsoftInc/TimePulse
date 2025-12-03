@@ -1216,6 +1216,54 @@ const Invoice = () => {
                   </div>
                 </div>
               </div>
+
+              {/* Summary Cards in Header */}
+              <div className="row g-gs" style={{ marginTop: '24px' }}>
+                {/* Total Invoiced Card */}
+                <div className="col-md-4">
+                  <div className="card card-bordered invoice-summary-card-header">
+                    <div className="card-inner">
+                      <div className="summary-header-content">
+                        <div className="summary-header-label">Total Invoiced</div>
+                        <div className="summary-header-value">
+                          ${invoices.reduce((sum, inv) => sum + (parseFloat(inv.total) || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </div>
+                        <div className="summary-header-period">This Month</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Payments Received Card */}
+                <div className="col-md-4">
+                  <div className="card card-bordered invoice-summary-card-header">
+                    <div className="card-inner">
+                      <div className="summary-header-content">
+                        <div className="summary-header-label">Payments Received</div>
+                        <div className="summary-header-value">
+                          ${invoices.filter(inv => inv.status.toLowerCase() === 'paid').reduce((sum, inv) => sum + (parseFloat(inv.total) || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </div>
+                        <div className="summary-header-period">This Month</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Outstanding Amount Card */}
+                <div className="col-md-4">
+                  <div className="card card-bordered invoice-summary-card-header">
+                    <div className="card-inner">
+                      <div className="summary-header-content">
+                        <div className="summary-header-label">Outstanding Amount</div>
+                        <div className="summary-header-value">
+                          ${invoices.filter(inv => inv.status.toLowerCase() !== 'paid').reduce((sum, inv) => sum + (parseFloat(inv.total) || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </div>
+                        <div className="summary-header-period">Total</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div className="nk-block">
@@ -1249,30 +1297,16 @@ const Invoice = () => {
                       </div>
 
                       <div className="card-tools mr-n1">
-                        <ul className="btn-toolbar gx-1">
+                        <ul className="btn-toolbar gx-1" style={{display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'nowrap'}}>
                           <li>
-                            <div className="form-group">
-                              <div className="form-control-wrap">
-                                <input
-                                  type="text"
-                                  className="form-control form-control-sm"
-                                  placeholder="Search..."
-                                  value={searchTerm}
-                                  onChange={(e) =>
-                                    setSearchTerm(e.target.value)
-                                  }
-                                />
-                              </div>
-                            </div>
-                          </li>
-                          <li>
-                            <div className="form-group">
+                            <div className="form-group" style={{marginBottom: 0}}>
                               <select
                                 className="form-select form-select-sm"
                                 value={filterStatus}
                                 onChange={(e) =>
                                   setFilterStatus(e.target.value)
                                 }
+                                style={{minWidth: '130px'}}
                               >
                                 <option value="all">All Status</option>
                                 <option value="draft">Draft</option>
@@ -1281,6 +1315,28 @@ const Invoice = () => {
                                 <option value="rejected">Rejected</option>
                                 <option value="sent">Sent</option>
                                 <option value="paid">Paid</option>
+                              </select>
+                            </div>
+                          </li>
+                          <li>
+                            <div className="form-group" style={{marginBottom: 0}}>
+                              <select
+                                className="form-select form-select-sm"
+                                style={{minWidth: '130px'}}
+                              >
+                                <option value="all">All Months</option>
+                                <option value="january">January</option>
+                                <option value="february">February</option>
+                                <option value="march">March</option>
+                                <option value="april">April</option>
+                                <option value="may">May</option>
+                                <option value="june">June</option>
+                                <option value="july">July</option>
+                                <option value="august">August</option>
+                                <option value="september">September</option>
+                                <option value="october">October</option>
+                                <option value="november">November</option>
+                                <option value="december">December</option>
                               </select>
                             </div>
                           </li>
@@ -1528,8 +1584,8 @@ const Invoice = () => {
                         )}
                       </div>
 
-                      {/* Pagination */}
-                      {filteredInvoices.length > itemsPerPage && (
+                      {/* Pagination - Always show when there are invoices */}
+                      {filteredInvoices.length > 0 && (
                         <div className="card-inner">
                           <div className="pagination-wrapper">
                             <div className="pagination-info">

@@ -9,7 +9,7 @@ import { apiFetch } from '@/config/api';
 import "./EmployeeDashboard.css";
 
 // Modern TimeCard component with beautiful design
-const TimeCard = ({ week, status, hours, dueDate }) => {
+const TimeCard = ({ week, status, hours, dueDate, subdomain }) => {
   const getStatusConfig = (status) => {
     switch (status) {
       case "Approved":
@@ -88,9 +88,9 @@ const TimeCard = ({ week, status, hours, dueDate }) => {
         </div>
       </div>
 
-      {isActionable && (
+      {isActionable && subdomain && (
         <div className="timecard-action">
-          <Link href={`/timesheets/submit/${week}`}
+          <Link href={`/${subdomain}/timesheets/submit`}
             className="btn-modern btn-primary"
           >
             {status === "Draft" ? "Continue Editing" : "Submit Timesheet"}
@@ -297,7 +297,7 @@ const UpcomingLeave = ({
           user?.role === "approver" ||
           currentEmployer?.role === "approver"
         ) && (
-          <Link href="/dashboard" className="btn-modern btn-outline">
+          <Link href="/leave-management" className="btn-modern btn-outline">
             + Request Leave
           </Link>
         )}
@@ -341,7 +341,6 @@ const UpcomingLeave = ({
   );
 };
 
-// Main EmployeeDashboard component
 const EmployeeDashboard = () => {
   const { subdomain } = useParams();
   const { user, checkPermission, currentEmployer } = useAuth();
@@ -354,6 +353,13 @@ const EmployeeDashboard = () => {
     leave: 0});
   const [notifications, setNotifications] = useState([]);
   const [leaveRequests, setLeaveRequests] = useState([]);
+
+  // Hydration fix: Track if component is mounted on client
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   useEffect(() => {
     const loadDashboardData = async () => {
@@ -472,27 +478,17 @@ const EmployeeDashboard = () => {
       }
     };
 
-    loadDashboardData();
-  }, [user?.tenantId, user?.employeeId]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (isMounted) {
+      loadDashboardData();
+    }
+  }, [isMounted, user?.tenantId, user?.employeeId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (loading) {
+  // Prevent hydration mismatch - don't render until mounted
+  if (!isMounted || loading) {
     return (
-      <div className="employee-dashboard">
-        <div className="nk-content">
-          <div className="container-fluid">
-            <div className="nk-content-inner">
-              <div className="nk-content-body">
-                <div className="nk-block">
-                  <div className="text-center p-5">
-                    <div className="spinner-border text-primary" role="status">
-                      <span className="visually-hidden">Loading...</span>
-                    </div>
-                    <p className="mt-3">Loading your dashboard...</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+      <div className="employee-dashboard-loading">
+        <div className="spinner-border text-primary" role="status">
+          <span className="sr-only">Loading...</span>
         </div>
       </div>
     );
@@ -632,13 +628,13 @@ const EmployeeDashboard = () => {
         <div className="dashboard-section timesheet-section">
           <div className="section-header">
             <h2>Recent Timesheets</h2>
-            <Link href={`/${subdomain}/dashboard`} className="section-link">
+            <Link href={`/${subdomain}/timesheets`} className="section-link">
               View All →
             </Link>
           </div>
           <div className="timesheets-grid">
             {timesheets.map((timesheet, index) => (
-              <TimeCard key={index} {...timesheet} />
+              <TimeCard key={index} {...timesheet} subdomain={subdomain} />
             ))}
           </div>
         </div>
@@ -677,7 +673,7 @@ const EmployeeDashboard = () => {
               </div>
               <div className="actions-grid">
                 {getQuickActions().map((action, index) => (
-                  <Link key={index} to={action.to} className="action-item">
+                  <Link key={index} href={action.to} className="action-item">
                     <div className="action-icon">{action.icon}</div>
                     <div className="action-content">
                       <h4>{action.title}</h4>

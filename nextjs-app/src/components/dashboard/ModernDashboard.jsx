@@ -9,6 +9,10 @@ import "./ModernDashboard.css";
 
 const ModernDashboard = () => {
   const { user } = useAuth();
+  
+  // Hydration fix: Track if component is mounted on client
+  const [isMounted, setIsMounted] = useState(false);
+  
   const [dashboardData, setDashboardData] = useState({
     timesheets: [],
     employees: [],
@@ -122,10 +126,17 @@ const ModernDashboard = () => {
     }
   }, [user?.tenantId]);
 
+  // Hydration fix: Set mounted state on client
   useEffect(() => {
-    fetchDashboardData();
-    fetchEmployees();
-  }, [fetchDashboardData, fetchEmployees, scope, selectedEmployeeId]);
+    setIsMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (isMounted) {
+      fetchDashboardData();
+      fetchEmployees();
+    }
+  }, [isMounted, fetchDashboardData, fetchEmployees, scope, selectedEmployeeId]);
 
   // Staffing Management Metrics - Updated to use optimized data
   const getTotalRevenue = () => {
@@ -288,7 +299,8 @@ const ModernDashboard = () => {
     return `${h}:${m.toString().padStart(2, "0")}`;
   };
 
-  if (loading) {
+  // Prevent hydration mismatch - don't render until mounted
+  if (!isMounted || loading) {
     return (
       <div
         className="d-flex justify-content-center align-items-center"

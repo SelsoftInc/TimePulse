@@ -370,9 +370,9 @@ const LeaveManagement = () => {
   }
 
   return (
-    <div className="nk-conten">
+    <div className="nk-content">
       <div className="container-fluid">
-        <div className="nk-content-inne">
+        <div className="nk-content-inner">
           <div className="nk-content-body">
             <div className="nk-block-head nk-block-head-sm">
               <div className="nk-block-between">
@@ -394,7 +394,7 @@ const LeaveManagement = () => {
                   {/* Leave Balance */}
                   <div className="col-lg-5 col-md-12">
                     <div className="card card-bordered h-100">
-                      <div className="card-inne">
+                      <div className="card-inner">
                         <div className="card-title-group align-start mb-4">
                           <div className="card-title">
                             <h6 className="title">Leave Balance</h6>
@@ -653,7 +653,7 @@ const LeaveManagement = () => {
                   {/* Request Leave Form */}
                   <div className="col-lg-7 col-md-12">
                     <div className="card card-bordered h-100">
-                      <div className="card-inne">
+                      <div className="card-inner">
                         <div className="card-title-group align-start mb-3">
                           <div className="card-title">
                             <h6 className="title">Request Leave</h6>
@@ -827,7 +827,7 @@ const LeaveManagement = () => {
                   <>
                     <div className="col-12">
                       <div className="card card-bordered">
-                        <div className="card-inne">
+                        <div className="card-inner">
                           <div className="card-title-group align-start mb-3">
                             <div className="card-title">
                               <h6 className="title">Pending Requests</h6>
@@ -964,7 +964,7 @@ const LeaveManagement = () => {
                     {/* Leave History - Only show for non-owners */}
                     <div className="col-12">
                       <div className="card card-bordered">
-                        <div className="card-inne">
+                        <div className="card-inner">
                           <div className="card-title-group align-start mb-3">
                             <div className="card-title">
                               <h6 className="title">Leave History</h6>

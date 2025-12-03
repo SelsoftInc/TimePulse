@@ -33,6 +33,10 @@ const VendorForm = ({
   const { subdomain } = useParams();
   const { user } = useAuth();
   const { toast } = useToast();
+
+  // Hydration fix: Track if component is mounted on client
+  const [isMounted, setIsMounted] = useState(false);
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [errors, setErrors] = useState({});
@@ -57,6 +61,11 @@ const VendorForm = ({
 
   const [contractFile, setContractFile] = useState(null);
   const [contractPreview, setContractPreview] = useState("");
+
+  // Hydration fix: Set mounted state on client
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -296,6 +305,17 @@ const VendorForm = ({
       setLoading(false);
     }
   };
+
+  // Prevent hydration mismatch - don't render until mounted
+  if (!isMounted) {
+    return (
+      <div style={{ padding: '40px', textAlign: 'center' }}>
+        <div className="spinner-border text-primary" role="status">
+          <span className="sr-only">Loading...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <PermissionGuard requiredPermission={PERMISSIONS.CREATE_VENDOR}>

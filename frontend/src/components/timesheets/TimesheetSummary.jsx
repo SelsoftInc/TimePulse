@@ -986,16 +986,15 @@ const TimesheetSummary = () => {
   }
 
   return (
-    <div className="containe">
+    <div className="nk-content">
       <div className="container-fluid">
-        <div className="nk-content-inne">
+        <div className="nk-content-inner">
           <div className="nk-content-body">
             <div className="nk-block-head nk-block-head-sm">
               <div className="nk-block-between">
                 <div className="nk-block-head-content">
                   <h1 className="nk-block-title page-title">Timesheets</h1>
                   <div className="nk-block-des text-soft">
-                    {/* <p>Timesheet Summary</p> */}
                     <div className="mt-2 toggle-container">
                       <label
                         className="toggle-switch"
@@ -1029,15 +1028,17 @@ const TimesheetSummary = () => {
                     </div>
                   </div>
                 </div>
-                {/* Submit Timesheet Button - Matching Employee Dashboard Design */}
-                <button
-                  className="btn-submit-timesheet"
-                  onClick={handleNewTimesheet}
-                  title="Submit a new timesheet"
-                >
-                  <em className="icon ni ni-file-plus"></em>
-                  <span>Submit Timesheet</span>
-                </button>
+                <div className="nk-block-head-content">
+                  {/* Submit Timesheet Button - Matching Employee Dashboard Design */}
+                  <button
+                    className="btn-submit-timesheet"
+                    onClick={handleNewTimesheet}
+                    title="Submit a new timesheet"
+                  >
+                    <em className="icon ni ni-file-plus"></em>
+                    <span>Submit Timesheet</span>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -1045,7 +1046,7 @@ const TimesheetSummary = () => {
           <div className="nk-block">
             <div className="card card-bordered card-stretch">
               <div className="card-inner-group">
-                <div className="card-inne">
+                <div className="card-inner">
                   <div className="card-title-group">
                     <div className="card-title">
                       <h6 className="title">
@@ -1205,42 +1206,33 @@ const TimesheetSummary = () => {
                 {/* Pagination */}
                 {totalPages > 1 && (
                   <div className="card-inner border-top">
-                    <div className="d-flex justify-content-between align-items-center">
-                      <div className="text-muted">
+                    <div className="pagination-wrapper">
+                      <div className="pagination-info">
                         Showing {startIndex + 1} to {Math.min(endIndex, filteredTimesheets.length)} of {filteredTimesheets.length} entries
                       </div>
-                      <ul className="pagination pagination-sm">
-                        <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
-                          <button 
-                            className="page-link" 
-                            onClick={() => handlePageChange(currentPage - 1)}
-                            disabled={currentPage === 1}
-                          >
-                            <em className="icon ni ni-chevron-left"></em>
-                            <span style={{marginLeft: '4px'}}>Previous</span>
-                          </button>
-                        </li>
-                        {[...Array(totalPages)].map((_, i) => (
-                          <li key={i} className={`page-item ${currentPage === i + 1 ? 'active' : ''}`}>
-                            <button 
-                              className="page-link" 
-                              onClick={() => handlePageChange(i + 1)}
-                            >
-                              {i + 1}
-                            </button>
-                          </li>
-                        ))}
-                        <li className={`page-item ${currentPage === totalPages ? 'disabled' : ''}`}>
-                          <button 
-                            className="page-link" 
-                            onClick={() => handlePageChange(currentPage + 1)}
-                            disabled={currentPage === totalPages}
-                          >
-                            <span style={{marginRight: '4px'}}>Next</span>
-                            <em className="icon ni ni-chevron-right"></em>
-                          </button>
-                        </li>
-                      </ul>
+                      <div className="pagination-controls">
+                        <button
+                          className="pagination-btn"
+                          onClick={() => handlePageChange(currentPage - 1)}
+                          disabled={currentPage === 1}
+                          title="Previous Page"
+                        >
+                          <i className="fas fa-chevron-left"></i>
+                        </button>
+                        <div className="pagination-pages">
+                          <span className="current-page">{currentPage}</span>
+                          <span className="page-separator">/</span>
+                          <span className="total-pages">{totalPages}</span>
+                        </div>
+                        <button
+                          className="pagination-btn"
+                          onClick={() => handlePageChange(currentPage + 1)}
+                          disabled={currentPage === totalPages}
+                          title="Next Page"
+                        >
+                          <i className="fas fa-chevron-right"></i>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 )}

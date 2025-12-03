@@ -17,6 +17,10 @@ const ClientDetails = () => {
   const router = useRouter();
   const { user } = useAuth();
   const { toast } = useToast();
+  
+  // Hydration fix: Track if component is mounted on client
+  const [isMounted, setIsMounted] = useState(false);
+  
   const [client, setClient] = useState(null);
   // Assigned employees are derived from allEmployees by matching clientId
   const [allEmployees, setAllEmployees] = useState([]);
@@ -26,6 +30,11 @@ const ClientDetails = () => {
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('all');
   const [tenantInfo, setTenantInfo] = useState(null);
+  
+  // Hydration fix: Set mounted state on client
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
   
   // Fetch client by ID from backend
   const fetchClientData = useCallback(async () => {
@@ -77,6 +86,8 @@ const ClientDetails = () => {
   
   // Get tenant information from localStorage
   useEffect(() => {
+    if (!isMounted) return;
+    
     const currentTenant = JSON.parse(localStorage.getItem('currentTenant'));
     setTenantInfo(currentTenant || { subdomain });
     
@@ -90,7 +101,7 @@ const ClientDetails = () => {
     // Fetch client and employee data
     fetchClientData();
     fetchAllEmployees();
-  }, [navigate, fetchClientData, fetchAllEmployees, subdomain, user?.tenantId]);
+  }, [isMounted, fetchClientData, fetchAllEmployees, subdomain, user?.tenantId]);
 
   const handleAssignEmployee = async () => {
     if (!assignEmployeeId || !client?.id) return;
@@ -160,6 +171,17 @@ const ClientDetails = () => {
     : assignedEmployees.filter((emp) =>
         (emp.status || '').toLowerCase() === statusFilter.toLowerCase()
       );
+
+  // Prevent hydration mismatch - don't render until mounted
+  if (!isMounted) {
+    return (
+      <div style={{ padding: '40px', textAlign: 'center' }}>
+        <div className="spinner-border text-primary" role="status">
+          <span className="sr-only">Loading...</span>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (

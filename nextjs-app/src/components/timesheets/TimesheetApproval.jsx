@@ -14,6 +14,10 @@ import "./TimesheetApproval.css";
 const TimesheetApproval = () => {
   const { user, currentEmployer } = useAuth();
   const { toast } = useToast();
+
+  // Hydration fix: Track if component is mounted on client
+  const [isMounted, setIsMounted] = useState(false);
+
   const [timesheets, setTimesheets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchBy, setSearchBy] = useState("");
@@ -21,6 +25,11 @@ const TimesheetApproval = () => {
   const [approvedToday, setApprovedToday] = useState(0);
   const [rejectedToday, setRejectedToday] = useState(0);
   const [pendingCount, setPendingCount] = useState(0);
+
+  // Hydration fix: Set mounted state on client
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const loadPendingTimesheets = async () => {
     setLoading(true);
@@ -161,11 +170,11 @@ const TimesheetApproval = () => {
   };
 
   useEffect(() => {
-    if (user?.tenantId) {
+    if (isMounted && user?.tenantId) {
       loadPendingTimesheets();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.tenantId]);
+    // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isMounted, user?.tenantId]);
 
   const handleApproval = async (timesheetId, action, comments = "") => {
     setProcessingId(timesheetId);
@@ -604,6 +613,17 @@ const TimesheetApproval = () => {
       timesheet.department.toLowerCase().includes(searchBy.toLowerCase()) ||
       timesheet.clientName.toLowerCase().includes(searchBy.toLowerCase())
   );
+
+  // Prevent hydration mismatch - don't render until mounted
+  if (!isMounted) {
+    return (
+      <div style={{ padding: '40px', textAlign: 'center' }}>
+        <div className="spinner-border text-primary" role="status">
+          <span className="sr-only">Loading...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <PermissionGuard requiredPermission={PERMISSIONS.APPROVE_TIMESHEETS}>

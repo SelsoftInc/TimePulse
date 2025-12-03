@@ -9,6 +9,10 @@ import "./CompanyInformation.css";
 const CompanyInformation = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  
+  // Hydration fix: Track if component is mounted on client
+  const [isMounted, setIsMounted] = useState(false);
+  
   const [companyInfo, setCompanyInfo] = useState({
     tenantName: "",
     address: "",
@@ -129,9 +133,15 @@ const CompanyInformation = () => {
     return addressParts.join("\n");
   };
 
+  // Hydration fix: Set mounted state on client
   useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isMounted) return;
     fetchTenantInfo();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isMounted]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -293,7 +303,8 @@ const CompanyInformation = () => {
     return { street, city: cityStateZip };
   };  
 
-  if (loading) {
+  // Hydration fix: Prevent hydration mismatch - don't render until mounted
+  if (!isMounted || loading) {
     return (
       <div className="company-information-setting">
         <h3 className="settings-section-title">Company Information</h3>

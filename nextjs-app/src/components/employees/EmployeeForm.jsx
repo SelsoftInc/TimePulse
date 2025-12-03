@@ -21,6 +21,10 @@ const EmployeeForm = () => {
   const pathname = usePathname();
   const { checkPermission, user } = useAuth();
   const { toast } = useToast();
+  
+  // Hydration fix: Track if component is mounted on client
+  const [isMounted, setIsMounted] = useState(false);
+  
   const [loading, setLoading] = useState(false);
   const [employeeLoading, setEmployeeLoading] = useState(false);
   const [errors, setErrors] = useState({});
@@ -58,8 +62,14 @@ const EmployeeForm = () => {
   const [approversLoading, setApproversLoading] = useState(false);
   const [approversError, setApproversError] = useState("");
 
+  // Hydration fix: Set mounted state on client
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   // Fetch clients from API
   useEffect(() => {
+    if (!isMounted) return;
     const fetchClients = async () => {
       if (!user?.tenantId) return;
       try {
@@ -98,7 +108,7 @@ const EmployeeForm = () => {
       }
     };
     fetchClients();
-  }, [user?.tenantId]);
+  }, [isMounted, user?.tenantId]);
 
   // Prefill from query params (clientId, clientName)
   useEffect(() => {
@@ -123,6 +133,7 @@ const EmployeeForm = () => {
 
   // Fetch existing employee data when in edit mode
   useEffect(() => {
+    if (!isMounted) return;
     const fetchEmployee = async () => {
       if (!isEditMode || !id || !user?.tenantId) return;
 
@@ -177,10 +188,11 @@ const EmployeeForm = () => {
     };
 
     fetchEmployee();
-  }, [isEditMode, id, user?.tenantId]);
+  }, [isMounted, isEditMode, id, user?.tenantId]);
 
   // Fetch approvers (users with admin or approver role) from API
   useEffect(() => {
+    if (!isMounted) return;
     const fetchApprovers = async () => {
       if (!user?.tenantId) return;
       try {
@@ -225,7 +237,7 @@ const EmployeeForm = () => {
       }
     };
     fetchApprovers();
-  }, [user?.tenantId]);
+  }, [isMounted, user?.tenantId]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -453,6 +465,17 @@ const EmployeeForm = () => {
       setLoading(false);
     }
   };
+
+  // Prevent hydration mismatch - don't render until mounted
+  if (!isMounted) {
+    return (
+      <div style={{ padding: '40px', textAlign: 'center' }}>
+        <div className="spinner-border text-primary" role="status">
+          <span className="sr-only">Loading...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <PermissionGuard requiredPermission={PERMISSIONS.CREATE_EMPLOYEE}>

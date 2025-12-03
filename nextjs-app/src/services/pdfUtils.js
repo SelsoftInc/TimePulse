@@ -1,9 +1,8 @@
-import * as pdfjs from 'pdfjs-dist/build/pdf';
-import * as pdfjsWorker from 'pdfjs-dist/build/pdf.worker.entry';
+import * as pdfjs from 'pdfjs-dist/legacy/build/pdf';
 
 // Set the worker source
-if (typeof window !== 'undefined' && 'Worker' in window) {
-  pdfjs.GlobalWorkerOptions.workerSrc = pdfjsWorker;
+if (typeof window !== 'undefined') {
+  pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 }
 
 /**

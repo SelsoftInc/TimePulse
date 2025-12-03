@@ -30,9 +30,19 @@ const ClientForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
   const { toast } = useToast();
   const addressInputRef = useRef(null);
   const autocompleteRef = useRef(null);
+  
+  // Hydration fix: Track if component is mounted on client
+  const [isMounted, setIsMounted] = useState(false);
+  
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({ phone: '', taxId: '' });
   const [paymentTermsOptions, setPaymentTermsOptions] = useState(PAYMENT_TERMS_OPTIONS);
+
+  // Hydration fix: Set mounted state on client
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   const [formData, setFormData] = useState({
     name: '',
     contactPerson: '',
@@ -282,6 +292,17 @@ const ClientForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
       setLoading(false);
     }
   };
+
+  // Prevent hydration mismatch - don't render until mounted
+  if (!isMounted) {
+    return (
+      <div style={{ padding: '40px', textAlign: 'center' }}>
+        <div className="spinner-border text-primary" role="status">
+          <span className="sr-only">Loading...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <PermissionGuard requiredPermission={mode === 'edit' ? PERMISSIONS.EDIT_CLIENT : PERMISSIONS.CREATE_CLIENT}>

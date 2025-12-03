@@ -13,9 +13,18 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 const EmployeeDetail = () => {
   const { subdomain, id } = useParams();
   const { checkPermission, isAdmin, isApprover, user } = useAuth();
+  
+  // Hydration fix: Track if component is mounted on client
+  const [isMounted, setIsMounted] = useState(false);
+  
   const [employee, setEmployee] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const queryClient = useQueryClient();
+  
+  // Hydration fix: Set mounted state on client
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
   // React Query: server state for clients and vendors
   const tenantId = user?.tenantId;
   const {
@@ -35,7 +44,7 @@ const EmployeeDetail = () => {
       const payload = await resp.json();
       return payload.success && payload.clients ? payload.clients : [];
     },
-    enabled: !!tenantId
+    enabled: isMounted && !!tenantId
   });
 
   const {
@@ -55,7 +64,7 @@ const EmployeeDetail = () => {
       const payload = await resp.json();
       return payload.success && payload.vendors ? payload.vendors : [];
     },
-    enabled: !!tenantId
+    enabled: isMounted && !!tenantId
   });
   const [formValues, setFormValues] = useState({ joinDate: '', clientId: '', vendorId: '', implPartnerId: '' });
 
@@ -77,7 +86,7 @@ const EmployeeDetail = () => {
       const data = await response.json();
       return data.employee || data;
     },
-    enabled: !!tenantId && !!id
+    enabled: isMounted && !!tenantId && !!id
   });
 
   // When employee query resolves, normalize and sync local state for display and form
@@ -165,7 +174,8 @@ const EmployeeDetail = () => {
     updateEmployeeMutation.mutate(updateBody);
   };
 
-  if (employeeLoading || clientsLoading || vendorsLoading) {
+  // Prevent hydration mismatch - don't render until mounted
+  if (!isMounted || employeeLoading || clientsLoading || vendorsLoading) {
     return (
       <div className="nk-content">
         <div className="container-fluid">

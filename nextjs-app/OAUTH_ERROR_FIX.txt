@@ -1,0 +1,165 @@
+═══════════════════════════════════════════════════════════════
+  OAUTH ERROR FIX - Missing Google Credentials
+═══════════════════════════════════════════════════════════════
+
+ERROR SEEN:
+"Route /api/auth/error not found"
+
+ROOT CAUSE:
+You clicked "Sign in with Google" but haven't configured Google OAuth 
+credentials yet. NextAuth is trying to authenticate but fails because:
+
+1. GOOGLE_CLIENT_ID is not set (or still has placeholder value)
+2. GOOGLE_CLIENT_SECRET is not set (or still has placeholder value)
+
+═══════════════════════════════════════════════════════════════
+  SOLUTION: ADD GOOGLE OAUTH CREDENTIALS
+═══════════════════════════════════════════════════════════════
+
+STEP 1: GET GOOGLE OAUTH CREDENTIALS
+────────────────────────────────────────────────────────────────
+
+1. Go to: https://console.cloud.google.com/
+
+2. Create a new project (or select existing):
+   - Click "Select a project" → "New Project"
+   - Name: "TimePulse OAuth"
+   - Click "Create"
+
+3. Enable Google+ API:
+   - Go to "APIs & Services" → "Library"
+   - Search for "Google+ API"
+   - Click "Enable"
+
+4. Create OAuth 2.0 Credentials:
+   - Go to "APIs & Services" → "Credentials"
+   - Click "Create Credentials" → "OAuth 2.0 Client ID"
+   - Application type: "Web application"
+   - Name: "TimePulse Web Client"
+   
+5. Add Authorized Redirect URI:
+   ⚠️ IMPORTANT - Add this EXACT URL:
+   
+   http://localhost:3000/api/auth/callback/google
+   
+   (Copy and paste exactly as shown above)
+
+6. Click "Create"
+
+7. Copy the credentials:
+   - Client ID (looks like: xxx.apps.googleusercontent.com)
+   - Client Secret (looks like: GOCSPX-xxx)
+
+STEP 2: UPDATE .env.local FILE
+────────────────────────────────────────────────────────────────
+
+1. Open: d:\selsoft\WebApp\TimePulse\nextjs-app\.env.local
+
+2. Replace the placeholder values with your actual credentials:
+
+   BEFORE:
+   ────────────────────────────────────────────────────────────
+   GOOGLE_CLIENT_ID=your-google-client-id.apps.googleusercontent.com
+   GOOGLE_CLIENT_SECRET=your-google-client-secret
+   ────────────────────────────────────────────────────────────
+
+   AFTER (with your actual values):
+   ────────────────────────────────────────────────────────────
+   GOOGLE_CLIENT_ID=123456789-abc123def456.apps.googleusercontent.com
+   GOOGLE_CLIENT_SECRET=GOCSPX-YourActualSecretHere123
+   ────────────────────────────────────────────────────────────
+
+3. Keep these values as they are (already correct):
+   ────────────────────────────────────────────────────────────
+   NEXTAUTH_SECRET=8KzP9mN2vL5xR7wQ3jT6hY4nB1gF0sA8dE2cV5xZ9mK3pL7wR4tY6hN8jB0gF2sA
+   NEXTAUTH_URL=http://localhost:3000
+   NEXT_PUBLIC_APP_URL=http://localhost:3000
+   ────────────────────────────────────────────────────────────
+
+STEP 3: RESTART THE SERVER
+────────────────────────────────────────────────────────────────
+
+After updating .env.local, restart the development server:
+
+1. Stop the current server (Ctrl+C in terminal)
+
+2. Start it again:
+   npm run dev
+
+3. Wait for "Ready in X.Xs" message
+
+STEP 4: TEST OAUTH
+────────────────────────────────────────────────────────────────
+
+1. Go to: http://localhost:3000/login
+
+2. Click "Sign in with Google"
+
+3. You should see Google's OAuth consent screen
+
+4. Select your Google account
+
+5. Grant permissions
+
+6. You'll be redirected back to: /selsoft/dashboard
+
+═══════════════════════════════════════════════════════════════
+  ALTERNATIVE: USE TRADITIONAL LOGIN (NO OAUTH NEEDED)
+═══════════════════════════════════════════════════════════════
+
+If you don't want to set up Google OAuth right now, you can still use
+the traditional email/password login:
+
+1. Go to: http://localhost:3000/login
+
+2. Enter your email and password
+
+3. Click "Sign In" (the blue button, NOT the Google button)
+
+4. This will use your existing authentication system
+
+═══════════════════════════════════════════════════════════════
+  TROUBLESHOOTING
+═══════════════════════════════════════════════════════════════
+
+ERROR: "Redirect URI mismatch"
+SOLUTION: Make sure you added EXACTLY this URI in Google Console:
+          http://localhost:3000/api/auth/callback/google
+
+ERROR: "Invalid client"
+SOLUTION: Double-check your GOOGLE_CLIENT_ID in .env.local
+
+ERROR: "Invalid client secret"
+SOLUTION: Double-check your GOOGLE_CLIENT_SECRET in .env.local
+
+ERROR: Still seeing /api/auth/error
+SOLUTION: 1. Verify .env.local has real credentials (not placeholders)
+          2. Restart the server after updating .env.local
+          3. Clear browser cache and try again
+
+═══════════════════════════════════════════════════════════════
+  QUICK CHECKLIST
+═══════════════════════════════════════════════════════════════
+
+□ Created Google Cloud project
+□ Enabled Google+ API
+□ Created OAuth 2.0 Client ID
+□ Added redirect URI: http://localhost:3000/api/auth/callback/google
+□ Copied Client ID and Client Secret
+□ Updated .env.local with real credentials
+□ Restarted development server
+□ Tested OAuth login
+
+═══════════════════════════════════════════════════════════════
+
+CURRENT STATUS:
+✅ OAuth code is correctly implemented
+✅ NextAuth API route is working
+✅ Login page has Google button
+⚠️ MISSING: Google OAuth credentials in .env.local
+
+NEXT ACTION:
+Follow STEP 1 above to get your Google OAuth credentials, then
+update .env.local and restart the server.
+
+═══════════════════════════════════════════════════════════════

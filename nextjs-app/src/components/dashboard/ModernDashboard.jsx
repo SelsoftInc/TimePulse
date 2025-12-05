@@ -13,27 +13,83 @@ const ModernDashboard = () => {
   // Hydration fix: Track if component is mounted on client
   const [isMounted, setIsMounted] = useState(false);
   
+  // HARDCODED DATA - No API calls
   const [dashboardData, setDashboardData] = useState({
-    timesheets: [],
-    employees: [],
-    clients: [],
-    invoices: [],
-    leaveRequests: [],
-    // New optimized data
-    kpis: {},
-    arAging: {},
-    revenueByEmployee: [],
-    revenueTrend: [],
+    timesheets: [
+      { id: 'TS001', employeeName: 'Shunmugavel Admin', projectName: 'TimePulse Development', hours: 8, status: 'approved', date: '2024-12-05' },
+      { id: 'TS002', employeeName: 'John Developer', projectName: 'TimePulse Development', hours: 7.5, status: 'submitted', date: '2024-12-05' },
+      { id: 'TS003', employeeName: 'Sarah Designer', projectName: 'Client Portal', hours: 6, status: 'draft', date: '2024-12-05' },
+      { id: 'TS004', employeeName: 'Mike Tester', projectName: 'TimePulse Development', hours: 8, status: 'approved', date: '2024-12-04' }
+    ],
+    employees: [
+      { id: 'EMP001', name: 'Shunmugavel Admin', email: 'shunmugavel@selsoftinc.com', department: 'Management', status: 'active' },
+      { id: 'EMP002', name: 'John Developer', email: 'john@selsoftinc.com', department: 'Engineering', status: 'active' },
+      { id: 'EMP003', name: 'Sarah Designer', email: 'sarah@selsoftinc.com', department: 'Design', status: 'active' },
+      { id: 'EMP004', name: 'Mike Tester', email: 'mike@selsoftinc.com', department: 'QA', status: 'active' },
+      { id: 'EMP005', name: 'Emily Manager', email: 'emily@selsoftinc.com', department: 'Engineering', status: 'active' }
+    ],
+    clients: [
+      { id: 'CLI001', name: 'Acme Corp', email: 'contact@acmecorp.com', status: 'active', projects: 1 },
+      { id: 'CLI002', name: 'TechStart Inc', email: 'hello@techstart.io', status: 'active', projects: 1 },
+      { id: 'CLI003', name: 'Global Solutions', email: 'info@globalsolutions.com', status: 'inactive', projects: 0 }
+    ],
+    invoices: [
+      { id: 'INV001', clientName: 'Acme Corp', amount: 15000, status: 'paid', dueDate: '2024-11-30' },
+      { id: 'INV002', clientName: 'TechStart Inc', amount: 25000, status: 'pending', dueDate: '2024-12-15' },
+      { id: 'INV003', clientName: 'Acme Corp', amount: 12000, status: 'overdue', dueDate: '2024-11-15' }
+    ],
+    leaveRequests: [
+      { id: 'LEAVE001', employeeName: 'Mike Tester', leaveType: 'Sick Leave', days: 1, status: 'approved', date: '2024-12-05' },
+      { id: 'LEAVE002', employeeName: 'John Developer', leaveType: 'Vacation', days: 6, status: 'pending', startDate: '2024-12-20' },
+      { id: 'LEAVE003', employeeName: 'Sarah Designer', leaveType: 'Personal', days: 1, status: 'rejected', date: '2024-12-10' }
+    ],
+    kpis: {
+      totalEmployees: 5,
+      activeProjects: 2,
+      pendingTimesheets: 1,
+      totalHours: 29.5,
+      pendingLeaves: 1,
+      todayAttendance: 4,
+      monthlyRevenue: 125000,
+      projectCompletion: 60
+    },
+    arAging: {
+      current: 25000,
+      days30: 15000,
+      days60: 8000,
+      days90: 12000
+    },
+    revenueByEmployee: [
+      { employeeName: 'John Developer', revenue: 45000 },
+      { employeeName: 'Sarah Designer', revenue: 32000 },
+      { employeeName: 'Mike Tester', revenue: 28000 },
+      { employeeName: 'Emily Manager', revenue: 20000 }
+    ],
+    revenueTrend: [
+      { month: 'Jul', revenue: 95000 },
+      { month: 'Aug', revenue: 105000 },
+      { month: 'Sep', revenue: 115000 },
+      { month: 'Oct', revenue: 110000 },
+      { month: 'Nov', revenue: 120000 },
+      { month: 'Dec', revenue: 125000 }
+    ],
     scope: "company",
     employeeId: null,
-    dateRange: {}});
-  const [loading, setLoading] = useState(true);
+    dateRange: {}
+  });
+  const [loading, setLoading] = useState(false); // Set to false - no loading needed
   const [searchTerm, setSearchTerm] = useState("");
   const [scope, setScope] = useState(
     user?.role === "admin" ? "company" : "employee"
   );
   const [selectedEmployeeId, setSelectedEmployeeId] = useState(null);
-  const [employees, setEmployees] = useState([]);
+  const [employees, setEmployees] = useState([
+    { id: 'EMP001', name: 'Shunmugavel Admin' },
+    { id: 'EMP002', name: 'John Developer' },
+    { id: 'EMP003', name: 'Sarah Designer' },
+    { id: 'EMP004', name: 'Mike Tester' },
+    { id: 'EMP005', name: 'Emily Manager' }
+  ]);
   const [dateRange] = useState({
     start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // 30 days ago
     end: new Date()});
@@ -131,12 +187,13 @@ const ModernDashboard = () => {
     setIsMounted(true);
   }, []);
 
-  useEffect(() => {
-    if (isMounted) {
-      fetchDashboardData();
-      fetchEmployees();
-    }
-  }, [isMounted, fetchDashboardData, fetchEmployees, scope, selectedEmployeeId]);
+  // DISABLED API CALLS - Using hardcoded data only
+  // useEffect(() => {
+  //   if (isMounted) {
+  //     fetchDashboardData();
+  //     fetchEmployees();
+  //   }
+  // }, [isMounted, fetchDashboardData, fetchEmployees, scope, selectedEmployeeId]);
 
   // Staffing Management Metrics - Updated to use optimized data
   const getTotalRevenue = () => {

@@ -11,6 +11,7 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { WebSocketProvider } from '@/contexts/WebSocketContext';
 import { ToastProvider, ToastContainer } from '@/contexts/ToastContext';
+import { SessionProvider } from 'next-auth/react';
 import DemoControls from '@/components/demo/DemoControls';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useState } from 'react';
@@ -38,19 +39,21 @@ export default function RootLayout({ children }) {
         />
       </head>
       <body className={inter.className}>
-        <QueryClientProvider client={queryClient}>
-          <ThemeProvider>
-            <ToastProvider>
-              <AuthProvider>
-                <WebSocketProvider>
-                  {children}
-                  <ToastContainer />
-                  <DemoControls />
-                </WebSocketProvider>
-              </AuthProvider>
-            </ToastProvider>
-          </ThemeProvider>
-        </QueryClientProvider>
+        <SessionProvider>
+          <QueryClientProvider client={queryClient}>
+            <ThemeProvider>
+              <ToastProvider>
+                <AuthProvider>
+                  <WebSocketProvider>
+                    {children}
+                    <ToastContainer />
+                    <DemoControls />
+                  </WebSocketProvider>
+                </AuthProvider>
+              </ToastProvider>
+            </ThemeProvider>
+          </QueryClientProvider>
+        </SessionProvider>
       </body>
     </html>
   );

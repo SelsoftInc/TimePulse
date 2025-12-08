@@ -431,7 +431,10 @@ router.get("/current", async (req, res, next) => {
       throw dbErr;
     }
 
-    const result = rows.map((r) => ({
+    // Decrypt timesheets
+    const decryptedRows = DataEncryptionService.decryptInstances(rows, 'timesheet');
+
+    const result = decryptedRows.map((r) => ({
       id: r.id,
       employee: {
         id: r.employee?.id,
@@ -536,7 +539,10 @@ router.get("/pending-approval", async (req, res, next) => {
       `  Found ${timesheets.length} timesheets with status 'submitted'`
     );
 
-    const formattedTimesheets = await Promise.all(timesheets.map(async (ts) => {
+    // Decrypt timesheets
+    const decryptedTimesheets = DataEncryptionService.decryptInstances(timesheets, 'timesheet');
+
+    const formattedTimesheets = await Promise.all(decryptedTimesheets.map(async (ts) => {
       // Parse attachments if it's a string (SQLite stores JSONB as string)
       let attachments = [];
       if (ts.attachments) {
@@ -1130,23 +1136,26 @@ router.get("/:id", async (req, res, next) => {
         .status(404)
         .json({ success: false, message: "Timesheet not found" });
 
+    // Decrypt timesheet data
+    const decryptedRow = DataEncryptionService.decryptInstance(row, 'timesheet');
+
     // Parse attachments if it's a string (SQLite stores JSONB as string)
     let attachments = [];
-    if (row.attachments) {
-      if (typeof row.attachments === "string") {
+    if (decryptedRow.attachments) {
+      if (typeof decryptedRow.attachments === "string") {
         try {
-          attachments = JSON.parse(row.attachments);
+          attachments = JSON.parse(decryptedRow.attachments);
         } catch (e) {
           console.error("Error parsing attachments:", e);
           attachments = [];
         }
-      } else if (Array.isArray(row.attachments)) {
-        attachments = row.attachments;
+      } else if (Array.isArray(decryptedRow.attachments)) {
+        attachments = decryptedRow.attachments;
       }
     }
 
     const timesheet = {
-      ...row.toJSON(),
+      ...decryptedRow,
       attachments: attachments,
     };
 

@@ -387,6 +387,9 @@ router.get("/:id/pdf-data", async (req, res) => {
 
     console.log('✅ Invoice found:', invoice.invoiceNumber);
 
+    // Decrypt invoice data
+    const decryptedInvoice = DataEncryptionService.decryptInstance(invoice, 'invoice');
+
     // Fetch related data separately to avoid association errors
     let vendor = null;
     let employee = null;
@@ -471,9 +474,9 @@ router.get("/:id/pdf-data", async (req, res) => {
     // Build line items from invoice data or timesheet
     let lineItems = [];
     
-    if (invoice.lineItems && Array.isArray(invoice.lineItems) && invoice.lineItems.length > 0) {
-      // Use existing line items
-      lineItems = invoice.lineItems.map(item => ({
+    if (decryptedInvoice.lineItems && Array.isArray(decryptedInvoice.lineItems) && decryptedInvoice.lineItems.length > 0) {
+      // Use existing line items (decrypted)
+      lineItems = decryptedInvoice.lineItems.map(item => ({
         employeeName: item.employeeName || (employee ? `${employee.firstName} ${employee.lastName}` : 'Employee Name'),
         role: item.role || item.position || employee?.title || employee?.position || employee?.department || 'Software Engineer',
         description: item.description || weekRange || 'Billing Period',
@@ -499,10 +502,10 @@ router.get("/:id/pdf-data", async (req, res) => {
     // Build response with all data needed for PDF
     const pdfData = {
       // Invoice basic info
-      id: invoice.id,
-      invoiceNumber: invoice.invoiceNumber,
-      invoiceDate: invoice.invoiceDate,
-      dueDate: invoice.dueDate,
+      id: decryptedInvoice.id,
+      invoiceNumber: decryptedInvoice.invoiceNumber,
+      invoiceDate: decryptedInvoice.invoiceDate,
+      dueDate: decryptedInvoice.dueDate,
       paymentTerms: 'Net 15',
       
       // Vendor/Client info (Billed To)
@@ -536,9 +539,9 @@ router.get("/:id/pdf-data", async (req, res) => {
       status: invoice.status,
       paymentStatus: invoice.paymentStatus,
       
-      // Additional info
-      notes: invoice.notes,
-      timesheetId: invoice.timesheetId,
+      // Additional info (decrypted)
+      notes: decryptedInvoice.notes,
+      timesheetId: decryptedInvoice.timesheetId,
       
       // Month and year for display
       month: weekStart ? new Date(weekStart).toLocaleDateString('en-US', { month: 'long' }) : null,
@@ -586,6 +589,9 @@ router.get("/:id", async (req, res) => {
     }
 
     console.log('✅ Invoice found:', invoice.invoiceNumber);
+
+    // Decrypt invoice data
+    const decryptedInvoice = DataEncryptionService.decryptInstance(invoice, 'invoice');
 
     // Fetch related data separately
     let vendor = null;
@@ -670,9 +676,9 @@ router.get("/:id", async (req, res) => {
       }
     }
 
-    // Build complete response
+    // Build complete response with decrypted data
     const completeInvoice = {
-      ...invoice.toJSON(),
+      ...decryptedInvoice,
       vendor: vendor,
       client: client,
       employee: employee,

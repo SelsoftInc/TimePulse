@@ -17,7 +17,7 @@ const { connectDB } = require("./models");
 const WebSocketService = require("./services/WebSocketService");
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 
 // Import route modules
 const timesheetRoutes = require("./routes/timesheets");

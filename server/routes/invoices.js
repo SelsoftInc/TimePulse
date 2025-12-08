@@ -6,6 +6,7 @@ const express = require("express");
 const router = express.Router();
 const { models } = require("../models");
 const { Op } = require("sequelize");
+const DataEncryptionService = require("../services/DataEncryptionService");
 
 // GET /api/invoices?tenantId=...&scope=...&employeeId=...&from=...&to=...&client=...&q=...
 router.get("/", async (req, res) => {
@@ -126,7 +127,10 @@ router.get("/", async (req, res) => {
       limit: 100, // Limit for performance
     });
 
-    const formattedInvoices = invoices.map((inv) => ({
+    // Decrypt invoice data
+    const decryptedInvoices = DataEncryptionService.decryptInstances(invoices, 'invoice');
+
+    const formattedInvoices = decryptedInvoices.map((inv) => ({
       id: inv.id,
       invoiceNumber: inv.invoiceNumber,
       vendor: inv.vendor?.name || inv.timesheet?.employee?.vendor?.name || "N/A",
@@ -267,6 +271,15 @@ router.post("/", async (req, res) => {
       invoiceNumber = `IN-${currentYear}-001`;
     }
 
+    // Prepare data for encryption
+    const invoiceData = {
+      notes: notes || "",
+      lineItems: lineItems || [],
+    };
+
+    // Encrypt sensitive data before saving
+    const encryptedData = DataEncryptionService.encryptInvoiceData(invoiceData);
+
     const newInvoice = await models.Invoice.create({
       tenantId,
       invoiceNumber,
@@ -276,13 +289,13 @@ router.post("/", async (req, res) => {
       timesheetId,
       weekStart,
       weekEnd,
-      lineItems: lineItems || [],
+      lineItems: encryptedData.lineItems || [],
       subtotal: subtotal || 0,
       tax: tax || 0,
       total: total || 0,
       status: "draft",
       dueDate,
-      notes,
+      notes: encryptedData.notes || "",
       attachments: attachments || [],
       quickbooksSync: quickbooksSync || false,
     });

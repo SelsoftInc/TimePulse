@@ -13,6 +13,7 @@ const { getAuditInfo } = require("../middleware/auditHelper");
 const multer = require("multer");
 const S3Service = require("../services/S3Service");
 const { S3_CONFIG } = require("../config/aws");
+const DataEncryptionService = require("../services/DataEncryptionService");
 
 // Helpers
 // Format date as YYYY-MM-DD in local time to avoid UTC shift issues
@@ -117,8 +118,11 @@ router.get("/", async (req, res, next) => {
       limit: 100, // Limit for performance
     });
 
+    // Decrypt timesheet data
+    const decryptedTimesheets = DataEncryptionService.decryptInstances(timesheets, 'timesheet');
+
     // Transform data for frontend
-    const transformedTimesheets = await Promise.all(timesheets.map(async (ts) => {
+    const transformedTimesheets = await Promise.all(decryptedTimesheets.map(async (ts) => {
       // Get employee name - use stored employeeName first, then fallback to Employee/User
       let employeeName = ts.employeeName || "Unknown";
       
@@ -253,8 +257,11 @@ router.get("/employee/:id/all", async (req, res, next) => {
 
     console.log(`  Found ${timesheets.length} timesheets for employee ${id}`);
 
+    // Decrypt timesheet data
+    const decryptedTimesheets = DataEncryptionService.decryptInstances(timesheets, 'timesheet');
+
     // Format timesheets for frontend
-    const formattedTimesheets = timesheets.map((ts) => {
+    const formattedTimesheets = decryptedTimesheets.map((ts) => {
       // Parse attachments if it's a string
       let attachments = [];
       if (ts.attachments) {
@@ -746,6 +753,26 @@ router.post("/submit", async (req, res, next) => {
       }
     }
 
+    // Prepare data for encryption
+    const timesheetData = {
+      employeeName: employeeName || null,
+      notes: notes || "",
+      dailyHours: dailyHours || {
+        mon: 0,
+        tue: 0,
+        wed: 0,
+        thu: 0,
+        fri: 0,
+        sat: 0,
+        sun: 0,
+      },
+      overtimeComment: overtimeComment || null,
+      overtimeDays: overtimeDays || null,
+    };
+
+    // Encrypt sensitive data before saving
+    const encryptedData = DataEncryptionService.encryptTimesheetData(timesheetData);
+
     // Check if timesheet already exists for this week
     const existing = await models.Timesheet.findOne({
       where: {
@@ -757,7 +784,7 @@ router.post("/submit", async (req, res, next) => {
     });
 
     if (existing) {
-      // Store old values for audit
+      // Store old values for audit (decrypted for audit log)
       const oldValues = {
         status: existing.status,
         totalHours: existing.totalHours,
@@ -767,16 +794,16 @@ router.post("/submit", async (req, res, next) => {
         reviewerId: existing.reviewerId,
       };
 
-      // Update existing timesheet
+      // Update existing timesheet with encrypted data
       existing.clientId = sanitizedClientId !== null ? sanitizedClientId : existing.clientId;
-      existing.employeeName = employeeName || existing.employeeName;
+      existing.employeeName = encryptedData.employeeName || existing.employeeName;
       existing.reviewerId = reviewerId || existing.reviewerId;
       existing.status = status || "submitted";
       existing.totalHours = totalHours || 0;
-      existing.notes = notes || existing.notes;
-      existing.dailyHours = dailyHours || existing.dailyHours;
-      existing.overtimeComment = overtimeComment || existing.overtimeComment;
-      existing.overtimeDays = overtimeDays || existing.overtimeDays;
+      existing.notes = encryptedData.notes || existing.notes;
+      existing.dailyHours = encryptedData.dailyHours || existing.dailyHours;
+      existing.overtimeComment = encryptedData.overtimeComment || existing.overtimeComment;
+      existing.overtimeDays = encryptedData.overtimeDays || existing.overtimeDays;
       existing.submittedAt = new Date();
 
       await existing.save();
@@ -818,16 +845,16 @@ router.post("/submit", async (req, res, next) => {
       });
     }
 
-    // Create new timesheet
+    // Create new timesheet with encrypted data
     const newTimesheet = await models.Timesheet.create({
       tenantId,
       employeeId,
-      employeeName: employeeName || null,
+      employeeName: encryptedData.employeeName || null,
       clientId: sanitizedClientId,
       reviewerId: reviewerId || null,
       weekStart,
       weekEnd,
-      dailyHours: dailyHours || {
+      dailyHours: encryptedData.dailyHours || {
         mon: 0,
         tue: 0,
         wed: 0,
@@ -838,9 +865,9 @@ router.post("/submit", async (req, res, next) => {
       },
       totalHours: totalHours || 0,
       status: status || "submitted",
-      notes: notes || "",
-      overtimeComment: overtimeComment || null,
-      overtimeDays: overtimeDays || null,
+      notes: encryptedData.notes || "",
+      overtimeComment: encryptedData.overtimeComment || null,
+      overtimeDays: encryptedData.overtimeDays || null,
       submittedAt: new Date(),
     });
 

@@ -6,6 +6,7 @@
 
 const { models } = require("../models");
 const crypto = require("crypto");
+const DataEncryptionService = require("./DataEncryptionService");
 
 class InvoiceService {
   /**
@@ -368,7 +369,14 @@ class InvoiceService {
       const invoiceDate = new Date();
       const dueDate = this.calculateDueDate(invoiceDate, 30);
 
-      // 12. Create invoice record
+      // 12. Encrypt sensitive invoice data
+      const invoiceData = {
+        lineItems: lineItems,
+        notes: "", // No notes in auto-generated invoices
+      };
+      const encryptedData = DataEncryptionService.encryptInvoiceData(invoiceData);
+
+      // 13. Create invoice record with encrypted data
       const invoice = await models.Invoice.create({
         tenantId,
         invoiceNumber,
@@ -379,7 +387,7 @@ class InvoiceService {
         invoiceHash,
         invoiceDate: this.formatDateOnly(invoiceDate),
         dueDate: dueDate,
-        lineItems,
+        lineItems: encryptedData.lineItems,
         subtotal: amounts.subtotal,
         taxAmount: amounts.taxAmount,
         totalAmount: amounts.totalAmount,

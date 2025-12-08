@@ -9,6 +9,7 @@ import InvoicePDFPreviewModal from '../common/InvoicePDFPreviewModal';
 import { useAuth } from '@/contexts/AuthContext';
 import axios from 'axios';
 import { API_BASE } from '@/config/api';
+import { isServerConnectedCached } from '@/utils/serverCheck';
 import {
   uploadAndProcessTimesheet,
   transformTimesheetToInvoice} from '@/services/engineService';
@@ -24,8 +25,10 @@ const TimesheetSummary = () => {
   // Hydration fix: Track if component is mounted on client
   const [isMounted, setIsMounted] = useState(false);
   
+  // Initialize with empty data - will be populated from server
   const [timesheets, setTimesheets] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isServerAvailable, setIsServerAvailable] = useState(false);
   const [clientType, setClientType] = useState("internal");
   const [filters, setFilters] = useState({
     status: "all",
@@ -279,47 +282,59 @@ const TimesheetSummary = () => {
     }
   }, [user]);
 
-  // Load data on mount
+  // Check server connection and fetch data accordingly
   useEffect(() => {
-    if (isMounted && user?.tenantId) {
-      loadTimesheetData();
+    async function checkAndFetch() {
+      if (!isMounted || !user?.tenantId) return;
+      
+      const serverConnected = await isServerConnectedCached();
+      setIsServerAvailable(serverConnected);
+      
+      if (serverConnected) {
+        // Server is connected - fetch real data
+        console.log('✅ Server connected - fetching timesheet data');
+        loadTimesheetData();
+      } else {
+        // Server not connected - show empty state
+        console.log('⚠️ Server not connected - no timesheet data available');
+        setLoading(false);
+      }
     }
+    
+    checkAndFetch();
   }, [isMounted, user, loadTimesheetData]);
 
-  // Reload data when navigating from submit page with refresh flag
-  useEffect(() => {
-    if (isMounted && location.state?.refresh && user?.tenantId) {
-      console.log('🔄 Refresh requested from navigation, reloading timesheet data...');
-      loadTimesheetData();
-      // Clear the state to prevent re-fetching on subsequent renders
-      window.history.replaceState({}, document.title);
-    }
-  }, [location.state, user?.tenantId, loadTimesheetData]);
+  // useEffect(() => {
+  //   if (isMounted && location.state?.refresh && user?.tenantId) {
+  //     console.log('🔄 Refresh requested from navigation, reloading timesheet data...');
+  //     loadTimesheetData();
+  //     window.history.replaceState({}, document.title);
+  //   }
+  // }, [location.state, user?.tenantId, loadTimesheetData]);
 
-  // Reload data when page becomes visible (e.g., returning from edit page)
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (!document.hidden && user?.tenantId) {
-        console.log('🔄 Page became visible, reloading timesheet data...');
-        loadTimesheetData();
-      }
-    };
-
-    const handleFocus = () => {
-      if (user?.tenantId) {
-        console.log('🔄 Window focused, reloading timesheet data...');
-        loadTimesheetData();
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('focus', handleFocus);
-
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('focus', handleFocus);
-    };
-  }, [user, loadTimesheetData]);
+  // useEffect(() => {
+  //   const handleVisibilityChange = () => {
+  //     if (!document.hidden && user?.tenantId) {
+  //       console.log('🔄 Page became visible, reloading timesheet data...');
+  //       loadTimesheetData();
+  //     }
+  //   };
+  //
+  //   const handleFocus = () => {
+  //     if (user?.tenantId) {
+  //       console.log('🔄 Window focused, reloading timesheet data...');
+  //       loadTimesheetData();
+  //     }
+  //   };
+  //
+  //   document.addEventListener('visibilitychange', handleVisibilityChange);
+  //   window.addEventListener('focus', handleFocus);
+  //
+  //   return () => {
+  //     document.removeEventListener('visibilitychange', handleVisibilityChange);
+  //     window.removeEventListener('focus', handleFocus);
+  //   };
+  // }, [user, loadTimesheetData]);
 
   // Filter timesheets based on current filters
   const filteredTimesheets = timesheets.filter((timesheet) => {

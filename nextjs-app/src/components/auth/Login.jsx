@@ -461,7 +461,13 @@ const Login = () => {
         <button
           type="button"
           className="btn-google btn-block"
-          onClick={() => signIn('google', { callbackUrl: '/selsoft/dashboard' })}
+          onClick={() => {
+            setLoading(true);
+            signIn('google', { 
+              callbackUrl: '/auth/callback',
+              redirect: true
+            });
+          }}
           disabled={loading}
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none">

@@ -160,6 +160,8 @@ app.use("/api/dashboard", dashboardRoutes);
 // app.use("/api/dashboard-prisma", dashboardPrismaRoutes); // Disabled - requires Prisma setup
 console.log('📍 Loading auth routes...');
 app.use("/api/auth", require("./routes/auth"));
+console.log('📍 Loading oauth routes...');
+app.use("/api/oauth", require("./routes/oauth"));
 console.log('📍 Loading password-reset routes...');
 app.use("/api/password-reset", passwordResetRoutes);
 console.log('✅ All routes loaded successfully');

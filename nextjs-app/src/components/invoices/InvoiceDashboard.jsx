@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import React, { useState, useEffect } from 'react';
 import { API_BASE } from '@/config/api';
+import { isServerConnectedCached } from '@/utils/serverCheck';
 import "./InvoiceDashboard.css";
 import "../common/ActionsDropdown.css";
 
@@ -14,10 +15,11 @@ const InvoiceDashboard = () => {
   // Hydration fix: Track if component is mounted on client
   const [isMounted, setIsMounted] = useState(false);
 
-  // Real data from API
+  // Initialize with empty data - will be populated from server
   const [invoices, setInvoices] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isServerAvailable, setIsServerAvailable] = useState(false);
 
   const [filterStatus, setFilterStatus] = useState("all");
   const [filterMonth, setFilterMonth] = useState("all");
@@ -28,12 +30,26 @@ const InvoiceDashboard = () => {
     setIsMounted(true);
   }, []);
 
-  // Fetch invoices from API
+  // Check server connection and fetch data accordingly
   useEffect(() => {
-    if (isMounted) {
-      fetchInvoices();
+    async function checkAndFetch() {
+      if (!isMounted) return;
+      
+      const serverConnected = await isServerConnectedCached();
+      setIsServerAvailable(serverConnected);
+      
+      if (serverConnected) {
+        // Server is connected - fetch real data
+        console.log('✅ Server connected - fetching invoice data');
+        fetchInvoices();
+      } else {
+        // Server not connected - show empty state
+        console.log('⚠️ Server not connected - no invoice data available');
+        setLoading(false);
+      }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
+    checkAndFetch();
   }, [isMounted]);
 
   // Close dropdown on outside click

@@ -9,6 +9,9 @@ const publicRoutes = [
   '/forgot-password',
   '/reset-password',
   '/change-password',
+  '/onboarding',
+  '/auth/callback',
+  '/test-oauth',
 ];
 
 // Routes that match employee registration pattern

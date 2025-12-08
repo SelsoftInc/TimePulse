@@ -9,13 +9,17 @@ const nextConfig = {
   },
   
   // API proxy to backend server
+  // Exclude NextAuth routes from proxy
   async rewrites() {
-    return [
-      {
-        source: '/api/:path*',
-        destination: 'http://localhost:5001/api/:path*',
-      },
-    ];
+    return {
+      beforeFiles: [
+        // Proxy all API routes to backend EXCEPT /api/auth/*
+        {
+          source: '/api/:path((?!auth).*)*',
+          destination: 'http://localhost:5001/api/:path*',
+        },
+      ],
+    };
   },
   
   // Image optimization

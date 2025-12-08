@@ -65,16 +65,64 @@ export const AuthProvider = ({ children }) => {
     
     if (typeof window !== 'undefined') {
       localStorage.setItem('userInfo', JSON.stringify(userData));
+      localStorage.setItem('user', JSON.stringify(userData));
       Cookies.set('user', JSON.stringify(userData), { expires: 7 });
 
       if (employerData) {
         localStorage.setItem('currentEmployer', JSON.stringify(employerData));
+        localStorage.setItem('currentTenant', JSON.stringify(employerData));
         setCurrentEmployer(employerData);
       }
     }
 
     setUser(userData);
     setIsAuthenticated(true);
+  };
+
+  // OAuth login function (for Google OAuth)
+  const loginWithOAuth = (userData, tenantData, token) => {
+    // Store authentication token
+    if (token && typeof window !== 'undefined') {
+      localStorage.setItem('token', token);
+      Cookies.set('token', token, { expires: 7 });
+    }
+
+    // Store user info
+    if (typeof window !== 'undefined') {
+      const userInfo = {
+        id: userData.id,
+        email: userData.email,
+        name: `${userData.firstName} ${userData.lastName}`,
+        firstName: userData.firstName,
+        lastName: userData.lastName,
+        role: userData.role,
+        tenantId: userData.tenantId,
+        employeeId: userData.employeeId,
+        status: userData.status,
+        authProvider: 'google'
+      };
+      localStorage.setItem('user', JSON.stringify(userInfo));
+      localStorage.setItem('userInfo', JSON.stringify(userInfo));
+      Cookies.set('user', JSON.stringify(userInfo), { expires: 7 });
+
+      // Store tenant info
+      if (tenantData) {
+        const tenantInfo = {
+          id: tenantData.id,
+          name: tenantData.tenantName,
+          subdomain: tenantData.subdomain,
+          status: tenantData.status,
+          role: userData.role
+        };
+        localStorage.setItem('tenants', JSON.stringify([tenantInfo]));
+        localStorage.setItem('currentTenant', JSON.stringify(tenantInfo));
+        localStorage.setItem('currentEmployer', JSON.stringify(tenantInfo));
+        setCurrentEmployer(tenantInfo);
+      }
+
+      setUser(userInfo);
+      setIsAuthenticated(true);
+    }
   };
 
   // Logout function
@@ -133,12 +181,14 @@ export const AuthProvider = ({ children }) => {
     currentEmployer,
     loading,
     login,
+    loginWithOAuth,
     logout,
     switchEmployer,
     checkPermission,
     isAdmin,
     isApprover,
-    isEmployee};
+    isEmployee
+  };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

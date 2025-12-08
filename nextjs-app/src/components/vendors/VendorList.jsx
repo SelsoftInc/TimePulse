@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useParams, usePathname } from 'next/navigation';
 import React, { useState, useEffect } from 'react';
 import { API_BASE } from '@/config/api';
+import { isServerConnectedCached } from '@/utils/serverCheck';
 import { PERMISSIONS } from '@/utils/roles';
 import PermissionGuard from '../common/PermissionGuard';
 import { useAuth } from '@/contexts/AuthContext';
@@ -27,9 +28,11 @@ const VendorList = () => {
   // Hydration fix: Track if component is mounted on client
   const [isMounted, setIsMounted] = useState(false);
 
+  // Initialize with empty data - will be populated from server
   const [vendors, setVendors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [isServerAvailable, setIsServerAvailable] = useState(false);
   const [openMenuId, setOpenMenuId] = useState(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
 
@@ -43,8 +46,25 @@ const VendorList = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
+  // Check server connection and fetch data accordingly
   useEffect(() => {
     if (!isMounted) return;
+    
+    async function checkAndFetch() {
+      const serverConnected = await isServerConnectedCached();
+      setIsServerAvailable(serverConnected);
+      
+      if (serverConnected) {
+        // Server is connected - fetch real data
+        console.log('✅ Server connected - fetching vendor data');
+        await fetchVendors();
+      } else {
+        // Server not connected - show empty state
+        console.log('⚠️ Server not connected - no vendor data available');
+        setLoading(false);
+      }
+    }
+    
     const fetchVendors = async () => {
       try {
         setLoading(true);
@@ -75,8 +95,9 @@ const VendorList = () => {
         setLoading(false);
       }
     };
-    fetchVendors();
-  }, [isMounted, user?.tenantId]); // eslint-disable-line react-hooks/exhaustive-deps
+    
+    checkAndFetch();
+  }, [isMounted, user?.tenantId]);
 
   // Close dropdown on outside click
   useEffect(() => {

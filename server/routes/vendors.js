@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { models, sequelize } = require('../models');
+const DataEncryptionService = require('../services/DataEncryptionService');
 
 const { Vendor } = models;
 
@@ -22,7 +23,13 @@ router.get('/', async (req, res) => {
 
     const vendors = await Vendor.findAll({ where: { tenantId }, order: [['name', 'ASC']] });
 
-    res.json({ success: true, vendors, total: vendors.length });
+    // Decrypt vendor data before sending to frontend
+    const decryptedVendors = vendors.map(vendor => {
+      const plainVendor = vendor.toJSON ? vendor.toJSON() : vendor;
+      return DataEncryptionService.decryptVendorData(plainVendor);
+    });
+
+    res.json({ success: true, vendors: decryptedVendors, total: decryptedVendors.length });
   } catch (err) {
     console.error('Error fetching vendors:', err);
     res.status(500).json({ error: 'Failed to fetch vendors', details: err.message });
@@ -39,7 +46,12 @@ router.get('/:id', async (req, res) => {
     const vendor = await Vendor.findOne({ where: { id, tenantId } });
     if (!vendor) return res.status(404).json({ error: 'Vendor not found' });
 
-    res.json({ success: true, vendor });
+    // Decrypt vendor data before sending to frontend
+    const decryptedVendor = DataEncryptionService.decryptVendorData(
+      vendor.toJSON ? vendor.toJSON() : vendor
+    );
+
+    res.json({ success: true, vendor: decryptedVendor });
   } catch (err) {
     console.error('Error fetching vendor:', err);
     res.status(500).json({ error: 'Failed to fetch vendor', details: err.message });
@@ -49,14 +61,23 @@ router.get('/:id', async (req, res) => {
 // Create vendor
 router.post('/', async (req, res) => {
   try {
-    const payload = req.body || {};
+    let payload = req.body || {};
     const errors = validateVendorPayload(payload);
     if (Object.keys(errors).length) {
       return res.status(400).json({ error: 'Validation failed', details: errors });
     }
 
+    // Encrypt vendor data before saving to database
+    payload = DataEncryptionService.encryptVendorData(payload);
+
     const created = await Vendor.create(payload);
-    res.status(201).json({ success: true, vendor: created });
+    
+    // Decrypt vendor data for response
+    const decryptedVendor = DataEncryptionService.decryptVendorData(
+      created.toJSON ? created.toJSON() : created
+    );
+    
+    res.status(201).json({ success: true, vendor: decryptedVendor });
   } catch (err) {
     console.error('Error creating vendor:', err);
     res.status(500).json({ error: 'Failed to create vendor', details: err.message });
@@ -70,7 +91,7 @@ router.put('/:id', async (req, res) => {
     const { tenantId } = req.query;
     if (!tenantId) return res.status(400).json({ error: 'Tenant ID is required' });
 
-    const payload = req.body || {};
+    let payload = req.body || {};
     const errors = validateVendorPayload({ ...payload, name: payload.name || 'x' }); // allow partial but keep name if provided
     if (payload.email && errors.email) {
       return res.status(400).json({ error: 'Validation failed', details: { email: errors.email } });
@@ -79,8 +100,17 @@ router.put('/:id', async (req, res) => {
     const vendor = await Vendor.findOne({ where: { id, tenantId } });
     if (!vendor) return res.status(404).json({ error: 'Vendor not found' });
 
+    // Encrypt vendor data before updating in database
+    payload = DataEncryptionService.encryptVendorData(payload);
+
     await vendor.update(payload);
-    res.json({ success: true, vendor });
+    
+    // Decrypt vendor data for response
+    const decryptedVendor = DataEncryptionService.decryptVendorData(
+      vendor.toJSON ? vendor.toJSON() : vendor
+    );
+    
+    res.json({ success: true, vendor: decryptedVendor });
   } catch (err) {
     console.error('Error updating vendor:', err);
     res.status(500).json({ error: 'Failed to update vendor', details: err.message });

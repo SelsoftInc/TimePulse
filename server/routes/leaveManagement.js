@@ -3,12 +3,14 @@ const router = express.Router();
 const { models } = require("../models");
 const NotificationService = require("../services/NotificationService");
 const { Op } = require("sequelize");
+const DataEncryptionService = require("../services/DataEncryptionService");
 
 const { User, Employee, LeaveRequest, LeaveBalance } = models;
 
 // Submit leave request
 router.post("/request", async (req, res) => {
   try {
+    let requestData = req.body;
     const {
       employeeId,
       employeeName,
@@ -20,7 +22,7 @@ router.post("/request", async (req, res) => {
       reason,
       approverId,
       attachmentName,
-    } = req.body;
+    } = requestData;
 
     if (
       !employeeId ||
@@ -141,6 +143,13 @@ router.post("/request", async (req, res) => {
       }
     }
 
+    // Encrypt leave request data before saving to database
+    const encryptedData = DataEncryptionService.encryptLeaveRequestData({
+      reason: reason || null,
+      attachmentName: attachmentName || null,
+      employeeName: employeeName || null
+    });
+
     // Create leave request
     const leaveRequest = await LeaveRequest.create({
       employeeId,
@@ -149,10 +158,10 @@ router.post("/request", async (req, res) => {
       startDate,
       endDate,
       totalDays,
-      reason: reason || null,
+      reason: encryptedData.reason,
       status: "pending",
       approverId,
-      attachmentName: attachmentName || null,
+      attachmentName: encryptedData.attachmentName,
     });
 
     // Update leave balance - add to pending days
@@ -179,10 +188,15 @@ router.post("/request", async (req, res) => {
       });
     }
 
+    // Decrypt leave request data for response
+    const decryptedLeaveRequest = DataEncryptionService.decryptLeaveRequestData(
+      leaveRequest.toJSON ? leaveRequest.toJSON() : leaveRequest
+    );
+
     res.json({
       success: true,
       message: "Leave request submitted successfully",
-      leaveRequest,
+      leaveRequest: decryptedLeaveRequest,
     });
   } catch (error) {
     console.error("Error submitting leave request:", error);
@@ -347,9 +361,14 @@ router.get("/history", async (req, res) => {
         : "N/A",
     }));
 
+    // Decrypt leave request data before sending to frontend
+    const decryptedRequests = formattedRequests.map(req => 
+      DataEncryptionService.decryptLeaveRequestData(req)
+    );
+
     res.json({
       success: true,
-      requests: formattedRequests,
+      requests: decryptedRequests,
     });
   } catch (error) {
     console.error("Error fetching leave history:", error);
@@ -395,9 +414,14 @@ router.get("/my-requests", async (req, res) => {
       requestedOn: new Date(req.createdAt).toISOString().split("T")[0],
     }));
 
+    // Decrypt leave request data before sending to frontend
+    const decryptedRequests = formattedRequests.map(req => 
+      DataEncryptionService.decryptLeaveRequestData(req)
+    );
+
     res.json({
       success: true,
-      requests: formattedRequests,
+      requests: decryptedRequests,
     });
   } catch (error) {
     console.error("Error fetching my requests:", error);
@@ -453,10 +477,15 @@ router.get("/pending-approvals", async (req, res) => {
       submittedAt: req.createdAt,
     }));
 
+    // Decrypt leave request data before sending to frontend
+    const decryptedRequests = formattedRequests.map(req => 
+      DataEncryptionService.decryptLeaveRequestData(req)
+    );
+
     res.json({
       success: true,
-      leaveRequests: formattedRequests,
-      total: formattedRequests.length,
+      leaveRequests: decryptedRequests,
+      total: decryptedRequests.length,
     });
   } catch (error) {
     console.error("Error fetching pending leave approvals:", error);
@@ -532,10 +561,15 @@ router.get("/all-requests", async (req, res) => {
       reviewComments: request.reviewComments,
     }));
 
+    // Decrypt leave request data before sending to frontend
+    const decryptedRequests = formattedRequests.map(req => 
+      DataEncryptionService.decryptLeaveRequestData(req)
+    );
+
     res.json({
       success: true,
-      leaveRequests: formattedRequests,
-      total: formattedRequests.length,
+      leaveRequests: decryptedRequests,
+      total: decryptedRequests.length,
     });
   } catch (error) {
     console.error("Error fetching all leave requests:", error);
@@ -567,12 +601,15 @@ router.post("/approve/:id", async (req, res) => {
       });
     }
 
+    // Encrypt review comments before saving
+    const encryptedComments = comments ? DataEncryptionService.encryptLeaveRequestData({ reviewComments: comments }).reviewComments : null;
+
     // Update leave request status
     await leaveRequest.update({
       status: "approved",
       reviewedBy: managerId,
       reviewedAt: new Date(),
-      reviewComments: comments || null,
+      reviewComments: encryptedComments,
     });
 
     // Update leave balance - move from pending to used
@@ -672,12 +709,15 @@ router.post("/reject/:id", async (req, res) => {
       });
     }
 
+    // Encrypt review comments before saving
+    const encryptedReason = DataEncryptionService.encryptLeaveRequestData({ reviewComments: reason }).reviewComments;
+
     // Update leave request status
     await leaveRequest.update({
       status: "rejected",
       reviewedBy: managerId,
       reviewedAt: new Date(),
-      reviewComments: reason,
+      reviewComments: encryptedReason,
     });
 
     // Update leave balance - remove from pending

@@ -18,7 +18,6 @@ export default function OnboardingPage() {
     firstName: '',
     lastName: '',
     role: '',
-    companyName: '',
     phoneNumber: '',
     department: ''
   });
@@ -79,7 +78,6 @@ export default function OnboardingPage() {
           firstName: formData.firstName,
           lastName: formData.lastName,
           role: formData.role,
-          companyName: formData.companyName,
           phoneNumber: formData.phoneNumber,
           department: formData.department
         })
@@ -229,17 +227,17 @@ export default function OnboardingPage() {
             </select>
           </div>
 
-          <div className="form-group">
-            <label htmlFor="companyName">Company Name</label>
-            <input
-              type="text"
-              id="companyName"
-              name="companyName"
-              value={formData.companyName}
-              onChange={handleChange}
-              placeholder="Enter company name (optional)"
-              className="form-control"
-            />
+          <div className="info-message" style={{
+            padding: '12px 16px',
+            backgroundColor: '#e3f2fd',
+            border: '1px solid #90caf9',
+            borderRadius: '8px',
+            marginBottom: '20px',
+            fontSize: '14px',
+            color: '#1976d2'
+          }}>
+            <i className="fas fa-info-circle" style={{ marginRight: '8px' }}></i>
+            You will be added to your company's existing workspace based on your email domain.
           </div>
 
           <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>

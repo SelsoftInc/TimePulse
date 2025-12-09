@@ -79,20 +79,10 @@ router.get("/", async (req, res) => {
       throw error;
     });
 
-    // Filter out admin users at application level (but keep employees without user records)
-    const employees = allEmployees.filter((emp) => {
-      // If employee doesn't have a user record, include them (newly created employees)
-      if (!emp.user) {
-        return true;
-      }
-      
-      // For inactive employees, show them regardless of role (they might be admins who were deactivated)
-      if (emp.status === "inactive") {
-        return true;
-      }
-      // For active employees, exclude admin users
-      return emp.user.role !== "admin";
-    });
+    // Show all employees including admins (OAuth users need to be visible)
+    // Previously we filtered out admin users, but now we include them
+    // because OAuth admins have Employee records and should be visible
+    const employees = allEmployees;
 
     console.log('📊 Found', allEmployees.length, 'total employees in database');
     console.log('📊 After filtering:', employees.length, 'employees');

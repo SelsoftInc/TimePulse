@@ -193,7 +193,7 @@ models.User = sequelize.define(
     },
     passwordHash: {
       type: DataTypes.STRING(255),
-      allowNull: false,
+      allowNull: true, // Nullable for OAuth users who don't have passwords
       field: "password_hash",
     },
     mustChangePassword: {
@@ -240,6 +240,22 @@ models.User = sequelize.define(
       type: DataTypes.DATE,
       allowNull: true,
       field: "reset_password_expires",
+    },
+    googleId: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+      field: "google_id",
+    },
+    authProvider: {
+      type: DataTypes.STRING(50),
+      allowNull: true,
+      defaultValue: "local",
+      field: "auth_provider",
+    },
+    emailVerified: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+      field: "email_verified",
     },
   },
   {

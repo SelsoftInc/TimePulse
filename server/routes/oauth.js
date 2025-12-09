@@ -7,7 +7,7 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { models } = require('../models');
+const { models, sequelize } = require('../models');
 
 // JWT Secret
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
@@ -55,19 +55,43 @@ router.post('/check-user', async (req, res) => {
       });
     }
 
-    // Find employee record if user is an employee
+    // Find or create employee record for all users (admin, employee, approver)
     let employeeId = null;
-    if (user.role === 'employee') {
-      const employee = await models.Employee.findOne({
-        where: {
-          email: user.email,
-          tenantId: user.tenant_id || user.tenantId
-        }
-      });
-      if (employee) {
-        employeeId = employee.id;
+    let employee = await models.Employee.findOne({
+      where: {
+        email: user.email,
+        tenantId: user.tenant_id || user.tenantId
       }
+    });
+    
+    // If employee record doesn't exist, create one
+    if (!employee) {
+      console.log('[OAuth Check] Employee record not found, creating one for user:', user.email);
+      
+      // Determine title based on role
+      let title = 'Employee';
+      if (user.role === 'admin') {
+        title = 'Administrator';
+      } else if (user.role === 'approver') {
+        title = 'Manager';
+      }
+      
+      employee = await models.Employee.create({
+        tenantId: user.tenant_id || user.tenantId,
+        firstName: user.firstName || user.first_name,
+        lastName: user.lastName || user.last_name,
+        email: user.email,
+        phone: null,
+        department: 'General',
+        title: title,
+        status: 'active',
+        startDate: new Date(),
+        userId: user.id
+      });
+      console.log('[OAuth Check] Employee record created:', employee.id);
     }
+    
+    employeeId = employee.id;
 
     // Generate JWT token
     const token = jwt.sign(
@@ -177,33 +201,59 @@ router.post('/register', async (req, res) => {
       });
     }
 
-    // Create or find tenant
+    // Find existing tenant by email domain
+    // OAuth users should join the existing company tenant, not create a new one
     let tenant;
-    const subdomain = companyName 
-      ? companyName.toLowerCase().replace(/[^a-z0-9]/g, '').substring(0, 20)
-      : email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '').substring(0, 20);
-
-    // Check if tenant with this subdomain exists
-    tenant = await models.Tenant.findOne({
-      where: { subdomain: subdomain }
+    const emailDomain = email.split('@')[1]; // e.g., "selsoftinc.com"
+    
+    console.log('[OAuth Register] Looking for tenant with email domain:', emailDomain);
+    
+    // First, try to find tenant by checking existing users with same email domain
+    const existingUserWithSameDomain = await models.User.findOne({
+      where: sequelize.where(
+        sequelize.fn('LOWER', sequelize.col('email')),
+        'LIKE',
+        `%@${emailDomain.toLowerCase()}`
+      ),
+      include: [{
+        model: models.Tenant,
+        as: 'tenant',
+        required: true
+      }]
     });
 
-    if (!tenant) {
-      // Create new tenant
-      const tenantName = companyName || `${firstName} ${lastName}'s Company`;
-      console.log('[OAuth Register] Creating tenant:', tenantName);
-      
-      tenant = await models.Tenant.create({
-        tenant_name: tenantName,
-        tenantName: tenantName,
-        legalName: tenantName,
-        subdomain: subdomain,
-        status: 'active',
-        plan_type: 'free',
-        max_users: 10,
-        settings: {}
+    if (existingUserWithSameDomain && existingUserWithSameDomain.tenant) {
+      tenant = existingUserWithSameDomain.tenant;
+      console.log('[OAuth Register] Found existing tenant by email domain:', tenant.tenant_name);
+    } else {
+      // If no existing tenant found, try to find by subdomain from company name
+      const subdomain = companyName 
+        ? companyName.toLowerCase().replace(/[^a-z0-9]/g, '').substring(0, 20)
+        : emailDomain.split('.')[0].toLowerCase().replace(/[^a-z0-9]/g, '').substring(0, 20);
+
+      tenant = await models.Tenant.findOne({
+        where: { subdomain: subdomain }
       });
-      console.log('[OAuth Register] Tenant created successfully:', tenant.id);
+
+      if (!tenant) {
+        // Create new tenant only if no existing tenant found
+        const tenantName = companyName || emailDomain.split('.')[0];
+        console.log('[OAuth Register] Creating new tenant:', tenantName);
+        
+        tenant = await models.Tenant.create({
+          tenant_name: tenantName,
+          tenantName: tenantName,
+          legalName: tenantName,
+          subdomain: subdomain,
+          status: 'active',
+          plan_type: 'free',
+          max_users: 10,
+          settings: {}
+        });
+        console.log('[OAuth Register] Tenant created successfully:', tenant.id);
+      } else {
+        console.log('[OAuth Register] Found existing tenant by subdomain:', tenant.tenant_name);
+      }
     }
 
     // Generate a random password hash (user won't use it, OAuth only)
@@ -230,25 +280,33 @@ router.post('/register', async (req, res) => {
     });
     console.log('[OAuth Register] User created successfully:', user.id);
 
-    // Create employee record if role is employee or approver
+    // Create employee record for all roles (admin, employee, approver)
+    // This ensures they appear in employee lists and can be assigned as approvers
     let employeeId = null;
-    if (role.toLowerCase() === 'employee' || role.toLowerCase() === 'approver') {
-      console.log('[OAuth Register] Creating employee record');
-      const employee = await models.Employee.create({
-        tenantId: tenant.id,
-        firstName: firstName,
-        lastName: lastName,
-        email: email.toLowerCase(),
-        phone: phoneNumber || null,
-        department: department || 'General',
-        title: role.toLowerCase() === 'approver' ? 'Manager' : 'Employee',
-        status: 'active',
-        startDate: new Date(),
-        userId: user.id
-      });
-      employeeId = employee.id;
-      console.log('[OAuth Register] Employee created successfully:', employeeId);
+    console.log('[OAuth Register] Creating employee record for role:', role.toLowerCase());
+    
+    // Determine title based on role
+    let title = 'Employee';
+    if (role.toLowerCase() === 'admin') {
+      title = 'Administrator';
+    } else if (role.toLowerCase() === 'approver') {
+      title = 'Manager';
     }
+    
+    const employee = await models.Employee.create({
+      tenantId: tenant.id,
+      firstName: firstName,
+      lastName: lastName,
+      email: email.toLowerCase(),
+      phone: phoneNumber || null,
+      department: department || 'General',
+      title: title,
+      status: 'active',
+      startDate: new Date(),
+      userId: user.id
+    });
+    employeeId = employee.id;
+    console.log('[OAuth Register] Employee created successfully:', employeeId);
 
     // Generate JWT token
     const token = jwt.sign(

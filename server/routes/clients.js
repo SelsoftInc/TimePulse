@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { models, sequelize } = require('../models');
 const { Op } = require('sequelize');
+const DataEncryptionService = require('../services/DataEncryptionService');
 
 const { Client, Tenant } = models;
 
@@ -175,10 +176,15 @@ router.get('/', async (req, res) => {
     console.log('✅ Found', transformedClients.length, 'clients for tenant:', tenantId);
     console.log('📤 Sending clients:', transformedClients.map(c => ({ id: c.id, name: c.name })));
 
+    // Decrypt client data before sending to frontend
+    const decryptedClients = transformedClients.map(client => 
+      DataEncryptionService.decryptClientData(client)
+    );
+
     res.json({
       success: true,
-      clients: transformedClients,
-      total: transformedClients.length
+      clients: decryptedClients,
+      total: decryptedClients.length
     });
 
   } catch (error) {
@@ -224,9 +230,12 @@ router.get('/:id', async (req, res) => {
       clientType: client.clientType || 'external'
     };
 
+    // Decrypt client data before sending to frontend
+    const decryptedClient = DataEncryptionService.decryptClientData(transformedClient);
+
     res.json({
       success: true,
-      client: transformedClient
+      client: decryptedClient
     });
 
   } catch (error) {
@@ -241,7 +250,7 @@ router.get('/:id', async (req, res) => {
 // Create new client
 router.post('/', async (req, res) => {
   try {
-    const clientData = req.body;
+    let clientData = req.body;
 
     const validationErrors = validateClientPayload(clientData);
     if (Object.keys(validationErrors).length > 0) {
@@ -251,13 +260,21 @@ router.post('/', async (req, res) => {
     clientData.phone = toE164(clientData.phone);
     clientData.taxId = normalizeTaxId(clientData.taxId);
     
+    // Encrypt client data before saving to database
+    clientData = DataEncryptionService.encryptClientData(clientData);
+    
     // Create the client record
     const client = await Client.create(clientData);
+
+    // Decrypt client data for response
+    const decryptedClient = DataEncryptionService.decryptClientData(
+      client.toJSON ? client.toJSON() : client
+    );
 
     res.status(201).json({
       success: true,
       message: 'Client created successfully',
-      client
+      client: decryptedClient
     });
 
   } catch (error) {
@@ -274,7 +291,7 @@ router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const { tenantId } = req.query;
-    const updateData = req.body;
+    let updateData = req.body;
 
     const validationErrors = validateClientPayload(updateData);
     if (Object.keys(validationErrors).length > 0) {
@@ -292,12 +309,20 @@ router.put('/:id', async (req, res) => {
       return res.status(404).json({ error: 'Client not found' });
     }
 
+    // Encrypt client data before updating in database
+    updateData = DataEncryptionService.encryptClientData(updateData);
+
     await client.update(updateData);
+
+    // Decrypt client data for response
+    const decryptedClient = DataEncryptionService.decryptClientData(
+      client.toJSON ? client.toJSON() : client
+    );
 
     res.json({
       success: true,
       message: 'Client updated successfully',
-      client
+      client: decryptedClient
     });
 
   } catch (error) {

@@ -4,6 +4,7 @@ const { models } = require("../models");
 const { Op } = require("sequelize");
 const bcrypt = require("bcrypt");
 const { generateTemporaryPassword, sendWelcomeEmail } = require("../utils/emailService");
+const DataEncryptionService = require("../services/DataEncryptionService");
 
 const { Employee, User, Client, Tenant, Vendor, EmploymentType } = models;
 
@@ -150,10 +151,16 @@ router.get("/", async (req, res) => {
 
     console.log('✅ Sending', transformedEmployees.length, 'employees to frontend');
 
+    // Decrypt employee data before sending to frontend
+    const decryptedEmployees = transformedEmployees.map(emp => {
+      const plainEmp = emp.toJSON ? emp.toJSON() : emp;
+      return DataEncryptionService.decryptEmployeeData(plainEmp);
+    });
+
     res.json({
       success: true,
-      employees: transformedEmployees,
-      total: transformedEmployees.length,
+      employees: decryptedEmployees,
+      total: decryptedEmployees.length,
     });
   } catch (error) {
     console.error("Error fetching employees:", error);
@@ -314,9 +321,12 @@ router.get("/:id", async (req, res) => {
     console.log('📤 Sending response with vendorId:', transformedEmployee.vendorId);
     console.log('📤 Sending response with vendor object:', transformedEmployee.vendor);
     
+    // Decrypt employee data before sending to frontend
+    const decryptedEmployee = DataEncryptionService.decryptEmployeeData(transformedEmployee);
+    
     res.json({
       success: true,
-      employee: transformedEmployee,
+      employee: decryptedEmployee,
     });
   } catch (error) {
     console.error("Error fetching employee:", error);
@@ -330,7 +340,10 @@ router.get("/:id", async (req, res) => {
 // Create new employee
 router.post("/", async (req, res) => {
   try {
-    const employeeData = req.body;
+    let employeeData = req.body;
+    
+    // Encrypt employee data before saving to database
+    employeeData = DataEncryptionService.encryptEmployeeData(employeeData);
 
     console.log('➕ Creating new employee:', {
       firstName: employeeData.firstName,
@@ -398,6 +411,9 @@ router.post("/", async (req, res) => {
 
     console.log('✅ Employee created successfully:', employee.id);
 
+    // Decrypt employee data for response
+    const decryptedEmployee = DataEncryptionService.decryptEmployeeData(employee.toJSON ? employee.toJSON() : employee);
+
     // Get tenant information for email
     const tenant = await models.Tenant.findByPk(employeeData.tenantId);
     const companyName = tenant ? tenant.tenantName : 'Your Company';
@@ -421,7 +437,7 @@ router.post("/", async (req, res) => {
     res.status(201).json({
       success: true,
       message: "Employee created successfully. Welcome email sent with temporary password.",
-      employee,
+      employee: decryptedEmployee,
       emailSent: true
     });
   } catch (error) {
@@ -438,7 +454,10 @@ router.put("/:id", async (req, res) => {
   try {
     const { id } = req.params;
     const { tenantId } = req.query;
-    const updateData = req.body;
+    let updateData = req.body;
+    
+    // Encrypt employee data before updating in database
+    updateData = DataEncryptionService.encryptEmployeeData(updateData);
 
     const employee = await Employee.findOne({
       where: { id, tenantId },
@@ -490,10 +509,15 @@ router.put("/:id", async (req, res) => {
       throw error;
     });
 
+    // Decrypt employee data before sending to frontend
+    const decryptedEmployee = DataEncryptionService.decryptEmployeeData(
+      updatedEmployee.toJSON ? updatedEmployee.toJSON() : updatedEmployee
+    );
+
     res.json({
       success: true,
       message: "Employee updated successfully",
-      employee: updatedEmployee,
+      employee: decryptedEmployee,
     });
   } catch (error) {
     console.error("Error updating employee:", error);

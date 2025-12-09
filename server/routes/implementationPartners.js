@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { models, sequelize } = require('../models');
+const DataEncryptionService = require('../services/DataEncryptionService');
 
 const { ImplementationPartner } = models;
 
@@ -25,7 +26,13 @@ router.get('/', async (req, res) => {
       order: [['name', 'ASC']] 
     });
 
-    res.json({ success: true, implementationPartners, total: implementationPartners.length });
+    // Decrypt implementation partner data before sending to frontend
+    const decryptedPartners = implementationPartners.map(partner => {
+      const plainPartner = partner.toJSON ? partner.toJSON() : partner;
+      return DataEncryptionService.decryptImplementationPartnerData(plainPartner);
+    });
+
+    res.json({ success: true, implementationPartners: decryptedPartners, total: decryptedPartners.length });
   } catch (err) {
     console.error('Error fetching implementation partners:', err);
     res.status(500).json({ error: 'Failed to fetch implementation partners', details: err.message });
@@ -42,7 +49,12 @@ router.get('/:id', async (req, res) => {
     const implementationPartner = await ImplementationPartner.findOne({ where: { id, tenantId } });
     if (!implementationPartner) return res.status(404).json({ error: 'Implementation Partner not found' });
 
-    res.json({ success: true, implementationPartner });
+    // Decrypt implementation partner data before sending to frontend
+    const decryptedPartner = DataEncryptionService.decryptImplementationPartnerData(
+      implementationPartner.toJSON ? implementationPartner.toJSON() : implementationPartner
+    );
+
+    res.json({ success: true, implementationPartner: decryptedPartner });
   } catch (err) {
     console.error('Error fetching implementation partner:', err);
     res.status(500).json({ error: 'Failed to fetch implementation partner', details: err.message });
@@ -52,7 +64,8 @@ router.get('/:id', async (req, res) => {
 // Create implementation partner
 router.post('/', async (req, res) => {
   try {
-    const { tenantId, ...payload } = req.body;
+    const { tenantId, ...payloadData } = req.body;
+    let payload = payloadData;
     if (!tenantId) return res.status(400).json({ error: 'Tenant ID is required' });
 
     const errors = validateImplementationPartnerPayload(payload);
@@ -68,12 +81,20 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: 'Implementation Partner with this name already exists' });
     }
 
+    // Encrypt implementation partner data before saving to database
+    payload = DataEncryptionService.encryptImplementationPartnerData(payload);
+
     const implementationPartner = await ImplementationPartner.create({
       ...payload,
       tenantId
     });
 
-    res.status(201).json({ success: true, implementationPartner });
+    // Decrypt implementation partner data for response
+    const decryptedPartner = DataEncryptionService.decryptImplementationPartnerData(
+      implementationPartner.toJSON ? implementationPartner.toJSON() : implementationPartner
+    );
+
+    res.status(201).json({ success: true, implementationPartner: decryptedPartner });
   } catch (err) {
     console.error('Error creating implementation partner:', err);
     res.status(500).json({ error: 'Failed to create implementation partner', details: err.message });
@@ -83,7 +104,8 @@ router.post('/', async (req, res) => {
 // Update implementation partner
 router.put('/:id', async (req, res) => {
   try {
-    const { tenantId, ...payload } = req.body;
+    const { tenantId, ...payloadData } = req.body;
+    let payload = payloadData;
     const { id } = req.params;
     if (!tenantId) return res.status(400).json({ error: 'Tenant ID is required' });
 
@@ -105,8 +127,17 @@ router.put('/:id', async (req, res) => {
       }
     }
 
+    // Encrypt implementation partner data before updating in database
+    payload = DataEncryptionService.encryptImplementationPartnerData(payload);
+
     await implementationPartner.update(payload);
-    res.json({ success: true, implementationPartner });
+    
+    // Decrypt implementation partner data for response
+    const decryptedPartner = DataEncryptionService.decryptImplementationPartnerData(
+      implementationPartner.toJSON ? implementationPartner.toJSON() : implementationPartner
+    );
+    
+    res.json({ success: true, implementationPartner: decryptedPartner });
   } catch (err) {
     console.error('Error updating implementation partner:', err);
     res.status(500).json({ error: 'Failed to update implementation partner', details: err.message });

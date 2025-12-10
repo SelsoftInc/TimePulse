@@ -90,7 +90,29 @@ export default function OnboardingPage() {
       if (response.ok && data.success) {
         console.log('[Onboarding] Registration successful');
         
-        // Store authentication data
+        // Check if approval is required
+        if (data.requiresApproval) {
+          console.log('[Onboarding] User requires admin approval');
+          
+          // Store user info for pending status display
+          const userInfo = {
+            id: data.user.id,
+            email: data.user.email,
+            name: `${data.user.firstName} ${data.user.lastName}`,
+            firstName: data.user.firstName,
+            lastName: data.user.lastName,
+            role: data.user.role,
+            tenantId: data.user.tenantId,
+            approvalStatus: data.user.approvalStatus
+          };
+          localStorage.setItem('pendingUser', JSON.stringify(userInfo));
+          
+          // Redirect to pending approval page
+          router.push('/pending-approval');
+          return;
+        }
+        
+        // Normal registration flow (no approval required)
         localStorage.setItem('token', data.token);
         
         const userInfo = {

@@ -47,6 +47,39 @@ router.post('/check-user', async (req, res) => {
       });
     }
 
+    // User exists - check approval status (if column exists)
+    const approvalStatus = user.approval_status || user.approvalStatus;
+    if (approvalStatus) {
+      if (approvalStatus === 'pending') {
+        return res.status(403).json({
+          success: false,
+          isPending: true,
+          message: 'Your registration is pending admin approval',
+          user: {
+            id: user.id,
+            firstName: user.firstName || user.first_name,
+            lastName: user.lastName || user.last_name,
+            email: user.email,
+            approvalStatus: approvalStatus
+          }
+        });
+      }
+
+      if (approvalStatus === 'rejected') {
+        return res.status(403).json({
+          success: false,
+          isRejected: true,
+          message: 'Your registration has been rejected',
+          user: {
+            id: user.id,
+            email: user.email,
+            approvalStatus: approvalStatus,
+            rejectionReason: user.rejection_reason || user.rejectionReason
+          }
+        });
+      }
+    }
+
     // User exists - check if active
     if (user.status !== 'active') {
       return res.status(401).json({
@@ -260,7 +293,7 @@ router.post('/register', async (req, res) => {
     const randomPassword = Math.random().toString(36).slice(-12);
     const passwordHash = await bcrypt.hash(randomPassword, 10);
 
-    // Create user
+    // Create user with pending approval status
     console.log('[OAuth Register] Creating user with tenant ID:', tenant.id);
     const user = await models.User.create({
       email: email.toLowerCase(),
@@ -272,13 +305,14 @@ router.post('/register', async (req, res) => {
       role: role.toLowerCase(),
       tenant_id: tenant.id,
       tenantId: tenant.id,
-      status: 'active',
+      status: 'inactive', // Set to inactive until approved
+      approvalStatus: 'pending', // Require admin approval (use model field name)
       googleId: googleId,
       authProvider: 'google',
       emailVerified: true,
       lastLogin: new Date()
     });
-    console.log('[OAuth Register] User created successfully:', user.id);
+    console.log('[OAuth Register] User created successfully with pending status:', user.id);
 
     // Create employee record for all roles (admin, employee, approver)
     // This ensures they appear in employee lists and can be assigned as approvers
@@ -308,22 +342,65 @@ router.post('/register', async (req, res) => {
     employeeId = employee.id;
     console.log('[OAuth Register] Employee created successfully:', employeeId);
 
-    // Generate JWT token
+    // Create notifications for all admin users in the tenant
+    try {
+      const adminUsers = await models.User.findAll({
+        where: {
+          tenantId: tenant.id,
+          role: 'admin',
+          status: 'active'
+        }
+      });
+
+      console.log(`[OAuth Register] Found ${adminUsers.length} admin users to notify`);
+
+      // Create notification for each admin
+      if (models.Notification) {
+        for (const admin of adminUsers) {
+          await models.Notification.create({
+            tenantId: tenant.id,
+            userId: admin.id,
+            title: 'New User Registration Pending Approval',
+            message: `${firstName} ${lastName} (${email}) has registered via Google OAuth and is awaiting approval.`,
+            type: 'warning',
+            category: 'approval',
+            priority: 'high',
+            actionUrl: '/user-approvals',
+            metadata: {
+              userId: user.id,
+              pendingUserId: user.id, // Keep for backward compatibility
+              pendingUserEmail: email,
+              pendingUserName: `${firstName} ${lastName}`,
+              pendingUserRole: role,
+              registrationDate: new Date()
+            }
+          });
+        }
+        console.log('[OAuth Register] Notifications created for admins');
+      }
+    } catch (notificationError) {
+      console.error('[OAuth Register] Failed to create notifications:', notificationError.message);
+      // Continue with registration even if notifications fail
+    }
+
+    // Generate JWT token (user can't login until approved, but we return it for the response)
     const token = jwt.sign(
       {
         userId: user.id,
         email: user.email,
         role: user.role,
-        tenantId: tenant.id
+        tenantId: tenant.id,
+        approvalStatus: 'pending'
       },
       JWT_SECRET,
       { expiresIn: JWT_EXPIRES_IN }
     );
 
-    // Return success response
+    // Return success response with pending status
     res.status(201).json({
       success: true,
-      message: 'User registered successfully',
+      message: 'Registration submitted successfully. Awaiting admin approval.',
+      requiresApproval: true,
       token,
       user: {
         id: user.id,
@@ -333,7 +410,8 @@ router.post('/register', async (req, res) => {
         role: user.role,
         tenantId: tenant.id,
         employeeId: employeeId,
-        status: user.status
+        status: user.status,
+        approvalStatus: 'pending'
       },
       tenant: {
         id: tenant.id,

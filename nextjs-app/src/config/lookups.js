@@ -78,10 +78,11 @@ export const PAYMENT_TERMS_OPTIONS = [
 // Fetch payment terms from API
 export const fetchPaymentTerms = async () => {
   try {
-    const response = await fetch(`${process.env.REACT_APP_API_BASE || 'http://localhost:5001'}/api/lookups/payment_terms`);
+    const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+    const response = await fetch(`${API_BASE}/api/lookups/payment_terms`);
     if (response.ok) {
       const data = await response.json();
-      if (data.success) {
+      if (data.success && data.lookups && data.lookups.length > 0) {
         return data.lookups.map(lookup => ({
           value: lookup.code,
           label: lookup.label
@@ -89,9 +90,10 @@ export const fetchPaymentTerms = async () => {
       }
     }
   } catch (error) {
-    console.error('Error fetching payment terms:', error);
+    console.error('Error fetching payment terms from API:', error);
   }
   // Return fallback if API fails
+  console.log('Using fallback payment terms options');
   return PAYMENT_TERMS_OPTIONS;
 };
 

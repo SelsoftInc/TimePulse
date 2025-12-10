@@ -7,7 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { API_BASE } from '@/config/api';
 import { useTheme } from '@/contexts/ThemeContext';
 // import PermissionGuard from '../common/PermissionGuard';
-import TimesheetAlerts from '../notifications/TimesheetAlerts';
+import NotificationBell from '../notifications/NotificationBell';
 import AskAIButton from '../ai/AskAIButton';
 import "./Header.css";
 
@@ -194,9 +194,9 @@ const Header = ({ toggleSidebar }) => {
               <AskAIButton />
             </div>
 
-            {/* Notification Bell */}
+            {/* Notification Bell - All Notifications */}
             <div className="header-action-item">
-              <TimesheetAlerts subdomain={subdomain} />
+              <NotificationBell />
             </div>
 
             {/* Theme Toggle */}

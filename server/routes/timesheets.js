@@ -1282,7 +1282,7 @@ router.put("/:id", async (req, res, next) => {
       },
     });
 
-    // Send email notifications for approval/rejection
+    // Send email and in-app notifications for approval/rejection
     try {
       const tenant = await models.Tenant.findByPk(row.tenantId);
       const employee = await models.Employee.findByPk(row.employeeId, {
@@ -1299,11 +1299,25 @@ router.put("/:id", async (req, res, next) => {
       const timesheetLink = `${process.env.FRONTEND_URL || 'https://app.timepulse.io'}/${tenant?.subdomain || 'app'}/timesheets/submit/${row.id}`;
       const tenantName = tenant?.name || 'TimePulse';
 
-      // Send approval email
+      // Send approval email and notification
       if (wasNotApproved && isBeingApproved && employee?.user) {
         const reviewer = approvedBy ? await models.User.findByPk(approvedBy) : null;
         const reviewerName = reviewer ? `${reviewer.firstName} ${reviewer.lastName}` : 'Manager';
         
+        // Create in-app notification
+        await NotificationService.createTimesheetNotification(
+          row.tenantId,
+          row.employeeId,
+          "approved",
+          {
+            id: row.id,
+            weekStartDate: row.weekStart,
+            weekEndDate: row.weekEnd,
+            approvedBy: reviewerName,
+          }
+        );
+        
+        // Send email
         await EmailService.sendTimesheetApprovedNotification({
           employeeEmail: employee.user.email,
           employeeName: `${employee.user.firstName} ${employee.user.lastName}`,
@@ -1312,13 +1326,38 @@ router.put("/:id", async (req, res, next) => {
           timesheetLink: timesheetLink,
           tenantName: tenantName,
         });
+        
+        // Send real-time notification via WebSocket
+        if (global.wsService) {
+          global.wsService.sendToUser(row.employeeId, {
+            type: "timesheet_approved",
+            title: "Timesheet Approved",
+            message: `Your timesheet for ${weekRange} has been approved.`,
+            timestamp: new Date().toISOString(),
+          });
+        }
       }
 
-      // Send rejection email
+      // Send rejection email and notification
       if (wasNotRejected && isBeingRejected && employee?.user) {
         const reviewer = approvedBy ? await models.User.findByPk(approvedBy) : null;
         const reviewerName = reviewer ? `${reviewer.firstName} ${reviewer.lastName}` : 'Manager';
         
+        // Create in-app notification
+        await NotificationService.createTimesheetNotification(
+          row.tenantId,
+          row.employeeId,
+          "rejected",
+          {
+            id: row.id,
+            weekStartDate: row.weekStart,
+            weekEndDate: row.weekEnd,
+            rejectedBy: reviewerName,
+            reason: row.rejectionReason || 'No reason provided',
+          }
+        );
+        
+        // Send email
         await EmailService.sendTimesheetRejectedNotification({
           employeeEmail: employee.user.email,
           employeeName: `${employee.user.firstName} ${employee.user.lastName}`,
@@ -1328,10 +1367,20 @@ router.put("/:id", async (req, res, next) => {
           timesheetLink: timesheetLink,
           tenantName: tenantName,
         });
+        
+        // Send real-time notification via WebSocket
+        if (global.wsService) {
+          global.wsService.sendToUser(row.employeeId, {
+            type: "timesheet_rejected",
+            title: "Timesheet Needs Revision",
+            message: `Your timesheet for ${weekRange} requires changes.`,
+            timestamp: new Date().toISOString(),
+          });
+        }
       }
     } catch (emailError) {
-      console.error("Error sending timesheet status email:", emailError);
-      // Don't fail the timesheet update if email fails
+      console.error("Error sending timesheet status notifications:", emailError);
+      // Don't fail the timesheet update if notifications fail
     }
 
     // ✨ AUTOMATIC INVOICE GENERATION ✨

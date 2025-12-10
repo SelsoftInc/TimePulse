@@ -49,6 +49,39 @@ export default function AuthCallback() {
           const data = await response.json();
           console.log('[OAuth Callback] Response data:', data);
 
+          // Check if user is pending approval
+          if (data.isPending) {
+            console.log('[OAuth Callback] User is pending approval, redirecting to pending page');
+            // Store pending user info
+            const pendingUser = {
+              email: session.user.email,
+              firstName: data.user?.firstName || session.user.name?.split(' ')[0] || '',
+              lastName: data.user?.lastName || session.user.name?.split(' ')[1] || '',
+              role: data.user?.role || '',
+              status: 'pending'
+            };
+            localStorage.setItem('pendingUser', JSON.stringify(pendingUser));
+            router.push('/pending-approval');
+            return;
+          }
+
+          // Check if user is rejected
+          if (data.isRejected) {
+            console.log('[OAuth Callback] User registration was rejected');
+            // Store rejection info
+            const rejectedUser = {
+              email: session.user.email,
+              firstName: data.user?.firstName || session.user.name?.split(' ')[0] || '',
+              lastName: data.user?.lastName || session.user.name?.split(' ')[1] || '',
+              role: data.user?.role || '',
+              status: 'rejected',
+              reason: data.user?.rejectionReason || data.message
+            };
+            localStorage.setItem('rejectedUser', JSON.stringify(rejectedUser));
+            router.push('/pending-approval'); // Can show rejection message on same page
+            return;
+          }
+
           if (data.needsOnboarding) {
             // New user - redirect to onboarding
             const params = new URLSearchParams({

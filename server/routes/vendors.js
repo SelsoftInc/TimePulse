@@ -61,26 +61,46 @@ router.get('/:id', async (req, res) => {
 // Create vendor
 router.post('/', async (req, res) => {
   try {
+    console.log('📝 Creating vendor with payload:', JSON.stringify(req.body, null, 2));
+    
     let payload = req.body || {};
     const errors = validateVendorPayload(payload);
     if (Object.keys(errors).length) {
+      console.error('❌ Validation errors:', errors);
       return res.status(400).json({ error: 'Validation failed', details: errors });
     }
 
+    console.log('🔒 Encrypting vendor data...');
     // Encrypt vendor data before saving to database
     payload = DataEncryptionService.encryptVendorData(payload);
+    console.log('✅ Vendor data encrypted');
 
+    console.log('💾 Saving vendor to database...');
     const created = await Vendor.create(payload);
+    console.log('✅ Vendor created with ID:', created.id);
     
     // Decrypt vendor data for response
+    console.log('🔓 Decrypting vendor data for response...');
     const decryptedVendor = DataEncryptionService.decryptVendorData(
       created.toJSON ? created.toJSON() : created
     );
+    console.log('✅ Vendor data decrypted');
     
     res.status(201).json({ success: true, vendor: decryptedVendor });
   } catch (err) {
-    console.error('Error creating vendor:', err);
-    res.status(500).json({ error: 'Failed to create vendor', details: err.message });
+    console.error('❌ Error creating vendor:', err);
+    console.error('Error stack:', err.stack);
+    console.error('Error name:', err.name);
+    console.error('Error message:', err.message);
+    if (err.errors) {
+      console.error('Sequelize validation errors:', err.errors);
+    }
+    res.status(500).json({ 
+      error: 'Failed to create vendor', 
+      details: err.message,
+      name: err.name,
+      validationErrors: err.errors ? err.errors.map(e => ({ field: e.path, message: e.message })) : null
+    });
   }
 });
 

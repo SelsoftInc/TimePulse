@@ -8,6 +8,7 @@ import { useSearchParams } from 'next/navigation';
 import "./Auth.css";
 import { API_BASE } from '@/config/api';
 import { validateStaticCredentials, getStaticSession, STATIC_ADMIN } from '@/utils/staticAuth';
+import { decryptAuthResponse } from '@/utils/encryption';
 
 const Login = () => {
   const searchParams = useSearchParams();
@@ -160,8 +161,12 @@ const Login = () => {
           console.log("Response status:", response.status);
           console.log("Response ok:", response.ok);
 
-          data = await response.json();
-          console.log("Response data:", data);
+          const rawData = await response.json();
+          console.log("Raw response data:", rawData);
+          
+          // Decrypt the response if encrypted
+          data = decryptAuthResponse(rawData);
+          console.log("Decrypted response data:", data);
         } catch (fetchError) {
           console.error("Fetch error:", fetchError);
           setError("Network error: " + fetchError.message);
@@ -236,7 +241,10 @@ const Login = () => {
             email: formData.email,
             password: formData.password})});
 
-        const data = await response.json();
+        const rawData = await response.json();
+        
+        // Decrypt the response if encrypted
+        const data = decryptAuthResponse(rawData);
 
         if (response.ok && data.success) {
           // Check if user must change password (temporary password)

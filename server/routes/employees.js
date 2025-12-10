@@ -5,6 +5,7 @@ const { Op } = require("sequelize");
 const bcrypt = require("bcrypt");
 const { generateTemporaryPassword, sendWelcomeEmail } = require("../utils/emailService");
 const DataEncryptionService = require("../services/DataEncryptionService");
+const { encryptAuthResponse } = require("../utils/encryption");
 
 const { Employee, User, Client, Tenant, Vendor, EmploymentType } = models;
 
@@ -157,11 +158,12 @@ router.get("/", async (req, res) => {
       return DataEncryptionService.decryptEmployeeData(plainEmp);
     });
 
-    res.json({
+    const responseData = {
       success: true,
       employees: decryptedEmployees,
       total: decryptedEmployees.length,
-    });
+    };
+    res.json(encryptAuthResponse(responseData));
   } catch (error) {
     console.error("Error fetching employees:", error);
     res.status(500).json({
@@ -324,10 +326,11 @@ router.get("/:id", async (req, res) => {
     // Decrypt employee data before sending to frontend
     const decryptedEmployee = DataEncryptionService.decryptEmployeeData(transformedEmployee);
     
-    res.json({
+    const responseData = {
       success: true,
       employee: decryptedEmployee,
-    });
+    };
+    res.json(encryptAuthResponse(responseData));
   } catch (error) {
     console.error("Error fetching employee:", error);
     res.status(500).json({
@@ -434,18 +437,19 @@ router.post("/", async (req, res) => {
       // Don't fail the employee creation if email fails
     }
 
-    res.status(201).json({
+    const responseData = {
       success: true,
       message: "Employee created successfully. Welcome email sent with temporary password.",
       employee: decryptedEmployee,
-      emailSent: true
-    });
+      userId: user.id,
+    };
+    res.status(201).json(encryptAuthResponse(responseData));
   } catch (error) {
     console.error("Error creating employee:", error);
-    res.status(500).json({
+    res.status(500).json(encryptAuthResponse({
       error: "Failed to create employee",
       details: error.message,
-    });
+    }));
   }
 });
 
@@ -464,7 +468,7 @@ router.put("/:id", async (req, res) => {
     });
 
     if (!employee) {
-      return res.status(404).json({ error: "Employee not found" });
+      return res.status(404).json(encryptAuthResponse({ error: "Employee not found" }));
     }
 
     // Update employee record
@@ -514,17 +518,18 @@ router.put("/:id", async (req, res) => {
       updatedEmployee.toJSON ? updatedEmployee.toJSON() : updatedEmployee
     );
 
-    res.json({
+    const responseData = {
       success: true,
       message: "Employee updated successfully",
       employee: decryptedEmployee,
-    });
+    };
+    res.json(encryptAuthResponse(responseData));
   } catch (error) {
     console.error("Error updating employee:", error);
-    res.status(500).json({
+    res.status(500).json(encryptAuthResponse({
       error: "Failed to update employee",
       details: error.message,
-    });
+    }));
   }
 });
 
@@ -539,7 +544,7 @@ router.delete("/:id", async (req, res) => {
     });
 
     if (!employee) {
-      return res.status(404).json({ error: "Employee not found" });
+      return res.status(404).json(encryptAuthResponse({ error: "Employee not found" }));
     }
 
     // Cascade soft delete all related data
@@ -579,18 +584,19 @@ router.delete("/:id", async (req, res) => {
       }
     }
 
-    res.json({
+    const responseData = {
       success: true,
       message: "Employee and all related data soft deleted successfully",
       employeeId: id,
-      deletedRecords,
-    });
+      deletedRecords: deletedRecords,
+    };
+    res.json(encryptAuthResponse(responseData));
   } catch (error) {
     console.error("Error soft deleting employee:", error);
-    res.status(500).json({
+    res.status(500).json(encryptAuthResponse({
       error: "Failed to soft delete employee",
       details: error.message,
-    });
+    }));
   }
 });
 
@@ -605,7 +611,7 @@ router.patch("/:id/restore", async (req, res) => {
     });
 
     if (!employee) {
-      return res.status(404).json({ error: "Employee not found" });
+      return res.status(404).json(encryptAuthResponse({ error: "Employee not found" }));
     }
 
     // Restore: Update status back to active
@@ -621,18 +627,19 @@ router.patch("/:id/restore", async (req, res) => {
       }
     }
 
-    res.json({
+    const responseData = {
       success: true,
       message: "Employee restored successfully (status set to active)",
       employeeId: id,
-      userRestored,
-    });
+      userRestored: userRestored,
+    };
+    res.json(encryptAuthResponse(responseData));
   } catch (error) {
     console.error("Error restoring employee:", error);
-    res.status(500).json({
+    res.status(500).json(encryptAuthResponse({
       error: "Failed to restore employee",
       details: error.message,
-    });
+    }));
   }
 });
 
@@ -642,7 +649,7 @@ router.get("/stats/summary", async (req, res) => {
     const { tenantId } = req.query;
 
     if (!tenantId) {
-      return res.status(400).json({ error: "Tenant ID is required" });
+      return res.status(400).json(encryptAuthResponse({ error: "Tenant ID is required" }));
     }
 
     const totalEmployees = await Employee.count({
@@ -681,7 +688,7 @@ router.get("/stats/summary", async (req, res) => {
       group: ["employmentType"],
     });
 
-    res.json({
+    const responseData = {
       success: true,
       stats: {
         total: totalEmployees,
@@ -694,7 +701,8 @@ router.get("/stats/summary", async (req, res) => {
           return acc;
         }, {}),
       },
-    });
+    };
+    res.json(encryptAuthResponse(responseData));
   } catch (error) {
     console.error("Error fetching employee stats:", error);
     res.status(500).json({

@@ -3,6 +3,7 @@ const router = express.Router();
 const { models, sequelize } = require('../models');
 const { Op } = require('sequelize');
 const DataEncryptionService = require('../services/DataEncryptionService');
+const { encryptAuthResponse } = require('../utils/encryption');
 
 const { Client, Tenant } = models;
 

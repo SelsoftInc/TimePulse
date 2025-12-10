@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import '@/components/auth/Auth.css';
 import { API_BASE } from '@/config/api';
+import { decryptAuthResponse } from '@/utils/encryption';
 
 export default function OnboardingPage() {
   const searchParams = useSearchParams();
@@ -84,8 +85,12 @@ export default function OnboardingPage() {
       });
 
       console.log('[Onboarding] Response status:', response.status);
-      const data = await response.json();
-      console.log('[Onboarding] Response data:', data);
+      const rawData = await response.json();
+      console.log('[Onboarding] Raw response data:', rawData);
+      
+      // Decrypt the response if encrypted
+      const data = decryptAuthResponse(rawData);
+      console.log('[Onboarding] Decrypted response data:', data);
 
       if (response.ok && data.success) {
         console.log('[Onboarding] Registration successful');

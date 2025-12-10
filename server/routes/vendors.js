@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { models, sequelize } = require('../models');
 const DataEncryptionService = require('../services/DataEncryptionService');
+const { encryptAuthResponse } = require('../utils/encryption');
 
 const { Vendor } = models;
 
@@ -29,7 +30,8 @@ router.get('/', async (req, res) => {
       return DataEncryptionService.decryptVendorData(plainVendor);
     });
 
-    res.json({ success: true, vendors: decryptedVendors, total: decryptedVendors.length });
+    const responseData = { success: true, vendors: decryptedVendors, total: decryptedVendors.length };
+    res.json(encryptAuthResponse(responseData));
   } catch (err) {
     console.error('Error fetching vendors:', err);
     res.status(500).json({ error: 'Failed to fetch vendors', details: err.message });
@@ -51,7 +53,8 @@ router.get('/:id', async (req, res) => {
       vendor.toJSON ? vendor.toJSON() : vendor
     );
 
-    res.json({ success: true, vendor: decryptedVendor });
+    const responseData = { success: true, vendor: decryptedVendor };
+    res.json(encryptAuthResponse(responseData));
   } catch (err) {
     console.error('Error fetching vendor:', err);
     res.status(500).json({ error: 'Failed to fetch vendor', details: err.message });
@@ -86,7 +89,8 @@ router.post('/', async (req, res) => {
     );
     console.log('✅ Vendor data decrypted');
     
-    res.status(201).json({ success: true, vendor: decryptedVendor });
+    const responseData = { success: true, vendor: decryptedVendor };
+    res.status(201).json(encryptAuthResponse(responseData));
   } catch (err) {
     console.error('❌ Error creating vendor:', err);
     console.error('Error stack:', err.stack);
@@ -130,7 +134,8 @@ router.put('/:id', async (req, res) => {
       vendor.toJSON ? vendor.toJSON() : vendor
     );
     
-    res.json({ success: true, vendor: decryptedVendor });
+    const responseData = { success: true, vendor: decryptedVendor };
+    res.json(encryptAuthResponse(responseData));
   } catch (err) {
     console.error('Error updating vendor:', err);
     res.status(500).json({ error: 'Failed to update vendor', details: err.message });
@@ -148,7 +153,8 @@ router.delete('/:id', async (req, res) => {
     if (!vendor) return res.status(404).json({ error: 'Vendor not found' });
 
     await vendor.destroy();
-    res.json({ success: true });
+    const responseData = { success: true };
+    res.json(encryptAuthResponse(responseData));
   } catch (err) {
     console.error('Error deleting vendor:', err);
     res.status(500).json({ error: 'Failed to delete vendor', details: err.message });

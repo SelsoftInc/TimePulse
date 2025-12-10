@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { models, sequelize } = require('../models');
 const DataEncryptionService = require('../services/DataEncryptionService');
+const { encryptAuthResponse } = require('../utils/encryption');
 
 const { ImplementationPartner } = models;
 

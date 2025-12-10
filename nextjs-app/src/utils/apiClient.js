@@ -1,10 +1,12 @@
 /**
  * API Client with automatic fallback to static data
  * Automatically detects server connection and uses mock data when offline
+ * Automatically decrypts encrypted API responses
  */
 
 import { apiRequest, isStaticMode } from '@/services/staticApiService';
 import { API_BASE } from '@/config/api';
+import { decryptAuthResponse } from '@/utils/encryption';
 
 /**
  * Check if server is reachable
@@ -67,8 +69,10 @@ export const apiClient = {
         throw new Error(`HTTP ${response.status}`);
       }
       
-      const data = await response.json();
+      const rawData = await response.json();
       console.log(`🌐 Real API: GET ${endpoint}`);
+      // Decrypt response if encrypted
+      const data = decryptAuthResponse(rawData);
       return data;
       
     } catch (error) {
@@ -106,8 +110,10 @@ export const apiClient = {
         throw new Error(`HTTP ${response.status}`);
       }
       
-      const result = await response.json();
+      const rawResult = await response.json();
       console.log(`🌐 Real API: POST ${endpoint}`);
+      // Decrypt response if encrypted
+      const result = decryptAuthResponse(rawResult);
       return result;
       
     } catch (error) {
@@ -145,8 +151,10 @@ export const apiClient = {
         throw new Error(`HTTP ${response.status}`);
       }
       
-      const result = await response.json();
+      const rawResult = await response.json();
       console.log(`🌐 Real API: PUT ${endpoint}`);
+      // Decrypt response if encrypted
+      const result = decryptAuthResponse(rawResult);
       return result;
       
     } catch (error) {
@@ -183,8 +191,10 @@ export const apiClient = {
         throw new Error(`HTTP ${response.status}`);
       }
       
-      const result = await response.json();
+      const rawResult = await response.json();
       console.log(`🌐 Real API: DELETE ${endpoint}`);
+      // Decrypt response if encrypted
+      const result = decryptAuthResponse(rawResult);
       return result;
       
     } catch (error) {

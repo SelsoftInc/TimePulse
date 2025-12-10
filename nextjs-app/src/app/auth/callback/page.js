@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import { decryptAuthResponse } from '@/utils/encryption';
 
 export default function AuthCallback() {
   const { data: session, status } = useSession();
@@ -46,8 +47,12 @@ export default function AuthCallback() {
           });
 
           console.log('[OAuth Callback] Response status:', response.status);
-          const data = await response.json();
-          console.log('[OAuth Callback] Response data:', data);
+          const rawData = await response.json();
+          console.log('[OAuth Callback] Raw response data:', rawData);
+          
+          // Decrypt the response if encrypted
+          const data = decryptAuthResponse(rawData);
+          console.log('[OAuth Callback] Decrypted response data:', data);
 
           // Check if user is pending approval
           if (data.isPending) {

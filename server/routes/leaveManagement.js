@@ -5,6 +5,7 @@ const NotificationService = require("../services/NotificationService");
 const LeaveManagementEmailService = require("../services/LeaveManagementEmailService");
 const { Op } = require("sequelize");
 const DataEncryptionService = require("../services/DataEncryptionService");
+const { encryptAuthResponse } = require("../utils/encryption");
 
 const { User, Employee, LeaveRequest, LeaveBalance } = models;
 

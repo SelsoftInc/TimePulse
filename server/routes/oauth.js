@@ -8,6 +8,7 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { models, sequelize } = require('../models');
+const { encryptAuthResponse } = require('../utils/encryption');
 
 // JWT Secret
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
@@ -141,8 +142,8 @@ router.post('/check-user', async (req, res) => {
     // Update last login
     await user.update({ lastLogin: new Date() });
 
-    // Return user data
-    res.json({
+    // Prepare response data
+    const responseData = {
       success: true,
       exists: true,
       needsOnboarding: false,
@@ -163,7 +164,11 @@ router.post('/check-user', async (req, res) => {
         subdomain: user.tenant.subdomain,
         status: user.tenant.status
       } : null
-    });
+    };
+
+    // Encrypt and return response
+    const encryptedResponse = encryptAuthResponse(responseData);
+    res.json(encryptedResponse);
 
   } catch (error) {
     console.error('Check user error:', error);
@@ -396,8 +401,8 @@ router.post('/register', async (req, res) => {
       { expiresIn: JWT_EXPIRES_IN }
     );
 
-    // Return success response with pending status
-    res.status(201).json({
+    // Prepare response data
+    const responseData = {
       success: true,
       message: 'Registration submitted successfully. Awaiting admin approval.',
       requiresApproval: true,
@@ -419,7 +424,11 @@ router.post('/register', async (req, res) => {
         subdomain: tenant.subdomain,
         status: tenant.status
       }
-    });
+    };
+
+    // Encrypt and return response
+    const encryptedResponse = encryptAuthResponse(responseData);
+    res.status(201).json(encryptedResponse);
 
   } catch (error) {
     console.error('OAuth registration error:', error);

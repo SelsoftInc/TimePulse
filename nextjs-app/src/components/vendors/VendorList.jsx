@@ -10,6 +10,7 @@ import PermissionGuard from '../common/PermissionGuard';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
 import ConfirmDialog from '../common/ConfirmDialog';
+import { decryptApiResponse } from '@/utils/encryption';
 import "../common/Pagination.css";
 import "../common/TableScroll.css";
 import "../common/ActionsDropdown.css";
@@ -82,7 +83,13 @@ const VendorList = () => {
               Authorization: `Bearer ${localStorage.getItem("token")}`}}
         );
         if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-        const data = await resp.json();
+        const rawData = await resp.json();
+        console.log('📦 Raw vendors response:', rawData);
+        
+        // Decrypt the response if encrypted
+        const data = decryptApiResponse(rawData);
+        console.log('🔓 Decrypted vendors data:', data);
+        
         if (data.success) {
           setVendors(data.vendors || []);
         } else {

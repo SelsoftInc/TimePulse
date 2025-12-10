@@ -57,6 +57,28 @@ export function decryptAuthResponse(response) {
 }
 
 /**
+ * Decrypt general API response (for employees, vendors, clients, etc.)
+ * @param {Object} response - Response object from API
+ * @returns {Object} - Decrypted response data
+ */
+export function decryptApiResponse(response) {
+  try {
+    // Check if response is encrypted
+    if (response.encrypted && response.data) {
+      const decryptedData = decryptData(response.data);
+      return decryptedData;
+    }
+    
+    // If not encrypted, return as is (for backward compatibility)
+    return response;
+  } catch (error) {
+    console.error('API response decryption error:', error);
+    // Return original response if decryption fails (backward compatibility)
+    return response;
+  }
+}
+
+/**
  * Encrypt data using AES encryption (for testing purposes)
  * @param {Object|String} data - Data to encrypt
  * @returns {String} - Encrypted string

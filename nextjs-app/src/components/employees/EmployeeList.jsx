@@ -11,6 +11,7 @@ import { useToast } from '@/contexts/ToastContext';
 import DataGridFilter from '../common/DataGridFilter';
 import ConfirmationDialog from '../common/ConfirmationDialog';
 import { useConfirmation } from '@/hooks/useConfirmation';
+import { decryptApiResponse } from '@/utils/encryption';
 import "./Employees.css";
 import "./EmployeeManagement.css";
 import "./EmployeeTable.css";
@@ -255,7 +256,12 @@ const EmployeeList = () => {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const data = await response.json();
+      const rawData = await response.json();
+      console.log('📦 Raw employees response:', rawData);
+      
+      // Decrypt the response if encrypted
+      const data = decryptApiResponse(rawData);
+      console.log('🔓 Decrypted employees data:', data);
 
       if (data.success) {
         console.log('✅ Employees fetched:', data.employees?.length || 0, 'employees');
@@ -306,12 +312,14 @@ const EmployeeList = () => {
         { timeoutMs: 15000 }
       );
       if (!resp.ok) {
-        const err = await resp.json().catch(() => ({}));
+        const rawErr = await resp.json().catch(() => ({}));
+        const err = decryptApiResponse(rawErr);
         throw new Error(
           err.details || `Failed to fetch clients (${resp.status})`
         );
       }
-      const data = await resp.json();
+      const rawData = await resp.json();
+      const data = decryptApiResponse(rawData);
       const list = (data.clients || data || []).filter(
         (c) => (c.status || "active") === "active"
       );
@@ -355,7 +363,8 @@ const EmployeeList = () => {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`}});
       if (!resp.ok) throw new Error(`Failed to fetch vendors`);
-      const data = await resp.json();
+      const rawData = await resp.json();
+      const data = decryptApiResponse(rawData);
       const list = (data.vendors || data || []).filter(
         (v) => !v.isImplPartner && v.status === "active"
       );
@@ -395,11 +404,12 @@ const EmployeeList = () => {
       );
       if (!resp.ok) throw new Error("Failed to assign vendor");
       
-      const data = await resp.json();
-      console.log("✅ Vendor assignment response:", data);
+      const rawCData = await resp.json();
+      const cData = decryptApiResponse(rawCData);
+      console.log("✅ Vendor assignment response:", cData);
       
       // Optimistically update the employee in the local state
-      if (data.employee) {
+      if (cData.employee) {
         setEmployees(prevEmployees => 
           prevEmployees.map(emp => 
             emp.id === assignTarget.id 
@@ -441,7 +451,8 @@ const EmployeeList = () => {
             Authorization: `Bearer ${localStorage.getItem("token")}`}}
       );
       if (!resp.ok) throw new Error(`Failed to fetch impl partners`);
-      const data = await resp.json();
+      const rawData = await resp.json();
+      const data = decryptApiResponse(rawData);
       const list = (data.vendors || data || []).filter(
         (v) => v.isImplPartner && v.status === "active"
       );

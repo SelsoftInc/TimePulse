@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
 import { API_BASE } from '@/config/api';
+import { decryptApiResponse } from '@/utils/encryption';
 import LeaveApprovals from './LeaveApprovals';
 import { validateWeekdays } from '@/utils/validations';
 import "./LeaveManagement.css";
@@ -87,17 +88,26 @@ const LeaveManagement = () => {
         console.error('❌ Balance error details:', errorText);
       }
       
-      const balanceData = balanceResponse.ok
+      const rawBalanceData = balanceResponse.ok
         ? await balanceResponse.json()
         : { balance: {} };
-      const historyData = historyResponse.ok
+      const rawHistoryData = historyResponse.ok
         ? await historyResponse.json()
         : { requests: [] };
-      const pendingData = pendingResponse.ok
+      const rawPendingData = pendingResponse.ok
         ? await pendingResponse.json()
         : { requests: [] };
 
-      console.log('📦 Raw balance data:', balanceData);
+      console.log('📦 Raw balance data:', rawBalanceData);
+      
+      // Decrypt all responses
+      const balanceData = decryptApiResponse(rawBalanceData);
+      const historyData = decryptApiResponse(rawHistoryData);
+      const pendingData = decryptApiResponse(rawPendingData);
+      
+      console.log('🔓 Decrypted balance data:', balanceData);
+      console.log('🔓 Decrypted history data:', historyData);
+      console.log('🔓 Decrypted pending data:', pendingData);
       console.log('📦 Balance object:', balanceData.balance);
 
       setLeaveData({
@@ -133,7 +143,8 @@ const LeaveManagement = () => {
       );
 
       if (response.ok) {
-        const data = await response.json();
+        const rawData = await response.json();
+        const data = decryptApiResponse(rawData);
         console.log('📋 Fetched approvers:', data.approvers);
         setApprovers(data.approvers || []);
       } else {
@@ -272,7 +283,8 @@ const LeaveManagement = () => {
       console.log("📥 Response status:", response.status);
 
       if (!response.ok) {
-        const errorData = await response.json();
+        const rawErrorData = await response.json();
+        const errorData = decryptApiResponse(rawErrorData);
         console.log("❌ Error response:", errorData);
         
         // Handle specific error cases
@@ -286,7 +298,8 @@ const LeaveManagement = () => {
         throw new Error(errorData.error || "Failed to submit leave request");
       }
 
-      const result = await response.json();
+      const rawResult = await response.json();
+      const result = decryptApiResponse(rawResult);
       console.log("✅ Success response:", result);
 
       // Show success toast first

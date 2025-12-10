@@ -8,6 +8,7 @@ import PermissionGuard from '../common/PermissionGuard';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
 import { API_BASE } from '@/config/api';
+import { decryptApiResponse } from '@/utils/encryption';
 import "./Clients.css";
 import "../common/Pagination.css";
 import "../common/TableScroll.css";
@@ -63,7 +64,12 @@ const ClientsList = () => {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const data = await response.json();
+      const rawData = await response.json();
+      console.log('📦 Raw clients response:', rawData);
+      
+      // Decrypt the response if encrypted
+      const data = decryptApiResponse(rawData);
+      console.log('🔓 Decrypted clients data:', data);
 
       if (data.success) {
         setClients(data.clients || []);

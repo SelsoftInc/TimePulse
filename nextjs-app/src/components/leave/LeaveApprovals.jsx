@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
 import { API_BASE } from '@/config/api';
+import { decryptApiResponse } from '@/utils/encryption';
 import '../common/Pagination.css';
 
 const LeaveApprovals = () => {
@@ -40,7 +41,9 @@ const LeaveApprovals = () => {
       );
 
       if (pendingResponse.ok) {
-        const pendingData = await pendingResponse.json();
+        const rawPendingData = await pendingResponse.json();
+        const pendingData = decryptApiResponse(rawPendingData);
+        console.log('🔓 Decrypted pending approvals:', pendingData);
         setPendingRequests(pendingData.leaveRequests || []);
       }
 
@@ -56,7 +59,9 @@ const LeaveApprovals = () => {
         );
 
         if (allResponse.ok) {
-          const allData = await allResponse.json();
+          const rawAllData = await allResponse.json();
+          const allData = decryptApiResponse(rawAllData);
+          console.log('🔓 Decrypted all requests:', allData);
           setAllRequests(allData.leaveRequests || []);
         }
       }
@@ -96,7 +101,8 @@ const LeaveApprovals = () => {
         await fetchLeaveRequests();
         toast.success('Leave request approved successfully!');
       } else {
-        const errorData = await response.json();
+        const rawErrorData = await response.json();
+        const errorData = decryptApiResponse(rawErrorData);
         toast.error(errorData.error || 'Failed to approve leave request');
       }
     } catch (error) {
@@ -134,7 +140,8 @@ const LeaveApprovals = () => {
         await fetchLeaveRequests();
         toast.success('Leave request rejected');
       } else {
-        const errorData = await response.json();
+        const rawErrorData = await response.json();
+        const errorData = decryptApiResponse(rawErrorData);
         toast.error(errorData.error || 'Failed to reject leave request');
       }
     } catch (error) {

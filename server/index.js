@@ -21,7 +21,7 @@ const PORT = process.env.PORT || 5001;
 
 // Import route modules
 const timesheetRoutes = require("./routes/timesheets");
-const invoiceRoutes = require("./routes/invoices");
+const invoiceRoutes = require("./routes/invoices/new");
 const engineRoutes = require("./routes/engine");
 const onboardingRoutes = require("./routes/onboarding");
 const employeeRoutes = require("./routes/employees");
@@ -104,7 +104,7 @@ app.get("/", (req, res) => {
     endpoints: {
       health: "/health",
       timesheets: "/api/timesheets",
-      invoices: "/api/invoices",
+      invoices: "/api/invoices/new",
       engine: "/api/engine",
       onboarding: "/api/onboarding",
       employees: "/api/employees",
@@ -122,7 +122,7 @@ const migrationsRoutes = require('./routes/migrations');
 app.use('/api/migrations', migrationsRoutes);
 app.use("/api/timesheets", timesheetRoutes);
 console.log('📍 Loading invoices routes...');
-app.use("/api/invoices", invoiceRoutes);
+app.use("/api/invoices/new", invoiceRoutes);
 console.log('📍 Loading engine routes...');
 app.use("/api/engine", engineRoutes);
 console.log('📍 Loading onboarding routes...');

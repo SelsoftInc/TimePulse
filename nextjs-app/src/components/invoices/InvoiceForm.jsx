@@ -188,7 +188,7 @@ const InvoiceForm = () => {
       
       // Navigate back to invoices list after a short delay
       setTimeout(() => {
-        router.push(`/${subdomain}/invoices`);
+        router.push(`/${subdomain}/invoices/new`);
       }, 2000);
       
     } catch (error) {
@@ -246,7 +246,7 @@ const InvoiceForm = () => {
               <div className="nk-block-head-content">
                 <button 
                   className="btn btn-outline-light bg-white d-none d-sm-inline-flex"
-                  onClick={() => router.push(`/${subdomain}/invoices`)}
+                  onClick={() => router.push(`/${subdomain}/invoices/new`)}
                 >
                   <em className="icon ni ni-arrow-left"></em>
                   <span>Back to Invoices</span>
@@ -630,7 +630,7 @@ const InvoiceForm = () => {
                     <button
                       type="button"
                       className="btn btn-outline-light ms-2"
-                      onClick={() => router.push(`/${subdomain}/invoices`)}
+                      onClick={() => router.push(`/${subdomain}/invoices/new`)}
                       disabled={isSubmitting}
                     >
                       Cancel

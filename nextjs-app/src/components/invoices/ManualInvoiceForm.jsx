@@ -280,7 +280,7 @@ const ManualInvoiceForm = () => {
       const result = await response.json();
 
       if (result.success) {
-        router.push(`/${subdomain}/invoices`);
+        router.push(`/${subdomain}/invoices/new`);
       } else {
         throw new Error(result.error || "Failed to create invoice");
       }
@@ -589,7 +589,7 @@ const ManualInvoiceForm = () => {
         <div className="form-actions">
           <button
             type="button"
-            onClick={() => router.push(`/${subdomain}/invoices`)}
+            onClick={() => router.push(`/${subdomain}/invoices/new`)}
             className="btn btn-secondary"
           >
             Cancel

@@ -80,7 +80,7 @@ const InvoiceCreation = () => {
   };
 
   const handleBack = () => {
-    router.push(`/${subdomain}/invoices`);
+    router.push(`/${subdomain}/invoices/new`);
   };
 
   if (loading) {

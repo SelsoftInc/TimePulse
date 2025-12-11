@@ -123,7 +123,7 @@ const InvoiceView = () => {
           <p>The invoice you're looking for doesn't exist.</p>
           <button
             className="btn btn-primary"
-            onClick={() => router.push(`/${subdomain}/invoices`)}
+            onClick={() => router.push(`/${subdomain}/invoices/new`)}
           >
             Back to Invoices
           </button>
@@ -138,7 +138,7 @@ const InvoiceView = () => {
       <div className="invoice-view-header">
         <button
           className="btn btn-secondary"
-          onClick={() => router.push(`/${subdomain}/invoices`)}
+          onClick={() => router.push(`/${subdomain}/invoices/new`)}
         >
           <i className="fas fa-arrow-left"></i> Back to Invoices
         </button>

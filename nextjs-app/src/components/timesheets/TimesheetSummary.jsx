@@ -13,6 +13,7 @@ import { isServerConnectedCached } from '@/utils/serverCheck';
 import {
   uploadAndProcessTimesheet,
   transformTimesheetToInvoice} from '@/services/engineService';
+import { apiClient } from '@/utils/apiClient';
 import "./TimesheetSummary.css";
 import "../common/Pagination.css";
 
@@ -690,18 +691,19 @@ const TimesheetSummary = () => {
       let vendorClientType = '';
       
       try {
-        const employeesResponse = await axios.get(
-          `${API_BASE}/api/employees?tenantId=${user.tenantId}`
+        const employeesResponse = await apiClient.get(
+          '/api/employees',
+          { tenantId: user.tenantId }
         );
         
-        console.log('📦 Employees API Response:', employeesResponse.data);
+        console.log('📦 Employees API Response:', employeesResponse);
         
-        if (!employeesResponse.data.success || !employeesResponse.data.employees) {
+        if (!employeesResponse.success || !employeesResponse.employees) {
           throw new Error('Failed to fetch employees from Employee API');
         }
         
         // Find the employee by email or name
-        const allEmployees = employeesResponse.data.employees;
+        const allEmployees = employeesResponse.employees;
         
         if (employeeEmail) {
           employeeData = allEmployees.find(emp => 

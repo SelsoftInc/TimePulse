@@ -6,6 +6,7 @@ import React, { useState, useEffect } from 'react';
 import { API_BASE } from '@/config/api';
 import { TAX_ID_LABELS, getPostalLabel } from '../../config/lookups';
 import { useAuth } from '@/contexts/AuthContext';
+import { decryptApiResponse } from '@/utils/encryption';
 import { PERMISSIONS } from '@/utils/roles';
 import PermissionGuard from '../common/PermissionGuard';
 import './Vendors.css';
@@ -45,11 +46,12 @@ const VendorDetail = () => {
           }
         });
         if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-        const data = await resp.json();
-        if (data.success) {
-          setVendor(data.vendor || null);
+        const rawData = await resp.json();
+        const data = decryptApiResponse(rawData);
+        if (data?.success) {
+          setVendor(data?.vendor || null);
         } else {
-          setError(data.error || 'Failed to fetch vendor');
+          setError(data?.error || 'Failed to fetch vendor');
           setVendor(null);
         }
       } catch (e) {
@@ -121,9 +123,9 @@ const VendorDetail = () => {
                 <i className="fas fa-arrow-left mr-1"></i> Back to Vendors
               </Link>
               <PermissionGuard requiredPermission={PERMISSIONS.EDIT_VENDOR}>
-                <button className="btn btn-primary ml-2">
+                <Link href={`/${subdomain}/vendors/edit/${id}`} className="btn btn-primary ml-2">
                   <i className="fas fa-edit mr-1"></i> Edit Vendor
-                </button>
+                </Link>
               </PermissionGuard>
             </div>
           </div>

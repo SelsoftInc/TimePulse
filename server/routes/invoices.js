@@ -170,7 +170,7 @@ router.get("/", async (req, res) => {
     }));
 
     // Transform data for frontend dashboard
-    const transformedInvoices = invoices.map((inv) => ({
+    const transformedInvoices = decryptedInvoices.map((inv) => ({
       id: inv.id,
       invoiceNumber: inv.invoiceNumber,
       vendor: inv.vendor?.name || inv.timesheet?.employee?.vendor?.name || "N/A",
@@ -182,7 +182,9 @@ router.get("/", async (req, res) => {
         : (inv.employee ? `${inv.employee.firstName} ${inv.employee.lastName}` : "Unknown"),
       week: inv.timesheet?.weekStart && inv.timesheet?.weekEnd
         ? `${new Date(inv.timesheet.weekStart).toLocaleDateString('en-US', { month: 'short', day: '2-digit' })} - ${new Date(inv.timesheet.weekEnd).toLocaleDateString('en-US', { month: 'short', day: '2-digit' })}`
-        : "N/A",
+        : (inv.weekStart && inv.weekEnd 
+          ? `${new Date(inv.weekStart).toLocaleDateString('en-US', { month: 'short', day: '2-digit' })} - ${new Date(inv.weekEnd).toLocaleDateString('en-US', { month: 'short', day: '2-digit' })}`
+          : "N/A"),
       period:
         inv.timesheet?.weekStart && inv.timesheet?.weekEnd
           ? `${inv.timesheet.weekStart} - ${inv.timesheet.weekEnd}`
@@ -196,8 +198,9 @@ router.get("/", async (req, res) => {
       dueOn: inv.dueDate
         ? new Date(inv.dueDate).toISOString().split("T")[0]
         : "N/A",
-      total: parseFloat(inv.totalAmount) || 0,
-      amount: parseFloat(inv.totalAmount) || 0,
+      totalHours: inv.totalHours || inv.timesheet?.totalHours || 0,
+      total: parseFloat(inv.totalAmount || inv.total) || 0,
+      amount: parseFloat(inv.totalAmount || inv.total) || 0,
       paymentStatus: inv.paymentStatus || "pending",
       status: inv.status || "active",
       lineItems: inv.lineItems || [],
@@ -207,9 +210,12 @@ router.get("/", async (req, res) => {
         id: inv.timesheet.id,
         weekStart: inv.timesheet.weekStart,
         weekEnd: inv.timesheet.weekEnd,
+        totalHours: inv.timesheet.totalHours,
         employee: inv.timesheet.employee
       } : null,
     }));
+
+    console.log(`✅ Returning ${transformedInvoices.length} invoices for tenant ${tenantId}`);
 
     res.json({
       success: true,

@@ -154,8 +154,9 @@ const VendorList = () => {
         {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }}
       );
-      const data = await refreshed.json().catch(() => ({ vendors: [] }));
-      setVendors(data.vendors || []);
+      const refreshedRaw = await refreshed.json().catch(() => ({ vendors: [] }));
+      const refreshedData = decryptApiResponse(refreshedRaw);
+      setVendors(refreshedData.vendors || []);
       toast.success("Vendor deleted");
     } catch (e) {
       toast.error(`Failed to delete: ${e.message}`);

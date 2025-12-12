@@ -111,9 +111,9 @@ const Sidebar = ({ collapsed, toggleSidebar, mobileVisible = false, isMobile = f
             fallback={null}
           >
             <li className="sidebar-item">
-              <Link href={`/${currentSubdomain}/invoices/new`}
+              <Link href={`/${currentSubdomain}/invoices`}
                 className={`sidebar-link ${
-                  currentPath.includes(`/${currentSubdomain}/invoices/new`)
+                  currentPath.includes(`/${currentSubdomain}/invoices`)
                     ? "active"
                     : ""
                 }`}

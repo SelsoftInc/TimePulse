@@ -20,13 +20,30 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [backgroundTheme, setBackgroundTheme] = useState("default");
+  const [isOAuthConfigured, setIsOAuthConfigured] = useState(true);
 
-  // Check for OAuth errors
+  // Check for OAuth errors and configuration
   useEffect(() => {
     const oauthError = searchParams.get('error');
     if (oauthError) {
       setError('Google OAuth is not configured. Please use email/password login or contact administrator.');
+      setIsOAuthConfigured(false);
     }
+    
+    // Check if OAuth is configured by checking environment variables
+    const checkOAuthConfig = async () => {
+      try {
+        const response = await fetch('/api/auth/providers');
+        const providers = await response.json();
+        const hasGoogle = providers && providers.google;
+        setIsOAuthConfigured(hasGoogle);
+      } catch (error) {
+        console.log('OAuth check failed, assuming not configured');
+        setIsOAuthConfigured(false);
+      }
+    };
+    
+    checkOAuthConfig();
   }, [searchParams]);
 
   // Load saved email on component mount
@@ -460,24 +477,27 @@ const Login = () => {
           </button>
         </form>
 
-        {/* OAuth Divider */}
-        <div className="auth-divider">
-          <span>OR</span>
-        </div>
+        {/* OAuth Divider - Only show if OAuth is configured */}
+        {isOAuthConfigured && (
+          <div className="auth-divider">
+            <span>OR</span>
+          </div>
+        )}
 
-        {/* Google OAuth Button */}
-        <button
-          type="button"
-          className="btn-google btn-block"
-          onClick={() => {
-            setLoading(true);
-            signIn('google', { 
-              callbackUrl: '/auth/callback',
-              redirect: true
-            });
-          }}
-          disabled={loading}
-        >
+        {/* Google OAuth Button - Only show if OAuth is configured */}
+        {isOAuthConfigured && (
+          <button
+            type="button"
+            className="btn-google btn-block"
+            onClick={() => {
+              setLoading(true);
+              signIn('google', { 
+                callbackUrl: '/auth/callback',
+                redirect: true
+              });
+            }}
+            disabled={loading}
+          >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
             <path
               d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -498,6 +518,7 @@ const Login = () => {
           </svg>
           Sign in with Google
         </button>
+        )}
       </div>
     </div>
   );

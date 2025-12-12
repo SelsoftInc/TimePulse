@@ -308,7 +308,7 @@ router.get("/employees", async (req, res) => {
 });
 
 // Get invoice report data
-router.get("/invoices/new", async (req, res) => {
+router.get("/invoices", async (req, res) => {
   try {
     const { tenantId, startDate, endDate } = req.query;
 

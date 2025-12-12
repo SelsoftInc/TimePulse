@@ -83,7 +83,7 @@ const InvoiceDashboard = () => {
         "Content-Type": "application/json",
         Authorization: `Bearer ${localStorage.getItem("token")}`};
 
-      const url = `${API_BASE}/api/reports/invoices?tenantId=${userInfo.tenantId}`;
+      const url = `${API_BASE}/api/invoices?tenantId=${userInfo.tenantId}`;
       console.log("Fetching invoices from:", url);
 
       const response = await fetch(url, { headers });
@@ -93,8 +93,8 @@ const InvoiceDashboard = () => {
       console.log("Invoice data received:", data);
       
       if (data.success) {
-        console.log("Setting invoices:", data.data);
-        setInvoices(data.data || []);
+        console.log("Setting invoices:", data.invoices);
+        setInvoices(data.invoices || []);
       } else {
         throw new Error(data.error || "Failed to fetch invoices");
       }
@@ -278,29 +278,29 @@ const InvoiceDashboard = () => {
                         <div key={invoice.id} className="nk-tb-item">
                           <div className="nk-tb-col">
                             <span className="tb-lead">
-                              {invoice.invoiceId || invoice.id}
+                              {invoice.invoiceNumber || invoice.id}
                             </span>
                           </div>
                           <div className="nk-tb-col tb-col-md">
-                            <span>{invoice.vendorName || invoice.vendor || 'N/A'}</span>
+                            <span>{invoice.vendor || 'N/A'}</span>
                           </div>
                           <div className="nk-tb-col tb-col-md">
-                            <span>{invoice.week || invoice.month || 'N/A'}</span>
+                            <span>{invoice.week || 'N/A'}</span>
                           </div>
                           <div className="nk-tb-col tb-col-md">
-                            <span>{invoice.totalHours || 0}</span>
+                            <span>{invoice.totalHours || invoice.timesheet?.totalHours || 0}</span>
                           </div>
                           <div className="nk-tb-col">
                             <span className="tb-amount">
-                              ${(invoice.amount || 0).toLocaleString()}
+                              ${(invoice.amount || invoice.total || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </span>
                           </div>
                           <div className="nk-tb-col">
                             <span
                               className={`badge bg-outline-${
-                                invoice.status === 'Active' || invoice.status === 'Paid'
+                                invoice.status === 'active' || invoice.status === 'paid'
                                   ? 'success'
-                                  : invoice.status === 'Pending' || invoice.status === 'Generated'
+                                  : invoice.status === 'pending' || invoice.status === 'generated'
                                   ? 'warning'
                                   : 'danger'
                               }`}
@@ -331,7 +331,7 @@ const InvoiceDashboard = () => {
                               </button>
                               {openMenuId === invoice.id && (
                                 <div className="dropdown-menu dropdown-menu-right show" style={{ position: 'absolute' }}>
-                                  <Link href={`/invoices/view/${invoice.id}`}
+                                  <Link href={`/${subdomain}/invoices/view/${invoice.id}`}
                                     className="dropdown-item"
                                     onClick={() => setOpenMenuId(null)}
                                   >
@@ -340,7 +340,7 @@ const InvoiceDashboard = () => {
                                   <button
                                     className="dropdown-item"
                                     onClick={() => {
-                                      alert(`Viewing details for invoice ${invoice.invoiceId || invoice.id}`);
+                                      alert(`Viewing details for invoice ${invoice.invoiceNumber || invoice.id}`);
                                       setOpenMenuId(null);
                                     }}
                                   >
@@ -349,7 +349,7 @@ const InvoiceDashboard = () => {
                                   <button
                                     className="dropdown-item"
                                     onClick={() => {
-                                      alert(`Downloading invoice ${invoice.invoiceId || invoice.id}`);
+                                      alert(`Downloading invoice ${invoice.invoiceNumber || invoice.id}`);
                                       setOpenMenuId(null);
                                     }}
                                   >
@@ -358,7 +358,7 @@ const InvoiceDashboard = () => {
                                   <button
                                     className="dropdown-item"
                                     onClick={() => {
-                                      alert(`Sending invoice ${invoice.invoiceId || invoice.id}`);
+                                      alert(`Sending invoice ${invoice.invoiceNumber || invoice.id}`);
                                       setOpenMenuId(null);
                                     }}
                                   >

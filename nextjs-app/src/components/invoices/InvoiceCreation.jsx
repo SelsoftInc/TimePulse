@@ -71,7 +71,7 @@ const InvoiceCreation = () => {
 
   const handleQuickCreate = () => {
     // Navigate to quick invoice creation (existing form)
-    router.push(`/${subdomain}/invoices/new`);
+    router.push(`/${subdomain}/invoices`);
   };
 
   const handleManualCreate = () => {

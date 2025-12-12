@@ -7,6 +7,7 @@ import InvoiceSuccessModal from '../common/InvoiceSuccessModal';
 import InvoiceDetailsModal from '../common/InvoiceDetailsModal';
 import axios from 'axios';
 import { API_BASE } from '@/config/api';
+import { apiClient } from '@/utils/apiClient';
 import "./Invoice.css";
 import '../common/ActionsDropdown.css';
 
@@ -316,19 +317,17 @@ const InvoiceUploadModal = ({ onClose, onUpload }) => {
         return;
       }
       
-      const response = await axios.get(`${API_BASE}/api/employees`, {
-        params: { tenantId }
-      });
+      const response = await apiClient.get('/api/employees', { tenantId });
 
-      console.log("Employees API response:", response.data);
+      console.log("Employees API response:", response);
 
-      if (response.data.success && response.data.employees) {
+      if (response.success && response.employees) {
         console.log(
           "Setting employees:",
-          response.data.employees.length,
+          response.employees.length,
           "employees"
         );
-        setEmployees(response.data.employees);
+        setEmployees(response.employees);
       } else {
         console.warn("No employees data in response");
         setEmployees([]);

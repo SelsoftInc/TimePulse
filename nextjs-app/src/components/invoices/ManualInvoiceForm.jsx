@@ -280,7 +280,7 @@ const ManualInvoiceForm = () => {
       const result = await response.json();
 
       if (result.success) {
-        router.push(`/${subdomain}/invoices/new`);
+        router.push(`/${subdomain}/invoices`);
       } else {
         throw new Error(result.error || "Failed to create invoice");
       }
@@ -307,7 +307,7 @@ const ManualInvoiceForm = () => {
     <div className="manual-invoice-form-container">
       <div className="form-header">
         <button
-          onClick={() => router.push(`/${subdomain}/invoices/new`)}
+          onClick={() => router.push(`/${subdomain}/invoices`)}
           className="btn btn-back"
         >
           <i className="fas fa-arrow-left mr-1"></i> Back to Options
@@ -589,7 +589,7 @@ const ManualInvoiceForm = () => {
         <div className="form-actions">
           <button
             type="button"
-            onClick={() => router.push(`/${subdomain}/invoices/new`)}
+            onClick={() => router.push(`/${subdomain}/invoices`)}
             className="btn btn-secondary"
           >
             Cancel

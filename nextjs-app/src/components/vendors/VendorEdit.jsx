@@ -7,6 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import PermissionGuard from '../common/PermissionGuard';
 import { PERMISSIONS } from '@/utils/roles';
 import { API_BASE } from '@/config/api';
+import { decryptApiResponse } from '@/utils/encryption';
 import VendorForm from './VendorForm';
 
 const VendorEdit = () => {
@@ -42,8 +43,9 @@ const VendorEdit = () => {
           const err = await resp.json().catch(() => ({}));
           throw new Error(err.details || `Fetch failed with status ${resp.status}`);
         }
-        const data = await resp.json();
-        setInitialVendor(data.vendor || null);
+        const rawData = await resp.json();
+        const data = decryptApiResponse(rawData);
+        setInitialVendor(data?.vendor || null);
       } catch (e) {
         setError(e.message);
       } finally {
@@ -64,6 +66,12 @@ const VendorEdit = () => {
     if (!resp.ok) {
       const err = await resp.json().catch(() => ({}));
       throw new Error(err.details ? JSON.stringify(err.details) : `Update failed with status ${resp.status}`);
+    }
+    // Consume response body to avoid unhandled promise issues and to verify success
+    const rawData = await resp.json().catch(() => ({}));
+    const data = decryptApiResponse(rawData);
+    if (data && data.success === false) {
+      throw new Error(data.error || 'Failed to update vendor');
     }
     router.push(`/${subdomain}/vendors/${id}`);
   };

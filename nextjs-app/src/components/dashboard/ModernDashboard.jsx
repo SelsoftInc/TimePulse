@@ -323,26 +323,31 @@ const ModernDashboard = () => {
   };
 
   const getTimesheetStatusData = () => {
-    const statusCounts = {
-      pending: dashboardData.timesheets.filter((ts) => ts.status === "pending")
-        .length,
-      approved: dashboardData.timesheets.filter(
-        (ts) => ts.status === "approved"
-      ).length,
-      rejected: dashboardData.timesheets.filter(
-        (ts) => ts.status === "rejected"
-      ).length};
-
-    return Object.entries(statusCounts).map(([status, count]) => ({
-      label: status.charAt(0).toUpperCase() + status.slice(1),
-      value: count,
-      color:
-        status === "approved"
-          ? "#28a745"
-          : status === "pending"
-          ? "#ffc107"
-          : "#dc3545"}));
+  const statusCounts = {
+    approved: dashboardData.timesheets.filter(ts => ts.status === "approved").length,
+    pending: dashboardData.timesheets.filter(ts => ts.status === "submitted").length,
+    draft: dashboardData.timesheets.filter(ts => ts.status === "draft").length,
   };
+
+  return [
+    {
+      label: "Approved",
+      value: statusCounts.approved,
+      color: "#28a745"
+    },
+    {
+      label: "Pending",
+      value: statusCounts.pending,
+      color: "#ffc107"
+    },
+    {
+      label: "Draft",
+      value: statusCounts.draft,
+      color: "#17a2b8"
+    }
+  ];
+};
+
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat("en-US", {
@@ -468,229 +473,278 @@ const ModernDashboard = () => {
         </div>
       </div>
 
-      <div className="widgets-grid">
-        {/* Timesheet Status - Moved to top */}
-        <div className="widget timesheet-widget">
-          <div className="widget-header">
-            <h3>Timesheet Status</h3>
-            <i className="fas fa-clock"></i>
-          </div>
-          <div className="widget-content">
-            <div className="metric-display">
-              <span className="metric-value-large">
-                {getPendingTimesheets()}
-              </span>
-              <span className="metric-label">Pending Approval</span>
+     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 p-4">
+
+ <div
+  className="
+    bg-blue-100 dark:bg-[#0f1a25]
+    rounded-2xl shadow-sm 
+    p-5 
+    border border-gray-200 dark:border-gray-700
+    hover:shadow-md transition-all duration-200
+    flex flex-col gap-6
+  "
+>
+  {/* Header */}
+  <div className="flex items-center justify-between">
+    <h3 className="text-base font-semibold text-gray-800 dark:text-gray-100">
+      Timesheet Overview
+    </h3>
+
+    <div
+      className="
+        w-10 h-10 flex items-center justify-center 
+        rounded-xl 
+        bg-blue-50 dark:bg-blue-900/30 
+        text-blue-600 dark:text-blue-300
+      "
+    >
+      <i className="fas fa-clock"></i>
+    </div>
+  </div>
+
+  {/* Stats Row */}
+  <div className="flex justify-around text-center py-6">
+    <div>
+      <p className="text-3xl font-bold text-gray-900 dark:text-white">
+        {getPendingTimesheets()}
+      </p>
+      <p className="text-xs text-gray-500 dark:text-gray-400">Pending</p>
+    </div>
+
+    <div>
+      <p className="text-3xl font-bold text-gray-900 dark:text-white">
+        {getApprovedTimesheets()}
+      </p>
+      <p className="text-xs text-gray-500 dark:text-gray-400">Approved</p>
+    </div>
+
+    <div>
+      <p className="text-3xl font-bold text-gray-900 dark:text-white">
+        {dashboardData.timesheets.length}
+      </p>
+      <p className="text-xs text-gray-500 dark:text-gray-400">Total</p>
+    </div>
+  </div>
+
+  {/* Pie Chart & Legend
+  <div className="flex flex-col items-center justify-center mt-2 space-y-3">
+    <ChartWidget 
+      type="pie" 
+      data={getTimesheetStatusData()} 
+      height={180} 
+      showLegend={true} 
+    />
+  </div> */}
+</div>
+
+{/* 5️⃣ Active Employees */}
+  <div className="bg-blue-200 dark:bg-[#0f1a25] rounded-2xl shadow-sm p-4 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all duration-200 flex flex-col justify-between min-h-[170px]">
+    <div className="flex items-center justify-between">
+      <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-100">Active Employees</h3>
+      <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-blue-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-300">
+        <i className="fas fa-users" aria-hidden />
+      </div>
+    </div>
+
+    <div className="flex items-center justify-center flex-col gap-1 mt-2">
+      <div className="text-2xl md:text-3xl font-extrabold text-gray-900 dark:text-white">{getActiveEmployees()}</div>
+      <div className="text-xs text-gray-500 dark:text-gray-400">+2 this month</div>
+    </div>
+
+    <div className="mt-3 grid grid-cols-2 gap-3 text-xs text-gray-600 dark:text-gray-300">
+      <div>
+        <div className="text-[11px] text-gray-500 dark:text-gray-400">Utilization</div>
+        <div className="font-semibold text-gray-900 dark:text-white">{getEmployeeUtilization()}%</div>
+      </div>
+      <div className="text-right">
+        <div className="text-[11px] text-gray-500 dark:text-gray-400">Hours This Week</div>
+        <div className="font-semibold text-gray-900 dark:text-white">{formatHours(getTotalHoursThisWeek())}</div>
+      </div>
+    </div>
+  </div>
+
+  {/* 2️⃣ Total Revenue */}
+  {user?.role === "admin" && (
+    <div className="bg-cyan-100 dark:bg-[#0f1a25] rounded-2xl shadow-sm p-4 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all duration-200 flex flex-col justify-between min-h-[170px]">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-100">Total Revenue</h3>
+        <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-cyan-50 dark:bg-green-900/30 text-green-600 dark:text-green-300">
+          <i className="fas fa-dollar-sign" aria-hidden />
+        </div>
+      </div>
+
+      <div className="flex items-center justify-center flex-col gap-1 mt-2">
+        <div className="text-xl md:text-2xl font-extrabold text-gray-900 dark:text-white leading-none">
+          {formatCurrency(getTotalRevenue())}
+        </div>
+        <div className="text-xs text-green-600 dark:text-green-400 font-medium">+12.5%</div>
+      </div>
+
+      <div className="mt-3 grid grid-cols-2 gap-3 text-xs text-gray-600 dark:text-gray-300">
+        <div>
+          <div className="text-[11px] text-gray-500 dark:text-gray-400">This Month</div>
+          <div className="font-semibold text-gray-900 dark:text-white">{formatCurrency(getMonthlyRevenue())}</div>
+        </div>
+        <div className="text-right">
+          <div className="text-[11px] text-gray-500 dark:text-gray-400">Outstanding</div>
+          <div className="font-semibold text-gray-900 dark:text-white">{formatCurrency(getOutstandingInvoices())}</div>
+        </div>
+      </div>
+    </div>
+  )}
+
+{/* 4️⃣ Revenue by Client */}
+  {user?.role === "admin" && (
+    <div className="bg-cyan-50 dark:bg-[#0f1a25] rounded-2xl shadow-sm p-5 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all duration-200 flex flex-col gap-4">
+      <div className="flex items-center justify-between">
+        <h3 className="text-base font-semibold text-gray-800 dark:text-gray-100">Revenue by Client</h3>
+        <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-cyan-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-300">
+          <i className="fas fa-building"></i>
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        {revenueByClient.map((client, index) => (
+          <div
+            key={client.client.id}
+            className="flex items-center justify-between bg-gray-50 dark:bg-[#1c2733] p-3 rounded-xl"
+          >
+            <div className="text-sm font-semibold text-gray-700 dark:text-gray-300">#{index + 1}</div>
+            <div className="flex flex-col">
+              <div className="font-medium dark:text-gray-100">{client.client.clientName}</div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">{client.client.email}</div>
             </div>
-            <div className="metric-details">
-              <div className="metric-item">
-                <span className="metric-label">Approved</span>
-                <span className="metric-value">{getApprovedTimesheets()}</span>
-              </div>
-              <div className="metric-item">
-                <span className="metric-label">Total</span>
-                <span className="metric-value">
-                  {dashboardData.timesheets.length}
-                </span>
-              </div>
+            <div className="font-semibold text-gray-900 dark:text-white">
+              {formatCurrency(client.revenue)}
             </div>
           </div>
+        ))}
+      </div>
+    </div>
+  )}
+
+  
+
+   {/* 3️⃣ Monthly Revenue Chart (spans 2 columns on md, 1 on small) */}
+  {user?.role === "admin" && (
+    <div className="bg-slate-50 dark:bg-[#0f1a25] rounded-2xl shadow-sm p-4 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all duration-200 col-span-1 md:col-span-2 flex flex-col min-h-[170px]">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-100">Monthly Revenue Trend</h3>
+        <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-300">
+          <i className="fas fa-chart-line" aria-hidden />
+        </div>
+      </div>
+
+      <div className="mt-3 flex-1">
+        <ChartWidget
+          type="line"
+          data={monthlyRevenueData.revenue}
+          labels={monthlyRevenueData.months}
+          height={150}
+          color="#1c398e"
+          showValues={true}
+        />
+      </div>
+    </div>
+  )}
+
+  
+
+   {/* 8️⃣ Recent Activity */}
+<div className="bg-slate-100 dark:bg-[#0f1a25] rounded-2xl shadow-sm p-5 border border-gray-200 dark:border-gray-700 
+     hover:shadow-md transition-all duration-200 col-span-1 md:col-span-2 
+     flex flex-col h-full">
+
+  {/* Header */}
+  <div className="flex items-center justify-between mb-4">
+    <h3 className="text-base font-semibold text-gray-800 dark:text-gray-100">
+      Recent Activity
+    </h3>
+    <div className="w-10 h-10 flex items-center justify-center rounded-xl 
+        bg-slate-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
+      <i className="fas fa-history"></i>
+    </div>
+  </div>
+
+  <div className="space-y-2 overflow-y-auto pr-2"
+     style={{ maxHeight: "155px" }}>
+
+  {dashboardData.timesheets.slice(0, 5).map((ts) => (
+    <div
+      key={ts.id}
+      className="flex items-center justify-between bg-gray-200 dark:bg-[#1c2733] 
+                 p-2.5 rounded-lg"
+    >
+      {/* Left */}
+      <div className="flex items-center gap-2">
+        <div className="w-7 h-7 flex items-center justify-center rounded-full 
+                        bg-blue-100 dark:bg-blue-900/30 
+                        text-blue-600 dark:text-blue-300 text-xs">
+          <i className="fas fa-clock"></i>
         </div>
 
-        {/* Revenue Overview - Only for Admin */}
-        {user?.role === "admin" && (
-          <div className="widget revenue-widget">
-            <div className="widget-header">
-              <h3>Total Revenue</h3>
-              <i className="fas fa-dollar-sign"></i>
-            </div>
-            <div className="widget-content">
-              <div className="metric-display">
-                <span className="metric-value-large">
-                  {formatCurrency(getTotalRevenue())}
-                </span>
-                <span className="metric-change positive">+12.5%</span>
-              </div>
-              <div className="metric-details">
-                <div className="metric-item">
-                  <span className="metric-label">This Month</span>
-                  <span className="metric-value">
-                    {formatCurrency(getMonthlyRevenue())}
-                  </span>
-                </div>
-                <div className="metric-item">
-                  <span className="metric-label">Outstanding</span>
-                  <span className="metric-value">
-                    {formatCurrency(getOutstandingInvoices())}
-                  </span>
-                </div>
-              </div>
-            </div>
+        <div>
+          <div className="font-medium text-sm dark:text-gray-100">
+            Timesheet submitted by {ts.employeeId}
           </div>
-        )}
-
-        {/* Employee Overview */}
-        <div className="widget employee-widget">
-          <div className="widget-header">
-            <h3>Active Employees</h3>
-            <i className="fas fa-users"></i>
-          </div>
-          <div className="widget-content">
-            <div className="metric-display">
-              <span className="metric-value-large">{getActiveEmployees()}</span>
-              <span className="metric-change neutral">+2 this month</span>
-            </div>
-            <div className="metric-details">
-              <div className="metric-item">
-                <span className="metric-label">Utilization</span>
-                <span className="metric-value">
-                  {getEmployeeUtilization()}%
-                </span>
-              </div>
-              <div className="metric-item">
-                <span className="metric-label">Hours This Week</span>
-                <span className="metric-value">
-                  {formatHours(getTotalHoursThisWeek())}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Monthly Revenue Chart - Only for Admin */}
-        {user?.role === "admin" && (
-          <div className="widget chart-widget">
-            <div className="widget-header">
-              <h3>Monthly Revenue Trend</h3>
-              <i className="fas fa-chart-line"></i>
-            </div>
-            <div className="widget-content">
-              <ChartWidget
-                type="line"
-                data={monthlyRevenueData.revenue}
-                labels={monthlyRevenueData.months}
-                height={200}
-                color="#007bff"
-                showValues={true}
-              />
-            </div>
-          </div>
-        )}
-
-        {/* Timesheet Status Chart */}
-        <div className="widget chart-widget">
-          <div className="widget-header">
-            <h3>Timesheet Status</h3>
-            <i className="fas fa-chart-pie"></i>
-          </div>
-          <div className="widget-content">
-            <ChartWidget
-              type="pie"
-              data={timesheetStatusData}
-              height={200}
-              showLegend={true}
-            />
-          </div>
-        </div>
-
-        {/* Top Performing Employees */}
-        <div className="widget list-widget">
-          <div className="widget-header">
-            <h3>Top Performers</h3>
-            <i className="fas fa-trophy"></i>
-          </div>
-          <div className="widget-content">
-            <div className="list-container">
-              {topEmployees.map((emp, index) => (
-                <div key={emp.employee.id} className="list-item">
-                  <div className="list-item-rank">#{index + 1}</div>
-                  <div className="list-item-content">
-                    <div className="list-item-name">
-                      {emp.employee.firstName} {emp.employee.lastName}
-                    </div>
-                    <div className="list-item-detail">
-                      {formatHours(emp.hours)} hours
-                    </div>
-                  </div>
-                  <div className="list-item-value">
-                    {formatCurrency(emp.hours * 50)}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Revenue by Client - Only for Admin */}
-        {user?.role === "admin" && (
-          <div className="widget list-widget">
-            <div className="widget-header">
-              <h3>Revenue by Client</h3>
-              <i className="fas fa-building"></i>
-            </div>
-            <div className="widget-content">
-              <div className="list-container">
-                {revenueByClient.map((client, index) => (
-                  <div key={client.client.id} className="list-item">
-                    <div className="list-item-rank">#{index + 1}</div>
-                    <div className="list-item-content">
-                      <div className="list-item-name">
-                        {client.client.clientName}
-                      </div>
-                      <div className="list-item-detail">
-                        {client.client.email}
-                      </div>
-                    </div>
-                    <div className="list-item-value">
-                      {formatCurrency(client.revenue)}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Recent Activity */}
-        <div className="widget activity-widget">
-          <div className="widget-header">
-            <h3>Recent Activity</h3>
-            <i className="fas fa-history"></i>
-          </div>
-          <div className="widget-content">
-            <div className="activity-list">
-              {dashboardData.timesheets.slice(0, 5).map((ts) => (
-                <div key={ts.id} className="activity-item">
-                  <div className="activity-icon">
-                    <i className="fas fa-clock"></i>
-                  </div>
-                  <div className="activity-content">
-                    <div className="activity-title">
-                      Timesheet submitted by {ts.employeeId}
-                    </div>
-                    <div className="activity-time">
-                      {new Date(ts.created_at).toLocaleDateString()}
-                    </div>
-                  </div>
-                  <div className="activity-status">
-                    <span
-                      className={`badge ${
-                        ts.status === "approved"
-                          ? "bg-success"
-                          : ts.status === "pending"
-                          ? "bg-warning"
-                          : "bg-danger"
-                      }`}
-                    >
-                      {ts.status}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
+          <div className="text-[10px] text-gray-500 dark:text-gray-400">
+            {new Date(ts.created_at).toLocaleDateString()}
           </div>
         </div>
       </div>
+
+      {/* Status */}
+      <span
+        className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+          ts.status === "approved"
+            ? "bg-green-200 dark:bg-green-900 text-green-700 dark:text-green-300"
+            : ts.status === "pending"
+            ? "bg-yellow-200 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300"
+            : "bg-red-200 dark:bg-red-900 text-red-700 dark:text-red-300"
+        }`}
+      >
+        {ts.status}
+      </span>
+    </div>
+  ))}
+</div>
+
+
+</div>
+
+
+  {/* 7️⃣ Top Performers */}
+  <div className="bg-indigo-50 dark:bg-[#0f1a25] rounded-2xl shadow-sm p-4 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all duration-200 flex flex-col gap-3 min-h-[170px]">
+    <div className="flex items-center justify-between">
+      <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-100">Top Performers</h3>
+      <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-indigo-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-300">
+        <i className="fas fa-trophy" aria-hidden />
+      </div>
+    </div>
+
+    <div className="space-y-2 mt-2">
+      {topEmployees.slice(0, 4).map((emp, index) => (
+        <div key={emp.employee.id} className="flex items-center justify-between bg-gray-50 dark:bg-[#1c2733] p-2 rounded-lg">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="text-sm font-semibold text-gray-700 dark:text-gray-300">#{index + 1}</div>
+            <div className="flex flex-col min-w-0">
+              <div className="font-medium text-sm dark:text-gray-100 truncate">{emp.employee.firstName} {emp.employee.lastName}</div>
+              <div className="text-xs text-gray-500 dark:text-gray-400 truncate">{formatHours(emp.hours)} hours</div>
+            </div>
+          </div>
+          <div className="font-semibold text-gray-900 dark:text-white ml-3">{formatCurrency(emp.hours * 50)}</div>
+        </div>
+      ))}
+    </div>
+  </div>
+
+ 
+
+</div>
+
+
+
     </div>
   );
 };

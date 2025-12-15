@@ -169,7 +169,7 @@ const TimesheetAlerts = ({ subdomain }) => {
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          className="bell-icon"
+          className="bell-icon text-white hover:bg-white/10"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -265,7 +265,7 @@ const TimesheetAlerts = ({ subdomain }) => {
 
           <div className="dropdown-footer">
             <Link href={`/${subdomain}/employee-dashboard`}
-              className="view-all-btn"
+              className="view-all-btn !bg-sky-800"
             >
               View All
             </Link>

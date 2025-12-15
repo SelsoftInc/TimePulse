@@ -1,5 +1,5 @@
 .nk-header {
-  background-color: var(--header-bg) !important;
+  background-color: palegreen !important;
   color: var(--header-text);
   box-shadow: var(--shadow);
   height: 60px;

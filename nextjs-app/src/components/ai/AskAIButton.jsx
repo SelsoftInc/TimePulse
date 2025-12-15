@@ -17,13 +17,13 @@ const AskAIButton = () => {
   return (
     <>
       <button
-        className="ask-ai-btn"
-        onClick={handleOpenAI}
-        title="Ask Pulse AI about TimePulse modules"
-      >
-        <i className="fas fa-brain"></i>
-        Pulse AI
-      </button>
+  className="bg-[#AEDAEF] text-black px-4 py-2 rounded-lg flex items-center gap-2 shadow hover:bg-[#A7B4C2] transition"
+  onClick={handleOpenAI}
+>
+  <i className="fas fa-brain text-lg"></i>
+  Pulse AI
+</button>
+
 
       <AIAssistant isOpen={isAIOpen} onClose={handleCloseAI} />
     </>

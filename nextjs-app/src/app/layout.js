@@ -1,5 +1,6 @@
 'use client';
 
+
 import { Inter } from 'next/font/google';
 import '@/styles/theme.css';
 import '@/styles/responsive.css';
@@ -7,6 +8,7 @@ import '@/styles/typography-override.css';
 import '@/styles/icon-preservation.css';
 import '@/styles/globals.css';
 import '@/styles/layout-fixes.css';
+import '@/styles/tailwind.css';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { WebSocketProvider } from '@/contexts/WebSocketContext';

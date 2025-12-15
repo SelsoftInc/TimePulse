@@ -34,7 +34,9 @@ const Sidebar = ({ collapsed, toggleSidebar, mobileVisible = false, isMobile = f
   } ${className}`;
 
   return (
-    <aside className={sidebarClasses}>
+    
+    <aside className={`${sidebarClasses} !bg-[#05253D] dark:!bg-[#00121F] !pt-2`}>
+
       <div className="sidebar-header">
         {(isMobile || !collapsed) && <WorkspaceSelector />}
         <div className="sidebar-collapse-button" onClick={toggleSidebar}>

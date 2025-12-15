@@ -293,7 +293,7 @@ const AIAssistant = ({ isOpen, onClose }) => {
   return (
     <div className="ai-assistant-overlay" onClick={onClose}>
       <div className="ai-assistant-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="ai-assistant-header">
+        <div className="ai-assistant-header ">
           <div className="ai-assistant-title">
             <div className="ai-avatar">
               <i className="fas fa-robot"></i>

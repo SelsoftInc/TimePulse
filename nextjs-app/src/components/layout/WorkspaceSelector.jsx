@@ -77,10 +77,15 @@ const WorkspaceSelector = () => {
   return (
     <div className="workspace-selector">
       <div className="workspace-current" onClick={handleClick} style={{ cursor: 'pointer' }}>
-        <div className="workspace-icon">{workspace.id}</div>
+        {/* <div className="workspace-icon">{workspace.id}</div> */}
         <div className="workspace-details">
-          <div className="workspace-name">{workspace.name}</div>
-          <div className="workspace-tagline">{workspace.tagline}</div>
+          <div className="workspace-name !text-white bold dark:!text-gray-200">
+  Hi {workspace.name.split(" ")[0]}!
+</div>
+
+<div className="workspace-tagline !text-gray-300 dark:!text-gray-400">
+  {workspace.tagline}
+</div>
         </div>
       </div>
     </div>

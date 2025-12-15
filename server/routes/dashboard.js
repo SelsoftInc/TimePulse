@@ -53,6 +53,23 @@ router.get("/", async (req, res) => {
       await sequelize.query(`SET app.current_employee_id = '${employeeId}'`);
     }
 
+    // Build date filters for different contexts
+    let timesheetDateFilter = '';
+    if (fromDate) {
+      timesheetDateFilter += ` AND week_end >= '${fromDate.toISOString().split("T")[0]}'`;
+    }
+    if (toDate) {
+      timesheetDateFilter += ` AND week_end <= '${toDate.toISOString().split("T")[0]}'`;
+    }
+    
+    let dateFilter = '';
+    if (fromDate) {
+      dateFilter += ` AND t.week_end >= '${fromDate.toISOString().split("T")[0]}'`;
+    }
+    if (toDate) {
+      dateFilter += ` AND t.week_end <= '${toDate.toISOString().split("T")[0]}'`;
+    }
+
     // Execute queries in parallel
     const [
       kpisResult,
@@ -60,31 +77,61 @@ router.get("/", async (req, res) => {
       revenueByEmployeeResult,
       revenueTrendResult,
     ] = await Promise.all([
-      // KPIs based on scope
+      // KPIs based on scope - Direct SQL queries
       scope === "employee"
         ? sequelize.query(
-            `SELECT * FROM get_employee_kpis('${tenantId}', '${employeeId}', ${
-              fromDate ? `'${fromDate.toISOString().split("T")[0]}'` : "NULL"
-            }, ${toDate ? `'${toDate.toISOString().split("T")[0]}'` : "NULL"})`,
+            `
+            SELECT
+              COALESCE(SUM(CASE WHEN t.status IN ('submitted','approved') THEN t.total_hours * COALESCE(c.hourly_rate,0) END), 0) AS total_revenue,
+              COALESCE(SUM(CASE WHEN t.status IN ('submitted','approved') THEN t.total_hours * (COALESCE(c.hourly_rate,0) - COALESCE(e.hourly_rate,0)) END), 0) AS gross_margin,
+              COALESCE(SUM(CASE WHEN t.status IN ('submitted','approved') THEN t.total_hours END), 0) AS total_hours,
+              COUNT(CASE WHEN t.status = 'submitted' THEN 1 END) AS ts_pending,
+              COUNT(CASE WHEN t.status = 'approved' THEN 1 END) AS ts_approved
+            FROM timesheets t
+            LEFT JOIN clients c ON c.id = t.client_id
+            LEFT JOIN employees e ON e.id = t.employee_id
+            WHERE t.tenant_id = '${tenantId}'
+              AND t.employee_id = '${employeeId}'
+              ${dateFilter}
+            `,
             {
               type: sequelize.QueryTypes.SELECT,
             }
           )
         : sequelize.query(
-            `SELECT * FROM get_company_kpis('${tenantId}', ${
-              fromDate ? `'${fromDate.toISOString().split("T")[0]}'` : "NULL"
-            }, ${toDate ? `'${toDate.toISOString().split("T")[0]}'` : "NULL"})`,
+            `
+            SELECT
+              COALESCE(SUM(CASE WHEN i.payment_status IN ('pending','paid','overdue') THEN i.total_amount END), 0) AS total_revenue,
+              COALESCE(SUM(CASE WHEN i.payment_status IN ('pending','overdue') THEN i.total_amount END), 0) AS ar_outstanding,
+              (SELECT COUNT(*) FROM employees WHERE tenant_id = '${tenantId}' AND status = 'active') AS active_employees,
+              (SELECT COUNT(*) FROM timesheets WHERE tenant_id = '${tenantId}' AND status = 'submitted' ${timesheetDateFilter}) AS ts_pending,
+              (SELECT COUNT(*) FROM timesheets WHERE tenant_id = '${tenantId}' AND status = 'approved' ${timesheetDateFilter}) AS ts_approved
+            FROM invoices i
+            WHERE i.tenant_id = '${tenantId}'
+              ${fromDate ? `AND i.invoice_date >= '${fromDate.toISOString().split("T")[0]}'` : ''}
+              ${toDate ? `AND i.invoice_date <= '${toDate.toISOString().split("T")[0]}'` : ''}
+            `,
             {
               type: sequelize.QueryTypes.SELECT,
             }
           ),
 
-      // AR Aging (company scope only)
+      // AR Aging (company scope only) - Direct SQL
       scope === "company"
         ? sequelize.query(
-            `SELECT * FROM get_ar_aging('${tenantId}', ${
-              fromDate ? `'${fromDate.toISOString().split("T")[0]}'` : "NULL"
-            }, ${toDate ? `'${toDate.toISOString().split("T")[0]}'` : "NULL"})`,
+            `
+            SELECT
+              SUM(CASE WHEN CURRENT_DATE <= due_date THEN total_amount ELSE 0 END) AS current,
+              SUM(CASE WHEN CURRENT_DATE > due_date AND CURRENT_DATE <= due_date + INTERVAL '30 day' THEN total_amount ELSE 0 END) AS d1_30,
+              SUM(CASE WHEN CURRENT_DATE > due_date + INTERVAL '30 day' AND CURRENT_DATE <= due_date + INTERVAL '60 day' THEN total_amount ELSE 0 END) AS d31_60,
+              SUM(CASE WHEN CURRENT_DATE > due_date + INTERVAL '60 day' AND CURRENT_DATE <= due_date + INTERVAL '90 day' THEN total_amount ELSE 0 END) AS d61_90,
+              SUM(CASE WHEN CURRENT_DATE > due_date + INTERVAL '90 day' THEN total_amount ELSE 0 END) AS d90_plus
+            FROM invoices
+            WHERE tenant_id = '${tenantId}'
+              AND payment_status <> 'paid'
+              ${fromDate ? `AND invoice_date >= '${fromDate.toISOString().split("T")[0]}'` : ''}
+              ${toDate ? `AND invoice_date <= '${toDate.toISOString().split("T")[0]}'` : ''}
+            `,
             {
               type: sequelize.QueryTypes.SELECT,
             }
@@ -93,30 +140,79 @@ router.get("/", async (req, res) => {
             { current: 0, d1_30: 0, d31_60: 0, d61_90: 0, d90_plus: 0 },
           ]),
 
-      // Revenue by Employee (company scope only)
+      // Revenue by Employee (company scope only) - Direct SQL
       scope === "company"
         ? sequelize.query(
-            `SELECT * FROM get_revenue_by_employee('${tenantId}', ${
-              fromDate ? `'${fromDate.toISOString().split("T")[0]}'` : "NULL"
-            }, ${toDate ? `'${toDate.toISOString().split("T")[0]}'` : "NULL"})`,
+            `
+            SELECT
+              e.id,
+              e.first_name || ' ' || e.last_name AS name,
+              SUM(t.total_hours * COALESCE(c.hourly_rate, 0)) AS revenue,
+              SUM(t.total_hours * COALESCE(e.hourly_rate, 0)) AS cost,
+              SUM(t.total_hours * (COALESCE(c.hourly_rate, 0) - COALESCE(e.hourly_rate, 0))) AS margin
+            FROM timesheets t
+            JOIN employees e ON e.id = t.employee_id
+            LEFT JOIN clients c ON c.id = t.client_id
+            WHERE t.tenant_id = '${tenantId}'
+              AND t.status IN ('submitted', 'approved')
+              ${dateFilter}
+            GROUP BY e.id, e.first_name, e.last_name
+            ORDER BY revenue DESC
+            LIMIT 50
+            `,
             {
               type: sequelize.QueryTypes.SELECT,
             }
           )
         : Promise.resolve([]),
 
-      // Revenue Trend
+      // Revenue Trend - Direct SQL
       sequelize.query(
-        `SELECT * FROM get_revenue_trend('${tenantId}', ${
-          fromDate ? `'${fromDate.toISOString().split("T")[0]}'` : "NULL"
-        }, ${toDate ? `'${toDate.toISOString().split("T")[0]}'` : "NULL"})`,
+        `
+        SELECT
+          DATE_TRUNC('week', t.week_end)::date AS week_date,
+          ROUND(SUM(t.total_hours * COALESCE(c.hourly_rate, 0))::numeric, 2) AS revenue,
+          ROUND(SUM(t.total_hours * (COALESCE(c.hourly_rate, 0) - COALESCE(e.hourly_rate, 0)))::numeric, 2) AS margin
+        FROM timesheets t
+        LEFT JOIN clients c ON c.id = t.client_id
+        LEFT JOIN employees e ON e.id = t.employee_id
+        WHERE t.tenant_id = '${tenantId}'
+          AND t.status IN ('submitted', 'approved')
+          ${dateFilter}
+        GROUP BY DATE_TRUNC('week', t.week_end)
+        ORDER BY week_date ASC
+        `,
         {
           type: sequelize.QueryTypes.SELECT,
         }
       ),
     ]);
 
-    // Format response
+    // Helper function to convert BigInt and Decimal to numbers
+    const convertToNumber = (obj) => {
+      if (obj === null || obj === undefined) return obj;
+      if (Array.isArray(obj)) {
+        return obj.map(item => convertToNumber(item));
+      }
+      if (typeof obj === 'object') {
+        const converted = {};
+        for (const [key, value] of Object.entries(obj)) {
+          if (typeof value === 'bigint') {
+            converted[key] = Number(value);
+          } else if (value && typeof value === 'object' && value.constructor && value.constructor.name === 'Decimal') {
+            converted[key] = parseFloat(value.toString());
+          } else if (typeof value === 'object') {
+            converted[key] = convertToNumber(value);
+          } else {
+            converted[key] = value;
+          }
+        }
+        return converted;
+      }
+      return obj;
+    };
+
+    // Format response with type conversion
     const response = {
       scope,
       employeeId: scope === "employee" ? employeeId : null,
@@ -124,10 +220,10 @@ router.get("/", async (req, res) => {
         from: fromDate?.toISOString().split("T")[0] || null,
         to: toDate?.toISOString().split("T")[0] || null,
       },
-      kpis: kpisResult[0] || {},
-      arAging: scope === "company" ? arAgingResult[0] || {} : null,
-      revenueByEmployee: scope === "company" ? revenueByEmployeeResult : null,
-      revenueTrend: revenueTrendResult,
+      kpis: convertToNumber(kpisResult[0] || {}),
+      arAging: scope === "company" ? convertToNumber(arAgingResult[0] || {}) : null,
+      revenueByEmployee: scope === "company" ? convertToNumber(revenueByEmployeeResult) : null,
+      revenueTrend: convertToNumber(revenueTrendResult),
     };
 
     res.json(response);

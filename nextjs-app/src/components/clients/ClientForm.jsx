@@ -9,7 +9,7 @@ import { useToast } from '@/contexts/ToastContext';
 import './Clients.css';
 import { PAYMENT_METHODS, CURRENCIES, CLIENT_TYPES } from '@/constants/lookups';
 import { formatPhoneInput } from '@/utils/validation';
-import { validatePhoneNumber, validateZipCode, validateEmail, validateName } from '@/utils/validations';
+import { validatePhoneNumber, validateZipCode, validateEmail, validateName, formatPostalInput } from '@/utils/validations';
 import { apiFetch } from '@/config/api';
 import {
   COUNTRY_OPTIONS,
@@ -20,7 +20,8 @@ import {
   fetchPaymentTerms,
   getPostalLabel,
   getPostalPlaceholder,
-  validateCountryTaxId
+  validateCountryTaxId,
+  getCountryCode
 } from '../../config/lookups';
 
 const ClientForm = ({ mode = 'create', initialData = null, onSubmitOverride = null, submitLabel }) => {
@@ -168,14 +169,21 @@ const ClientForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    // Reset state when country changes to avoid stale values
+    let updates = { [name]: type === 'checkbox' ? checked : value };
+    
+    // Auto-prefill country code when country changes
     if (name === 'country') {
-      setFormData({ ...formData, country: value, state: '' });
-      return;
+      const countryCode = getCountryCode(value);
+      if (!formData.phone || /^\+\d{0,3}$/.test(formData.phone)) {
+        updates.phone = countryCode;
+      }
+      // Reset state when country changes to avoid stale values
+      updates.state = '';
     }
+    
     setFormData({
       ...formData,
-      [name]: type === 'checkbox' ? checked : value
+      ...updates
     });
 
     // Clear field-specific error on change
@@ -196,14 +204,17 @@ const ClientForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
       const msg = validateCountryTaxId(formData.country, value);
       setErrors(prev => ({ ...prev, taxId: msg }));
     } else if (name === 'zip') {
-      const validation = validateZipCode(value);
+      const validation = validateZipCode(value, formData.country);
       setErrors(prev => ({ ...prev, zip: validation.isValid ? '' : validation.message }));
     } else if (name === 'email') {
       const validation = validateEmail(value);
       setErrors(prev => ({ ...prev, email: validation.isValid ? '' : validation.message }));
-    } else if (name === 'clientName') {
+    } else if (name === 'name') {
       const validation = validateName(value, 'Client Name');
-      setErrors(prev => ({ ...prev, clientName: validation.isValid ? '' : validation.message }));
+      setErrors(prev => ({ ...prev, name: validation.isValid ? '' : validation.message }));
+    } else if (name === 'contactPerson') {
+      const validation = validateName(value, 'Contact Person', { requireAtLeastTwoWords: true });
+      setErrors(prev => ({ ...prev, contactPerson: validation.isValid ? '' : validation.message }));
     }
   };
 
@@ -217,16 +228,20 @@ const ClientForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
       // Validate critical fields
       const phoneValidation = validatePhoneNumber(formData.phone);
       const taxErr = validateCountryTaxId(formData.country, formData.taxId);
-      const zipValidation = validateZipCode(formData.zip);
+      const zipValidation = formData.zip
+        ? validateZipCode(formData.zip, formData.country)
+        : { isValid: true, message: 'Valid' };
       const emailValidation = validateEmail(formData.email);
-      const nameValidation = validateName(formData.clientName, 'Client Name');
+      const nameValidation = validateName(formData.name, 'Client Name');
+      const contactValidation = validateName(formData.contactPerson, 'Contact Person', { requireAtLeastTwoWords: true });
       
       const newErrors = {};
       if (!phoneValidation.isValid) newErrors.phone = phoneValidation.message;
       if (taxErr) newErrors.taxId = taxErr;
       if (!zipValidation.isValid) newErrors.zip = zipValidation.message;
       if (!emailValidation.isValid) newErrors.email = emailValidation.message;
-      if (!nameValidation.isValid) newErrors.clientName = nameValidation.message;
+      if (!nameValidation.isValid) newErrors.name = nameValidation.message;
+      if (!contactValidation.isValid) newErrors.contactPerson = contactValidation.message;
       
       if (Object.keys(newErrors).length > 0) {
         setErrors(newErrors);
@@ -451,25 +466,32 @@ const ClientForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
                         )}
                       </div>
                     </div>
-                    <div className="col-lg-4">
-                      <div className="form-group">
-                        <label className="form-label" htmlFor="zip">{getPostalLabel(formData.country)}</label>
-                        <input
-                          type="text"
-                          className="form-control"
-                          id="zip"
-                          name="zip"
-                          value={formData.zip}
-                          onChange={handleChange}
-                          onBlur={handleBlur}
-                          placeholder={getPostalPlaceholder(formData.country)}
-                          maxLength={formData.country === 'United States' ? 5 : 10}
-                        />
-                        {errors.zip && (
-                          <div className="mt-1"><small className="text-danger">{errors.zip}</small></div>
-                        )}
+                    {/* Hide ZIP/Postal field for UAE */}
+                    {formData.country !== 'United Arab Emirates' && (
+                      <div className="col-lg-4">
+                        <div className="form-group">
+                          <label className="form-label" htmlFor="zip">{getPostalLabel(formData.country)}</label>
+                          <input
+                            type="text"
+                            className="form-control"
+                            id="zip"
+                            name="zip"
+                            value={formData.zip}
+                            onChange={(e) => {
+                              const formatted = formatPostalInput(e.target.value, formData.country);
+                              setFormData(prev => ({ ...prev, zip: formatted }));
+                              if (errors.zip) setErrors(prev => ({ ...prev, zip: '' }));
+                            }}
+                            onBlur={handleBlur}
+                            placeholder={getPostalPlaceholder(formData.country)}
+                            maxLength={formData.country === 'United States' ? 10 : 20}
+                          />
+                          {errors.zip && (
+                            <div className="mt-1"><small className="text-danger">{errors.zip}</small></div>
+                          )}
+                        </div>
                       </div>
-                    </div>
+                    )}
                     <div className="col-lg-6">
                       <div className="form-group">
                         <label className="form-label" htmlFor="country">Country</label>

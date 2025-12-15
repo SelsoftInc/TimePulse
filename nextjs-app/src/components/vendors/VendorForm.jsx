@@ -12,7 +12,8 @@ import {
   fetchPaymentTerms,
   getPostalLabel,
   getPostalPlaceholder,
-  validateCountryTaxId} from '../../config/lookups';
+  validateCountryTaxId,
+  getCountryCode} from '../../config/lookups';
 import { PERMISSIONS } from '@/utils/roles';
 import PermissionGuard from '../common/PermissionGuard';
 import { useAuth } from '@/contexts/AuthContext';
@@ -21,7 +22,8 @@ import {
   validatePhoneNumber,
   validateZipCode,
   validateEmail,
-  validateName} from '@/utils/validations';
+  validateName,
+  formatPostalInput} from '@/utils/validations';
 import "./Vendors.css";
 
 const VendorForm = ({
@@ -70,47 +72,44 @@ const VendorForm = ({
   const handleChange = (e) => {
     const { name, value } = e.target;
     let processedValue = value;
+    let updates = { [name]: processedValue };
 
     if (name === "country") {
+      const countryCode = getCountryCode(value);
+      // Auto-prefill country code when country changes
+      if (!formData.phone || /^\+\d{0,3}$/.test(formData.phone)) {
+        updates.phone = countryCode;
+      }
       // Reset state when country changes
-      setFormData({ ...formData, country: value, state: "" });
-      return;
+      updates.state = "";
     }
 
-    // Format phone number as user types
+    // Format phone number as user types - E.164 only
     if (name === "phone") {
-      // Remove all non-digit characters
-      const digits = value.replace(/\D/g, "");
-
-      // Limit to 10 digits
-      const limitedDigits = digits.slice(0, 10);
-
-      // Format as (XXX) XXX-XXXX
-      if (limitedDigits.length >= 6) {
-        processedValue = `(${limitedDigits.slice(0, 3)}) ${limitedDigits.slice(
-          3,
-          6
-        )}-${limitedDigits.slice(6)}`;
-      } else if (limitedDigits.length >= 3) {
-        processedValue = `(${limitedDigits.slice(0, 3)}) ${limitedDigits.slice(
-          3
-        )}`;
-      } else if (limitedDigits.length > 0) {
-        processedValue = `(${limitedDigits}`;
+      const trimmed = String(value || '');
+      // Only allow + followed by digits (E.164 format)
+      if (trimmed.startsWith('+') || trimmed === '') {
+        const digits = trimmed.replace(/\D/g, '').slice(0, 15);
+        processedValue = digits ? `+${digits}` : (trimmed === '+' ? '+' : '');
+      } else if (/^\d/.test(trimmed)) {
+        // If user starts typing digits without +, prepend it
+        const digits = trimmed.replace(/\D/g, '').slice(0, 15);
+        processedValue = digits ? `+${digits}` : '';
       } else {
-        processedValue = "";
+        processedValue = trimmed.startsWith('+') ? trimmed : '';
       }
+      updates.phone = processedValue;
     }
 
     // Format zip code - only allow digits and limit to 5
     if (name === "zip") {
-      const digits = value.replace(/\D/g, "");
-      processedValue = digits.slice(0, 5);
+      processedValue = formatPostalInput(value, formData.country);
+      updates.zip = processedValue;
     }
 
     setFormData({
       ...formData,
-      [name]: processedValue});
+      ...updates});
 
     // Clear field-specific error on change
     if (errors[name]) {
@@ -127,7 +126,7 @@ const VendorForm = ({
         ...prev,
         phone: validation.isValid ? "" : validation.message}));
     } else if (name === "zip") {
-      const validation = validateZipCode(value);
+      const validation = validateZipCode(value, formData.country);
       setErrors((prev) => ({
         ...prev,
         zip: validation.isValid ? "" : validation.message}));
@@ -142,7 +141,7 @@ const VendorForm = ({
         ...prev,
         name: validation.isValid ? "" : validation.message}));
     } else if (name === "contactPerson") {
-      const validation = validateName(value, "Contact Person");
+      const validation = validateName(value, "Contact Person", { requireAtLeastTwoWords: true });
       setErrors((prev) => ({
         ...prev,
         contactPerson: validation.isValid ? "" : validation.message}));
@@ -198,12 +197,15 @@ const VendorForm = ({
 
     // Validate form fields
     const phoneValidation = validatePhoneNumber(formData.phone);
-    const zipValidation = validateZipCode(formData.zip);
+    const zipValidation = formData.zip
+      ? validateZipCode(formData.zip, formData.country)
+      : { isValid: true, message: 'Valid' };
     const emailValidation = validateEmail(formData.email);
     const nameValidation = validateName(formData.name, "Vendor Name");
     const contactValidation = validateName(
       formData.contactPerson,
-      "Contact Person"
+      "Contact Person",
+      { requireAtLeastTwoWords: true }
     );
 
     const newErrors = {};
@@ -506,31 +508,48 @@ const VendorForm = ({
                         )}
                       </div>
                     </div>
-                    <div className="col-lg-4">
-                      <div className="form-group">
-                        <label className="form-label" htmlFor="zip">
-                          {getPostalLabel(formData.country)}
-                        </label>
-                        <input
-                          type="text"
-                          className="form-control"
-                          id="zip"
-                          name="zip"
-                          value={formData.zip}
-                          onChange={handleChange}
-                          onBlur={handleBlur}
-                          placeholder={getPostalPlaceholder(formData.country)}
-                          maxLength={
-                            formData.country === "United States" ? 5 : 10
-                          }
-                        />
-                        {errors.zip && (
-                          <div className="mt-1">
-                            <small className="text-danger">{errors.zip}</small>
-                          </div>
-                        )}
+                    {/* Hide ZIP/Postal field for UAE */}
+                    {formData.country !== 'United Arab Emirates' && (
+                      <div className="col-lg-4">
+                        <div className="form-group">
+                          <label className="form-label" htmlFor="zip">
+                            {getPostalLabel(formData.country)}
+                          </label>
+                          <input
+                            type="text"
+                            className="form-control"
+                            id="zip"
+                            name="zip"
+                            value={formData.zip}
+                            onChange={handleChange}
+                            onBlur={handleBlur}
+                            placeholder={getPostalPlaceholder(formData.country)}
+                            maxLength={
+                              formData.country === 'United States'
+                                ? 10
+                                : formData.country === 'India'
+                                  ? 6
+                                  : formData.country === 'Canada'
+                                    ? 7
+                                    : formData.country === 'United Kingdom'
+                                      ? 8
+                                      : formData.country === 'Australia'
+                                        ? 4
+                                        : formData.country === 'Singapore'
+                                          ? 6
+                                          : formData.country === 'Germany'
+                                            ? 5
+                                            : 20
+                            }
+                          />
+                          {errors.zip && (
+                            <div className="mt-1">
+                              <small className="text-danger">{errors.zip}</small>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
+                    )}
                     <div className="col-lg-6">
                       <div className="form-group">
                         <label className="form-label" htmlFor="country">

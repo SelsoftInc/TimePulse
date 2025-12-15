@@ -11,6 +11,23 @@ export const COUNTRY_OPTIONS = [
   'United Arab Emirates'
 ];
 
+// Country code mapping for phone numbers (E.164 format)
+export const COUNTRY_CODES = {
+  'United States': '+1',
+  'India': '+91',
+  'Canada': '+1',
+  'United Kingdom': '+44',
+  'Australia': '+61',
+  'Germany': '+49',
+  'Singapore': '+65',
+  'United Arab Emirates': '+971'
+};
+
+// Get country code for a given country name
+export const getCountryCode = (country) => {
+  return COUNTRY_CODES[country] || '+1';
+};
+
 export const STATES_BY_COUNTRY = {
   'United States': [
     'Alabama','Alaska','Arizona','Arkansas','California','Colorado','Connecticut','Delaware','District of Columbia','Florida','Georgia','Hawaii','Idaho','Illinois','Indiana','Iowa','Kansas','Kentucky','Louisiana','Maine','Maryland','Massachusetts','Michigan','Minnesota','Mississippi','Missouri','Montana','Nebraska','Nevada','New Hampshire','New Jersey','New Mexico','New York','North Carolina','North Dakota','Ohio','Oklahoma','Oregon','Pennsylvania','Rhode Island','South Carolina','South Dakota','Tennessee','Texas','Utah','Vermont','Virginia','Washington','West Virginia','Wisconsin','Wyoming'

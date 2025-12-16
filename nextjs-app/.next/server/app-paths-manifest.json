@@ -1,0 +1,5 @@
+{
+  "/[subdomain]/leave-management/page": "app/[subdomain]/leave-management/page.js",
+  "/[subdomain]/reports/page": "app/[subdomain]/reports/page.js",
+  "/[subdomain]/page": "app/[subdomain]/page.js"
+}

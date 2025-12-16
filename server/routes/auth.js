@@ -8,6 +8,7 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { models } = require('../models');
+const { encryptAuthResponse } = require('../utils/encryption');
 
 // JWT Secret (should be in environment variables)
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
@@ -90,8 +91,8 @@ router.post('/login', async (req, res) => {
       }
     }
 
-    // Return success response
-    res.json({
+    // Prepare response data
+    const responseData = {
       success: true,
       message: 'Login successful',
       token,
@@ -113,7 +114,11 @@ router.post('/login', async (req, res) => {
         subdomain: user.tenant.subdomain,
         status: user.tenant.status
       } : null
-    });
+    };
+
+    // Encrypt and return response
+    const encryptedResponse = encryptAuthResponse(responseData);
+    res.json(encryptedResponse);
 
   } catch (error) {
     console.error('Login error:', error);
@@ -158,7 +163,8 @@ router.get('/me', authenticateToken, async (req, res) => {
       });
     }
 
-    res.json({
+    // Prepare response data
+    const responseData = {
       success: true,
       user: {
         id: user.id,
@@ -176,7 +182,11 @@ router.get('/me', authenticateToken, async (req, res) => {
         subdomain: user.tenant.subdomain,
         status: user.tenant.status
       } : null
-    });
+    };
+
+    // Encrypt and return response
+    const encryptedResponse = encryptAuthResponse(responseData);
+    res.json(encryptedResponse);
 
   } catch (error) {
     console.error('Get user error:', error);

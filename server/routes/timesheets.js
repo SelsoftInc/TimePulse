@@ -13,6 +13,7 @@ const { getAuditInfo } = require("../middleware/auditHelper");
 const multer = require("multer");
 const S3Service = require("../services/S3Service");
 const { S3_CONFIG } = require("../config/aws");
+const DataEncryptionService = require("../services/DataEncryptionService");
 
 // Helpers
 // Format date as YYYY-MM-DD in local time to avoid UTC shift issues
@@ -117,8 +118,11 @@ router.get("/", async (req, res, next) => {
       limit: 100, // Limit for performance
     });
 
+    // Decrypt timesheet data
+    const decryptedTimesheets = DataEncryptionService.decryptInstances(timesheets, 'timesheet');
+
     // Transform data for frontend
-    const transformedTimesheets = await Promise.all(timesheets.map(async (ts) => {
+    const transformedTimesheets = await Promise.all(decryptedTimesheets.map(async (ts) => {
       // Get employee name - use stored employeeName first, then fallback to Employee/User
       let employeeName = ts.employeeName || "Unknown";
       
@@ -253,8 +257,11 @@ router.get("/employee/:id/all", async (req, res, next) => {
 
     console.log(`  Found ${timesheets.length} timesheets for employee ${id}`);
 
+    // Decrypt timesheet data
+    const decryptedTimesheets = DataEncryptionService.decryptInstances(timesheets, 'timesheet');
+
     // Format timesheets for frontend
-    const formattedTimesheets = timesheets.map((ts) => {
+    const formattedTimesheets = decryptedTimesheets.map((ts) => {
       // Parse attachments if it's a string
       let attachments = [];
       if (ts.attachments) {
@@ -424,7 +431,10 @@ router.get("/current", async (req, res, next) => {
       throw dbErr;
     }
 
-    const result = rows.map((r) => ({
+    // Decrypt timesheets
+    const decryptedRows = DataEncryptionService.decryptInstances(rows, 'timesheet');
+
+    const result = decryptedRows.map((r) => ({
       id: r.id,
       employee: {
         id: r.employee?.id,
@@ -529,7 +539,10 @@ router.get("/pending-approval", async (req, res, next) => {
       `  Found ${timesheets.length} timesheets with status 'submitted'`
     );
 
-    const formattedTimesheets = await Promise.all(timesheets.map(async (ts) => {
+    // Decrypt timesheets
+    const decryptedTimesheets = DataEncryptionService.decryptInstances(timesheets, 'timesheet');
+
+    const formattedTimesheets = await Promise.all(decryptedTimesheets.map(async (ts) => {
       // Parse attachments if it's a string (SQLite stores JSONB as string)
       let attachments = [];
       if (ts.attachments) {
@@ -746,6 +759,26 @@ router.post("/submit", async (req, res, next) => {
       }
     }
 
+    // Prepare data for encryption
+    const timesheetData = {
+      employeeName: employeeName || null,
+      notes: notes || "",
+      dailyHours: dailyHours || {
+        mon: 0,
+        tue: 0,
+        wed: 0,
+        thu: 0,
+        fri: 0,
+        sat: 0,
+        sun: 0,
+      },
+      overtimeComment: overtimeComment || null,
+      overtimeDays: overtimeDays || null,
+    };
+
+    // Encrypt sensitive data before saving
+    const encryptedData = DataEncryptionService.encryptTimesheetData(timesheetData);
+
     // Check if timesheet already exists for this week
     const existing = await models.Timesheet.findOne({
       where: {
@@ -757,7 +790,7 @@ router.post("/submit", async (req, res, next) => {
     });
 
     if (existing) {
-      // Store old values for audit
+      // Store old values for audit (decrypted for audit log)
       const oldValues = {
         status: existing.status,
         totalHours: existing.totalHours,
@@ -767,16 +800,16 @@ router.post("/submit", async (req, res, next) => {
         reviewerId: existing.reviewerId,
       };
 
-      // Update existing timesheet
+      // Update existing timesheet with encrypted data
       existing.clientId = sanitizedClientId !== null ? sanitizedClientId : existing.clientId;
-      existing.employeeName = employeeName || existing.employeeName;
+      existing.employeeName = encryptedData.employeeName || existing.employeeName;
       existing.reviewerId = reviewerId || existing.reviewerId;
       existing.status = status || "submitted";
       existing.totalHours = totalHours || 0;
-      existing.notes = notes || existing.notes;
-      existing.dailyHours = dailyHours || existing.dailyHours;
-      existing.overtimeComment = overtimeComment || existing.overtimeComment;
-      existing.overtimeDays = overtimeDays || existing.overtimeDays;
+      existing.notes = encryptedData.notes || existing.notes;
+      existing.dailyHours = encryptedData.dailyHours || existing.dailyHours;
+      existing.overtimeComment = encryptedData.overtimeComment || existing.overtimeComment;
+      existing.overtimeDays = encryptedData.overtimeDays || existing.overtimeDays;
       existing.submittedAt = new Date();
 
       await existing.save();
@@ -818,16 +851,16 @@ router.post("/submit", async (req, res, next) => {
       });
     }
 
-    // Create new timesheet
+    // Create new timesheet with encrypted data
     const newTimesheet = await models.Timesheet.create({
       tenantId,
       employeeId,
-      employeeName: employeeName || null,
+      employeeName: encryptedData.employeeName || null,
       clientId: sanitizedClientId,
       reviewerId: reviewerId || null,
       weekStart,
       weekEnd,
-      dailyHours: dailyHours || {
+      dailyHours: encryptedData.dailyHours || {
         mon: 0,
         tue: 0,
         wed: 0,
@@ -838,9 +871,9 @@ router.post("/submit", async (req, res, next) => {
       },
       totalHours: totalHours || 0,
       status: status || "submitted",
-      notes: notes || "",
-      overtimeComment: overtimeComment || null,
-      overtimeDays: overtimeDays || null,
+      notes: encryptedData.notes || "",
+      overtimeComment: encryptedData.overtimeComment || null,
+      overtimeDays: encryptedData.overtimeDays || null,
       submittedAt: new Date(),
     });
 
@@ -1103,23 +1136,26 @@ router.get("/:id", async (req, res, next) => {
         .status(404)
         .json({ success: false, message: "Timesheet not found" });
 
+    // Decrypt timesheet data
+    const decryptedRow = DataEncryptionService.decryptInstance(row, 'timesheet');
+
     // Parse attachments if it's a string (SQLite stores JSONB as string)
     let attachments = [];
-    if (row.attachments) {
-      if (typeof row.attachments === "string") {
+    if (decryptedRow.attachments) {
+      if (typeof decryptedRow.attachments === "string") {
         try {
-          attachments = JSON.parse(row.attachments);
+          attachments = JSON.parse(decryptedRow.attachments);
         } catch (e) {
           console.error("Error parsing attachments:", e);
           attachments = [];
         }
-      } else if (Array.isArray(row.attachments)) {
-        attachments = row.attachments;
+      } else if (Array.isArray(decryptedRow.attachments)) {
+        attachments = decryptedRow.attachments;
       }
     }
 
     const timesheet = {
-      ...row.toJSON(),
+      ...decryptedRow,
       attachments: attachments,
     };
 
@@ -1246,7 +1282,7 @@ router.put("/:id", async (req, res, next) => {
       },
     });
 
-    // Send email notifications for approval/rejection
+    // Send email and in-app notifications for approval/rejection
     try {
       const tenant = await models.Tenant.findByPk(row.tenantId);
       const employee = await models.Employee.findByPk(row.employeeId, {
@@ -1263,11 +1299,25 @@ router.put("/:id", async (req, res, next) => {
       const timesheetLink = `${process.env.FRONTEND_URL || 'https://app.timepulse.io'}/${tenant?.subdomain || 'app'}/timesheets/submit/${row.id}`;
       const tenantName = tenant?.name || 'TimePulse';
 
-      // Send approval email
+      // Send approval email and notification
       if (wasNotApproved && isBeingApproved && employee?.user) {
         const reviewer = approvedBy ? await models.User.findByPk(approvedBy) : null;
         const reviewerName = reviewer ? `${reviewer.firstName} ${reviewer.lastName}` : 'Manager';
         
+        // Create in-app notification
+        await NotificationService.createTimesheetNotification(
+          row.tenantId,
+          row.employeeId,
+          "approved",
+          {
+            id: row.id,
+            weekStartDate: row.weekStart,
+            weekEndDate: row.weekEnd,
+            approvedBy: reviewerName,
+          }
+        );
+        
+        // Send email
         await EmailService.sendTimesheetApprovedNotification({
           employeeEmail: employee.user.email,
           employeeName: `${employee.user.firstName} ${employee.user.lastName}`,
@@ -1276,13 +1326,38 @@ router.put("/:id", async (req, res, next) => {
           timesheetLink: timesheetLink,
           tenantName: tenantName,
         });
+        
+        // Send real-time notification via WebSocket
+        if (global.wsService) {
+          global.wsService.sendToUser(row.employeeId, {
+            type: "timesheet_approved",
+            title: "Timesheet Approved",
+            message: `Your timesheet for ${weekRange} has been approved.`,
+            timestamp: new Date().toISOString(),
+          });
+        }
       }
 
-      // Send rejection email
+      // Send rejection email and notification
       if (wasNotRejected && isBeingRejected && employee?.user) {
         const reviewer = approvedBy ? await models.User.findByPk(approvedBy) : null;
         const reviewerName = reviewer ? `${reviewer.firstName} ${reviewer.lastName}` : 'Manager';
         
+        // Create in-app notification
+        await NotificationService.createTimesheetNotification(
+          row.tenantId,
+          row.employeeId,
+          "rejected",
+          {
+            id: row.id,
+            weekStartDate: row.weekStart,
+            weekEndDate: row.weekEnd,
+            rejectedBy: reviewerName,
+            reason: row.rejectionReason || 'No reason provided',
+          }
+        );
+        
+        // Send email
         await EmailService.sendTimesheetRejectedNotification({
           employeeEmail: employee.user.email,
           employeeName: `${employee.user.firstName} ${employee.user.lastName}`,
@@ -1292,10 +1367,20 @@ router.put("/:id", async (req, res, next) => {
           timesheetLink: timesheetLink,
           tenantName: tenantName,
         });
+        
+        // Send real-time notification via WebSocket
+        if (global.wsService) {
+          global.wsService.sendToUser(row.employeeId, {
+            type: "timesheet_rejected",
+            title: "Timesheet Needs Revision",
+            message: `Your timesheet for ${weekRange} requires changes.`,
+            timestamp: new Date().toISOString(),
+          });
+        }
       }
     } catch (emailError) {
-      console.error("Error sending timesheet status email:", emailError);
-      // Don't fail the timesheet update if email fails
+      console.error("Error sending timesheet status notifications:", emailError);
+      // Don't fail the timesheet update if notifications fail
     }
 
     // ✨ AUTOMATIC INVOICE GENERATION ✨

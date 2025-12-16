@@ -8,6 +8,10 @@ const {
   getARAging,
   getRevenueByEmployee,
   getRevenueTrend,
+  getRecentActivity,
+  getTopPerformers,
+  getRevenueByClient,
+  getMonthlyRevenueTrend,
   prisma,
 } = require("../db/prisma");
 
@@ -165,6 +169,174 @@ router.get("/employees", async (req, res) => {
     res.json({ employees: formattedEmployees });
   } catch (error) {
     console.error("Dashboard Employees Prisma API Error:", error);
+    res.status(500).json({
+      error: "Internal server error",
+      message: error.message,
+    });
+  }
+});
+
+// GET /api/dashboard-prisma/recent-activity - Get recent activity
+router.get("/recent-activity", async (req, res) => {
+  try {
+    const { tenantId, limit = 10 } = req.query;
+
+    if (!tenantId) {
+      return res.status(400).json({ error: "Tenant ID is required" });
+    }
+
+    const activities = await withTenant(tenantId, () =>
+      getRecentActivity(tenantId, parseInt(limit))
+    );
+
+    // Helper function to convert BigInt to number
+    const convertBigInt = (obj) => {
+      if (obj === null || obj === undefined) return obj;
+      if (typeof obj === "bigint") return Number(obj);
+      if (obj instanceof Date) return obj.toISOString();
+      if (Array.isArray(obj)) return obj.map(convertBigInt);
+      if (typeof obj === "object") {
+        if (obj.constructor && obj.constructor.name === "Decimal") {
+          return Number(obj.toString());
+        }
+        const converted = {};
+        for (const [key, value] of Object.entries(obj)) {
+          converted[key] = convertBigInt(value);
+        }
+        return converted;
+      }
+      return obj;
+    };
+
+    res.json({ activities: convertBigInt(activities) });
+  } catch (error) {
+    console.error("Recent Activity API Error:", error);
+    res.status(500).json({
+      error: "Internal server error",
+      message: error.message,
+    });
+  }
+});
+
+// GET /api/dashboard-prisma/top-performers - Get top performing employees
+router.get("/top-performers", async (req, res) => {
+  try {
+    const { tenantId, from, to, limit = 5 } = req.query;
+
+    if (!tenantId) {
+      return res.status(400).json({ error: "Tenant ID is required" });
+    }
+
+    const performers = await withTenant(tenantId, () =>
+      getTopPerformers(tenantId, from, to, parseInt(limit))
+    );
+
+    // Helper function to convert BigInt to number
+    const convertBigInt = (obj) => {
+      if (obj === null || obj === undefined) return obj;
+      if (typeof obj === "bigint") return Number(obj);
+      if (obj instanceof Date) return obj.toISOString();
+      if (Array.isArray(obj)) return obj.map(convertBigInt);
+      if (typeof obj === "object") {
+        if (obj.constructor && obj.constructor.name === "Decimal") {
+          return Number(obj.toString());
+        }
+        const converted = {};
+        for (const [key, value] of Object.entries(obj)) {
+          converted[key] = convertBigInt(value);
+        }
+        return converted;
+      }
+      return obj;
+    };
+
+    res.json({ performers: convertBigInt(performers) });
+  } catch (error) {
+    console.error("Top Performers API Error:", error);
+    res.status(500).json({
+      error: "Internal server error",
+      message: error.message,
+    });
+  }
+});
+
+// GET /api/dashboard-prisma/revenue-by-client - Get revenue by client
+router.get("/revenue-by-client", async (req, res) => {
+  try {
+    const { tenantId, from, to, limit = 5 } = req.query;
+
+    if (!tenantId) {
+      return res.status(400).json({ error: "Tenant ID is required" });
+    }
+
+    const clientRevenue = await withTenant(tenantId, () =>
+      getRevenueByClient(tenantId, from, to, parseInt(limit))
+    );
+
+    // Helper function to convert BigInt to number
+    const convertBigInt = (obj) => {
+      if (obj === null || obj === undefined) return obj;
+      if (typeof obj === "bigint") return Number(obj);
+      if (obj instanceof Date) return obj.toISOString();
+      if (Array.isArray(obj)) return obj.map(convertBigInt);
+      if (typeof obj === "object") {
+        if (obj.constructor && obj.constructor.name === "Decimal") {
+          return Number(obj.toString());
+        }
+        const converted = {};
+        for (const [key, value] of Object.entries(obj)) {
+          converted[key] = convertBigInt(value);
+        }
+        return converted;
+      }
+      return obj;
+    };
+
+    res.json({ clients: convertBigInt(clientRevenue) });
+  } catch (error) {
+    console.error("Revenue by Client API Error:", error);
+    res.status(500).json({
+      error: "Internal server error",
+      message: error.message,
+    });
+  }
+});
+
+// GET /api/dashboard-prisma/monthly-revenue-trend - Get monthly revenue trend
+router.get("/monthly-revenue-trend", async (req, res) => {
+  try {
+    const { tenantId } = req.query;
+
+    if (!tenantId) {
+      return res.status(400).json({ error: "Tenant ID is required" });
+    }
+
+    const trend = await withTenant(tenantId, () =>
+      getMonthlyRevenueTrend(tenantId)
+    );
+
+    // Helper function to convert BigInt to number
+    const convertBigInt = (obj) => {
+      if (obj === null || obj === undefined) return obj;
+      if (typeof obj === "bigint") return Number(obj);
+      if (obj instanceof Date) return obj.toISOString();
+      if (Array.isArray(obj)) return obj.map(convertBigInt);
+      if (typeof obj === "object") {
+        if (obj.constructor && obj.constructor.name === "Decimal") {
+          return Number(obj.toString());
+        }
+        const converted = {};
+        for (const [key, value] of Object.entries(obj)) {
+          converted[key] = convertBigInt(value);
+        }
+        return converted;
+      }
+      return obj;
+    };
+
+    res.json({ trend: convertBigInt(trend) });
+  } catch (error) {
+    console.error("Monthly Revenue Trend API Error:", error);
     res.status(500).json({
       error: "Internal server error",
       message: error.message,

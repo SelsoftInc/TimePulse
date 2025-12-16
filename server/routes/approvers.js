@@ -13,12 +13,12 @@ router.get('/', async (req, res) => {
       return res.status(400).json({ error: 'Tenant ID is required' });
     }
 
-    // Fetch users with admin, manager, or hr roles who can approve leaves
+    // Fetch users with admin, manager, hr, or approver roles who can approve leaves
     const approvers = await User.findAll({
       where: {
         tenantId,
         role: {
-          [require('sequelize').Op.in]: ['admin', 'manager', 'hr']
+          [require('sequelize').Op.in]: ['admin', 'manager', 'hr', 'approver']
         },
         status: 'active'
       },

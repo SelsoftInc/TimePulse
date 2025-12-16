@@ -1,0 +1,47 @@
+{
+  "name": "timepulse-nextjs",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 3000",
+    "dev:clean": "rimraf .next && next dev -p 3000",
+    "build": "next build",
+    "start": "next start -p 3000",
+    "lint": "next lint",
+    "clean": "rimraf .next node_modules/.cache",
+    "fresh": "rimraf .next node_modules/.cache && next dev -p 3000"
+  },
+  "dependencies": {
+    "@fortawesome/fontawesome-free": "^7.0.1",
+    "@tanstack/react-query": "^5.90.11",
+    "axios": "^1.6.0",
+    "crypto-js": "^4.2.0",
+    "file-saver": "^2.0.5",
+    "js-cookie": "^3.0.5",
+    "jspdf": "^3.0.3",
+    "jspdf-autotable": "^5.0.2",
+    "libphonenumber-js": "^1.12.12",
+    "mammoth": "^1.11.0",
+    "next": "^14.2.0",
+    "next-auth": "^4.24.13",
+    "pdf-parse": "^2.2.2",
+    "pdfjs-dist": "^3.11.174",
+    "react": "^18.3.0",
+    "react-circular-progressbar": "^2.2.0",
+    "react-dom": "^18.3.0",
+    "react-icons": "^5.5.0",
+    "react-phone-number-input": "^3.4.12",
+    "socket.io-client": "^4.8.1",
+    "tesseract.js": "^4.1.4",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.17",
+    "autoprefixer": "^10.4.22",
+    "eslint": "^8.57.0",
+    "eslint-config-next": "^14.2.0",
+    "postcss": "^8.5.6",
+    "rimraf": "^5.0.10",
+    "tailwindcss": "^4.1.17"
+  }
+}

@@ -4,6 +4,8 @@ const { models } = require("../models");
 const { Op } = require("sequelize");
 const bcrypt = require("bcrypt");
 const { generateTemporaryPassword, sendWelcomeEmail } = require("../utils/emailService");
+const DataEncryptionService = require("../services/DataEncryptionService");
+const { encryptAuthResponse } = require("../utils/encryption");
 
 const { Employee, User, Client, Tenant, Vendor, EmploymentType } = models;
 
@@ -79,20 +81,10 @@ router.get("/", async (req, res) => {
       throw error;
     });
 
-    // Filter out admin users at application level (but keep employees without user records)
-    const employees = allEmployees.filter((emp) => {
-      // If employee doesn't have a user record, include them (newly created employees)
-      if (!emp.user) {
-        return true;
-      }
-      
-      // For inactive employees, show them regardless of role (they might be admins who were deactivated)
-      if (emp.status === "inactive") {
-        return true;
-      }
-      // For active employees, exclude admin users
-      return emp.user.role !== "admin";
-    });
+    // Show all employees including admins (OAuth users need to be visible)
+    // Previously we filtered out admin users, but now we include them
+    // because OAuth admins have Employee records and should be visible
+    const employees = allEmployees;
 
     console.log('📊 Found', allEmployees.length, 'total employees in database');
     console.log('📊 After filtering:', employees.length, 'employees');
@@ -160,11 +152,18 @@ router.get("/", async (req, res) => {
 
     console.log('✅ Sending', transformedEmployees.length, 'employees to frontend');
 
-    res.json({
-      success: true,
-      employees: transformedEmployees,
-      total: transformedEmployees.length,
+    // Decrypt employee data before sending to frontend
+    const decryptedEmployees = transformedEmployees.map(emp => {
+      const plainEmp = emp.toJSON ? emp.toJSON() : emp;
+      return DataEncryptionService.decryptEmployeeData(plainEmp);
     });
+
+    const responseData = {
+      success: true,
+      employees: decryptedEmployees,
+      total: decryptedEmployees.length,
+    };
+    res.json(encryptAuthResponse(responseData));
   } catch (error) {
     console.error("Error fetching employees:", error);
     res.status(500).json({
@@ -324,10 +323,14 @@ router.get("/:id", async (req, res) => {
     console.log('📤 Sending response with vendorId:', transformedEmployee.vendorId);
     console.log('📤 Sending response with vendor object:', transformedEmployee.vendor);
     
-    res.json({
+    // Decrypt employee data before sending to frontend
+    const decryptedEmployee = DataEncryptionService.decryptEmployeeData(transformedEmployee);
+    
+    const responseData = {
       success: true,
-      employee: transformedEmployee,
-    });
+      employee: decryptedEmployee,
+    };
+    res.json(encryptAuthResponse(responseData));
   } catch (error) {
     console.error("Error fetching employee:", error);
     res.status(500).json({
@@ -340,7 +343,10 @@ router.get("/:id", async (req, res) => {
 // Create new employee
 router.post("/", async (req, res) => {
   try {
-    const employeeData = req.body;
+    let employeeData = req.body;
+    
+    // Encrypt employee data before saving to database
+    employeeData = DataEncryptionService.encryptEmployeeData(employeeData);
 
     console.log('➕ Creating new employee:', {
       firstName: employeeData.firstName,
@@ -408,6 +414,9 @@ router.post("/", async (req, res) => {
 
     console.log('✅ Employee created successfully:', employee.id);
 
+    // Decrypt employee data for response
+    const decryptedEmployee = DataEncryptionService.decryptEmployeeData(employee.toJSON ? employee.toJSON() : employee);
+
     // Get tenant information for email
     const tenant = await models.Tenant.findByPk(employeeData.tenantId);
     const companyName = tenant ? tenant.tenantName : 'Your Company';
@@ -428,18 +437,19 @@ router.post("/", async (req, res) => {
       // Don't fail the employee creation if email fails
     }
 
-    res.status(201).json({
+    const responseData = {
       success: true,
       message: "Employee created successfully. Welcome email sent with temporary password.",
-      employee,
-      emailSent: true
-    });
+      employee: decryptedEmployee,
+      userId: user.id,
+    };
+    res.status(201).json(encryptAuthResponse(responseData));
   } catch (error) {
     console.error("Error creating employee:", error);
-    res.status(500).json({
+    res.status(500).json(encryptAuthResponse({
       error: "Failed to create employee",
       details: error.message,
-    });
+    }));
   }
 });
 
@@ -448,14 +458,17 @@ router.put("/:id", async (req, res) => {
   try {
     const { id } = req.params;
     const { tenantId } = req.query;
-    const updateData = req.body;
+    let updateData = req.body;
+    
+    // Encrypt employee data before updating in database
+    updateData = DataEncryptionService.encryptEmployeeData(updateData);
 
     const employee = await Employee.findOne({
       where: { id, tenantId },
     });
 
     if (!employee) {
-      return res.status(404).json({ error: "Employee not found" });
+      return res.status(404).json(encryptAuthResponse({ error: "Employee not found" }));
     }
 
     // Update employee record
@@ -500,17 +513,23 @@ router.put("/:id", async (req, res) => {
       throw error;
     });
 
-    res.json({
+    // Decrypt employee data before sending to frontend
+    const decryptedEmployee = DataEncryptionService.decryptEmployeeData(
+      updatedEmployee.toJSON ? updatedEmployee.toJSON() : updatedEmployee
+    );
+
+    const responseData = {
       success: true,
       message: "Employee updated successfully",
-      employee: updatedEmployee,
-    });
+      employee: decryptedEmployee,
+    };
+    res.json(encryptAuthResponse(responseData));
   } catch (error) {
     console.error("Error updating employee:", error);
-    res.status(500).json({
+    res.status(500).json(encryptAuthResponse({
       error: "Failed to update employee",
       details: error.message,
-    });
+    }));
   }
 });
 
@@ -525,7 +544,7 @@ router.delete("/:id", async (req, res) => {
     });
 
     if (!employee) {
-      return res.status(404).json({ error: "Employee not found" });
+      return res.status(404).json(encryptAuthResponse({ error: "Employee not found" }));
     }
 
     // Cascade soft delete all related data
@@ -565,18 +584,19 @@ router.delete("/:id", async (req, res) => {
       }
     }
 
-    res.json({
+    const responseData = {
       success: true,
       message: "Employee and all related data soft deleted successfully",
       employeeId: id,
-      deletedRecords,
-    });
+      deletedRecords: deletedRecords,
+    };
+    res.json(encryptAuthResponse(responseData));
   } catch (error) {
     console.error("Error soft deleting employee:", error);
-    res.status(500).json({
+    res.status(500).json(encryptAuthResponse({
       error: "Failed to soft delete employee",
       details: error.message,
-    });
+    }));
   }
 });
 
@@ -591,7 +611,7 @@ router.patch("/:id/restore", async (req, res) => {
     });
 
     if (!employee) {
-      return res.status(404).json({ error: "Employee not found" });
+      return res.status(404).json(encryptAuthResponse({ error: "Employee not found" }));
     }
 
     // Restore: Update status back to active
@@ -607,18 +627,19 @@ router.patch("/:id/restore", async (req, res) => {
       }
     }
 
-    res.json({
+    const responseData = {
       success: true,
       message: "Employee restored successfully (status set to active)",
       employeeId: id,
-      userRestored,
-    });
+      userRestored: userRestored,
+    };
+    res.json(encryptAuthResponse(responseData));
   } catch (error) {
     console.error("Error restoring employee:", error);
-    res.status(500).json({
+    res.status(500).json(encryptAuthResponse({
       error: "Failed to restore employee",
       details: error.message,
-    });
+    }));
   }
 });
 
@@ -628,7 +649,7 @@ router.get("/stats/summary", async (req, res) => {
     const { tenantId } = req.query;
 
     if (!tenantId) {
-      return res.status(400).json({ error: "Tenant ID is required" });
+      return res.status(400).json(encryptAuthResponse({ error: "Tenant ID is required" }));
     }
 
     const totalEmployees = await Employee.count({
@@ -667,7 +688,7 @@ router.get("/stats/summary", async (req, res) => {
       group: ["employmentType"],
     });
 
-    res.json({
+    const responseData = {
       success: true,
       stats: {
         total: totalEmployees,
@@ -680,7 +701,8 @@ router.get("/stats/summary", async (req, res) => {
           return acc;
         }, {}),
       },
-    });
+    };
+    res.json(encryptAuthResponse(responseData));
   } catch (error) {
     console.error("Error fetching employee stats:", error);
     res.status(500).json({

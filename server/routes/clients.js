@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const { models, sequelize } = require('../models');
 const { Op } = require('sequelize');
+const DataEncryptionService = require('../services/DataEncryptionService');
+const { encryptAuthResponse } = require('../utils/encryption');
 
 const { Client, Tenant } = models;
 
@@ -22,10 +24,11 @@ function validatePhone(phone) {
 }
 
 function validateTaxId(taxId) {
-  if (!taxId) return 'Tax ID is required';
+  // Tax ID is now optional
+  if (!taxId || taxId === '') return '';
   const compact = String(taxId).replace(/\D/g, '');
-  if (compact.length !== 9) return 'Tax ID must have exactly 9 digits';
-  if (!/^\d{9}$/.test(compact)) return 'Tax ID must be numeric';
+  if (compact.length > 0 && compact.length !== 9) return 'Tax ID must have exactly 9 digits';
+  if (compact.length > 0 && !/^\d{9}$/.test(compact)) return 'Tax ID must be numeric';
   return '';
 }
 
@@ -45,8 +48,11 @@ function validateClientPayload(payload) {
   }
   const phoneMsg = validatePhone(payload.phone);
   if (phoneMsg) errors.phone = phoneMsg;
-  const taxMsg = validateTaxId(payload.taxId);
-  if (taxMsg) errors.taxId = taxMsg;
+  // Tax ID is optional - only validate if provided
+  if (payload.taxId) {
+    const taxMsg = validateTaxId(payload.taxId);
+    if (taxMsg) errors.taxId = taxMsg;
+  }
   return errors;
 }
 
@@ -175,10 +181,15 @@ router.get('/', async (req, res) => {
     console.log('✅ Found', transformedClients.length, 'clients for tenant:', tenantId);
     console.log('📤 Sending clients:', transformedClients.map(c => ({ id: c.id, name: c.name })));
 
+    // Decrypt client data before sending to frontend
+    const decryptedClients = transformedClients.map(client => 
+      DataEncryptionService.decryptClientData(client)
+    );
+
     res.json({
       success: true,
-      clients: transformedClients,
-      total: transformedClients.length
+      clients: decryptedClients,
+      total: decryptedClients.length
     });
 
   } catch (error) {
@@ -224,9 +235,12 @@ router.get('/:id', async (req, res) => {
       clientType: client.clientType || 'external'
     };
 
+    // Decrypt client data before sending to frontend
+    const decryptedClient = DataEncryptionService.decryptClientData(transformedClient);
+
     res.json({
       success: true,
-      client: transformedClient
+      client: decryptedClient
     });
 
   } catch (error) {
@@ -241,7 +255,7 @@ router.get('/:id', async (req, res) => {
 // Create new client
 router.post('/', async (req, res) => {
   try {
-    const clientData = req.body;
+    let clientData = req.body;
 
     const validationErrors = validateClientPayload(clientData);
     if (Object.keys(validationErrors).length > 0) {
@@ -249,15 +263,26 @@ router.post('/', async (req, res) => {
     }
     // Normalize
     clientData.phone = toE164(clientData.phone);
-    clientData.taxId = normalizeTaxId(clientData.taxId);
+    // Only normalize taxId if provided
+    if (clientData.taxId) {
+      clientData.taxId = normalizeTaxId(clientData.taxId);
+    }
+    
+    // Encrypt client data before saving to database
+    clientData = DataEncryptionService.encryptClientData(clientData);
     
     // Create the client record
     const client = await Client.create(clientData);
 
+    // Decrypt client data for response
+    const decryptedClient = DataEncryptionService.decryptClientData(
+      client.toJSON ? client.toJSON() : client
+    );
+
     res.status(201).json({
       success: true,
       message: 'Client created successfully',
-      client
+      client: decryptedClient
     });
 
   } catch (error) {
@@ -274,7 +299,7 @@ router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const { tenantId } = req.query;
-    const updateData = req.body;
+    let updateData = req.body;
 
     const validationErrors = validateClientPayload(updateData);
     if (Object.keys(validationErrors).length > 0) {
@@ -282,7 +307,10 @@ router.put('/:id', async (req, res) => {
     }
     // Normalize
     updateData.phone = toE164(updateData.phone);
-    updateData.taxId = normalizeTaxId(updateData.taxId);
+    // Only normalize taxId if provided
+    if (updateData.taxId) {
+      updateData.taxId = normalizeTaxId(updateData.taxId);
+    }
 
     const client = await Client.findOne({
       where: { id, tenantId }
@@ -292,12 +320,20 @@ router.put('/:id', async (req, res) => {
       return res.status(404).json({ error: 'Client not found' });
     }
 
+    // Encrypt client data before updating in database
+    updateData = DataEncryptionService.encryptClientData(updateData);
+
     await client.update(updateData);
+
+    // Decrypt client data for response
+    const decryptedClient = DataEncryptionService.decryptClientData(
+      client.toJSON ? client.toJSON() : client
+    );
 
     res.json({
       success: true,
       message: 'Client updated successfully',
-      client
+      client: decryptedClient
     });
 
   } catch (error) {

@@ -67,7 +67,7 @@ const EmployerLayout = ({ children }) => {
   }, [subdomain, currentEmployer]);
   
   return (
-    <div className={`nk-body bg-lighter npc-default has-sidebar ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
+    <div className={`nk-body bg-sky-800 npc-default has-sidebar ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
       <div className="nk-app-root">
         <div className="nk-main">
           {/* Sidebar overlay for mobile */}

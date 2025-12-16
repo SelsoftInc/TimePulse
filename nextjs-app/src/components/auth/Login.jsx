@@ -46,13 +46,14 @@ const Login = () => {
     checkOAuthConfig();
   }, [searchParams]);
 
-  // Load saved email on component mount
+  // Load saved credentials on component mount
   useEffect(() => {
     const savedEmail = localStorage.getItem("rememberedEmail");
+    const savedPassword = localStorage.getItem("rememberedPassword");
     if (savedEmail) {
       setFormData({
         email: savedEmail,
-        password: ""});
+        password: savedPassword || ""});
       setRememberMe(true);
     } else {
       setFormData({
@@ -94,12 +95,38 @@ const Login = () => {
       setError("Session expired, please login again");
     }
 
-    // Handle remember me functionality
+    // Handle remember me functionality - store both email and password
     if (rememberMe) {
       localStorage.setItem("rememberedEmail", formData.email);
+      localStorage.setItem("rememberedPassword", formData.password);
     } else {
       localStorage.removeItem("rememberedEmail");
+      localStorage.removeItem("rememberedPassword");
     }
+
+    const persistAuth = (token, userInfo, tenantInfo) => {
+      // If rememberMe is ON -> persist in localStorage
+      // If rememberMe is OFF -> session-only in sessionStorage
+      const store = rememberMe ? localStorage : sessionStorage;
+      const other = rememberMe ? sessionStorage : localStorage;
+
+      other.removeItem('token');
+      other.removeItem('user');
+      other.removeItem('userInfo');
+      other.removeItem('tenants');
+      other.removeItem('currentTenant');
+      other.removeItem('currentEmployer');
+
+      store.setItem('token', token);
+      store.setItem('user', JSON.stringify(userInfo));
+      store.setItem('userInfo', JSON.stringify(userInfo));
+
+      if (tenantInfo) {
+        store.setItem('tenants', JSON.stringify([tenantInfo]));
+        store.setItem('currentTenant', JSON.stringify(tenantInfo));
+        store.setItem('currentEmployer', JSON.stringify(tenantInfo));
+      }
+    };
 
     try {
       // ===== STATIC AUTHENTICATION FOR UI DEVELOPMENT =====
@@ -110,36 +137,30 @@ const Login = () => {
         const staticSession = getStaticSession();
         
         // Store authentication token
-        localStorage.setItem("token", staticSession.token);
-        localStorage.setItem("staticMode", "true");
-        
-        // Store user info
-        const userInfo = {
-          id: staticSession.user.id,
-          email: staticSession.user.email,
-          name: staticSession.user.name,
-          firstName: staticSession.user.firstName,
-          lastName: staticSession.user.lastName,
-          role: staticSession.user.role,
-          tenantId: staticSession.user.tenantId,
-          employeeId: staticSession.user.employeeId,
-          isStatic: true
-        };
-        localStorage.setItem("user", JSON.stringify(userInfo));
-        localStorage.setItem("userInfo", JSON.stringify(userInfo));
-        
-        // Store tenant info
-        const tenantInfo = {
-          id: staticSession.tenant.id,
-          name: staticSession.tenant.tenantName,
-          subdomain: staticSession.tenant.subdomain,
-          status: staticSession.tenant.status,
-          role: staticSession.tenant.role,
-          isStatic: true
-        };
-        localStorage.setItem("tenants", JSON.stringify([tenantInfo]));
-        localStorage.setItem("currentTenant", JSON.stringify(tenantInfo));
-        localStorage.setItem("currentEmployer", JSON.stringify(tenantInfo));
+        persistAuth(
+          staticSession.token,
+          {
+            id: staticSession.user.id,
+            email: staticSession.user.email,
+            name: staticSession.user.name,
+            firstName: staticSession.user.firstName,
+            lastName: staticSession.user.lastName,
+            role: staticSession.user.role,
+            tenantId: staticSession.user.tenantId,
+            employeeId: staticSession.user.employeeId,
+            isStatic: true
+          },
+          {
+            id: staticSession.tenant.id,
+            name: staticSession.tenant.tenantName,
+            subdomain: staticSession.tenant.subdomain,
+            status: staticSession.tenant.status,
+            role: staticSession.tenant.role,
+            isStatic: true
+          }
+        );
+        // Keep staticMode flag for UI dev; store it alongside token
+        (rememberMe ? localStorage : sessionStorage).setItem('staticMode', 'true');
         
         // Redirect to dashboard
         const subdomain = staticSession.tenant.subdomain;
@@ -205,9 +226,6 @@ const Login = () => {
             return;
           }
 
-          // Store authentication token
-          localStorage.setItem("token", data.token);
-
           // Store user info
           const userInfo = {
             id: data.user.id,
@@ -218,21 +236,17 @@ const Login = () => {
             role: data.user.role,
             tenantId: data.user.tenantId,
             employeeId: data.user.employeeId};
-          localStorage.setItem("user", JSON.stringify(userInfo));
-          localStorage.setItem("userInfo", JSON.stringify(userInfo));
-
-          // Store tenant info
-          if (data.tenant) {
-            const tenantInfo = {
+          const tenantInfo = data.tenant
+            ? {
               id: data.tenant.id,
               name: data.tenant.tenantName,
               subdomain: data.tenant.subdomain,
-              status: "active",
-              role: data.user.role};
-            localStorage.setItem("tenants", JSON.stringify([tenantInfo]));
-            localStorage.setItem("currentTenant", JSON.stringify(tenantInfo));
-            localStorage.setItem("currentEmployer", JSON.stringify(tenantInfo));
-          }
+              status: 'active',
+              role: data.user.role
+            }
+            : null;
+
+          persistAuth(data.token, userInfo, tenantInfo);
 
           // Redirect based on user role
           const subdomain = data.tenant?.subdomain || "selsoft";
@@ -278,9 +292,6 @@ const Login = () => {
             return;
           }
 
-          // Store authentication token
-          localStorage.setItem("token", data.token);
-
           // Store user info
           const userInfo = {
             id: data.user.id,
@@ -291,21 +302,17 @@ const Login = () => {
             role: data.user.role,
             tenantId: data.user.tenantId,
             employeeId: data.user.employeeId};
-          localStorage.setItem("user", JSON.stringify(userInfo));
-          localStorage.setItem("userInfo", JSON.stringify(userInfo));
-
-          // Store tenant info
-          if (data.tenant) {
-            const tenantInfo = {
+          const tenantInfo = data.tenant
+            ? {
               id: data.tenant.id,
               name: data.tenant.tenantName,
               subdomain: data.tenant.subdomain,
-              status: "active",
-              role: data.user.role};
-            localStorage.setItem("tenants", JSON.stringify([tenantInfo]));
-            localStorage.setItem("currentTenant", JSON.stringify(tenantInfo));
-            localStorage.setItem("currentEmployer", JSON.stringify(tenantInfo));
-          }
+              status: 'active',
+              role: data.user.role
+            }
+            : null;
+
+          persistAuth(data.token, userInfo, tenantInfo);
 
           // Redirect based on user role
           const subdomain = data.tenant?.subdomain || "selsoft";
@@ -345,6 +352,9 @@ const Login = () => {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         localStorage.removeItem('userInfo');
+        sessionStorage.removeItem('token');
+        sessionStorage.removeItem('user');
+        sessionStorage.removeItem('userInfo');
         window.location.href = '/login?sessionExpired=true';
       }
     };

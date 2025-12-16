@@ -264,6 +264,150 @@ async function getRevenueTrend(tenantId, from, to) {
   return prisma.$queryRaw(query);
 }
 
+// Get Recent Activity (timesheets, invoices, leave requests)
+async function getRecentActivity(tenantId, limit = 10) {
+  const query = Prisma.sql`
+    WITH timesheet_activity AS (
+      SELECT 
+        t.id,
+        'timesheet' AS activity_type,
+        e.first_name || ' ' || e.last_name AS employee_name,
+        t.status,
+        t.created_at,
+        t.total_hours,
+        c.client_name
+      FROM timesheets t
+      JOIN employees e ON e.id = t.employee_id
+      LEFT JOIN clients c ON c.id = t.client_id
+      WHERE t.tenant_id = ${tenantId}::uuid
+      ORDER BY t.created_at DESC
+      LIMIT ${limit}
+    ),
+    leave_activity AS (
+      SELECT 
+        lr.id,
+        'leave' AS activity_type,
+        lr.employee_name,
+        lr.status,
+        lr.created_at,
+        NULL::numeric AS total_hours,
+        lr.leave_type AS client_name
+      FROM leave_requests lr
+      WHERE lr.tenant_id = ${tenantId}::uuid
+      ORDER BY lr.created_at DESC
+      LIMIT ${limit}
+    ),
+    combined AS (
+      SELECT * FROM timesheet_activity
+      UNION ALL
+      SELECT * FROM leave_activity
+    )
+    SELECT * FROM combined
+    ORDER BY created_at DESC
+    LIMIT ${limit}
+  `;
+
+  return prisma.$queryRaw(query);
+}
+
+// Get Top Performers by hours worked
+async function getTopPerformers(tenantId, from, to, limit = 5) {
+  const fromDate = from ? new Date(from) : null;
+  const toDate = to ? new Date(to) : null;
+
+  const whereClause = Prisma.sql`
+    WHERE t.tenant_id = ${tenantId}::uuid
+      AND t.status = 'approved'
+      ${
+        fromDate ? Prisma.sql`AND t.week_end_date >= ${fromDate}` : Prisma.empty
+      }
+      ${fromDate && toDate ? Prisma.sql`AND` : Prisma.empty}
+      ${toDate ? Prisma.sql`t.week_end_date <= ${toDate}` : Prisma.empty}
+  `;
+
+  const query = Prisma.sql`
+    SELECT
+      e.id,
+      e.first_name,
+      e.last_name,
+      e.first_name || ' ' || e.last_name AS name,
+      e.email,
+      e.department,
+      COALESCE(SUM(t.total_hours), 0) AS total_hours,
+      COALESCE(SUM(t.total_hours * COALESCE(c.hourly_rate, 0)), 0) AS revenue_generated
+    FROM timesheets t
+    JOIN employees e ON e.id = t.employee_id
+    LEFT JOIN clients c ON c.id = t.client_id
+    ${whereClause}
+    GROUP BY e.id, e.first_name, e.last_name, e.email, e.department
+    ORDER BY total_hours DESC
+    LIMIT ${limit}
+  `;
+
+  return prisma.$queryRaw(query);
+}
+
+// Get Revenue by Client
+async function getRevenueByClient(tenantId, from, to, limit = 5) {
+  const fromDate = from ? new Date(from) : null;
+  const toDate = to ? new Date(to) : null;
+
+  const whereClause = Prisma.sql`
+    WHERE i.tenant_id = ${tenantId}::uuid
+      AND i.payment_status IN ('pending', 'paid', 'overdue')
+      ${fromDate ? Prisma.sql`AND i.invoice_date >= ${fromDate}` : Prisma.empty}
+      ${fromDate && toDate ? Prisma.sql`AND` : Prisma.empty}
+      ${toDate ? Prisma.sql`i.invoice_date <= ${toDate}` : Prisma.empty}
+  `;
+
+  const query = Prisma.sql`
+    SELECT
+      c.id,
+      c.client_name,
+      c.email,
+      c.company,
+      COALESCE(SUM(i.total_amount), 0) AS total_revenue,
+      COUNT(i.id) AS invoice_count
+    FROM invoices i
+    JOIN clients c ON c.id = i.client_id
+    ${whereClause}
+    GROUP BY c.id, c.client_name, c.email, c.company
+    ORDER BY total_revenue DESC
+    LIMIT ${limit}
+  `;
+
+  return prisma.$queryRaw(query);
+}
+
+// Get Monthly Revenue Trend (last 12 months)
+async function getMonthlyRevenueTrend(tenantId) {
+  const query = Prisma.sql`
+    WITH months AS (
+      SELECT 
+        DATE_TRUNC('month', CURRENT_DATE - INTERVAL '11 months' + (n || ' months')::INTERVAL)::date AS month_start
+      FROM generate_series(0, 11) AS n
+    ),
+    monthly_revenue AS (
+      SELECT 
+        DATE_TRUNC('month', i.invoice_date)::date AS month_start,
+        SUM(i.total_amount) AS revenue
+      FROM invoices i
+      WHERE i.tenant_id = ${tenantId}::uuid
+        AND i.payment_status IN ('pending', 'paid', 'overdue')
+        AND i.invoice_date >= CURRENT_DATE - INTERVAL '11 months'
+      GROUP BY DATE_TRUNC('month', i.invoice_date)
+    )
+    SELECT 
+      TO_CHAR(m.month_start, 'Mon') AS month_label,
+      COALESCE(mr.revenue, 0) AS revenue
+    FROM months m
+    LEFT JOIN monthly_revenue mr ON m.month_start = mr.month_start
+    ORDER BY m.month_start ASC
+  `;
+
+  return prisma.$queryRaw(query);
+}
+
 module.exports = {
   prisma,
   withTenant,
@@ -273,4 +417,8 @@ module.exports = {
   getEmployeeKPIs,
   getARAging,
   getRevenueTrend,
+  getRecentActivity,
+  getTopPerformers,
+  getRevenueByClient,
+  getMonthlyRevenueTrend,
 };

@@ -7,7 +7,9 @@ import {
   COUNTRY_OPTIONS,
   STATES_BY_COUNTRY,
   getPostalLabel,
-  getPostalPlaceholder} from '../../config/lookups';
+  getPostalPlaceholder,
+  getCountryCode
+} from '../../config/lookups';
 import { PERMISSIONS } from '@/utils/roles';
 import PermissionGuard from '../common/PermissionGuard';
 import { useAuth } from '@/contexts/AuthContext';
@@ -16,14 +18,17 @@ import {
   validatePhoneNumber,
   validateZipCode,
   validateEmail,
-  validateName} from '@/utils/validations';
+  validateName,
+  formatPostalInput
+} from '@/utils/validations';
 import "./ImplementationPartners.css";
 
 const ImplementationPartnerForm = ({
   mode = "create",
   initialData = null,
   onSubmitOverride = null,
-  submitLabel = null}) => {
+  submitLabel = null
+}) => {
   const router = useRouter();
   const { subdomain } = useParams();
   const { user } = useAuth();
@@ -44,7 +49,8 @@ const ImplementationPartnerForm = ({
     country: "United States",
     specialization: "",
     status: "active",
-    notes: ""});
+    notes: ""
+  });
 
   useEffect(() => {
     if (mode === "edit" && initialData) {
@@ -61,54 +67,59 @@ const ImplementationPartnerForm = ({
         country: initialData.country || "United States",
         specialization: initialData.specialization || "",
         status: initialData.status || "active",
-        notes: initialData.notes || ""});
+        notes: initialData.notes || ""
+      });
     }
   }, [mode, initialData]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     let processedValue = value;
+    let updates = { [name]: processedValue };
 
-    // Format phone number as user types
-    if (name === "phone") {
-      // Remove all non-digit characters
-      const digits = value.replace(/\D/g, "");
-
-      // Limit to 10 digits
-      const limitedDigits = digits.slice(0, 10);
-
-      // Format as (XXX) XXX-XXXX
-      if (limitedDigits.length >= 6) {
-        processedValue = `(${limitedDigits.slice(0, 3)}) ${limitedDigits.slice(
-          3,
-          6
-        )}-${limitedDigits.slice(6)}`;
-      } else if (limitedDigits.length >= 3) {
-        processedValue = `(${limitedDigits.slice(0, 3)}) ${limitedDigits.slice(
-          3
-        )}`;
-      } else if (limitedDigits.length > 0) {
-        processedValue = `(${limitedDigits}`;
-      } else {
-        processedValue = "";
+    // Auto-prefill country code when country is selected
+    if (name === "country") {
+      const countryCode = getCountryCode(value);
+      // Only prefill if phone is empty or just has a country code
+      if (!formData.phone || /^\+\d{0,3}$/.test(formData.phone)) {
+        updates.phone = countryCode;
       }
     }
 
-    // Format zip code - only allow digits and limit to 5
+    // Format phone number as user types - E.164 only
+    if (name === "phone") {
+      const trimmed = String(value || '');
+      // Only allow + followed by digits (E.164 format)
+      if (trimmed.startsWith('+') || trimmed === '') {
+        const digits = trimmed.replace(/\D/g, '').slice(0, 15);
+        processedValue = digits ? `+${digits}` : (trimmed === '+' ? '+' : '');
+      } else if (/^\d/.test(trimmed)) {
+        // If user starts typing digits without +, prepend it
+        const digits = trimmed.replace(/\D/g, '').slice(0, 15);
+        processedValue = digits ? `+${digits}` : '';
+      } else {
+        processedValue = trimmed.startsWith('+') ? trimmed : '';
+      }
+      updates.phone = processedValue;
+    }
+
+    // Format zip code - only allow digits and limit to country-specific length
     if (name === "zip") {
-      const digits = value.replace(/\D/g, "");
-      processedValue = digits.slice(0, 5);
+      processedValue = formatPostalInput(value, formData.country);
+      updates.zip = processedValue;
     }
 
     setFormData((prev) => ({
       ...prev,
-      [name]: processedValue}));
+      ...updates
+    }));
 
     // Clear error when user starts typing
     if (errors[name]) {
       setErrors((prev) => ({
         ...prev,
-        [name]: ""}));
+        [name]: ""
+      }));
     }
   };
 
@@ -132,7 +143,12 @@ const ImplementationPartnerForm = ({
         break;
       case "zip":
         if (value) {
-          validation = validateZipCode(value);
+          validation = validateZipCode(value, formData.country);
+        }
+        break;
+      case "contactPerson":
+        if (value) {
+          validation = validateName(value, "Contact Person", { requireAtLeastTwoWords: true });
         }
         break;
       default:
@@ -142,7 +158,8 @@ const ImplementationPartnerForm = ({
     if (validation && !validation.isValid) {
       setErrors((prev) => ({
         ...prev,
-        [name]: validation.message}));
+        [name]: validation.message
+      }));
     } else {
       setErrors((prev) => {
         const newErrors = { ...prev };
@@ -167,6 +184,11 @@ const ImplementationPartnerForm = ({
     }
 
     // Optional but validated fields
+    if (formData.contactPerson) {
+      const contactValidation = validateName(formData.contactPerson, "Contact Person", { requireAtLeastTwoWords: true });
+      if (!contactValidation.isValid) newErrors.contactPerson = contactValidation.message;
+    }
+
     if (formData.email) {
       const emailValidation = validateEmail(formData.email);
       if (!emailValidation.isValid) newErrors.email = emailValidation.message;
@@ -178,7 +200,7 @@ const ImplementationPartnerForm = ({
     }
 
     if (formData.zip) {
-      const zipValidation = validateZipCode(formData.zip);
+      const zipValidation = validateZipCode(formData.zip, formData.country);
       if (!zipValidation.isValid) newErrors.zip = zipValidation.message;
     }
 
@@ -200,7 +222,8 @@ const ImplementationPartnerForm = ({
     try {
       const payload = {
         ...formData,
-        tenantId: user.tenantId};
+        tenantId: user.tenantId
+      };
 
       let response;
       if (mode === "create") {
@@ -208,8 +231,10 @@ const ImplementationPartnerForm = ({
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`},
-          body: JSON.stringify(payload)});
+            Authorization: `Bearer ${localStorage.getItem("token")}`
+          },
+          body: JSON.stringify(payload)
+        });
       } else {
         response = await fetch(
           `${API_BASE}/api/implementation-partners/${initialData.id}?tenantId=${user.tenantId}`,
@@ -217,8 +242,10 @@ const ImplementationPartnerForm = ({
             method: "PUT",
             headers: {
               "Content-Type": "application/json",
-              Authorization: `Bearer ${localStorage.getItem("token")}`},
-            body: JSON.stringify(payload)}
+              Authorization: `Bearer ${localStorage.getItem("token")}`
+            },
+            body: JSON.stringify(payload)
+          }
         );
       }
 
@@ -470,29 +497,49 @@ const ImplementationPartnerForm = ({
                     </div>
 
                     <div className="row">
-                      <div className="col-md-6">
-                        <div className="mb-3">
-                          <label htmlFor="zip" className="form-label">
-                            {getPostalLabel(formData.country)}
-                          </label>
-                          <input
-                            type="text"
-                            className={`form-control ${
-                              errors.zip ? "is-invalid" : ""
-                            }`}
-                            id="zip"
-                            name="zip"
-                            value={formData.zip}
-                            onChange={handleChange}
-                            onBlur={handleBlur}
-                            maxLength={5}
-                            placeholder={getPostalPlaceholder(formData.country)}
-                          />
-                          {errors.zip && (
-                            <div className="invalid-feedback">{errors.zip}</div>
-                          )}
+                      {/* Hide ZIP/Postal field for UAE */}
+                      {formData.country !== 'United Arab Emirates' && (
+                        <div className="col-md-6">
+                          <div className="mb-3">
+                            <label htmlFor="zip" className="form-label">
+                              {getPostalLabel(formData.country)}
+                            </label>
+                            <input
+                              type="text"
+                              className={`form-control ${
+                                errors.zip ? "is-invalid" : ""
+                              }`}
+                              id="zip"
+                              name="zip"
+                              value={formData.zip}
+                              onChange={handleChange}
+                              onBlur={handleBlur}
+                              maxLength={
+                                formData.country === 'United States'
+                                  ? 10
+                                  : formData.country === 'India'
+                                    ? 6
+                                    : formData.country === 'Canada'
+                                      ? 7
+                                      : formData.country === 'United Kingdom'
+                                        ? 8
+                                        : formData.country === 'Australia'
+                                          ? 4
+                                          : formData.country === 'Singapore'
+                                            ? 6
+                                            : formData.country === 'Germany'
+                                              ? 5
+                                              : 20
+                              }
+                              placeholder={getPostalPlaceholder(formData.country)}
+                            />
+
+                            {errors.zip && (
+                              <div className="invalid-feedback">{errors.zip}</div>
+                            )}
+                          </div>
                         </div>
-                      </div>
+                      )}
                       <div className="col-md-6">
                         <div className="mb-3">
                           <label htmlFor="country" className="form-label">

@@ -19,7 +19,9 @@ export const AuthProvider = ({ children }) => {
     const initializeAuth = () => {
       try {
         // Check for token in cookies (for SSR compatibility)
-        const token = Cookies.get('token') || (typeof window !== 'undefined' ? localStorage.getItem('token') : null);
+        const token = Cookies.get('token') || (typeof window !== 'undefined'
+          ? (localStorage.getItem('token') || sessionStorage.getItem('token'))
+          : null);
 
         if (!token) {
           setLoading(false);
@@ -27,13 +29,15 @@ export const AuthProvider = ({ children }) => {
         }
 
         // Get user info
-        const userInfo = typeof window !== 'undefined' 
-          ? JSON.parse(localStorage.getItem('userInfo') || '{}')
+        const userInfo = typeof window !== 'undefined'
+          ? JSON.parse((localStorage.getItem('userInfo') || sessionStorage.getItem('userInfo')) || '{}')
           : {};
         const employer = typeof window !== 'undefined'
           ? JSON.parse(
               localStorage.getItem('currentEmployer') ||
                 localStorage.getItem('currentTenant') ||
+                sessionStorage.getItem('currentEmployer') ||
+                sessionStorage.getItem('currentTenant') ||
                 'null'
             )
           : null;

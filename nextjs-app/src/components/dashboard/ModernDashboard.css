@@ -37,11 +37,11 @@
 
 /* Dashboard Header - Clean Modern Card */
 .dashboard-header {
-  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+  background: #7cbdf2 !important;
   border-radius: 24px;
   padding: 32px 36px;
   margin-bottom: 32px;
-  box-shadow: 0 20px 60px rgba(99, 102, 241, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+  /* box-shadow: 0 20px 60px rgba(99, 102, 241, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.1) inset; */
   display: grid;
   grid-template-columns: 1fr auto;
   align-items: center;
@@ -58,7 +58,7 @@
   right: -100px;
   width: 500px;
   height: 500px;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.08) 0%, transparent 60%);
+  /* background: radial-gradient(circle, rgba(255, 255, 255, 0.08) 0%, transparent 60%); */
   pointer-events: none;
 }
 
@@ -69,7 +69,7 @@
   left: -80px;
   width: 400px;
   height: 400px;
-  background: radial-gradient(circle, rgba(139, 92, 246, 0.2) 0%, transparent 65%);
+  /* background: radial-gradient(circle, rgba(139, 92, 246, 0.2) 0%, transparent 65%); */
   pointer-events: none;
 }
 
@@ -133,6 +133,7 @@
   position: relative;
   z-index: 1;
   justify-self: end;
+
 }
 
 /* View Mode Toggle - Clean Modern Design */
@@ -162,7 +163,7 @@
 
 .toggle-btn.active {
   background: #ffffff;
-  color: #6366f1;
+  color: #05253D;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.08);
 }
 

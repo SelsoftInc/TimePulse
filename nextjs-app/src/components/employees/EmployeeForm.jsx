@@ -9,10 +9,18 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
 import { API_BASE, apiFetch } from '@/config/api';
 import {
+  COUNTRY_OPTIONS,
+  STATES_BY_COUNTRY,
+  getPostalLabel,
+  getPostalPlaceholder,
+  getCountryCode
+} from '../../config/lookups';
+import {
   validatePhoneNumber,
   validateZipCode,
   validateEmail,
-  validateName} from '@/utils/validations';
+  validateName,
+  formatPostalInput} from '@/utils/validations';
 import "./Employees.css";
 
 const EmployeeForm = () => {
@@ -242,41 +250,43 @@ const EmployeeForm = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     let processedValue = value;
+    let updates = { [name]: processedValue };
 
-    // Format phone number as user types
-    if (name === "phone") {
-      // Remove all non-digit characters
-      const digits = value.replace(/\D/g, "");
-
-      // Limit to 10 digits
-      const limitedDigits = digits.slice(0, 10);
-
-      // Format as (XXX) XXX-XXXX
-      if (limitedDigits.length >= 6) {
-        processedValue = `(${limitedDigits.slice(0, 3)}) ${limitedDigits.slice(
-          3,
-          6
-        )}-${limitedDigits.slice(6)}`;
-      } else if (limitedDigits.length >= 3) {
-        processedValue = `(${limitedDigits.slice(0, 3)}) ${limitedDigits.slice(
-          3
-        )}`;
-      } else if (limitedDigits.length > 0) {
-        processedValue = `(${limitedDigits}`;
-      } else {
-        processedValue = "";
+    // Auto-prefill country code when country is selected
+    if (name === "country") {
+      const countryCode = getCountryCode(value);
+      // Only prefill if phone is empty or just has a country code
+      if (!formData.phone || /^\+\d{0,3}$/.test(formData.phone)) {
+        updates.phone = countryCode;
       }
+    }
+
+    // Format phone number as user types - E.164 only
+    if (name === "phone") {
+      const trimmed = String(value || '');
+      // Only allow + followed by digits (E.164 format)
+      if (trimmed.startsWith('+') || trimmed === '') {
+        const digits = trimmed.replace(/\D/g, '').slice(0, 15);
+        processedValue = digits ? `+${digits}` : (trimmed === '+' ? '+' : '');
+      } else if (/^\d/.test(trimmed)) {
+        // If user starts typing digits without +, prepend it
+        const digits = trimmed.replace(/\D/g, '').slice(0, 15);
+        processedValue = digits ? `+${digits}` : '';
+      } else {
+        processedValue = trimmed.startsWith('+') ? trimmed : '';
+      }
+      updates.phone = processedValue;
     }
 
     // Format zip code - only allow digits and limit to 5
     if (name === "zip") {
-      const digits = value.replace(/\D/g, "");
-      processedValue = digits.slice(0, 5);
+      processedValue = formatPostalInput(value, formData.country);
+      updates.zip = processedValue;
     }
 
     setFormData({
       ...formData,
-      [name]: processedValue});
+      ...updates});
 
     // Clear field-specific error on change
     if (errors[name]) {
@@ -288,12 +298,20 @@ const EmployeeForm = () => {
     const { name, value } = e.target;
 
     if (name === "phone") {
+      if (!value) {
+        setErrors((prev) => ({ ...prev, phone: "" }));
+        return;
+      }
       const validation = validatePhoneNumber(value);
       setErrors((prev) => ({
         ...prev,
         phone: validation.isValid ? "" : validation.message}));
     } else if (name === "zip") {
-      const validation = validateZipCode(value);
+      if (!value) {
+        setErrors((prev) => ({ ...prev, zip: "" }));
+        return;
+      }
+      const validation = validateZipCode(value, formData.country);
       setErrors((prev) => ({
         ...prev,
         zip: validation.isValid ? "" : validation.message}));
@@ -349,8 +367,12 @@ const EmployeeForm = () => {
     e.preventDefault();
 
     // Validate form fields
-    const phoneValidation = validatePhoneNumber(formData.phone);
-    const zipValidation = validateZipCode(formData.zip);
+    const phoneValidation = formData.phone
+      ? validatePhoneNumber(formData.phone)
+      : { isValid: true, message: 'Valid' };
+    const zipValidation = formData.zip
+      ? validateZipCode(formData.zip, formData.country)
+      : { isValid: true, message: 'Valid' };
     const emailValidation = validateEmail(formData.email);
     const firstNameValidation = validateName(formData.firstName, "First Name");
     const lastNameValidation = validateName(formData.lastName, "Last Name");
@@ -987,44 +1009,81 @@ const EmployeeForm = () => {
                       <div className="col-lg-4">
                         <div className="form-group">
                           <label className="form-label" htmlFor="state">
-                            State
+                            State/Province
                           </label>
-                          <input
-                            type="text"
-                            className="form-control"
-                            id="state"
-                            name="state"
-                            value={formData.state}
-                            onChange={handleChange}
-                            placeholder="Enter state"
-                          />
-                        </div>
-                      </div>
-                      <div className="col-lg-4">
-                        <div className="form-group">
-                          <label className="form-label" htmlFor="zip">
-                            ZIP Code
-                          </label>
-                          <input
-                            type="text"
-                            className="form-control"
-                            id="zip"
-                            name="zip"
-                            value={formData.zip}
-                            onChange={handleChange}
-                            onBlur={handleBlur}
-                            placeholder="Enter ZIP code"
-                            maxLength="5"
-                          />
-                          {errors.zip && (
-                            <div className="mt-1">
-                              <small className="text-danger">
-                                {errors.zip}
-                              </small>
-                            </div>
+                          {STATES_BY_COUNTRY[formData.country] &&
+                          STATES_BY_COUNTRY[formData.country].length > 0 ? (
+                            <select
+                              className="form-select"
+                              id="state"
+                              name="state"
+                              value={formData.state}
+                              onChange={handleChange}
+                            >
+                              <option value="">Select state</option>
+                              {STATES_BY_COUNTRY[formData.country].map((st) => (
+                                <option key={st} value={st}>
+                                  {st}
+                                </option>
+                              ))}
+                            </select>
+                          ) : (
+                            <input
+                              type="text"
+                              className="form-control"
+                              id="state"
+                              name="state"
+                              value={formData.state}
+                              onChange={handleChange}
+                              placeholder="Enter state"
+                            />
                           )}
                         </div>
                       </div>
+                      {/* Hide ZIP/Postal field for UAE */}
+                      {formData.country !== 'United Arab Emirates' && (
+                        <div className="col-lg-4">
+                          <div className="form-group">
+                            <label className="form-label" htmlFor="zip">
+                              {getPostalLabel(formData.country)}
+                            </label>
+                            <input
+                              type="text"
+                              className="form-control"
+                              id="zip"
+                              name="zip"
+                              value={formData.zip}
+                              onChange={handleChange}
+                              onBlur={handleBlur}
+                              placeholder={getPostalPlaceholder(formData.country)}
+                              maxLength={
+                                formData.country === 'United States'
+                                  ? 10
+                                  : formData.country === 'India'
+                                    ? 6
+                                    : formData.country === 'Canada'
+                                      ? 7
+                                      : formData.country === 'United Kingdom'
+                                        ? 8
+                                        : formData.country === 'Australia'
+                                          ? 4
+                                          : formData.country === 'Singapore'
+                                            ? 6
+                                            : formData.country === 'Germany'
+                                              ? 5
+                                              : 20
+                              }
+                            />
+                            {errors.zip && (
+                              <div className="mt-1">
+                                <small className="text-danger">
+                                  {errors.zip}
+                                </small>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
                       <div className="col-lg-4">
                         <div className="form-group">
                           <label className="form-label" htmlFor="country">
@@ -1037,9 +1096,11 @@ const EmployeeForm = () => {
                             value={formData.country}
                             onChange={handleChange}
                           >
-                            <option value="United States">United States</option>
-                            <option value="Canada">Canada</option>
-                            <option value="India">India</option>
+                            {COUNTRY_OPTIONS.map((c) => (
+                              <option key={c} value={c}>
+                                {c}
+                              </option>
+                            ))}
                           </select>
                         </div>
                       </div>

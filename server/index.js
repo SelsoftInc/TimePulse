@@ -40,7 +40,7 @@ const subscriptionRoutes = require("./routes/subscriptions");
 const billingRoutes = require("./routes/billing");
 const dashboardRoutes = require("./routes/dashboard");
 const passwordResetRoutes = require("./routes/passwordReset");
-// const dashboardPrismaRoutes = require("./routes/dashboard-prisma"); // Disabled - requires Prisma setup
+const dashboardExtendedRoutes = require("./routes/dashboard-extended");
 
 // Middleware
 // Configure CORS - allow specific origins from environment variable or default to open
@@ -157,7 +157,8 @@ console.log('📍 Loading billing routes...');
 app.use("/api/billing", billingRoutes);
 console.log('📍 Loading dashboard routes...');
 app.use("/api/dashboard", dashboardRoutes);
-// app.use("/api/dashboard-prisma", dashboardPrismaRoutes); // Disabled - requires Prisma setup
+console.log('📍 Loading dashboard-extended routes...');
+app.use("/api/dashboard-extended", dashboardExtendedRoutes);
 console.log('📍 Loading auth routes...');
 app.use("/api/auth", require("./routes/auth"));
 console.log('📍 Loading oauth routes...');

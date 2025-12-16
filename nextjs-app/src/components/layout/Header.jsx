@@ -8,8 +8,10 @@ import { API_BASE } from '@/config/api';
 import { useTheme } from '@/contexts/ThemeContext';
 // import PermissionGuard from '../common/PermissionGuard';
 import NotificationBell from '../notifications/NotificationBell';
+import TimesheetAlerts from '../notifications/TimesheetAlerts';
 import AskAIButton from '../ai/AskAIButton';
-import "./Header.css";
+import './Header.css';
+
 
 const Header = ({ toggleSidebar }) => {
   const router = useRouter();
@@ -152,96 +154,91 @@ const Header = ({ toggleSidebar }) => {
   };
 
   return (
-    <header className="nk-header">
-      <div className="container-fluid">
-        <div className="nk-header-wrap">
-          {/* Mobile menu toggle - MUST BE FIRST */}
-          <button
-            className="mobile-menu-toggle"
-            onClick={toggleSidebar}
-            aria-label="Toggle Menu"
-            title="Toggle Menu"
-          >
-            <i className="fas fa-bars"></i>
-          </button>
-          
-          {/* Brand logo and name */}
-          <div
-            className="app-brand"
-            onClick={() => router.push(`/${subdomain}/employee-dashboard`)}
-            style={{ cursor: "pointer" }}
-          >
-            <img
-              src={tenantLogo || "/assets/images/jsTree/TimePulseLogoAuth.png"}
-              alt={tenantLogo ? "Company Logo" : "TimePulse Logo"}
-              className="app-brand-logo"
-              style={
-                tenantLogo
-                  ? {
-                      maxHeight: "30px",
-                      maxWidth: "200px",
-                      objectFit: "contain"}
-                  : {}
-              }
-              title="Go to Employee Dashboard"
-            />
-          </div>
+    <header className="w-full h-[60px] flex items-center 
+  bg-[#05253D] shadow-md transition-colors duration-300">
 
-          {/* Right side tools - Aligned to top right */}
-          <div className="nk-header-tools">
-            {/* Ask AI Button */}
-            <div className="header-action-item">
-              <AskAIButton />
-            </div>
+  <div className="w-full px-4 lg:px-6">
+    <div className="flex items-center w-full">
 
             {/* Notification Bell - All Notifications */}
             <div className="header-action-item">
               <NotificationBell />
             </div>
+      {/* Mobile Menu Toggle */}
+      <button
+        onClick={toggleSidebar}
+        aria-label="Toggle Menu"
+        title="Toggle Menu"
+        className="lg:hidden text-[#466D81] text-2xl p-2 mr-2"
+      >
+        <i className="fas fa-bars"></i>
+      </button>
 
-            {/* Theme Toggle */}
-            <div
-              className="header-action-item"
-              onClick={toggleTheme}
-              style={{ cursor: "pointer" }}
-              title={`Switch to ${isDarkMode ? "light" : "dark"} mode`}
-            >
-              <i
-                className={`fas ${
-                  isDarkMode ? "fa-sun" : "fa-moon"
-                } header-action-icon`}
-              ></i>
-            </div>
-
-            {/* Settings icon - only show for admin/approver roles */}
-            {user?.role === "admin" || user?.role === "approver" ? (
-              <div
-                className="header-action-item"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  goToSettings();
-                }}
-                style={{ cursor: "pointer" }}
-                title="Settings"
-              >
-                <i className="fas fa-cog header-action-icon"></i>
-              </div>
-            ) : null}
-
-            {/* User Avatar */}
-            <div
-              className="header-action-item user-dropdown"
-              onClick={goToProfileSettings}
-              style={{ cursor: "pointer" }}
-              title="Edit Profile"
-            >
-              <div className="user-avatar">{getUserInitials()}</div>
-            </div>
-          </div>
-        </div>
+      {/* Logo */}
+      <div
+        className="flex items-center cursor-pointer mr-4"
+        onClick={() => router.push(`/${subdomain}/employee-dashboard`)}
+      >
+        <img
+          src={tenantLogo || "/assets/images/jsTree/TimePulse4.png"}
+          alt="Logo"
+          className={`object-contain mr-2
+            ${tenantLogo ? "max-h-[30px] max-w-[200px]" : "max-h-[70px] max-w-[280px]"}`}
+        />
       </div>
-    </header>
+
+      {/* Tools */}
+      <div className="flex items-center gap-4 ml-auto">
+
+        {/* Ask AI Button */}
+        <div className="text-[#466D81]">
+          <AskAIButton />
+        </div>
+
+        {/* Notification Bell */}
+        <div className="text-[#466D81]">
+          <TimesheetAlerts subdomain={subdomain} />
+        </div>
+
+        {/* Theme Toggle */}
+        <div
+          className="p-2 rounded-lg hover:bg-white/10 cursor-pointer text-[#466D81]"
+          onClick={toggleTheme}
+          title={`Switch to ${isDarkMode ? "light" : "dark"} mode text-white`}
+        >
+          <i className={`fas ${isDarkMode ? "fa-sun" : "fa-moon"} text-xl text-white`}></i>
+        </div>
+
+        {/* Settings */}
+        {(user?.role === "admin" || user?.role === "approver") && (
+          <div
+            className="p-2 rounded-lg hover:bg-white/10 cursor-pointer text-[#466D81]"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              goToSettings();
+            }}
+            title="Settings"
+          >
+            <i className="fas fa-cog text-xl text-white"></i>
+          </div>
+        )}
+
+        {/* User Avatar */}
+        <div
+          onClick={goToProfileSettings}
+          className="w-8 h-8 rounded-full bg-gray-200 text-[#466D81] font-bold flex items-center justify-center cursor-pointer"
+          title="Edit Profile"
+        >
+          {getUserInitials()}
+        </div>
+
+      </div>
+    </div>
+  </div>
+</header>
+
+
   );
 };
 

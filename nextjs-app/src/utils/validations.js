@@ -2,25 +2,28 @@
  * Validation utilities for the TimePulse application
  */
 
-// Phone number validation (exactly 10 digits)
+// --- Phone ---
+// Accepts:
+// - E.164: +[country][number] (max 15 digits)
+// Server-side should normalize to E.164.
 export const validatePhoneNumber = (phone) => {
-  if (!phone) {
-    return { isValid: false, message: "Phone number is required" };
+  if (!phone || typeof phone !== 'string') {
+    return { isValid: false, message: 'Phone number is required' };
   }
 
-  // Remove all non-digit characters
-  const cleanPhone = phone.replace(/\D/g, "");
-
-  if (cleanPhone.length !== 10) {
-    return { isValid: false, message: "Phone number must be exactly 10 digits" };
+  const cleaned = phone.replace(/[\s\-\(\)]/g, '');
+  
+  // E.164 format ONLY: +[country code][subscriber number] (up to 15 digits total)
+  const e164Pattern = /^\+[1-9]\d{1,14}$/;
+  
+  if (e164Pattern.test(cleaned)) {
+    return { isValid: true, message: 'Valid phone number' };
   }
-
-  // Check if it's all the same digit (like 1111111111)
-  if (/^(\d)\1{9}$/.test(cleanPhone)) {
-    return { isValid: false, message: "Phone number cannot be all the same digits" };
-  }
-
-  return { isValid: true, message: "Valid phone number" };
+  
+  return { 
+    isValid: false, 
+    message: 'Phone must be in E.164 format (e.g., +15551234567 for US, +442079460958 for UK, +919874563210 for India)' 
+  };
 };
 
 // Format phone number for display (XXX) XXX-XXXX
@@ -35,57 +38,207 @@ export const formatPhoneNumber = (phone) => {
   return phone;
 };
 
-// Zip code validation (exactly 5 digits)
-export const validateZipCode = (zipCode) => {
-  if (!zipCode) {
-    return { isValid: false, message: "Zip code is required" };
+// --- Postal / ZIP ---
+// Backward compatible signature: validateZipCode(zip) defaults to US
+export const validateZipCode = (zipCode, country = 'United States') => {
+  const value = String(zipCode || '').trim();
+
+  // UAE typically has no postal code; allow empty
+  if (country === 'United Arab Emirates') {
+    if (!value) return { isValid: true, message: "Valid" };
+    if (value.length > 20) return { isValid: false, message: "Postal code is too long" };
+    return { isValid: true, message: "Valid" };
   }
 
-  const cleanZip = zipCode.replace(/\D/g, "");
-
-  if (cleanZip.length !== 5) {
-    return { isValid: false, message: "Zip code must be exactly 5 digits" };
+  if (!value) {
+    return { isValid: false, message: `${getPostalFieldLabel(country)} is required` };
   }
 
-  return { isValid: true, message: "Valid zip code" };
+  switch (country) {
+    case 'United States': {
+      // 5 digits or ZIP+4 (12345-6789)
+      if (!/^\d{5}(-\d{4})?$/.test(value)) {
+        return { isValid: false, message: "ZIP Code must be 5 digits or 9 digits (e.g., 12345 or 12345-6789)" };
+      }
+      return { isValid: true, message: "Valid" };
+    }
+    case 'India': {
+      if (!/^\d{6}$/.test(value)) {
+        return { isValid: false, message: "PIN Code must be exactly 6 digits" };
+      }
+      return { isValid: true, message: "Valid" };
+    }
+    case 'Canada': {
+      // A1A 1A1 (allow optional space)
+      if (!/^[A-Za-z]\d[A-Za-z][ ]?\d[A-Za-z]\d$/.test(value)) {
+        return { isValid: false, message: "Postal Code must be in format A1A 1A1" };
+      }
+      return { isValid: true, message: "Valid" };
+    }
+    case 'United Kingdom': {
+      // Simplified UK postcode validation (covers common cases)
+      if (!/^[A-Za-z]{1,2}\d[A-Za-z\d]?[ ]?\d[A-Za-z]{2}$/.test(value)) {
+        return { isValid: false, message: "Postcode must be a valid UK format (e.g., SW1A 1AA)" };
+      }
+      return { isValid: true, message: "Valid" };
+    }
+    case 'Australia': {
+      if (!/^\d{4}$/.test(value)) {
+        return { isValid: false, message: "Postcode must be exactly 4 digits" };
+      }
+      return { isValid: true, message: "Valid" };
+    }
+    case 'Singapore': {
+      if (!/^\d{6}$/.test(value)) {
+        return { isValid: false, message: "Postal Code must be exactly 6 digits" };
+      }
+      return { isValid: true, message: "Valid" };
+    }
+    case 'Germany': {
+      if (!/^\d{5}$/.test(value)) {
+        return { isValid: false, message: "Postleitzahl must be exactly 5 digits" };
+      }
+      return { isValid: true, message: "Valid" };
+    }
+    default: {
+      // Generic fallback: at least 3 chars
+      if (value.length < 3) {
+        return { isValid: false, message: `${getPostalFieldLabel(country)} is too short` };
+      }
+      return { isValid: true, message: "Valid" };
+    }
+  }
 };
 
-// Email validation
+export const formatPostalInput = (raw, country = 'United States') => {
+  const v = String(raw || '');
+  if (country === 'United States') {
+    const digits = v.replace(/\D/g, '').slice(0, 9);
+    if (digits.length <= 5) return digits;
+    return `${digits.slice(0, 5)}-${digits.slice(5)}`;
+  }
+  if (country === 'India' || country === 'Singapore') {
+    return v.replace(/\D/g, '').slice(0, 6);
+  }
+  if (country === 'Germany') {
+    return v.replace(/\D/g, '').slice(0, 5);
+  }
+  if (country === 'Australia') {
+    return v.replace(/\D/g, '').slice(0, 4);
+  }
+  if (country === 'Canada') {
+    // Allow alphanumeric, format as A1A 1A1
+    const compact = v.replace(/[^A-Za-z0-9]/g, '').toUpperCase().slice(0, 6);
+    if (compact.length <= 3) return compact;
+    return `${compact.slice(0, 3)} ${compact.slice(3)}`;
+  }
+  if (country === 'United Kingdom') {
+    // Keep alphanumeric and a single space
+    return v.toUpperCase().replace(/[^A-Za-z0-9 ]/g, '').replace(/\s+/g, ' ').slice(0, 8);
+  }
+  if (country === 'United Arab Emirates') {
+    return v.slice(0, 20);
+  }
+  return v.slice(0, 20);
+};
+
+// Email validation (layered basic syntax rules)
 export const validateEmail = (email) => {
   if (!email) {
     return { isValid: false, message: "Email is required" };
   }
+  const value = String(email).trim();
 
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-  if (!emailRegex.test(email)) {
-    return { isValid: false, message: "Please enter a valid email address" };
+  // Must contain exactly one @
+  const parts = value.split('@');
+  if (parts.length !== 2) {
+    return { isValid: false, message: "Email must contain a single @" };
   }
-
+  const [local, domain] = parts;
+  if (!local || !domain) {
+    return { isValid: false, message: "Email is invalid" };
+  }
+  // Local part rules
+  if (local.startsWith('.') || local.endsWith('.')) {
+    return { isValid: false, message: "Email local part cannot start or end with a period" };
+  }
+  if (local.includes('..')) {
+    return { isValid: false, message: "Email local part cannot contain consecutive periods" };
+  }
+  // Allowed local chars (basic)
+  if (!/^[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+$/.test(local)) {
+    return { isValid: false, message: "Email contains invalid characters" };
+  }
+  // Domain must contain a dot and TLD length >=2
+  if (!/\./.test(domain)) {
+    return { isValid: false, message: "Email domain must contain a period" };
+  }
+  const lastDot = domain.lastIndexOf('.');
+  const tld = domain.slice(lastDot + 1);
+  if (!tld || tld.length < 2) {
+    return { isValid: false, message: "Email must have a valid top-level domain" };
+  }
+  // Domain allowed chars
+  if (!/^[A-Za-z0-9.-]+$/.test(domain) || domain.includes('..') || domain.startsWith('-') || domain.endsWith('-')) {
+    return { isValid: false, message: "Email domain is invalid" };
+  }
   return { isValid: true, message: "Valid email" };
 };
 
-// Name validation (first name, last name, etc.)
-export const validateName = (name, fieldName = "Name") => {
-  if (!name) {
+// Name validation (supports first/middle/last formats)
+// Allowed: letters, numbers, spaces, hyphens, apostrophes, periods, commas
+export const validateName = (value, fieldName = 'Name', options = {}) => {
+  const { requireAtLeastTwoWords = false } = options;
+  
+  if (!value || typeof value !== 'string') {
     return { isValid: false, message: `${fieldName} is required` };
   }
 
-  if (name.trim().length < 2) {
-    return { isValid: false, message: `${fieldName} must be at least 2 characters long` };
-  }
-
-  if (name.trim().length > 50) {
-    return { isValid: false, message: `${fieldName} must be less than 50 characters` };
+  const trimmed = value.trim();
+  
+  if (trimmed.length === 0) {
+    return { isValid: false, message: `${fieldName} cannot be empty` };
   }
 
   // Check for valid characters (letters, spaces, hyphens, apostrophes, numbers, periods, commas)
-  if (!/^[a-zA-Z0-9\s\-'.,&]+$/.test(name.trim())) {
+  if (!/^[a-zA-Z0-9\s\-'.,]+$/.test(trimmed)) {
     return { isValid: false, message: `${fieldName} contains invalid characters` };
+  }
+
+  // Prevent consecutive spaces
+  if (/\s{2,}/.test(trimmed)) {
+    return { isValid: false, message: `${fieldName} cannot contain consecutive spaces` };
+  }
+
+  // Optional: require at least 2 words (e.g., full name)
+  if (options.requireAtLeastTwoWords) {
+    const words = trimmed.split(/\s+/).filter(Boolean);
+    if (words.length < 2) {
+      return { isValid: false, message: `${fieldName} must include first and last name` };
+    }
   }
 
   return { isValid: true, message: "Valid name" };
 };
+
+function getPostalFieldLabel(country) {
+  switch (country) {
+    case 'United States':
+      return 'ZIP Code';
+    case 'India':
+      return 'PIN Code';
+    case 'Canada':
+    case 'United Kingdom':
+    case 'Australia':
+    case 'Singapore':
+    case 'Germany':
+      return 'Postal Code';
+    case 'United Arab Emirates':
+      return 'Postal Code';
+    default:
+      return 'Postal Code';
+  }
+}
 
 // Password validation
 export const validatePassword = (password) => {

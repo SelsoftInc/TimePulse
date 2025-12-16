@@ -1,33 +1,27 @@
 version: 1
 applications:
-  - appRoot: frontend
+  - appRoot: nextjs-app
     frontend:
       phases:
         preBuild:
           commands:
-            - echo "Installing dependencies..."
-            - rm -rf node_modules package-lock.json
-            - unset NODE_ENV || true
-            - npm install --legacy-peer-deps --include=dev --force
-            - npm install ajv@^8.0.0 --legacy-peer-deps --save-dev || true
-            - echo "Verifying react-scripts installation..."
-            - ls -la node_modules/.bin/react-scripts || echo "react-scripts not found in node_modules/.bin"
-            - echo "Checking installed packages..."
-            - npm list react-scripts || echo "react-scripts not in package list"
+            - echo "Installing Next.js dependencies..."
+            - npm ci --legacy-peer-deps
             - echo "Setting up environment variables..."
-            - echo "REACT_APP_API_BASE=$REACT_APP_API_BASE" >> .env.production
-            - echo "REACT_APP_ENGINE_API_URL=$REACT_APP_ENGINE_API_URL" >> .env.production
+            - echo "NEXT_PUBLIC_API_BASE=$NEXT_PUBLIC_API_BASE" > .env.production
+            - echo "NEXT_PUBLIC_ENGINE_API_URL=$NEXT_PUBLIC_ENGINE_API_URL" >> .env.production
+            - echo "NEXT_PUBLIC_SOCKET_URL=$NEXT_PUBLIC_SOCKET_URL" >> .env.production
         build:
           commands:
-            - echo "Building React application..."
+            - echo "Building Next.js application..."
             - npm run build
+            - echo "Exporting static files..."
             - echo "Build completed successfully"
       artifacts:
-        baseDirectory: build
+        baseDirectory: .next
         files:
           - '**/*'
       cache:
         paths:
           - node_modules/**/*
-        # Clear cache to ensure devDependencies are installed
-        # Remove this comment after first successful build
+          - .next/cache/**/*

@@ -269,8 +269,8 @@ const ModernDashboard = () => {
         <div className="dashboard-title-section">
           <h1 className="dashboard-title">Dashboard</h1>
           <div className="dashboard-subtitle">
-            <i className="fas fa-calendar-alt"></i>
-            <span>
+            {/* <i className="fas fa-calendar-alt"></i> */}
+            {/* <span>
               {dateRange.start.toLocaleDateString("en-US", {
                 weekday: "short",
                 month: "short",
@@ -282,7 +282,7 @@ const ModernDashboard = () => {
                 month: "short",
                 day: "numeric",
                 year: "numeric"})}
-            </span>
+            </span> */}
             <span className="scope-indicator">
               {scope === "company" ? (
                 <>
@@ -306,9 +306,9 @@ const ModernDashboard = () => {
                 </>
               )}
             </span>
-            <span className="refresh-indicator">
+            {/* <span className="refresh-indicator">
               Refreshed: {formatRelativeTime(lastRefresh)}
-            </span>
+            </span> */}
           </div>
         </div>
 
@@ -463,7 +463,7 @@ const ModernDashboard = () => {
         <div className="text-xl md:text-2xl font-extrabold text-gray-900 dark:text-white leading-none">
           {formatCurrency(getTotalRevenue())}
         </div>
-        <div className="text-xs text-green-600 dark:text-green-400 font-medium">+12.5%</div>
+        <div className="text-xs text-green-600 dark:text-green-400 font-medium"></div>
       </div>
 
       <div className="mt-3 grid grid-cols-2 gap-3 text-xs text-gray-600 dark:text-gray-300">

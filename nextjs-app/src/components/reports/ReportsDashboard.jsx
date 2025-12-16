@@ -1874,7 +1874,7 @@ const ReportsDashboard = () => {
                 Are you sure you want to delete client <strong>{selectedClient.name}</strong>?
               </p>
               <p className="text-center text-muted">
-                This action cannot be undone.
+                This action can be done.
               </p>
             </div>
             

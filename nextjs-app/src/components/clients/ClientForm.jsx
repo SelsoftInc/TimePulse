@@ -20,8 +20,7 @@ import {
   fetchPaymentTerms,
   getPostalLabel,
   getPostalPlaceholder,
-  validateCountryTaxId,
-  getCountryCode
+  validateCountryTaxId
 } from '../../config/lookups';
 import {
   getCountryCode,

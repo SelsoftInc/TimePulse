@@ -118,7 +118,7 @@ const ClientsList = () => {
 
 
   const handleDelete = async (clientId) => {
-    if (!window.confirm("Delete this client? This action cannot be undone."))
+    if (!window.confirm("Delete this client? This action can be done."))
       return;
     try {
       const resp = await fetch(

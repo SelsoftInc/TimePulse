@@ -86,6 +86,7 @@ const ModernDashboard = () => {
       
       setLastRefresh(new Date());
       console.log('✅ Dashboard data refreshed successfully');
+      console.log('📊 Dashboard Data:', { scope, selectedEmployeeId, kpis: mainData.kpis, revenueByClient: revenueByClient.clients });
     } catch (error) {
       console.error("Error fetching dashboard data:", error);
     } finally {
@@ -294,11 +295,11 @@ const ModernDashboard = () => {
                   <i className="fas fa-user"></i>
                   {selectedEmployeeId
                     ? `Employee: ${
-                        dashboardData.employees.find(
+                        employees.find(
                           (emp) => emp.id === selectedEmployeeId
                         )?.firstName || "Selected"
                       } ${
-                        dashboardData.employees.find(
+                        employees.find(
                           (emp) => emp.id === selectedEmployeeId
                         )?.lastName || ""
                       }`
@@ -434,7 +435,7 @@ const ModernDashboard = () => {
 
     <div className="flex items-center justify-center flex-col gap-1 mt-2">
       <div className="text-2xl md:text-3xl font-extrabold text-gray-900 dark:text-white">{getActiveEmployees()}</div>
-      <div className="text-xs text-gray-500 dark:text-gray-400">+2 this month</div>
+      <div className="text-xs text-gray-500 dark:text-gray-400"></div>
     </div>
 
     <div className="mt-3 grid grid-cols-2 gap-3 text-xs text-gray-600 dark:text-gray-300">

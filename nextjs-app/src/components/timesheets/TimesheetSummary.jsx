@@ -1213,6 +1213,7 @@ const TimesheetSummary = () => {
                                 </button>
                               </div>
                             </td>
+                            
                           </tr>
                           );
                         })}

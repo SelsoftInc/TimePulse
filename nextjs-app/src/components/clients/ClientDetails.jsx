@@ -13,7 +13,7 @@ import PermissionGuard from '../common/PermissionGuard';
 import './ClientDetails.css';
 
 const ClientDetails = () => {
-  const { clientId, subdomain } = useParams();
+  const { id, subdomain } = useParams();
   const router = useRouter();
   const { user } = useAuth();
   const { toast } = useToast();
@@ -42,7 +42,7 @@ const ClientDetails = () => {
       setLoading(true);
       const tenantId = user?.tenantId;
       if (!tenantId) throw new Error('No tenant information');
-      const resp = await fetch(`${API_BASE}/api/clients/${clientId}?tenantId=${tenantId}`, {
+      const resp = await fetch(`${API_BASE}/api/clients/${id}?tenantId=${tenantId}`, {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -59,7 +59,7 @@ const ClientDetails = () => {
     } finally {
       setLoading(false);
     }
-  }, [clientId, user?.tenantId]);
+  }, [id, user?.tenantId]);
 
   // Fetch all employees for the tenant (reusable)
   const fetchAllEmployees = useCallback(async () => {

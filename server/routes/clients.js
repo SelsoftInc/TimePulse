@@ -24,10 +24,11 @@ function validatePhone(phone) {
 }
 
 function validateTaxId(taxId) {
-  if (!taxId) return 'Tax ID is required';
+  // Tax ID is now optional
+  if (!taxId || taxId === '') return '';
   const compact = String(taxId).replace(/\D/g, '');
-  if (compact.length !== 9) return 'Tax ID must have exactly 9 digits';
-  if (!/^\d{9}$/.test(compact)) return 'Tax ID must be numeric';
+  if (compact.length > 0 && compact.length !== 9) return 'Tax ID must have exactly 9 digits';
+  if (compact.length > 0 && !/^\d{9}$/.test(compact)) return 'Tax ID must be numeric';
   return '';
 }
 
@@ -47,8 +48,11 @@ function validateClientPayload(payload) {
   }
   const phoneMsg = validatePhone(payload.phone);
   if (phoneMsg) errors.phone = phoneMsg;
-  const taxMsg = validateTaxId(payload.taxId);
-  if (taxMsg) errors.taxId = taxMsg;
+  // Tax ID is optional - only validate if provided
+  if (payload.taxId) {
+    const taxMsg = validateTaxId(payload.taxId);
+    if (taxMsg) errors.taxId = taxMsg;
+  }
   return errors;
 }
 
@@ -259,7 +263,10 @@ router.post('/', async (req, res) => {
     }
     // Normalize
     clientData.phone = toE164(clientData.phone);
-    clientData.taxId = normalizeTaxId(clientData.taxId);
+    // Only normalize taxId if provided
+    if (clientData.taxId) {
+      clientData.taxId = normalizeTaxId(clientData.taxId);
+    }
     
     // Encrypt client data before saving to database
     clientData = DataEncryptionService.encryptClientData(clientData);
@@ -300,7 +307,10 @@ router.put('/:id', async (req, res) => {
     }
     // Normalize
     updateData.phone = toE164(updateData.phone);
-    updateData.taxId = normalizeTaxId(updateData.taxId);
+    // Only normalize taxId if provided
+    if (updateData.taxId) {
+      updateData.taxId = normalizeTaxId(updateData.taxId);
+    }
 
     const client = await Client.findOne({
       where: { id, tenantId }

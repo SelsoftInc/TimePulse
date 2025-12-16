@@ -22,6 +22,13 @@ import {
   getPostalPlaceholder,
   validateCountryTaxId
 } from '../../config/lookups';
+import {
+  getCountryCode,
+  getPhonePlaceholder,
+  validatePhoneForCountry,
+  formatPhoneWithCountryCode,
+  extractPhoneNumber
+} from '@/config/countryPhoneCodes';
 
 const ClientForm = ({ mode = 'create', initialData = null, onSubmitOverride = null, submitLabel }) => {
   const router = useRouter();
@@ -67,20 +74,27 @@ const ClientForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
     currency: 'USD'
   });
 
+  // Track country code separately for display
+  const [phoneCountryCode, setPhoneCountryCode] = useState('+1');
+
   // Prefill when in edit mode
   useEffect(() => {
     if (initialData) {
+      const country = initialData.billingAddress?.country || 'United States';
+      const countryCode = getCountryCode(country);
+      setPhoneCountryCode(countryCode);
+      
       setFormData(prev => ({
         ...prev,
         name: initialData.name || prev.name,
         contactPerson: initialData.contactPerson || prev.contactPerson,
         email: initialData.email || prev.email,
-        phone: initialData.phone || prev.phone,
+        phone: initialData.phone ? extractPhoneNumber(initialData.phone, country) : prev.phone,
         address: initialData.billingAddress?.line1 || prev.address,
         city: initialData.billingAddress?.city || prev.city,
         state: initialData.billingAddress?.state || prev.state,
         zip: initialData.billingAddress?.zip || prev.zip,
-        country: initialData.billingAddress?.country || prev.country,
+        country: country,
         status: initialData.status || prev.status,
         clientType: initialData.clientType || prev.clientType,
         paymentTerms: (initialData.paymentTerms === 60
@@ -95,6 +109,23 @@ const ClientForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
         currency: initialData.currency || prev.currency}));
     }
   }, [initialData]);
+
+  // Helper function to convert payment terms code to integer
+  const convertPaymentTermsToInteger = (code) => {
+    // Handle both old format (net30, net60, net90) and new database codes
+    if (!code) return 30; // Default
+    
+    // Extract number from code (e.g., "net30" -> 30, "net_30" -> 30, "due_on_receipt" -> 0)
+    if (code === 'due_on_receipt' || code === 'immediate') return 0;
+    
+    const match = code.match(/(\d+)/);
+    if (match) {
+      return parseInt(match[1], 10);
+    }
+    
+    // Fallback to 30 days
+    return 30;
+  };
 
   // Load payment terms from API
   useEffect(() => {
@@ -170,6 +201,8 @@ const ClientForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
     const { name, value, type, checked } = e.target;
     // Reset state when country changes to avoid stale values
     if (name === 'country') {
+      const newCountryCode = getCountryCode(value);
+      setPhoneCountryCode(newCountryCode);
       setFormData({ ...formData, country: value, state: '' });
       return;
     }
@@ -190,11 +223,8 @@ const ClientForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
   const handleBlur = (e) => {
     const { name, value } = e.target;
     if (name === 'phone') {
-      const validation = validatePhoneNumber(value);
+      const validation = validatePhoneForCountry(value, formData.country);
       setErrors(prev => ({ ...prev, phone: validation.isValid ? '' : validation.message }));
-    } else if (name === 'taxId') {
-      const msg = validateCountryTaxId(formData.country, value);
-      setErrors(prev => ({ ...prev, taxId: msg }));
     } else if (name === 'zip') {
       const validation = validateZipCode(value);
       setErrors(prev => ({ ...prev, zip: validation.isValid ? '' : validation.message }));
@@ -214,16 +244,14 @@ const ClientForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
       const tenantId = user?.tenantId;
       if (!tenantId) throw new Error('No tenant information');
 
-      // Validate critical fields
-      const phoneValidation = validatePhoneNumber(formData.phone);
-      const taxErr = validateCountryTaxId(formData.country, formData.taxId);
+      // Validate critical fields (Tax ID is now optional)
+      const phoneValidation = validatePhoneForCountry(formData.phone, formData.country);
       const zipValidation = validateZipCode(formData.zip);
       const emailValidation = validateEmail(formData.email);
-      const nameValidation = validateName(formData.clientName, 'Client Name');
+      const nameValidation = validateName(formData.name, 'Client Name');
       
       const newErrors = {};
       if (!phoneValidation.isValid) newErrors.phone = phoneValidation.message;
-      if (taxErr) newErrors.taxId = taxErr;
       if (!zipValidation.isValid) newErrors.zip = zipValidation.message;
       if (!emailValidation.isValid) newErrors.email = emailValidation.message;
       if (!nameValidation.isValid) newErrors.clientName = nameValidation.message;
@@ -252,14 +280,14 @@ const ClientForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
       const payload = {
         tenantId,
         clientName: formData.name,
-        legalName: formData.name,
+        name: formData.name,
         contactPerson: formData.contactPerson,
         email: formData.email,
-        phone: formData.phone,
+        phone: formatPhoneWithCountryCode(formData.phone, formData.country),
         billingAddress: billingAddressObj,
         shippingAddress: shippingAddressObj,
         taxId: formData.taxId || null,
-        paymentTerms: formData.paymentTerms === 'net60' ? 60 : formData.paymentTerms === 'net90' ? 90 : 30,
+        paymentTerms: convertPaymentTermsToInteger(formData.paymentTerms),
         hourlyRate: null,
         status: formData.status,
         // clientType may or may not exist in schema; include if supported server-side
@@ -280,6 +308,12 @@ const ClientForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
           const err = await resp.json().catch(() => ({}));
           throw new Error(err.details || `Create failed with status ${resp.status}`);
         }
+        
+        const result = await resp.json();
+        toast.success('Client created successfully', {
+          title: 'Success'
+        });
+        
         // Navigate to clients list
         router.push(`/${subdomain}/clients`);
       }
@@ -370,23 +404,29 @@ const ClientForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
                     <div className="col-lg-6">
                       <div className="form-group">
                         <label className="form-label" htmlFor="phone">Phone Number*</label>
-                        <input
-                          type="tel"
-                          className="form-control"
-                          id="phone"
-                          name="phone"
-                          value={formData.phone}
-                          onChange={(e) => {
-                            const formatted = formatPhoneInput(e.target.value);
-                            setFormData(prev => ({ ...prev, phone: formatted }));
-                            if (errors.phone) setErrors(prev => ({ ...prev, phone: '' }));
-                          }}
-                          onBlur={handleBlur}
-                          inputMode="tel"
-                          maxLength={20}
-                          placeholder="Enter phone number"
-                          required
-                        />
+                        <div className="input-group">
+                          <span className="input-group-text" style={{ backgroundColor: '#f8f9fa', fontWeight: '600', minWidth: '70px' }}>
+                            {phoneCountryCode}
+                          </span>
+                          <input
+                            type="tel"
+                            className="form-control"
+                            id="phone"
+                            name="phone"
+                            value={formData.phone}
+                            onChange={(e) => {
+                              const formatted = formatPhoneInput(e.target.value);
+                              setFormData(prev => ({ ...prev, phone: formatted }));
+                              if (errors.phone) setErrors(prev => ({ ...prev, phone: '' }));
+                            }}
+                            onBlur={handleBlur}
+                            inputMode="tel"
+                            maxLength={20}
+                            placeholder={getPhonePlaceholder(formData.country)}
+                            required
+                          />
+                        </div>
+                        <small className="text-muted">Phone number must be exactly {formData.country === 'United States' || formData.country === 'Canada' || formData.country === 'India' ? '10' : formData.country === 'Singapore' ? '8' : formData.country === 'Australia' || formData.country === 'United Arab Emirates' ? '9' : '10-11'} digits for {formData.country}</small>
                         {errors.phone && (
                           <div className="mt-1"><small className="text-danger">{errors.phone}</small></div>
                         )}
@@ -595,7 +635,7 @@ const ClientForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
                     
                     <div className="col-lg-6">
                       <div className="form-group">
-                        <label className="form-label" htmlFor="taxId">{TAX_ID_LABELS[formData.country] || 'Tax ID'}*</label>
+                        <label className="form-label" htmlFor="taxId">{TAX_ID_LABELS[formData.country] || 'Tax ID'}</label>
                         <input
                           type="text"
                           className="form-control"
@@ -604,16 +644,10 @@ const ClientForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
                           value={formData.taxId}
                           onChange={(e) => {
                             setFormData(prev => ({ ...prev, taxId: e.target.value }));
-                            if (errors.taxId) setErrors(prev => ({ ...prev, taxId: '' }));
                           }}
-                          onBlur={handleBlur}
-                          placeholder={TAX_ID_PLACEHOLDERS[formData.country] || 'Enter tax identifier'}
-                          required
+                          placeholder={TAX_ID_PLACEHOLDERS[formData.country] || 'Enter tax identifier (optional)'}
                         />
-                        <small className="text-muted">This identifier varies by country (e.g., EIN in US, GSTIN in India, VAT in UK).</small>
-                        {errors.taxId && (
-                          <div className="mt-1"><small className="text-danger">{errors.taxId}</small></div>
-                        )}
+                        <small className="text-muted">Optional. This identifier varies by country (e.g., EIN in US, GSTIN in India, VAT in UK).</small>
                       </div>
                     </div>
                     

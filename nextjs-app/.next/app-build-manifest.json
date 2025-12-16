@@ -1,3 +1,51 @@
 {
-  "pages": {}
+  "pages": {
+    "/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/page.js"
+    ],
+    "/layout": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/css/app/layout.css",
+      "static/chunks/app/layout.js"
+    ],
+    "/login/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/css/app/login/page.css",
+      "static/chunks/app/login/page.js"
+    ],
+    "/[subdomain]/dashboard/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/css/app/[subdomain]/dashboard/page.css",
+      "static/chunks/app/[subdomain]/dashboard/page.js"
+    ],
+    "/[subdomain]/layout": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/css/app/[subdomain]/layout.css",
+      "static/chunks/app/[subdomain]/layout.js"
+    ],
+    "/[subdomain]/reports/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/css/app/[subdomain]/reports/page.css",
+      "static/chunks/app/[subdomain]/reports/page.js"
+    ],
+    "/[subdomain]/clients/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/css/app/[subdomain]/clients/page.css",
+      "static/chunks/app/[subdomain]/clients/page.js"
+    ],
+    "/[subdomain]/clients/new/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/css/app/[subdomain]/clients/new/page.css",
+      "static/chunks/app/[subdomain]/clients/new/page.js"
+    ]
+  }
 }

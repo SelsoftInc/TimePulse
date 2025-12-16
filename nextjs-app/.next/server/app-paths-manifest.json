@@ -1,1 +1,6 @@
-{}
+{
+  "/[subdomain]/dashboard/page": "app/[subdomain]/dashboard/page.js",
+  "/[subdomain]/reports/page": "app/[subdomain]/reports/page.js",
+  "/[subdomain]/clients/page": "app/[subdomain]/clients/page.js",
+  "/[subdomain]/clients/new/page": "app/[subdomain]/clients/new/page.js"
+}

@@ -193,7 +193,7 @@ models.User = sequelize.define(
     },
     passwordHash: {
       type: DataTypes.STRING(255),
-      allowNull: false,
+      allowNull: true, // Nullable for OAuth users who don't have passwords
       field: "password_hash",
     },
     mustChangePassword: {
@@ -240,6 +240,50 @@ models.User = sequelize.define(
       type: DataTypes.DATE,
       allowNull: true,
       field: "reset_password_expires",
+    },
+    googleId: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+      field: "google_id",
+    },
+    authProvider: {
+      type: DataTypes.STRING(50),
+      allowNull: true,
+      defaultValue: "local",
+      field: "auth_provider",
+    },
+    emailVerified: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+      field: "email_verified",
+    },
+    approvalStatus: {
+      type: DataTypes.STRING(20),
+      defaultValue: "approved",
+      allowNull: false,
+      field: "approval_status",
+      validate: {
+        isIn: [["pending", "approved", "rejected"]]
+      }
+    },
+    approvedBy: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      field: "approved_by",
+      references: {
+        model: "users",
+        key: "id",
+      },
+    },
+    approvedAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      field: "approved_at",
+    },
+    rejectionReason: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+      field: "rejection_reason",
     },
   },
   {
@@ -289,23 +333,21 @@ models.Employee = sequelize.define(
       field: "employee_id",
     },
     firstName: {
-      type: DataTypes.STRING(100),
+      type: DataTypes.STRING(500),
       allowNull: false,
       field: "first_name",
     },
     lastName: {
-      type: DataTypes.STRING(100),
+      type: DataTypes.STRING(500),
       allowNull: false,
       field: "last_name",
     },
     email: {
-      type: DataTypes.STRING(255),
-      validate: {
-        isEmail: true,
-      },
+      type: DataTypes.STRING(500),
+      // Removed isEmail validation because email is encrypted before saving
     },
     phone: {
-      type: DataTypes.STRING(20),
+      type: DataTypes.STRING(500),
       allowNull: true,
     },
     department: {
@@ -431,26 +473,24 @@ models.Client = sequelize.define(
       },
     },
     clientName: {
-      type: DataTypes.STRING(255),
+      type: DataTypes.STRING(500),
       allowNull: false,
       field: "client_name",
     },
     legalName: {
-      type: DataTypes.STRING(255),
+      type: DataTypes.STRING(500),
       field: "legal_name",
     },
     contactPerson: {
-      type: DataTypes.STRING(255),
+      type: DataTypes.STRING(500),
       field: "contact_person",
     },
     email: {
-      type: DataTypes.STRING(255),
-      validate: {
-        isEmail: true,
-      },
+      type: DataTypes.STRING(500),
+      // Removed isEmail validation because email is encrypted before saving
     },
     phone: {
-      type: DataTypes.STRING(50),
+      type: DataTypes.STRING(500),
     },
     billingAddress: {
       type: DataTypes.JSONB,
@@ -663,20 +703,20 @@ models.Vendor = sequelize.define(
       references: { model: "tenants", key: "id" },
     },
     name: {
-      type: DataTypes.STRING(255),
+      type: DataTypes.STRING(500),
       allowNull: false,
     },
     contactPerson: {
-      type: DataTypes.STRING(255),
+      type: DataTypes.STRING(500),
       field: "contact_person",
     },
     email: {
-      type: DataTypes.STRING(255),
-      validate: { isEmail: true },
+      type: DataTypes.STRING(500),
+      // Removed isEmail validation because email is encrypted before saving
       allowNull: true,
     },
     phone: {
-      type: DataTypes.STRING(50),
+      type: DataTypes.STRING(500),
       allowNull: true,
     },
     category: {
@@ -691,7 +731,7 @@ models.Vendor = sequelize.define(
       defaultValue: 0,
       field: "total_spent",
     },
-    address: { type: DataTypes.STRING(255) },
+    address: { type: DataTypes.STRING(1000) },
     city: { type: DataTypes.STRING(100) },
     state: { type: DataTypes.STRING(100) },
     zip: { type: DataTypes.STRING(20) },

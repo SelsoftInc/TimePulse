@@ -1,0 +1,60 @@
+/* EmployerLayout.css */
+.nk-body {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: #075985;
+}
+
+.nk-app-root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.nk-main {
+  display: flex;
+  flex: 1;
+  min-height: 100vh;
+}
+
+.nk-wrap {
+  flex: 1;
+  margin-left: 240px;
+  transition: margin-left 0.3s ease;
+  width: calc(100% - 240px);
+}
+
+.sidebar-collapsed .nk-wrap {
+  margin-left: 70px;
+  width: calc(100% - 70px);
+}
+
+.nk-content {
+  padding: 20px;
+  min-height: calc(100vh - 60px);
+  margin-top: 10px;
+}
+
+/* Responsive styles */
+@media (max-width: 991px) {
+  .nk-wrap {
+    margin-left: 0;
+    width: 100%;
+  }
+  
+  .sidebar-collapsed .nk-wrap {
+    margin-left: 0;
+    width: 100%;
+  }
+}
+
+/* Dark mode styles */
+body.dark-mode .nk-body {
+  background-color: #1c2b36;
+  color: #e4e6eb;
+}
+
+body.dark-mode .nk-content {
+  background-color: #1c2b36;
+}

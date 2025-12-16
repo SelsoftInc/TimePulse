@@ -2,13 +2,17 @@ const express = require("express");
 const router = express.Router();
 const { models } = require("../models");
 const NotificationService = require("../services/NotificationService");
+const LeaveManagementEmailService = require("../services/LeaveManagementEmailService");
 const { Op } = require("sequelize");
+const DataEncryptionService = require("../services/DataEncryptionService");
+const { encryptAuthResponse } = require("../utils/encryption");
 
 const { User, Employee, LeaveRequest, LeaveBalance } = models;
 
 // Submit leave request
 router.post("/request", async (req, res) => {
   try {
+    let requestData = req.body;
     const {
       employeeId,
       employeeName,
@@ -20,7 +24,7 @@ router.post("/request", async (req, res) => {
       reason,
       approverId,
       attachmentName,
-    } = req.body;
+    } = requestData;
 
     if (
       !employeeId ||
@@ -141,6 +145,13 @@ router.post("/request", async (req, res) => {
       }
     }
 
+    // Encrypt leave request data before saving to database
+    const encryptedData = DataEncryptionService.encryptLeaveRequestData({
+      reason: reason || null,
+      attachmentName: attachmentName || null,
+      employeeName: employeeName || null
+    });
+
     // Create leave request
     const leaveRequest = await LeaveRequest.create({
       employeeId,
@@ -149,10 +160,10 @@ router.post("/request", async (req, res) => {
       startDate,
       endDate,
       totalDays,
-      reason: reason || null,
+      reason: encryptedData.reason,
       status: "pending",
       approverId,
-      attachmentName: attachmentName || null,
+      attachmentName: encryptedData.attachmentName,
     });
 
     // Update leave balance - add to pending days
@@ -179,10 +190,57 @@ router.post("/request", async (req, res) => {
       });
     }
 
+    // Create notification for approver about new leave request
+    try {
+      await NotificationService.createLeaveNotification(
+        tenantId,
+        approverId,
+        "submitted",
+        {
+          id: leaveRequest.id,
+          employeeId: employeeId,
+          employeeName: employeeName || `${employee.firstName} ${employee.lastName}`,
+          startDate: leaveRequest.startDate,
+          endDate: leaveRequest.endDate,
+          leaveType: leaveRequest.leaveType,
+          totalDays: leaveRequest.totalDays,
+        }
+      );
+
+      // Send email notification to approver
+      const approver = await User.findByPk(approverId);
+      const tenant = await models.Tenant.findByPk(tenantId);
+      
+      if (approver && tenant) {
+        const leaveRequestLink = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/${tenant.subdomain}/leave-management`;
+        
+        await LeaveManagementEmailService.sendLeaveRequestSubmittedNotification({
+          approverEmail: approver.email,
+          approverName: `${approver.firstName} ${approver.lastName}`,
+          employeeName: employeeName || `${employee.firstName} ${employee.lastName}`,
+          leaveType: leaveType,
+          startDate: startDate,
+          endDate: endDate,
+          totalDays: totalDays,
+          reason: reason || 'Not provided',
+          leaveRequestLink: leaveRequestLink,
+          tenantName: tenant.name || 'TimePulse',
+        });
+      }
+    } catch (notificationError) {
+      console.error("Error creating leave submission notification:", notificationError);
+      // Don't fail the submission if notification fails
+    }
+
+    // Decrypt leave request data for response
+    const decryptedLeaveRequest = DataEncryptionService.decryptLeaveRequestData(
+      leaveRequest.toJSON ? leaveRequest.toJSON() : leaveRequest
+    );
+
     res.json({
       success: true,
       message: "Leave request submitted successfully",
-      leaveRequest,
+      leaveRequest: decryptedLeaveRequest,
     });
   } catch (error) {
     console.error("Error submitting leave request:", error);
@@ -347,9 +405,14 @@ router.get("/history", async (req, res) => {
         : "N/A",
     }));
 
+    // Decrypt leave request data before sending to frontend
+    const decryptedRequests = formattedRequests.map(req => 
+      DataEncryptionService.decryptLeaveRequestData(req)
+    );
+
     res.json({
       success: true,
-      requests: formattedRequests,
+      requests: decryptedRequests,
     });
   } catch (error) {
     console.error("Error fetching leave history:", error);
@@ -395,9 +458,14 @@ router.get("/my-requests", async (req, res) => {
       requestedOn: new Date(req.createdAt).toISOString().split("T")[0],
     }));
 
+    // Decrypt leave request data before sending to frontend
+    const decryptedRequests = formattedRequests.map(req => 
+      DataEncryptionService.decryptLeaveRequestData(req)
+    );
+
     res.json({
       success: true,
-      requests: formattedRequests,
+      requests: decryptedRequests,
     });
   } catch (error) {
     console.error("Error fetching my requests:", error);
@@ -453,10 +521,15 @@ router.get("/pending-approvals", async (req, res) => {
       submittedAt: req.createdAt,
     }));
 
+    // Decrypt leave request data before sending to frontend
+    const decryptedRequests = formattedRequests.map(req => 
+      DataEncryptionService.decryptLeaveRequestData(req)
+    );
+
     res.json({
       success: true,
-      leaveRequests: formattedRequests,
-      total: formattedRequests.length,
+      leaveRequests: decryptedRequests,
+      total: decryptedRequests.length,
     });
   } catch (error) {
     console.error("Error fetching pending leave approvals:", error);
@@ -532,10 +605,15 @@ router.get("/all-requests", async (req, res) => {
       reviewComments: request.reviewComments,
     }));
 
+    // Decrypt leave request data before sending to frontend
+    const decryptedRequests = formattedRequests.map(req => 
+      DataEncryptionService.decryptLeaveRequestData(req)
+    );
+
     res.json({
       success: true,
-      leaveRequests: formattedRequests,
-      total: formattedRequests.length,
+      leaveRequests: decryptedRequests,
+      total: decryptedRequests.length,
     });
   } catch (error) {
     console.error("Error fetching all leave requests:", error);
@@ -567,12 +645,15 @@ router.post("/approve/:id", async (req, res) => {
       });
     }
 
+    // Encrypt review comments before saving
+    const encryptedComments = comments ? DataEncryptionService.encryptLeaveRequestData({ reviewComments: comments }).reviewComments : null;
+
     // Update leave request status
     await leaveRequest.update({
       status: "approved",
       reviewedBy: managerId,
       reviewedAt: new Date(),
-      reviewComments: comments || null,
+      reviewComments: encryptedComments,
     });
 
     // Update leave balance - move from pending to used
@@ -610,6 +691,31 @@ router.post("/approve/:id", async (req, res) => {
           leaveType: leaveRequest.leaveType,
         }
       );
+
+      // Send email notification to employee
+      const employee = await Employee.findByPk(leaveRequest.employeeId, {
+        include: [{
+          model: User,
+          as: 'user',
+          required: false
+        }]
+      });
+      const approver = await User.findByPk(managerId);
+      const tenant = await models.Tenant.findByPk(leaveRequest.tenantId);
+      
+      if (employee?.user && approver && tenant) {
+        await LeaveManagementEmailService.sendLeaveRequestApprovedNotification({
+          employeeEmail: employee.user.email,
+          employeeName: `${employee.user.firstName} ${employee.user.lastName}`,
+          approverName: `${approver.firstName} ${approver.lastName}`,
+          leaveType: leaveRequest.leaveType,
+          startDate: leaveRequest.startDate,
+          endDate: leaveRequest.endDate,
+          totalDays: leaveRequest.totalDays,
+          comments: comments || '',
+          tenantName: tenant.name || 'TimePulse',
+        });
+      }
 
       // Send real-time notification via WebSocket
       if (global.wsService) {
@@ -672,12 +778,15 @@ router.post("/reject/:id", async (req, res) => {
       });
     }
 
+    // Encrypt review comments before saving
+    const encryptedReason = DataEncryptionService.encryptLeaveRequestData({ reviewComments: reason }).reviewComments;
+
     // Update leave request status
     await leaveRequest.update({
       status: "rejected",
       reviewedBy: managerId,
       reviewedAt: new Date(),
-      reviewComments: reason,
+      reviewComments: encryptedReason,
     });
 
     // Update leave balance - remove from pending
@@ -697,6 +806,63 @@ router.post("/reject/:id", async (req, res) => {
           parseFloat(leaveBalance.pendingDays) -
           parseFloat(leaveRequest.totalDays),
       });
+    }
+
+    // Create notification for leave rejection
+    try {
+      await NotificationService.createLeaveNotification(
+        leaveRequest.tenantId,
+        leaveRequest.employeeId,
+        "rejected",
+        {
+          id: leaveRequest.id,
+          startDate: leaveRequest.startDate,
+          endDate: leaveRequest.endDate,
+          leaveType: leaveRequest.leaveType,
+          reason: reason,
+        }
+      );
+
+      // Send email notification to employee
+      const employee = await Employee.findByPk(leaveRequest.employeeId, {
+        include: [{
+          model: User,
+          as: 'user',
+          required: false
+        }]
+      });
+      const approver = await User.findByPk(managerId);
+      const tenant = await models.Tenant.findByPk(leaveRequest.tenantId);
+      
+      if (employee?.user && approver && tenant) {
+        await LeaveManagementEmailService.sendLeaveRequestRejectedNotification({
+          employeeEmail: employee.user.email,
+          employeeName: `${employee.user.firstName} ${employee.user.lastName}`,
+          approverName: `${approver.firstName} ${approver.lastName}`,
+          leaveType: leaveRequest.leaveType,
+          startDate: leaveRequest.startDate,
+          endDate: leaveRequest.endDate,
+          totalDays: leaveRequest.totalDays,
+          reason: reason,
+          tenantName: tenant.name || 'TimePulse',
+        });
+      }
+
+      // Send real-time notification via WebSocket
+      if (global.wsService) {
+        global.wsService.sendToUser(leaveRequest.employeeId, {
+          type: "leave_rejected",
+          title: "Leave Request Not Approved",
+          message: `Your leave request for ${leaveRequest.startDate} to ${leaveRequest.endDate} was not approved.`,
+          timestamp: new Date().toISOString(),
+        });
+      }
+    } catch (notificationError) {
+      console.error(
+        "Error creating leave rejection notification:",
+        notificationError
+      );
+      // Don't fail the rejection if notification fails
     }
 
     res.json({

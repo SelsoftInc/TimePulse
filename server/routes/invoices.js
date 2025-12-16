@@ -6,6 +6,7 @@ const express = require("express");
 const router = express.Router();
 const { models } = require("../models");
 const { Op } = require("sequelize");
+const DataEncryptionService = require("../services/DataEncryptionService");
 
 // GET /api/invoices?tenantId=...&scope=...&employeeId=...&from=...&to=...&client=...&q=...
 router.get("/", async (req, res) => {
@@ -126,7 +127,10 @@ router.get("/", async (req, res) => {
       limit: 100, // Limit for performance
     });
 
-    const formattedInvoices = invoices.map((inv) => ({
+    // Decrypt invoice data
+    const decryptedInvoices = DataEncryptionService.decryptInstances(invoices, 'invoice');
+
+    const formattedInvoices = decryptedInvoices.map((inv) => ({
       id: inv.id,
       invoiceNumber: inv.invoiceNumber,
       vendor: inv.vendor?.name || inv.timesheet?.employee?.vendor?.name || "N/A",
@@ -166,7 +170,7 @@ router.get("/", async (req, res) => {
     }));
 
     // Transform data for frontend dashboard
-    const transformedInvoices = invoices.map((inv) => ({
+    const transformedInvoices = decryptedInvoices.map((inv) => ({
       id: inv.id,
       invoiceNumber: inv.invoiceNumber,
       vendor: inv.vendor?.name || inv.timesheet?.employee?.vendor?.name || "N/A",
@@ -178,7 +182,9 @@ router.get("/", async (req, res) => {
         : (inv.employee ? `${inv.employee.firstName} ${inv.employee.lastName}` : "Unknown"),
       week: inv.timesheet?.weekStart && inv.timesheet?.weekEnd
         ? `${new Date(inv.timesheet.weekStart).toLocaleDateString('en-US', { month: 'short', day: '2-digit' })} - ${new Date(inv.timesheet.weekEnd).toLocaleDateString('en-US', { month: 'short', day: '2-digit' })}`
-        : "N/A",
+        : (inv.weekStart && inv.weekEnd 
+          ? `${new Date(inv.weekStart).toLocaleDateString('en-US', { month: 'short', day: '2-digit' })} - ${new Date(inv.weekEnd).toLocaleDateString('en-US', { month: 'short', day: '2-digit' })}`
+          : "N/A"),
       period:
         inv.timesheet?.weekStart && inv.timesheet?.weekEnd
           ? `${inv.timesheet.weekStart} - ${inv.timesheet.weekEnd}`
@@ -192,8 +198,9 @@ router.get("/", async (req, res) => {
       dueOn: inv.dueDate
         ? new Date(inv.dueDate).toISOString().split("T")[0]
         : "N/A",
-      total: parseFloat(inv.totalAmount) || 0,
-      amount: parseFloat(inv.totalAmount) || 0,
+      totalHours: inv.totalHours || inv.timesheet?.totalHours || 0,
+      total: parseFloat(inv.totalAmount || inv.total) || 0,
+      amount: parseFloat(inv.totalAmount || inv.total) || 0,
       paymentStatus: inv.paymentStatus || "pending",
       status: inv.status || "active",
       lineItems: inv.lineItems || [],
@@ -203,9 +210,12 @@ router.get("/", async (req, res) => {
         id: inv.timesheet.id,
         weekStart: inv.timesheet.weekStart,
         weekEnd: inv.timesheet.weekEnd,
+        totalHours: inv.timesheet.totalHours,
         employee: inv.timesheet.employee
       } : null,
     }));
+
+    console.log(`✅ Returning ${transformedInvoices.length} invoices for tenant ${tenantId}`);
 
     res.json({
       success: true,
@@ -267,6 +277,15 @@ router.post("/", async (req, res) => {
       invoiceNumber = `IN-${currentYear}-001`;
     }
 
+    // Prepare data for encryption
+    const invoiceData = {
+      notes: notes || "",
+      lineItems: lineItems || [],
+    };
+
+    // Encrypt sensitive data before saving
+    const encryptedData = DataEncryptionService.encryptInvoiceData(invoiceData);
+
     const newInvoice = await models.Invoice.create({
       tenantId,
       invoiceNumber,
@@ -276,13 +295,13 @@ router.post("/", async (req, res) => {
       timesheetId,
       weekStart,
       weekEnd,
-      lineItems: lineItems || [],
+      lineItems: encryptedData.lineItems || [],
       subtotal: subtotal || 0,
       tax: tax || 0,
       total: total || 0,
       status: "draft",
       dueDate,
-      notes,
+      notes: encryptedData.notes || "",
       attachments: attachments || [],
       quickbooksSync: quickbooksSync || false,
     });
@@ -374,6 +393,9 @@ router.get("/:id/pdf-data", async (req, res) => {
 
     console.log('✅ Invoice found:', invoice.invoiceNumber);
 
+    // Decrypt invoice data
+    const decryptedInvoice = DataEncryptionService.decryptInstance(invoice, 'invoice');
+
     // Fetch related data separately to avoid association errors
     let vendor = null;
     let employee = null;
@@ -458,9 +480,9 @@ router.get("/:id/pdf-data", async (req, res) => {
     // Build line items from invoice data or timesheet
     let lineItems = [];
     
-    if (invoice.lineItems && Array.isArray(invoice.lineItems) && invoice.lineItems.length > 0) {
-      // Use existing line items
-      lineItems = invoice.lineItems.map(item => ({
+    if (decryptedInvoice.lineItems && Array.isArray(decryptedInvoice.lineItems) && decryptedInvoice.lineItems.length > 0) {
+      // Use existing line items (decrypted)
+      lineItems = decryptedInvoice.lineItems.map(item => ({
         employeeName: item.employeeName || (employee ? `${employee.firstName} ${employee.lastName}` : 'Employee Name'),
         role: item.role || item.position || employee?.title || employee?.position || employee?.department || 'Software Engineer',
         description: item.description || weekRange || 'Billing Period',
@@ -486,10 +508,10 @@ router.get("/:id/pdf-data", async (req, res) => {
     // Build response with all data needed for PDF
     const pdfData = {
       // Invoice basic info
-      id: invoice.id,
-      invoiceNumber: invoice.invoiceNumber,
-      invoiceDate: invoice.invoiceDate,
-      dueDate: invoice.dueDate,
+      id: decryptedInvoice.id,
+      invoiceNumber: decryptedInvoice.invoiceNumber,
+      invoiceDate: decryptedInvoice.invoiceDate,
+      dueDate: decryptedInvoice.dueDate,
       paymentTerms: 'Net 15',
       
       // Vendor/Client info (Billed To)
@@ -523,9 +545,9 @@ router.get("/:id/pdf-data", async (req, res) => {
       status: invoice.status,
       paymentStatus: invoice.paymentStatus,
       
-      // Additional info
-      notes: invoice.notes,
-      timesheetId: invoice.timesheetId,
+      // Additional info (decrypted)
+      notes: decryptedInvoice.notes,
+      timesheetId: decryptedInvoice.timesheetId,
       
       // Month and year for display
       month: weekStart ? new Date(weekStart).toLocaleDateString('en-US', { month: 'long' }) : null,
@@ -573,6 +595,9 @@ router.get("/:id", async (req, res) => {
     }
 
     console.log('✅ Invoice found:', invoice.invoiceNumber);
+
+    // Decrypt invoice data
+    const decryptedInvoice = DataEncryptionService.decryptInstance(invoice, 'invoice');
 
     // Fetch related data separately
     let vendor = null;
@@ -657,9 +682,9 @@ router.get("/:id", async (req, res) => {
       }
     }
 
-    // Build complete response
+    // Build complete response with decrypted data
     const completeInvoice = {
-      ...invoice.toJSON(),
+      ...decryptedInvoice,
       vendor: vendor,
       client: client,
       employee: employee,

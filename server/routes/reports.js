@@ -1,9 +1,17 @@
 const express = require("express");
 const router = express.Router();
-const { models } = require("../models");
+const { models, sequelize } = require("../models");
 const { Op } = require("sequelize");
+const DataEncryptionService = require("../services/DataEncryptionService");
 
 const { Employee, Timesheet, User, Client, Invoice } = models;
+
+// Helper function to safely parse dates
+const parseDate = (dateStr) => {
+  if (!dateStr) return null;
+  const date = new Date(dateStr);
+  return isNaN(date.getTime()) ? null : date;
+};
 
 // Get client report data
 router.get("/clients", async (req, res) => {
@@ -12,15 +20,15 @@ router.get("/clients", async (req, res) => {
 
     if (!tenantId) {
       return res.status(400).json({
+        success: false,
         error: "Tenant ID is required",
       });
     }
 
     // Set default date range if not provided (last 3 months)
     const now = new Date();
-    const defaultStartDate =
-      startDate || new Date(now.getFullYear(), now.getMonth() - 3, 1);
-    const defaultEndDate = endDate || now;
+    const defaultStartDate = parseDate(startDate) || new Date(now.getFullYear(), now.getMonth() - 3, 1);
+    const defaultEndDate = parseDate(endDate) || now;
 
     console.log("🔍 Fetching client reports for:", {
       tenantId,
@@ -32,38 +40,49 @@ router.get("/clients", async (req, res) => {
     const clients = await Client.findAll({
       where: { tenantId },
       attributes: ["id", "clientName", "legalName", "hourlyRate"],
+      raw: true,
     });
 
-    // Get timesheets for the date range (exclude soft-deleted)
-    const timesheets = await Timesheet.findAll({
-      where: {
-        tenantId,
-        week_start_date: {
-          [Op.gte]: defaultStartDate,
-          [Op.lte]: defaultEndDate,
-        },
-        status: {
-          [Op.ne]: "deleted", // Exclude soft-deleted timesheets
-        },
-      },
-      include: [
-        {
-          model: Client,
-          as: "client",
-          attributes: ["id", "clientName"],
-          required: false,
-        },
-        {
-          model: Employee,
-          as: "employee",
-          attributes: ["id", "firstName", "lastName"],
-          required: false,
-        },
-      ],
-      order: [["week_start_date", "DESC"]],
-    });
+    // Decrypt client data
+    const decryptedClients = DataEncryptionService.decryptClients(clients);
 
-    // Get invoices for the date range (exclude soft-deleted)
+    console.log(`📊 Found ${decryptedClients.length} clients`);
+
+    // Get timesheets using raw query to avoid field mapping issues
+    const timesheets = await sequelize.query(
+      `SELECT 
+        t.id, t.tenant_id, t.employee_id, t.client_id, 
+        t.week_start, t.week_end, t.total_hours, t.status,
+        c.client_name, e.first_name, e.last_name
+      FROM timesheets t
+      LEFT JOIN clients c ON t.client_id = c.id
+      LEFT JOIN employees e ON t.employee_id = e.id
+      WHERE t.tenant_id = :tenantId
+        AND t.week_start >= :startDate
+        AND t.week_start <= :endDate
+        AND t.status IN ('draft', 'submitted', 'approved', 'rejected')
+      ORDER BY t.week_start DESC`,
+      {
+        replacements: {
+          tenantId,
+          startDate: defaultStartDate.toISOString().split('T')[0],
+          endDate: defaultEndDate.toISOString().split('T')[0],
+        },
+        type: sequelize.QueryTypes.SELECT,
+      }
+    );
+
+    // Decrypt client and employee names in timesheets
+    const decryptedTimesheets = timesheets.map(ts => ({
+      ...ts,
+      client_name: ts.client_name ? DataEncryptionService.decryptClientData({ clientName: ts.client_name }).clientName : null,
+      first_name: ts.first_name ? DataEncryptionService.decryptEmployeeData({ firstName: ts.first_name }).firstName : null,
+      last_name: ts.last_name ? DataEncryptionService.decryptEmployeeData({ lastName: ts.last_name }).lastName : null,
+    }));
+
+    console.log(`📊 Found ${decryptedTimesheets.length} timesheets`);
+
+    // Get invoices for the date range
     const invoices = await Invoice.findAll({
       where: {
         tenantId,
@@ -71,17 +90,15 @@ router.get("/clients", async (req, res) => {
           [Op.gte]: defaultStartDate,
           [Op.lte]: defaultEndDate,
         },
-        status: {
-          [Op.ne]: "deleted", // Exclude soft-deleted invoices
-        },
       },
       attributes: ["id", "clientId", "totalAmount", "paymentStatus"],
+      raw: true,
     });
 
-    // Process data to create client reports
-    const clientReports = clients.map((client) => {
-      const clientTimesheets = timesheets.filter(
-        (ts) => ts.clientId === client.id
+    // Process data to create client reports using decrypted clients
+    const clientReports = decryptedClients.map((client) => {
+      const clientTimesheets = decryptedTimesheets.filter(
+        (ts) => ts.client_id === client.id
       );
       const clientInvoices = invoices.filter(
         (inv) => inv.clientId === client.id
@@ -89,7 +106,7 @@ router.get("/clients", async (req, res) => {
 
       // Calculate totals
       const totalHours = clientTimesheets.reduce(
-        (sum, ts) => sum + (parseFloat(ts.totalHours) || 0),
+        (sum, ts) => sum + (parseFloat(ts.total_hours) || 0),
         0
       );
       const totalBilled = clientInvoices.reduce(
@@ -99,7 +116,7 @@ router.get("/clients", async (req, res) => {
 
       // Get unique employees
       const uniqueEmployees = new Set(
-        clientTimesheets.map((ts) => ts.employeeId).filter(Boolean)
+        clientTimesheets.map((ts) => ts.employee_id).filter(Boolean)
       );
       const totalEmployees = uniqueEmployees.size;
 
@@ -156,15 +173,15 @@ router.get("/employees", async (req, res) => {
 
     if (!tenantId) {
       return res.status(400).json({
+        success: false,
         error: "Tenant ID is required",
       });
     }
 
-    // Set default date range if not provided (last month)
+    // Set default date range if not provided (last 3 months)
     const now = new Date();
-    const defaultStartDate =
-      startDate || new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    const defaultEndDate = endDate || now;
+    const defaultStartDate = parseDate(startDate) || new Date(now.getFullYear(), now.getMonth() - 3, 1);
+    const defaultEndDate = parseDate(endDate) || now;
 
     console.log("🔍 Fetching employee reports for:", {
       tenantId,
@@ -173,80 +190,88 @@ router.get("/employees", async (req, res) => {
     });
 
     // Get all active employees for the tenant (exclude soft-deleted and admin users)
-    const allEmployees = await Employee.findAll({
-      where: { 
-        tenantId,
-        status: "active" // Only include active employees
-      },
-      attributes: ["id", "firstName", "lastName", "hourlyRate"],
-      include: [
-        {
-          model: User,
-          as: "user",
-          attributes: ["department", "title", "role"],
-          required: false,
-        },
-      ],
-    });
-
-    // Filter out admin users at application level
-    const employees = allEmployees.filter(emp => 
-      !emp.user || emp.user.role !== "admin"
+    const employees = await sequelize.query(
+      `SELECT e.id, e.first_name, e.last_name, e.department
+       FROM employees e
+       LEFT JOIN users u ON e.id = u.id AND e.tenant_id = u.tenant_id
+       WHERE e.tenant_id = :tenantId
+         AND (u.role IS NULL OR u.role != 'admin')
+       ORDER BY e.first_name, e.last_name`,
+      {
+        replacements: { tenantId },
+        type: sequelize.QueryTypes.SELECT,
+      }
     );
 
-    // Get timesheets for the date range (exclude soft-deleted)
-    const timesheets = await Timesheet.findAll({
-      where: {
-        tenantId,
-        week_start_date: {
-          [Op.gte]: defaultStartDate,
-          [Op.lte]: defaultEndDate,
-        },
-        status: {
-          [Op.ne]: "deleted", // Exclude soft-deleted timesheets
-        },
-      },
-      include: [
-        {
-          model: Client,
-          as: "client",
-          attributes: ["id", "clientName"],
-          required: false,
-        },
-        {
-          model: Employee,
-          as: "employee",
-          attributes: ["id", "firstName", "lastName"],
-          required: false,
-        },
-      ],
-      order: [["week_start_date", "DESC"]],
-    });
+    // Decrypt employee data
+    const decryptedEmployees = employees.map(emp => ({
+      ...emp,
+      first_name: emp.first_name ? DataEncryptionService.decryptEmployeeData({ firstName: emp.first_name }).firstName : null,
+      last_name: emp.last_name ? DataEncryptionService.decryptEmployeeData({ lastName: emp.last_name }).lastName : null,
+    }));
 
-    // Process data to create employee reports
-    const employeeReports = employees.map((employee) => {
-      const employeeTimesheets = timesheets.filter(
-        (ts) => ts.employeeId === employee.id
+    console.log(`📊 Found ${decryptedEmployees.length} employees`);
+
+    // Get timesheets using raw query
+    const timesheets = await sequelize.query(
+      `SELECT 
+        t.id, t.employee_id, t.client_id, t.week_start, t.week_end, 
+        t.total_hours, t.status,
+        c.client_name, e.first_name, e.last_name
+      FROM timesheets t
+      LEFT JOIN clients c ON t.client_id = c.id
+      LEFT JOIN employees e ON t.employee_id = e.id
+      WHERE t.tenant_id = :tenantId
+        AND t.week_start >= :startDate
+        AND t.week_start <= :endDate
+        AND t.status IN ('draft', 'submitted', 'approved', 'rejected')
+      ORDER BY t.week_start DESC`,
+      {
+        replacements: {
+          tenantId,
+          startDate: defaultStartDate.toISOString().split('T')[0],
+          endDate: defaultEndDate.toISOString().split('T')[0],
+        },
+        type: sequelize.QueryTypes.SELECT,
+      }
+    );
+
+    // Decrypt client and employee names in timesheets
+    const decryptedTimesheets = timesheets.map(ts => ({
+      ...ts,
+      client_name: ts.client_name ? DataEncryptionService.decryptClientData({ clientName: ts.client_name }).clientName : null,
+      first_name: ts.first_name ? DataEncryptionService.decryptEmployeeData({ firstName: ts.first_name }).firstName : null,
+      last_name: ts.last_name ? DataEncryptionService.decryptEmployeeData({ lastName: ts.last_name }).lastName : null,
+    }));
+
+    console.log(`📊 Found ${decryptedTimesheets.length} timesheets`);
+
+    // Process data to create employee reports using decrypted data
+    const employeeReports = decryptedEmployees.map((employee) => {
+      const employeeTimesheets = decryptedTimesheets.filter(
+        (ts) => ts.employee_id === employee.id
       );
 
       // Calculate totals
       const totalHours = employeeTimesheets.reduce(
-        (sum, ts) => sum + (parseFloat(ts.totalHours) || 0),
+        (sum, ts) => sum + (parseFloat(ts.total_hours) || 0),
         0
       );
 
-      // Calculate utilization (assuming 40 hours per week as standard)
-      const weeksInRange = Math.ceil(
+      // Calculate utilization (assuming 40 hours per week)
+      const weeksInPeriod = Math.ceil(
         (defaultEndDate - defaultStartDate) / (7 * 24 * 60 * 60 * 1000)
       );
-      const expectedHours = weeksInRange * 40;
+      const expectedHours = weeksInPeriod * 40;
       const utilization =
-        expectedHours > 0 ? Math.round((totalHours / expectedHours) * 100) : 0;
+        expectedHours > 0
+          ? Math.round((totalHours / expectedHours) * 100)
+          : 0;
 
-      // Get most recent client and project
+      // Get client and project info from most recent timesheet
       const latestTimesheet = employeeTimesheets[0];
-      const clientName = latestTimesheet?.client?.clientName || "N/A";
-      const projectName = latestTimesheet?.client?.clientName || "N/A"; // Using client name as project for now
+      const clientName = latestTimesheet?.client_name || "N/A";
+      const projectName = clientName; // Using client name as project for now
 
       // Calculate weekly breakdown (last 4 weeks)
       const weeklyBreakdown = [];
@@ -258,21 +283,21 @@ router.get("/employees", async (req, res) => {
 
         const weekHours = employeeTimesheets
           .filter((ts) => {
-            const tsDate = new Date(ts.week_start_date);
+            const tsDate = new Date(ts.week_start);
             return tsDate >= weekStart && tsDate <= weekEnd;
           })
-          .reduce((sum, ts) => sum + (parseFloat(ts.totalHours) || 0), 0);
+          .reduce((sum, ts) => sum + (parseFloat(ts.total_hours) || 0), 0);
 
         weeklyBreakdown.push(Math.round(weekHours * 100) / 100);
       }
 
       return {
         id: employee.id,
-        name: `${employee.firstName} ${employee.lastName}`.trim(),
-        totalHours: Math.round(totalHours * 100) / 100,
-        utilization: Math.min(utilization, 120), // Cap at 120%
+        name: `${employee.first_name} ${employee.last_name}`.trim(),
         clientName,
         projectName,
+        totalHours: Math.round(totalHours * 100) / 100,
+        utilization,
         weeklyBreakdown,
       };
     });
@@ -314,33 +339,19 @@ router.get("/invoices", async (req, res) => {
 
     if (!tenantId) {
       return res.status(400).json({
+        success: false,
         error: "Tenant ID is required",
       });
     }
 
-    // Set default date range if not provided (last 6 months)
-    const now = new Date();
-    const defaultStartDate =
-      startDate || new Date(now.getFullYear(), now.getMonth() - 6, 1);
-    const defaultEndDate = endDate || now;
-
     console.log("🔍 Fetching invoice reports for:", {
       tenantId,
-      startDate: defaultStartDate,
-      endDate: defaultEndDate,
     });
 
-    // Get invoices for the date range (exclude soft-deleted)
+    // Get all invoices for the tenant (no date filtering to match Invoice module)
     const invoices = await Invoice.findAll({
       where: {
         tenantId,
-        invoiceDate: {
-          [Op.gte]: defaultStartDate,
-          [Op.lte]: defaultEndDate,
-        },
-        status: {
-          [Op.ne]: "deleted", // Exclude soft-deleted invoices
-        },
       },
       include: [
         {
@@ -353,8 +364,19 @@ router.get("/invoices", async (req, res) => {
       order: [["invoiceDate", "DESC"]],
     });
 
+    // Decrypt client names in invoices
+    const decryptedInvoices = invoices.map(invoice => {
+      const plainInvoice = invoice.get({ plain: true });
+      if (plainInvoice.client && plainInvoice.client.clientName) {
+        plainInvoice.client.clientName = DataEncryptionService.decryptClientData({ 
+          clientName: plainInvoice.client.clientName 
+        }).clientName;
+      }
+      return plainInvoice;
+    });
+
     // Process data to create invoice reports
-    const invoiceReports = invoices.map((invoice) => {
+    const invoiceReports = decryptedInvoices.map((invoice) => {
       const invoiceDate = new Date(invoice.invoiceDate);
       const month = invoiceDate.toLocaleDateString("en-US", { month: "long" });
       const year = invoiceDate.getFullYear();
@@ -477,36 +499,38 @@ router.get("/analytics", async (req, res) => {
       endDate,
     });
 
-    // Get timesheets for the period (exclude soft-deleted)
-    const timesheets = await Timesheet.findAll({
-      where: {
-        tenantId,
-        week_start_date: {
-          [Op.gte]: startDate,
-          [Op.lte]: endDate,
+    // Get timesheets using raw query
+    const timesheets = await sequelize.query(
+      `SELECT 
+        t.id, t.employee_id, t.client_id, t.week_start, t.total_hours,
+        c.client_name, e.first_name, e.last_name, e.department
+      FROM timesheets t
+      LEFT JOIN clients c ON t.client_id = c.id
+      LEFT JOIN employees e ON t.employee_id = e.id
+      WHERE t.tenant_id = :tenantId
+        AND t.week_start >= :startDate
+        AND t.week_start <= :endDate
+        AND t.status IN ('draft', 'submitted', 'approved', 'rejected')
+      ORDER BY t.week_start ASC`,
+      {
+        replacements: {
+          tenantId,
+          startDate: startDate.toISOString().split('T')[0],
+          endDate: endDate.toISOString().split('T')[0],
         },
-        status: {
-          [Op.ne]: "deleted", // Exclude soft-deleted timesheets
-        },
-      },
-      include: [
-        {
-          model: Client,
-          as: "client",
-          attributes: ["id", "clientName"],
-          required: false,
-        },
-        {
-          model: Employee,
-          as: "employee",
-          attributes: ["id", "firstName", "lastName", "department"],
-          required: false,
-        },
-      ],
-      order: [["week_start_date", "ASC"]],
-    });
+        type: sequelize.QueryTypes.SELECT,
+      }
+    );
 
-    // Get invoices for the period (exclude soft-deleted)
+    // Decrypt client and employee names in timesheets
+    const decryptedTimesheets = timesheets.map(ts => ({
+      ...ts,
+      client_name: ts.client_name ? DataEncryptionService.decryptClientData({ clientName: ts.client_name }).clientName : null,
+      first_name: ts.first_name ? DataEncryptionService.decryptEmployeeData({ firstName: ts.first_name }).firstName : null,
+      last_name: ts.last_name ? DataEncryptionService.decryptEmployeeData({ lastName: ts.last_name }).lastName : null,
+    }));
+
+    // Get invoices for the period
     const invoices = await Invoice.findAll({
       where: {
         tenantId,
@@ -514,9 +538,6 @@ router.get("/analytics", async (req, res) => {
           [Op.gte]: startDate,
           [Op.lte]: endDate,
         },
-        status: {
-          [Op.ne]: "deleted", // Exclude soft-deleted invoices
-        },
       },
       include: [
         {
@@ -528,9 +549,9 @@ router.get("/analytics", async (req, res) => {
       ],
     });
 
-    // Calculate analytics
-    const totalHours = timesheets.reduce(
-      (sum, ts) => sum + (parseFloat(ts.totalHours) || 0),
+    // Calculate analytics using decrypted timesheets
+    const totalHours = decryptedTimesheets.reduce(
+      (sum, ts) => sum + (parseFloat(ts.total_hours) || 0),
       0
     );
     const totalRevenue = invoices.reduce(
@@ -538,36 +559,36 @@ router.get("/analytics", async (req, res) => {
       0
     );
     const totalEmployees = new Set(
-      timesheets.map((ts) => ts.employeeId).filter(Boolean)
+      decryptedTimesheets.map((ts) => ts.employee_id).filter(Boolean)
     ).size;
     const totalClients = new Set(
-      timesheets.map((ts) => ts.clientId).filter(Boolean)
+      decryptedTimesheets.map((ts) => ts.client_id).filter(Boolean)
     ).size;
 
     // Hours by client
     const hoursByClient = {};
-    timesheets.forEach((ts) => {
-      const clientName = ts.client?.clientName || "Unknown";
+    decryptedTimesheets.forEach((ts) => {
+      const clientName = ts.client_name || "Unknown";
       hoursByClient[clientName] =
-        (hoursByClient[clientName] || 0) + (parseFloat(ts.totalHours) || 0);
+        (hoursByClient[clientName] || 0) + (parseFloat(ts.total_hours) || 0);
     });
 
     // Hours by employee
     const hoursByEmployee = {};
-    timesheets.forEach((ts) => {
-      const employeeName = ts.employee
-        ? `${ts.employee.firstName} ${ts.employee.lastName}`.trim()
+    decryptedTimesheets.forEach((ts) => {
+      const employeeName = ts.first_name && ts.last_name
+        ? `${ts.first_name} ${ts.last_name}`.trim()
         : "Unknown";
       hoursByEmployee[employeeName] =
-        (hoursByEmployee[employeeName] || 0) + (parseFloat(ts.totalHours) || 0);
+        (hoursByEmployee[employeeName] || 0) + (parseFloat(ts.total_hours) || 0);
     });
 
     // Hours by department
     const hoursByDepartment = {};
-    timesheets.forEach((ts) => {
-      const department = ts.employee?.department || "Unknown";
+    decryptedTimesheets.forEach((ts) => {
+      const department = ts.department || "Unknown";
       hoursByDepartment[department] =
-        (hoursByDepartment[department] || 0) + (parseFloat(ts.totalHours) || 0);
+        (hoursByDepartment[department] || 0) + (parseFloat(ts.total_hours) || 0);
     });
 
     // Weekly trends
@@ -577,13 +598,13 @@ router.get("/analytics", async (req, res) => {
       const weekEnd = new Date(currentDate);
       weekEnd.setDate(currentDate.getDate() + 6);
 
-        const weekTimesheets = timesheets.filter((ts) => {
-          const tsDate = new Date(ts.week_start_date);
+        const weekTimesheets = decryptedTimesheets.filter((ts) => {
+          const tsDate = new Date(ts.week_start);
           return tsDate >= currentDate && tsDate <= weekEnd;
         });
 
       const weekHours = weekTimesheets.reduce(
-        (sum, ts) => sum + (parseFloat(ts.totalHours) || 0),
+        (sum, ts) => sum + (parseFloat(ts.total_hours) || 0),
         0
       );
 

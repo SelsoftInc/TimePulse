@@ -4,8 +4,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { API_BASE } from '@/config/api';
 import "./ReportsDashboard.css";
+import "./ReportsModals.css";
 import '../common/ActionsDropdown.css';
 import InvoicePDFPreviewModal from '../common/InvoicePDFPreviewModal';
+import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
 // Helper functions outside component to avoid dependency issues
 const getMonday = (date) => {
@@ -51,6 +55,18 @@ const ReportsDashboard = () => {
   // Dropdown state for Actions
   const [openActionsId, setOpenActionsId] = useState(null);
   const [actionsType, setActionsType] = useState(null); // 'client', 'employee', 'invoice'
+  
+  // Client modals state
+  const [showClientDetailsModal, setShowClientDetailsModal] = useState(false);
+  const [showClientEditModal, setShowClientEditModal] = useState(false);
+  const [showClientDeleteModal, setShowClientDeleteModal] = useState(false);
+  const [selectedClient, setSelectedClient] = useState(null);
+  
+  // Employee modals state
+  const [showEmployeeDetailsModal, setShowEmployeeDetailsModal] = useState(false);
+  const [showEmployeeEditModal, setShowEmployeeEditModal] = useState(false);
+  const [showEmployeeDeleteModal, setShowEmployeeDeleteModal] = useState(false);
+  const [selectedEmployee, setSelectedEmployee] = useState(null);
   
   // Initialize week range on component mount
   useEffect(() => {
@@ -213,9 +229,11 @@ const ReportsDashboard = () => {
         endDate = new Date(year, monthIndex + 1, 0);
       }
 
+      const token = typeof window !== 'undefined' ? localStorage.getItem("token") : null;
       const headers = {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${localStorage.getItem("token")}`};
+        ...(token ? { Authorization: `Bearer ${token}` } : {})
+      };
 
       // Fetch all report data in parallel
       console.log('🔍 Fetching reports with:', {
@@ -309,6 +327,150 @@ const ReportsDashboard = () => {
       fetchReportsData();
     }
   }, [viewMode, weekStart, weekEnd, selectedMonth, selectedYear, fetchReportsData]);
+
+  // Export functionality
+  const handleExport = () => {
+    const format = 'excel'; // Default to Excel, can add PDF option later
+    const dateRange = viewMode === 'week' && weekStart && weekEnd
+      ? `${formatDate(weekStart)} - ${formatDate(weekEnd)}`
+      : `${selectedMonth} ${selectedYear}`;
+
+    if (activeTab === 'client') {
+      exportClientData(format, dateRange);
+    } else if (activeTab === 'employee') {
+      exportEmployeeData(format, dateRange);
+    } else if (activeTab === 'invoice') {
+      exportInvoiceData(format, dateRange);
+    }
+  };
+
+  const exportClientData = (format, dateRange) => {
+    if (format === 'excel') {
+      // Prepare data for Excel
+      const worksheetData = [
+        ['Client Report - ' + dateRange],
+        [],
+        ['Client Name', 'Total Hours', 'Total Employees', 'Total Billed ($)'],
+        ...clientReportData.map(client => [
+          client.name,
+          client.totalHours,
+          client.totalEmployees,
+          client.totalBilled
+        ]),
+        [],
+        ['Summary'],
+        ['Total Clients', clientReportData.length],
+        ['Total Hours', totalHours],
+        ['Total Amount', `$${totalAmount.toLocaleString()}`]
+      ];
+
+      const ws = XLSX.utils.aoa_to_sheet(worksheetData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Client Report');
+      XLSX.writeFile(wb, `Client_Report_${dateRange.replace(/\s+/g, '_')}.xlsx`);
+    } else if (format === 'pdf') {
+      const doc = new jsPDF();
+      doc.text(`Client Report - ${dateRange}`, 14, 15);
+      doc.autoTable({
+        head: [['Client Name', 'Total Hours', 'Total Employees', 'Total Billed ($)']],
+        body: clientReportData.map(client => [
+          client.name,
+          client.totalHours,
+          client.totalEmployees,
+          `$${client.totalBilled.toLocaleString()}`
+        ]),
+        startY: 25
+      });
+      doc.save(`Client_Report_${dateRange.replace(/\s+/g, '_')}.pdf`);
+    }
+  };
+
+  const exportEmployeeData = (format, dateRange) => {
+    if (format === 'excel') {
+      const worksheetData = [
+        ['Employee Report - ' + dateRange],
+        [],
+        ['Employee Name', 'Client', 'Project', 'Total Hours', 'Utilization %'],
+        ...employeeReportData.map(emp => [
+          emp.name,
+          emp.clientName,
+          emp.projectName,
+          emp.totalHours,
+          emp.utilization
+        ]),
+        [],
+        ['Summary'],
+        ['Total Employees', employeeReportData.length],
+        ['Total Hours', employeeReportData.reduce((sum, emp) => sum + emp.totalHours, 0)]
+      ];
+
+      const ws = XLSX.utils.aoa_to_sheet(worksheetData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Employee Report');
+      XLSX.writeFile(wb, `Employee_Report_${dateRange.replace(/\s+/g, '_')}.xlsx`);
+    } else if (format === 'pdf') {
+      const doc = new jsPDF();
+      doc.text(`Employee Report - ${dateRange}`, 14, 15);
+      doc.autoTable({
+        head: [['Employee Name', 'Client', 'Project', 'Total Hours', 'Utilization %']],
+        body: employeeReportData.map(emp => [
+          emp.name,
+          emp.clientName,
+          emp.projectName,
+          emp.totalHours,
+          `${emp.utilization}%`
+        ]),
+        startY: 25
+      });
+      doc.save(`Employee_Report_${dateRange.replace(/\s+/g, '_')}.pdf`);
+    }
+  };
+
+  const exportInvoiceData = (format, dateRange) => {
+    if (format === 'excel') {
+      const worksheetData = [
+        ['Invoice Report - ' + dateRange],
+        [],
+        ['Invoice ID', 'Client', 'Month', 'Issue Date', 'Hours', 'Amount ($)', 'Status'],
+        ...invoiceReportData.map(inv => [
+          inv.invoiceNumber || inv.id,
+          inv.clientName,
+          `${inv.month} ${inv.year}`,
+          inv.issueDate ? new Date(inv.issueDate).toLocaleDateString() : 'N/A',
+          inv.totalHours,
+          inv.amount,
+          inv.status
+        ]),
+        [],
+        ['Summary'],
+        ['Total Invoices', invoiceReportData.length],
+        ['Total Hours', invoiceReportData.reduce((sum, inv) => sum + inv.totalHours, 0)],
+        ['Total Amount', `$${invoiceReportData.reduce((sum, inv) => sum + inv.amount, 0).toLocaleString()}`]
+      ];
+
+      const ws = XLSX.utils.aoa_to_sheet(worksheetData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Invoice Report');
+      XLSX.writeFile(wb, `Invoice_Report_${dateRange.replace(/\s+/g, '_')}.xlsx`);
+    } else if (format === 'pdf') {
+      const doc = new jsPDF();
+      doc.text(`Invoice Report - ${dateRange}`, 14, 15);
+      doc.autoTable({
+        head: [['Invoice ID', 'Client', 'Month', 'Issue Date', 'Hours', 'Amount', 'Status']],
+        body: invoiceReportData.map(inv => [
+          inv.invoiceNumber || inv.id,
+          inv.clientName,
+          `${inv.month} ${inv.year}`,
+          inv.issueDate ? new Date(inv.issueDate).toLocaleDateString() : 'N/A',
+          inv.totalHours,
+          `$${inv.amount.toLocaleString()}`,
+          inv.status
+        ]),
+        startY: 25
+      });
+      doc.save(`Invoice_Report_${dateRange.replace(/\s+/g, '_')}.pdf`);
+    }
+  };
 
   // Close dropdown and calendar on outside click
   useEffect(() => {
@@ -467,41 +629,56 @@ const ReportsDashboard = () => {
                         </span>
                       </div>
                       <div className="nk-tb-col nk-tb-col-tools">
-                        <div className="dropdown" style={{ position: 'relative' }}>
-                          <button
-                            className="btn btn-sm btn-outline-secondary dropdown-toggle"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              toggleActions(client.id, 'client');
-                            }}
-                            type="button"
-                          >
-                            Actions
-                          </button>
-                          {openActionsId === client.id && actionsType === 'client' && (
-                            <div className="dropdown-menu dropdown-menu-right show">
-                              <button
-                                className="dropdown-item"
-                                onClick={() => {
-                                  alert(`Viewing details for ${client.name}`);
-                                  setOpenActionsId(null);
-                                  setActionsType(null);
-                                }}
-                              >
-                                <i className="fas fa-eye mr-1"></i> View Details
-                              </button>
-                              <button
-                                className="dropdown-item"
-                                onClick={() => {
-                                  alert(`Downloading report for ${client.name}`);
-                                  setOpenActionsId(null);
-                                  setActionsType(null);
-                                }}
-                              >
-                                <i className="fas fa-download mr-1"></i> Download Report
-                              </button>
-                            </div>
-                          )}
+                        <div className="actions-dropdown">
+                          <div className="dropdown">
+                            <button
+                              className="btn btn-sm btn-outline-secondary dropdown-toggle"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleActions(client.id, 'client');
+                              }}
+                              type="button"
+                            >
+                              Actions
+                            </button>
+                            {openActionsId === client.id && actionsType === 'client' && (
+                              <div className="dropdown-menu dropdown-menu-right show">
+                                <button
+                                  className="dropdown-item"
+                                  onClick={() => {
+                                    setSelectedClient(client);
+                                    setShowClientDetailsModal(true);
+                                    setOpenActionsId(null);
+                                    setActionsType(null);
+                                  }}
+                                >
+                                  <i className="fas fa-eye mr-1"></i> View Details
+                                </button>
+                                <button
+                                  className="dropdown-item"
+                                  onClick={() => {
+                                    setSelectedClient(client);
+                                    setShowClientEditModal(true);
+                                    setOpenActionsId(null);
+                                    setActionsType(null);
+                                  }}
+                                >
+                                  <i className="fas fa-edit mr-1"></i> Edit
+                                </button>
+                                {/* <button
+                                  className="dropdown-item text-danger"
+                                  onClick={() => {
+                                    setSelectedClient(client);
+                                    setShowClientDeleteModal(true);
+                                    setOpenActionsId(null);
+                                    setActionsType(null);
+                                  }}
+                                >
+                                  <i className="fas fa-trash mr-1"></i> Delete
+                                </button> */}
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -670,41 +847,56 @@ const ReportsDashboard = () => {
                         </div>
                       </div>
                       <div className="nk-tb-col nk-tb-col-tools">
-                        <div className="dropdown" style={{ position: 'relative' }}>
-                          <button
-                            className="btn btn-sm btn-outline-secondary dropdown-toggle"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              toggleActions(employee.id, 'employee');
-                            }}
-                            type="button"
-                          >
-                            Actions
-                          </button>
-                          {openActionsId === employee.id && actionsType === 'employee' && (
-                            <div className="dropdown-menu dropdown-menu-right show">
-                              <button
-                                className="dropdown-item"
-                                onClick={() => {
-                                  alert(`Viewing details for ${employee.name}`);
-                                  setOpenActionsId(null);
-                                  setActionsType(null);
-                                }}
-                              >
-                                <i className="fas fa-eye mr-1"></i> View Details
-                              </button>
-                              <button
-                                className="dropdown-item"
-                                onClick={() => {
-                                  alert(`Downloading report for ${employee.name}`);
-                                  setOpenActionsId(null);
-                                  setActionsType(null);
-                                }}
-                              >
-                                <i className="fas fa-download mr-1"></i> Download Report
-                              </button>
-                            </div>
-                          )}
+                        <div className="actions-dropdown">
+                          <div className="dropdown">
+                            <button
+                              className="btn btn-sm btn-outline-secondary dropdown-toggle"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleActions(employee.id, 'employee');
+                              }}
+                              type="button"
+                            >
+                              Actions
+                            </button>
+                            {openActionsId === employee.id && actionsType === 'employee' && (
+                              <div className="dropdown-menu dropdown-menu-right show">
+                                <button
+                                  className="dropdown-item"
+                                  onClick={() => {
+                                    setSelectedEmployee(employee);
+                                    setShowEmployeeDetailsModal(true);
+                                    setOpenActionsId(null);
+                                    setActionsType(null);
+                                  }}
+                                >
+                                  <i className="fas fa-eye mr-1"></i> View Details
+                                </button>
+                                <button
+                                  className="dropdown-item"
+                                  onClick={() => {
+                                    setSelectedEmployee(employee);
+                                    setShowEmployeeEditModal(true);
+                                    setOpenActionsId(null);
+                                    setActionsType(null);
+                                  }}
+                                >
+                                  <i className="fas fa-edit mr-1"></i> Edit
+                                </button>
+                                {/* <button
+                                  className="dropdown-item text-danger"
+                                  onClick={() => {
+                                    setSelectedEmployee(employee);
+                                    setShowEmployeeDeleteModal(true);
+                                    setOpenActionsId(null);
+                                    setActionsType(null);
+                                  }}
+                                >
+                                  <i className="fas fa-trash mr-1"></i> Delete
+                                </button> */}
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -879,52 +1071,45 @@ const ReportsDashboard = () => {
                       </span>
                     </div>
                     <div className="nk-tb-col nk-tb-col-tools">
-                      <div className="dropdown" style={{ position: 'relative' }}>
-                        <button
-                          className="btn btn-sm btn-outline-secondary dropdown-toggle"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toggleActions(invoice.id, 'invoice');
-                          }}
-                          type="button"
-                          ref={(el) => {
-                            if (el && openActionsId === invoice.id) {
-                              const rect = el.getBoundingClientRect();
-                              const spaceBelow = window.innerHeight - rect.bottom;
-                              if (spaceBelow < 200) {
-                                el.nextElementSibling?.classList.add('dropup');
-                              }
-                            }
-                          }}
-                        >
-                          Actions
-                        </button>
-                        {openActionsId === invoice.id && actionsType === 'invoice' && (
-                          <div className="dropdown-menu dropdown-menu-right show">
-                            <button
-                              className="dropdown-item"
-                              onClick={() => {
-                                setSelectedInvoiceForDetails(invoice);
-                                setShowDetailsModal(true);
-                                setOpenActionsId(null);
-                                setActionsType(null);
-                              }}
-                            >
-                              <i className="fas fa-eye mr-1"></i> View Details
-                            </button>
-                            <button
-                              className="dropdown-item"
-                              onClick={() => {
-                                setSelectedInvoiceForPDF(invoice);
-                                setShowPDFModal(true);
-                                setOpenActionsId(null);
-                                setActionsType(null);
-                              }}
-                            >
-                              <i className="fas fa-download mr-1"></i> Download Invoice
-                            </button>
-                          </div>
-                        )}
+                      <div className="actions-dropdown">
+                        <div className="dropdown">
+                          <button
+                            className="btn btn-sm btn-outline-secondary dropdown-toggle"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleActions(invoice.id, 'invoice');
+                            }}
+                            type="button"
+                          >
+                            Actions
+                          </button>
+                          {openActionsId === invoice.id && actionsType === 'invoice' && (
+                            <div className="dropdown-menu dropdown-menu-right show">
+                              <button
+                                className="dropdown-item"
+                                onClick={() => {
+                                  setSelectedInvoiceForDetails(invoice);
+                                  setShowDetailsModal(true);
+                                  setOpenActionsId(null);
+                                  setActionsType(null);
+                                }}
+                              >
+                                <i className="fas fa-eye mr-1"></i> View Details
+                              </button>
+                              <button
+                                className="dropdown-item"
+                                onClick={() => {
+                                  setSelectedInvoiceForPDF(invoice);
+                                  setShowPDFModal(true);
+                                  setOpenActionsId(null);
+                                  setActionsType(null);
+                                }}
+                              >
+                                <i className="fas fa-download mr-1"></i> Download Invoice
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1207,7 +1392,7 @@ const ReportsDashboard = () => {
                     </div>
                     
                     {/* Export Button */}
-                    <button className="export-btn">
+                    <button className="export-btn" onClick={handleExport}>
                       <i className="fas fa-download"></i>
                       <span>Export</span>
                     </button>
@@ -1529,6 +1714,370 @@ const ReportsDashboard = () => {
                 }}
               >
                 <i className="fas fa-download mr-1"></i> Download PDF
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Client Details Modal */}
+      {showClientDetailsModal && selectedClient && (
+        <div className="modal-overlay" onClick={() => setShowClientDetailsModal(false)}>
+          <div className="modal-container" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3><i className="fas fa-building mr-2"></i> Client Details</h3>
+              <button className="modal-close" onClick={() => setShowClientDetailsModal(false)}>
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+            
+            <div className="modal-body">
+              <div className="details-grid">
+                <div className="detail-item">
+                  <label>Client Name:</label>
+                  <span>{selectedClient.name}</span>
+                </div>
+                <div className="detail-item">
+                  <label>Total Hours:</label>
+                  <span>{selectedClient.totalHours} hrs</span>
+                </div>
+                <div className="detail-item">
+                  <label>Total Employees:</label>
+                  <span>{selectedClient.totalEmployees}</span>
+                </div>
+                <div className="detail-item">
+                  <label>Total Billed:</label>
+                  <span className="amount">${selectedClient.totalBilled?.toLocaleString()}</span>
+                </div>
+              </div>
+              
+              {selectedClient.projects && selectedClient.projects.length > 0 && (
+                <div className="details-section mt-3">
+                  <h5 className="section-title">
+                    <i className="fas fa-project-diagram"></i> Projects
+                  </h5>
+                  <div className="projects-list">
+                    {selectedClient.projects.map((project, index) => (
+                      <div key={index} className="project-item">
+                        <div className="project-name">{project.name}</div>
+                        <div className="project-stats">
+                          <span>{project.hours} hrs</span>
+                          <span>{project.employees} employees</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            <div className="modal-footer">
+              <button className="btn btn-secondary" onClick={() => setShowClientDetailsModal(false)}>
+                Close
+              </button>
+              <button 
+                className="btn btn-primary" 
+                onClick={() => {
+                  setShowClientDetailsModal(false);
+                  setShowClientEditModal(true);
+                }}
+              >
+                <i className="fas fa-edit mr-1"></i> Edit Client
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Client Edit Modal */}
+      {showClientEditModal && selectedClient && (
+        <div className="modal-overlay" onClick={() => setShowClientEditModal(false)}>
+          <div className="modal-container" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3><i className="fas fa-edit mr-2"></i> Edit Client</h3>
+              <button className="modal-close" onClick={() => setShowClientEditModal(false)}>
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+            
+            <div className="modal-body">
+              <div className="form-group">
+                <label>Client Name</label>
+                <input 
+                  type="text" 
+                  className="form-control" 
+                  defaultValue={selectedClient.name}
+                  placeholder="Enter client name"
+                />
+              </div>
+              <div className="form-group">
+                <label>Total Hours</label>
+                <input 
+                  type="number" 
+                  className="form-control" 
+                  defaultValue={selectedClient.totalHours}
+                  placeholder="Enter total hours"
+                />
+              </div>
+              <div className="form-group">
+                <label>Total Employees</label>
+                <input 
+                  type="number" 
+                  className="form-control" 
+                  defaultValue={selectedClient.totalEmployees}
+                  placeholder="Enter total employees"
+                />
+              </div>
+              <div className="form-group">
+                <label>Total Billed ($)</label>
+                <input 
+                  type="number" 
+                  className="form-control" 
+                  defaultValue={selectedClient.totalBilled}
+                  placeholder="Enter total billed amount"
+                />
+              </div>
+            </div>
+            
+            <div className="modal-footer">
+              <button className="btn btn-secondary" onClick={() => setShowClientEditModal(false)}>
+                Cancel
+              </button>
+              <button 
+                className="btn btn-primary" 
+                onClick={() => {
+                  // TODO: Implement save functionality
+                  alert('Save functionality will be implemented');
+                  setShowClientEditModal(false);
+                }}
+              >
+                <i className="fas fa-save mr-1"></i> Save Changes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Client Delete Modal */}
+      {showClientDeleteModal && selectedClient && (
+        <div className="modal-overlay" onClick={() => setShowClientDeleteModal(false)}>
+          <div className="modal-container modal-sm" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header bg-danger">
+              <h3><i className="fas fa-exclamation-triangle mr-2"></i> Delete Client</h3>
+              <button className="modal-close" onClick={() => setShowClientDeleteModal(false)}>
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+            
+            <div className="modal-body">
+              <p className="text-center mb-3">
+                Are you sure you want to delete client <strong>{selectedClient.name}</strong>?
+              </p>
+              <p className="text-center text-muted">
+                This action cannot be undone.
+              </p>
+            </div>
+            
+            <div className="modal-footer">
+              <button className="btn btn-secondary" onClick={() => setShowClientDeleteModal(false)}>
+                Cancel
+              </button>
+              <button 
+                className="btn btn-danger" 
+                onClick={() => {
+                  // TODO: Implement delete functionality
+                  alert(`Client ${selectedClient.name} will be deleted`);
+                  setShowClientDeleteModal(false);
+                }}
+              >
+                <i className="fas fa-trash mr-1"></i> Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Employee Details Modal */}
+      {showEmployeeDetailsModal && selectedEmployee && (
+        <div className="modal-overlay" onClick={() => setShowEmployeeDetailsModal(false)}>
+          <div className="modal-container" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3><i className="fas fa-user mr-2"></i> Employee Details</h3>
+              <button className="modal-close" onClick={() => setShowEmployeeDetailsModal(false)}>
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+            
+            <div className="modal-body">
+              <div className="details-grid">
+                <div className="detail-item">
+                  <label>Employee Name:</label>
+                  <span>{selectedEmployee.name}</span>
+                </div>
+                <div className="detail-item">
+                  <label>Client:</label>
+                  <span>{selectedEmployee.clientName}</span>
+                </div>
+                <div className="detail-item">
+                  <label>Project:</label>
+                  <span>{selectedEmployee.projectName}</span>
+                </div>
+                <div className="detail-item">
+                  <label>Total Hours:</label>
+                  <span>{selectedEmployee.totalHours} hrs</span>
+                </div>
+                <div className="detail-item">
+                  <label>Utilization:</label>
+                  <span>{selectedEmployee.utilization}%</span>
+                </div>
+              </div>
+              
+              {/* {selectedEmployee.weeklyBreakdown && selectedEmployee.weeklyBreakdown.length > 0 && (
+                <div className="details-section mt-3">
+                  <h5 className="section-title">
+                    <i className="fas fa-chart-line"></i> Weekly Breakdown
+                  </h5>
+                  <div className="weekly-breakdown">
+                    {selectedEmployee.weeklyBreakdown.map((hours, index) => (
+                      <div key={index} className="week-item">
+                        <span className="week-label">Week {index + 1}</span>
+                        <span className="week-hours">{hours} hrs</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )} */}
+            </div>
+            
+            <div className="modal-footer">
+              <button className="btn btn-secondary" onClick={() => setShowEmployeeDetailsModal(false)}>
+                Close
+              </button>
+              <button 
+                className="btn btn-primary" 
+                onClick={() => {
+                  setShowEmployeeDetailsModal(false);
+                  setShowEmployeeEditModal(true);
+                }}
+              >
+                <i className="fas fa-edit mr-1"></i> Edit Employee
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Employee Edit Modal */}
+      {showEmployeeEditModal && selectedEmployee && (
+        <div className="modal-overlay" onClick={() => setShowEmployeeEditModal(false)}>
+          <div className="modal-container" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3><i className="fas fa-edit mr-2"></i> Edit Employee</h3>
+              <button className="modal-close" onClick={() => setShowEmployeeEditModal(false)}>
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+            
+            <div className="modal-body">
+              <div className="form-group">
+                <label>Employee Name</label>
+                <input 
+                  type="text" 
+                  className="form-control" 
+                  defaultValue={selectedEmployee.name}
+                  placeholder="Enter employee name"
+                />
+              </div>
+              <div className="form-group">
+                <label>Client Name</label>
+                <input 
+                  type="text" 
+                  className="form-control" 
+                  defaultValue={selectedEmployee.clientName}
+                  placeholder="Enter client name"
+                />
+              </div>
+              <div className="form-group">
+                <label>Project Name</label>
+                <input 
+                  type="text" 
+                  className="form-control" 
+                  defaultValue={selectedEmployee.projectName}
+                  placeholder="Enter project name"
+                />
+              </div>
+              <div className="form-group">
+                <label>Total Hours</label>
+                <input 
+                  type="number" 
+                  className="form-control" 
+                  defaultValue={selectedEmployee.totalHours}
+                  placeholder="Enter total hours"
+                />
+              </div>
+              <div className="form-group">
+                <label>Utilization (%)</label>
+                <input 
+                  type="number" 
+                  className="form-control" 
+                  defaultValue={selectedEmployee.utilization}
+                  placeholder="Enter utilization percentage"
+                />
+              </div>
+            </div>
+            
+            <div className="modal-footer">
+              <button className="btn btn-secondary" onClick={() => setShowEmployeeEditModal(false)}>
+                Cancel
+              </button>
+              <button 
+                className="btn btn-primary" 
+                onClick={() => {
+                  // TODO: Implement save functionality
+                  alert('Save functionality will be implemented');
+                  setShowEmployeeEditModal(false);
+                }}
+              >
+                <i className="fas fa-save mr-1"></i> Save Changes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Employee Delete Modal */}
+      {showEmployeeDeleteModal && selectedEmployee && (
+        <div className="modal-overlay" onClick={() => setShowEmployeeDeleteModal(false)}>
+          <div className="modal-container modal-sm" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header bg-danger">
+              <h3><i className="fas fa-exclamation-triangle mr-2"></i> Delete Employee</h3>
+              <button className="modal-close" onClick={() => setShowEmployeeDeleteModal(false)}>
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+            
+            <div className="modal-body">
+              <p className="text-center mb-3">
+                Are you sure you want to delete employee <strong>{selectedEmployee.name}</strong>?
+              </p>
+              <p className="text-center text-muted">
+                This action cannot be undone.
+              </p>
+            </div>
+            
+            <div className="modal-footer">
+              <button className="btn btn-secondary" onClick={() => setShowEmployeeDeleteModal(false)}>
+                Cancel
+              </button>
+              <button 
+                className="btn btn-danger" 
+                onClick={() => {
+                  // TODO: Implement delete functionality
+                  alert(`Employee ${selectedEmployee.name} will be deleted`);
+                  setShowEmployeeDeleteModal(false);
+                }}
+              >
+                <i className="fas fa-trash mr-1"></i> Delete
               </button>
             </div>
           </div>

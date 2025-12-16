@@ -35,6 +35,24 @@ const ClientsList = () => {
     setIsMounted(true);
   }, []);
 
+  // Close dropdown on outside click - EXACT VENDORS IMPLEMENTATION
+  useEffect(() => {
+    const handler = (e) => {
+      // Close dropdown when clicking outside
+      if (openMenuId !== null) {
+        const dropdownEl = document.querySelector(
+          `[data-dropdown-id="${openMenuId}"]`
+        );
+        const isClickInside = dropdownEl?.contains(e.target);
+        if (!isClickInside) {
+          setOpenMenuId(null);
+        }
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [openMenuId]);
+
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
@@ -90,20 +108,7 @@ const ClientsList = () => {
     }
   }, [isMounted, user?.tenantId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Close menu on outside click
-  useEffect(() => {
-    const handler = (e) => {
-      const inMenu = e.target.closest(".dropdown-menu");
-      const inTrigger = e.target.closest(".btn-trigger");
-      if (!inMenu && !inTrigger) setOpenMenuId(null);
-    };
-    document.addEventListener("click", handler);
-    return () => document.removeEventListener("click", handler);
-  }, []);
-
-  const toggleMenu = (id) => {
-    setOpenMenuId((prev) => (prev === id ? null : id));
-  };
+  const toggleMenu = (id) => setOpenMenuId((prev) => (prev === id ? null : id));
 
   // Pagination calculations
   const totalPages = Math.ceil(clients.length / itemsPerPage);
@@ -111,9 +116,6 @@ const ClientsList = () => {
   const endIndex = startIndex + itemsPerPage;
   const paginatedClients = clients.slice(startIndex, endIndex);
 
-  const handleEdit = (clientId) => {
-    router.push(`/${subdomain}/clients/edit/${clientId}`);
-  };
 
   const handleDelete = async (clientId) => {
     if (!window.confirm("Delete this client? This action cannot be undone."))
@@ -302,28 +304,28 @@ const ClientsList = () => {
                             data-dropdown-id={client.id}
                             style={{ position: "relative" }}
                           >
-                            <button
-                              type="button"
-                              className="btn btn-sm btn-outline-secondary dropdown-toggle"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                toggleMenu(client.id);
-                              }}
-                              ref={(el) => {
-                                if (el && openMenuId === client.id) {
-                                  const rect = el.getBoundingClientRect();
-                                  const spaceBelow = window.innerHeight - rect.bottom;
-                                  // Open upward if less than 180px space below
-                                  if (spaceBelow < 180) {
-                                    el.nextElementSibling?.classList.add('dropup');
-                                  } else {
-                                    el.nextElementSibling?.classList.remove('dropup');
+                              <button
+                                className="btn btn-sm btn-outline-secondary dropdown-toggle"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toggleMenu(client.id);
+                                }}
+                                type="button"
+                                ref={(el) => {
+                                  if (el && openMenuId === client.id) {
+                                    const rect = el.getBoundingClientRect();
+                                    const spaceBelow = window.innerHeight - rect.bottom;
+                                    // Open upward if less than 180px space below
+                                    if (spaceBelow < 180) {
+                                      el.nextElementSibling?.classList.add('dropup');
+                                    } else {
+                                      el.nextElementSibling?.classList.remove('dropup');
+                                    }
                                   }
-                                }
-                              }}
-                            >
-                              Actions
-                            </button>
+                                }}
+                              >
+                                Actions
+                              </button>
                             <div
                               className={`dropdown-menu dropdown-menu-right ${
                                 openMenuId === client.id ? "show" : ""
@@ -339,25 +341,12 @@ const ClientsList = () => {
                                 <PermissionGuard
                                   requiredPermission={PERMISSIONS.EDIT_CLIENT}
                                 >
-                                  <button
-                                    type="button"
+                                  <Link href={`/${subdomain}/clients/edit/${client.id}`}
                                     className="dropdown-item"
-                                    onClick={() => handleEdit(client.id)}
+                                    onClick={() => setOpenMenuId(null)}
                                   >
                                     <i className="fas fa-edit mr-1"></i> Edit
-                                  </button>
-                                </PermissionGuard>
-                                <PermissionGuard
-                                  requiredPermission={PERMISSIONS.CREATE_CLIENT}
-                                >
-                                  <button
-                                    type="button"
-                                    className="dropdown-item"
-                                    onClick={() => handleDuplicate(client.id)}
-                                  >
-                                    <i className="fas fa-clone mr-1"></i>{" "}
-                                    Duplicate
-                                  </button>
+                                  </Link>
                                 </PermissionGuard>
                                 <PermissionGuard
                                   requiredPermission={PERMISSIONS.DELETE_CLIENT}
@@ -365,7 +354,10 @@ const ClientsList = () => {
                                   <button
                                     type="button"
                                     className="dropdown-item text-danger"
-                                    onClick={() => handleDelete(client.id)}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleDelete(client.id);
+                                    }}
                                   >
                                     <i className="fas fa-trash-alt mr-1"></i>{" "}
                                     Delete

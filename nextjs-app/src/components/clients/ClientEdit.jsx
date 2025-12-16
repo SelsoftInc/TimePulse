@@ -4,14 +4,17 @@ import Link from 'next/link';
 import { useRouter, useParams } from 'next/navigation';
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/contexts/ToastContext';
+import { API_BASE } from '@/config/api';
 import PermissionGuard from '../common/PermissionGuard';
 import { PERMISSIONS } from '@/utils/roles';
 import ClientForm from './ClientForm';
 
 const ClientEdit = () => {
-  const { clientId, subdomain } = useParams();
+  const { id, subdomain } = useParams();
   const router = useRouter();
   const { user } = useAuth();
+  const { toast } = useToast();
   
   // Hydration fix: Track if component is mounted on client
   const [isMounted, setIsMounted] = useState(false);
@@ -32,7 +35,7 @@ const ClientEdit = () => {
         setLoading(true);
         const tenantId = user?.tenantId;
         if (!tenantId) throw new Error('No tenant information');
-        const resp = await fetch(`http://localhost:5000/api/clients/${clientId}?tenantId=${tenantId}`, {
+        const resp = await fetch(`${API_BASE}/api/clients/${id}?tenantId=${tenantId}`, {
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${localStorage.getItem('token')}`}});
@@ -49,11 +52,11 @@ const ClientEdit = () => {
       }
     };
     fetchClient();
-  }, [isMounted, clientId, user?.tenantId]);
+  }, [isMounted, id, user?.tenantId]);
 
   const handleUpdate = async (payload) => {
     const tenantId = user?.tenantId;
-    const resp = await fetch(`http://localhost:5000/api/clients/${clientId}?tenantId=${tenantId}`, {
+    const resp = await fetch(`${API_BASE}/api/clients/${id}?tenantId=${tenantId}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -63,7 +66,13 @@ const ClientEdit = () => {
       const err = await resp.json().catch(() => ({}));
       throw new Error(err.details ? JSON.stringify(err.details) : `Update failed with status ${resp.status}`);
     }
-    router.push(`/${subdomain}/clients/${clientId}`);
+    
+    const result = await resp.json();
+    toast.success('Client updated successfully', {
+      title: 'Success'
+    });
+    
+    router.push(`/${subdomain}/clients/${id}`);
   };
 
   // Prevent hydration mismatch - don't render until mounted
@@ -94,7 +103,7 @@ const ClientEdit = () => {
                 </div>
               </div>
               <div className="nk-block-head-content">
-                <Link href={`/${subdomain}/clients/${clientId}`} className="btn btn-outline-light">
+                <Link href={`/${subdomain}/clients/${id}`} className="btn btn-outline-light">
                   <em className="icon ni ni-arrow-left"></em>
                   <span>Back</span>
                 </Link>

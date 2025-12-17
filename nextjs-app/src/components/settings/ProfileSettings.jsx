@@ -42,14 +42,18 @@ const ProfileSettings = () => {
     try {
       setLoading(true);
       
-      if (!user?.tenantId) {
-        console.error('No tenant information available');
+      const userId = user?.id || JSON.parse(localStorage.getItem('userInfo') || '{}').id;
+      
+      if (!userId) {
+        console.error('No user ID found');
         setLoading(false);
         return;
       }
 
-      // Fetch real user data from employees API
-      const response = await fetch(`${API_BASE}/api/employees?tenantId=${user.tenantId}`, {
+      console.log('📥 Fetching profile for user ID:', userId);
+
+      // Fetch user profile from settings API
+      const response = await fetch(`${API_BASE}/api/settings/profile/${userId}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -63,54 +67,43 @@ const ProfileSettings = () => {
 
       const data = await response.json();
       
-      if (data.success && data.employees) {
-        // Find the current user in the employees list by email
-        const currentEmployee = data.employees.find(emp => 
-          emp.email.toLowerCase() === user.email.toLowerCase()
-        );
+      if (data.success && data.user) {
+        console.log('✅ Profile data received:', data.user);
         
-        if (currentEmployee) {
-          console.log('🔍 Found employee data:', currentEmployee);
-          
-          const realProfile = {
-            firstName: currentEmployee.firstName || '',
-            lastName: currentEmployee.lastName || '',
-            email: currentEmployee.email,
-            phone: currentEmployee.phone || '',
-            department: currentEmployee.department || '',
-            position: currentEmployee.position || '',
-            employeeId: currentEmployee.employeeId || '',
-            startDate: currentEmployee.joinDate ? new Date(currentEmployee.joinDate).toISOString().split('T')[0] : '',
-            manager: '',
-            timezone: 'America/New_York',
-            language: 'en',
-            notifications: {
-              emailReminders: true,
-              timesheetDeadlines: true,
-              approvalRequests: isApprover() || isAdmin(),
-              systemUpdates: isAdmin()
-            }
-          };
-          
-          console.log('✅ Setting real profile data:', realProfile);
-          setProfileData(realProfile);
-        } else {
-          console.warn('Current user not found in employees list');
-          // Fallback to basic user data
-          setProfileData(prev => ({
-            ...prev,
-            firstName: user.firstName || '',
-            lastName: user.lastName || '',
-            email: user.email || ''
-          }));
-        }
+        const userData = data.user;
+        const employeeData = userData.employee;
+        
+        const realProfile = {
+          firstName: userData.firstName || '',
+          lastName: userData.lastName || '',
+          email: userData.email || '',
+          phone: userData.phone || '',
+          department: employeeData?.department || '',
+          position: employeeData?.position || '',
+          employeeId: userData.employeeId || '',
+          startDate: employeeData?.startDate ? new Date(employeeData.startDate).toISOString().split('T')[0] : '',
+          manager: '',
+          timezone: userData.settings?.timezone || 'America/New_York',
+          language: userData.settings?.language || 'en',
+          notifications: {
+            emailReminders: userData.settings?.notifications?.emailReminders !== undefined ? userData.settings.notifications.emailReminders : true,
+            timesheetDeadlines: userData.settings?.notifications?.timesheetDeadlines !== undefined ? userData.settings.notifications.timesheetDeadlines : true,
+            approvalRequests: userData.settings?.notifications?.approvalRequests !== undefined ? userData.settings.notifications.approvalRequests : (isApprover() || isAdmin()),
+            systemUpdates: userData.settings?.notifications?.systemUpdates !== undefined ? userData.settings.notifications.systemUpdates : isAdmin()
+          }
+        };
+        
+        console.log('✅ Setting profile data:', realProfile);
+        setProfileData(realProfile);
       } else {
-        console.error('Failed to fetch employee data:', data.error);
+        console.error('Failed to fetch profile data:', data.error);
+        toast.error('Failed to load profile data', { title: 'Error' });
       }
       
       setLoading(false);
     } catch (error) {
       console.error('Error loading profile data:', error);
+      toast.error('Failed to load profile data', { title: 'Error' });
       // Fallback to basic user data from auth context
       setProfileData(prev => ({
         ...prev,
@@ -145,30 +138,11 @@ const ProfileSettings = () => {
     try {
       setLoading(true);
       
-      if (!user?.tenantId) {
-        throw new Error('No tenant information available');
-      }
-
-      // Find the current employee first to get the employee ID
-      const employeesResponse = await fetch(`${API_BASE}/api/employees?tenantId=${user.tenantId}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-
-      if (!employeesResponse.ok) {
-        throw new Error('Failed to fetch employee data');
-      }
-
-      const employeesData = await employeesResponse.json();
-      const currentEmployee = employeesData.employees?.find(emp => 
-        emp.email.toLowerCase() === user.email.toLowerCase()
-      );
-
-      if (!currentEmployee) {
-        throw new Error('Employee record not found');
+      const userId = user?.id || JSON.parse(localStorage.getItem('userInfo') || '{}').id;
+      
+      if (!userId) {
+        toast.error('User not found', { title: 'Error' });
+        return;
       }
 
       // Prepare update payload
@@ -178,15 +152,18 @@ const ProfileSettings = () => {
         email: profileData.email,
         phone: profileData.phone,
         department: profileData.department,
-        title: profileData.position, // Map position to title field
-        employeeId: profileData.employeeId,
-        startDate: profileData.startDate ? new Date(profileData.startDate).toISOString() : null
+        position: profileData.position,
+        settings: {
+          timezone: profileData.timezone,
+          language: profileData.language,
+          notifications: profileData.notifications
+        }
       };
 
       console.log('💾 Saving profile data:', updatePayload);
 
-      // Save profile data to backend - include tenantId as query parameter
-      const response = await fetch(`${API_BASE}/api/employees/${currentEmployee.id}?tenantId=${user.tenantId}`, {
+      // Save profile data to settings API
+      const response = await fetch(`${API_BASE}/api/settings/profile/${userId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

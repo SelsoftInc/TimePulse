@@ -1,10 +1,13 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
+import { API_BASE } from '@/config/api';
 import "./InvoiceSettings.css";
 
 const InvoiceSettings = () => {
+  const { user } = useAuth();
   const { toast } = useToast();
   const [invoiceSettings, setInvoiceSettings] = useState({
     // Company Information
@@ -85,16 +88,33 @@ const InvoiceSettings = () => {
   const loadInvoiceSettings = async () => {
     setLoading(true);
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      const tenantId = user?.tenantId || JSON.parse(localStorage.getItem('userInfo') || '{}').tenantId;
+      
+      if (!tenantId) {
+        console.error('No tenant ID found');
+        setLoading(false);
+        return;
+      }
 
-      // In a real app, this would fetch from API
-      const savedSettings = localStorage.getItem("invoiceSettings");
-      if (savedSettings) {
-        setInvoiceSettings(JSON.parse(savedSettings));
+      const response = await fetch(`${API_BASE}/api/settings/invoice-settings/${tenantId}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch invoice settings');
+      }
+
+      const data = await response.json();
+      
+      if (data.success) {
+        setInvoiceSettings(data.settings);
       }
     } catch (error) {
       console.error("Error loading invoice settings:", error);
+      toast.error('Failed to load invoice settings', { title: 'Error' });
     } finally {
       setLoading(false);
     }
@@ -144,23 +164,37 @@ const InvoiceSettings = () => {
   const handleSave = async () => {
     setLoading(true);
     try {
-      // Mark as configured
-      const updatedSettings = {
-        ...invoiceSettings,
-        isConfigured: true};
+      const tenantId = user?.tenantId || JSON.parse(localStorage.getItem('userInfo') || '{}').tenantId;
+      
+      if (!tenantId) {
+        toast.error('Tenant not found', { title: 'Error' });
+        return;
+      }
 
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const response = await fetch(`${API_BASE}/api/settings/invoice-settings/${tenantId}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(invoiceSettings)
+      });
 
-      // Save to localStorage (in real app, this would be API call)
-      localStorage.setItem("invoiceSettings", JSON.stringify(updatedSettings));
-      setInvoiceSettings(updatedSettings);
+      if (!response.ok) {
+        throw new Error('Failed to save invoice settings');
+      }
 
-      toast.success("Your invoice settings have been saved.", {
-        title: "Invoice Settings Saved"});
+      const data = await response.json();
+      
+      if (data.success) {
+        toast.success("Your invoice settings have been saved.", {
+          title: "Invoice Settings Saved"});
+        // Reload settings to get updated data
+        await loadInvoiceSettings();
+      }
     } catch (error) {
       console.error("Error saving invoice settings:", error);
-      toast.error("Please try again.", {
+      toast.error("Failed to save invoice settings. Please try again.", {
         title: "Error Saving Settings"});
     } finally {
       setLoading(false);

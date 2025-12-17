@@ -1,10 +1,15 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/contexts/ToastContext';
+import { API_BASE } from '@/config/api';
 import "./Settings.css";
 
 const NotificationSettings = () => {
-  // Mock notification settings
+  const { user } = useAuth();
+  const { toast } = useToast();
+  
   const [emailNotifications, setEmailNotifications] = useState({
     timeEntryReminders: true,
     approvalRequests: true,
@@ -19,25 +24,158 @@ const NotificationSettings = () => {
     systemAnnouncements: false});
 
   const [emailFrequency, setEmailFrequency] = useState("daily");
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  // Fetch notification preferences on mount
+  useEffect(() => {
+    fetchNotificationPreferences();
+  }, []);
+
+  const fetchNotificationPreferences = async () => {
+    try {
+      setLoading(true);
+      const userId = user?.id || JSON.parse(localStorage.getItem('userInfo') || '{}').id;
+      
+      if (!userId) {
+        console.error('No user ID found');
+        setLoading(false);
+        return;
+      }
+
+      const response = await fetch(`${API_BASE}/api/settings/notification-preferences/${userId}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch notification preferences');
+      }
+
+      const data = await response.json();
+      
+      if (data.success) {
+        const prefs = data.preferences;
+        setEmailNotifications({
+          timeEntryReminders: prefs.emailTimeEntryReminders,
+          approvalRequests: prefs.emailApprovalRequests,
+          weeklyReports: prefs.emailWeeklyReports,
+          projectUpdates: prefs.emailProjectUpdates,
+          systemAnnouncements: prefs.emailSystemAnnouncements
+        });
+        setPushNotifications({
+          timeEntryReminders: prefs.pushTimeEntryReminders,
+          approvalRequests: prefs.pushApprovalRequests,
+          projectUpdates: prefs.pushProjectUpdates,
+          systemAnnouncements: prefs.pushSystemAnnouncements
+        });
+        setEmailFrequency(prefs.emailDigestFrequency);
+      }
+    } catch (error) {
+      console.error('Error fetching notification preferences:', error);
+      toast.error('Failed to load notification preferences', { title: 'Error' });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleEmailToggle = (setting) => {
     setEmailNotifications({
       ...emailNotifications,
       [setting]: !emailNotifications[setting]});
-    // In a real app, this would trigger an API call to update the settings
   };
 
   const handlePushToggle = (setting) => {
     setPushNotifications({
       ...pushNotifications,
       [setting]: !pushNotifications[setting]});
-    // In a real app, this would trigger an API call to update the settings
   };
 
   const handleFrequencyChange = (frequency) => {
     setEmailFrequency(frequency);
-    // In a real app, this would trigger an API call to update the settings
   };
+
+  const handleSaveChanges = async () => {
+    try {
+      setSaving(true);
+      const userId = user?.id || JSON.parse(localStorage.getItem('userInfo') || '{}').id;
+      
+      if (!userId) {
+        toast.error('User not found', { title: 'Error' });
+        return;
+      }
+
+      const preferences = {
+        emailTimeEntryReminders: emailNotifications.timeEntryReminders,
+        emailApprovalRequests: emailNotifications.approvalRequests,
+        emailWeeklyReports: emailNotifications.weeklyReports,
+        emailProjectUpdates: emailNotifications.projectUpdates,
+        emailSystemAnnouncements: emailNotifications.systemAnnouncements,
+        emailDigestFrequency: emailFrequency,
+        pushTimeEntryReminders: pushNotifications.timeEntryReminders,
+        pushApprovalRequests: pushNotifications.approvalRequests,
+        pushProjectUpdates: pushNotifications.projectUpdates,
+        pushSystemAnnouncements: pushNotifications.systemAnnouncements
+      };
+
+      const response = await fetch(`${API_BASE}/api/settings/notification-preferences/${userId}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(preferences)
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save notification preferences');
+      }
+
+      const data = await response.json();
+      
+      if (data.success) {
+        toast.success('Notification preferences saved successfully', { title: 'Success' });
+      }
+    } catch (error) {
+      console.error('Error saving notification preferences:', error);
+      toast.error('Failed to save notification preferences', { title: 'Error' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleResetToDefault = () => {
+    setEmailNotifications({
+      timeEntryReminders: true,
+      approvalRequests: true,
+      weeklyReports: true,
+      projectUpdates: false,
+      systemAnnouncements: true
+    });
+    setPushNotifications({
+      timeEntryReminders: false,
+      approvalRequests: true,
+      projectUpdates: true,
+      systemAnnouncements: false
+    });
+    setEmailFrequency('daily');
+    toast.info('Settings reset to defaults', { title: 'Reset' });
+  };
+
+  if (loading) {
+    return (
+      <div className="settings-content">
+        <div className="loading-state">
+          <div className="spinner-border" role="status">
+            <span className="sr-only">Loading...</span>
+          </div>
+          <p>Loading notification preferences...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="settings-content">
@@ -303,8 +441,18 @@ const NotificationSettings = () => {
         </div>
 
         <div className="mt-4">
-          <button className="btn btn-primary">Save Changes</button>
-          <button className="btn btn-outline-secondary ml-2">
+          <button 
+            className="btn btn-primary" 
+            onClick={handleSaveChanges}
+            disabled={saving}
+          >
+            {saving ? 'Saving...' : 'Save Changes'}
+          </button>
+          <button 
+            className="btn btn-outline-secondary ml-2"
+            onClick={handleResetToDefault}
+            disabled={saving}
+          >
             Reset to Default
           </button>
         </div>

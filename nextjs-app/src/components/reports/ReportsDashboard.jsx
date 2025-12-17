@@ -9,7 +9,7 @@ import '../common/ActionsDropdown.css';
 import InvoicePDFPreviewModal from '../common/InvoicePDFPreviewModal';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 
 // Helper functions outside component to avoid dependency issues
 const getMonday = (date) => {
@@ -55,6 +55,9 @@ const ReportsDashboard = () => {
   // Dropdown state for Actions
   const [openActionsId, setOpenActionsId] = useState(null);
   const [actionsType, setActionsType] = useState(null); // 'client', 'employee', 'invoice'
+  
+  // Export dropdown state
+  const [showExportDropdown, setShowExportDropdown] = useState(false);
   
   // Client modals state
   const [showClientDetailsModal, setShowClientDetailsModal] = useState(false);
@@ -329,8 +332,7 @@ const ReportsDashboard = () => {
   }, [viewMode, weekStart, weekEnd, selectedMonth, selectedYear, fetchReportsData]);
 
   // Export functionality
-  const handleExport = () => {
-    const format = 'excel'; // Default to Excel, can add PDF option later
+  const handleExport = (format) => {
     const dateRange = viewMode === 'week' && weekStart && weekEnd
       ? `${formatDate(weekStart)} - ${formatDate(weekEnd)}`
       : `${selectedMonth} ${selectedYear}`;
@@ -342,6 +344,9 @@ const ReportsDashboard = () => {
     } else if (activeTab === 'invoice') {
       exportInvoiceData(format, dateRange);
     }
+    
+    // Close dropdown after export
+    setShowExportDropdown(false);
   };
 
   const exportClientData = (format, dateRange) => {
@@ -371,7 +376,7 @@ const ReportsDashboard = () => {
     } else if (format === 'pdf') {
       const doc = new jsPDF();
       doc.text(`Client Report - ${dateRange}`, 14, 15);
-      doc.autoTable({
+      autoTable(doc, {
         head: [['Client Name', 'Total Hours', 'Total Employees', 'Total Billed ($)']],
         body: clientReportData.map(client => [
           client.name,
@@ -411,7 +416,7 @@ const ReportsDashboard = () => {
     } else if (format === 'pdf') {
       const doc = new jsPDF();
       doc.text(`Employee Report - ${dateRange}`, 14, 15);
-      doc.autoTable({
+      autoTable(doc, {
         head: [['Employee Name', 'Client', 'Project', 'Total Hours', 'Utilization %']],
         body: employeeReportData.map(emp => [
           emp.name,
@@ -455,7 +460,7 @@ const ReportsDashboard = () => {
     } else if (format === 'pdf') {
       const doc = new jsPDF();
       doc.text(`Invoice Report - ${dateRange}`, 14, 15);
-      doc.autoTable({
+      autoTable(doc, {
         head: [['Invoice ID', 'Client', 'Month', 'Issue Date', 'Hours', 'Amount', 'Status']],
         body: invoiceReportData.map(inv => [
           inv.invoiceNumber || inv.id,
@@ -481,6 +486,9 @@ const ReportsDashboard = () => {
       }
       if (!event.target.closest('.date-range-navigator') && !event.target.closest('.calendar-picker')) {
         setShowCalendar(false);
+      }
+      if (!event.target.closest('.export-dropdown-container')) {
+        setShowExportDropdown(false);
       }
     };
 
@@ -1391,11 +1399,39 @@ const ReportsDashboard = () => {
                       )}
                     </div>
                     
-                    {/* Export Button */}
-                    <button className="export-btn" onClick={handleExport}>
-                      <i className="fas fa-download"></i>
-                      <span>Export</span>
-                    </button>
+                    {/* Export Button with Dropdown */}
+                    <div className="export-dropdown-container">
+                      <button 
+                        className="export-btn" 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowExportDropdown(!showExportDropdown);
+                        }}
+                      >
+                        <i className="fas fa-download"></i>
+                        <span>Export</span>
+                        <i className="fas fa-caret-down" style={{ marginLeft: '8px', fontSize: '12px' }}></i>
+                      </button>
+                      
+                      {showExportDropdown && (
+                        <div className="export-dropdown-menu">
+                          <button
+                            className="export-dropdown-item"
+                            onClick={() => handleExport('excel')}
+                          >
+                            <i className="fas fa-file-excel" style={{ color: '#10b981' }}></i>
+                            <span>Export as Excel</span>
+                          </button>
+                          <button
+                            className="export-dropdown-item"
+                            onClick={() => handleExport('pdf')}
+                          >
+                            <i className="fas fa-file-pdf" style={{ color: '#ef4444' }}></i>
+                            <span>Export as PDF</span>
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                   
                   {/* Calendar Picker */}

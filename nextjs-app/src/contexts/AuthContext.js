@@ -132,15 +132,24 @@ export const AuthProvider = ({ children }) => {
   // Logout function
   const logout = () => {
     if (typeof window !== 'undefined') {
+      // Clear all localStorage items
       localStorage.removeItem('token');
+      localStorage.removeItem('user');
       localStorage.removeItem('userInfo');
       localStorage.removeItem('currentEmployer');
-      localStorage.removeItem('currentTenant'); // Remove legacy item too
+      localStorage.removeItem('currentTenant');
+      localStorage.removeItem('tenants');
+      localStorage.removeItem('staticMode');
+      
+      // Clear all sessionStorage items
+      sessionStorage.clear();
     }
     
+    // Clear all cookies
     Cookies.remove('token');
     Cookies.remove('user');
 
+    // Reset state
     setUser(null);
     setIsAuthenticated(false);
     setCurrentEmployer(null);

@@ -1,5 +1,6 @@
 {
   "/api/auth/[...nextauth]/route": "app/api/auth/[...nextauth]/route.js",
-  "/[subdomain]/clients/page": "app/[subdomain]/clients/page.js",
-  "/[subdomain]/clients/new/page": "app/[subdomain]/clients/new/page.js"
+  "/[subdomain]/timesheets/page": "app/[subdomain]/timesheets/page.js",
+  "/[subdomain]/employees/page": "app/[subdomain]/employees/page.js",
+  "/[subdomain]/invoices/page": "app/[subdomain]/invoices/page.js"
 }

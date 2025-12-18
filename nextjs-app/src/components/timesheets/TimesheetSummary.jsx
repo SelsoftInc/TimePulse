@@ -414,7 +414,7 @@ const TimesheetSummary = () => {
   const totalPages = Math.ceil(filteredTimesheets.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const paginatedTimesheets = filteredTimesheets.slice(startIndex, endIndex);
+  // const paginatedTimesheets = filteredTimesheets.slice(startIndex, endIndex);
 
   const handlePageChange = (page) => {
     setCurrentPage(page);
@@ -603,28 +603,28 @@ const TimesheetSummary = () => {
   
   // Handle invoice button click - check if invoice exists first
   const handleInvoiceButtonClick = async (timesheet) => {
-    if (timesheet.status.toLowerCase() !== 'approved') {
-      showModal({
-        type: 'warning',
-        title: 'Cannot Generate Invoice',
-        message: 'Only approved timesheets can be converted to invoices.'
-      });
-      return;
-    }
-    
-    // Check if invoice already exists
-    setGeneratingInvoiceId(timesheet.id);
-    const existingInvoice = await checkInvoiceExists(timesheet.id);
-    setGeneratingInvoiceId(null);
-    
-    if (existingInvoice) {
-      // Invoice exists - show details modal with full invoice object
-      handleViewInvoiceDetails(existingInvoice);
-    } else {
-      // No invoice - show generate confirmation
-      handleGenerateInvoiceFromTimesheet(timesheet);
-    }
-  };
+    if (timesheet.status.toLowerCase() !== 'approved') {
+      showModal({
+        type: 'warning',
+        title: 'Cannot Generate Invoice',
+        message: 'Only approved timesheets can be converted to invoices.'
+      });
+      return;
+    }
+    
+    // Check if invoice already exists
+    setGeneratingInvoiceId(timesheet.id);
+    const existingInvoice = await checkInvoiceExists(timesheet.id);
+    setGeneratingInvoiceId(null);
+    
+    if (existingInvoice) {
+      // Invoice exists - show details modal with full invoice object
+      handleViewInvoiceDetails(existingInvoice);
+    } else {
+      // No invoice - show generate confirmation
+      handleGenerateInvoiceFromTimesheet(timesheet);
+    }
+  };
   
   // Generate invoice from approved timesheet
   const handleGenerateInvoiceFromTimesheet = async (timesheet) => {
@@ -972,147 +972,580 @@ const TimesheetSummary = () => {
   };
 
   // Prevent hydration mismatch - don't render until mounted
-  if (!isMounted || loading) {
-    return (
-      <div className="nk-conten">
-        <div className="container-fluid">
-          <div className="nk-content-inne">
-            <div className="nk-content-body">
-              <div className="nk-block-head nk-block-head-sm">
-                <div className="nk-block-between">
-                  <div className="nk-block-head-content">
-                    <h1 className="nk-block-title page-title">Timesheets</h1>
-                  </div>
-                </div>
-              </div>
-              <div className="nk-bloc">
-                <div className="card card-bordered">
-                  <div className="card-inne">
-                    <div className="text-center">
-                      <div className="spinner-border" role="status">
-                        <span className="visually-hidden">Loading...</span>
-                      </div>
-                      <p className="mt-2">Loading timesheets...</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // if (!isMounted || loading) {
+  //   return (
+  //     <div className="nk-conten">
+  //       <div className="container-fluid">
+  //         <div className="nk-content-inne">
+  //           <div className="nk-content-body">
+  //             <div className="nk-block-head nk-block-head-sm mb-4">
+  //               <div className="nk-block-between items-center">
+  //                 <div className="nk-block-head-content">
+  //                   <h1 className="nk-block-title page-title">Timesheets</h1>
+  //                 </div>
+  //               </div>
+  //             </div>
+  //             <div className="nk-bloc">
+  //               <div className="card card-bordered">
+  //                 <div className="card-inne">
+  //                   <div className="text-center">
+  //                     <div className="spinner-border" role="status">
+  //                       <span className="visually-hidden">Loading...</span>
+  //                     </div>
+  //                     <p className="mt-2">Loading timesheets...</p>
+  //                   </div>
+  //                 </div>
+  //               </div>
+  //             </div>
+  //           </div>
+  //         </div>
+  //       </div>
+  //     </div>
+  //   );
+  // }
+const paginatedTimesheets = [
+  {
+    id: 1,
+    weekRange: "Dec 02 – Dec 08, 2024",
+    status: "submitted",
+    billableProjectHrs: 38,
+    timeOffHolidayHrs: 2,
+    totalTimeHours: 40,
+  },
+  {
+    id: 2,
+    weekRange: "Nov 25 – Dec 01, 2024",
+    status: "approved",
+    billableProjectHrs: 40,
+    timeOffHolidayHrs: 0,
+    totalTimeHours: 40,
+  },
+  {
+    id: 3,
+    weekRange: "Nov 18 – Nov 24, 2024",
+    status: "rejected",
+    billableProjectHrs: 32,
+    timeOffHolidayHrs: 8,
+    totalTimeHours: 40,
+  },
+];
 
   return (
-    <div className="containe">
-      <div className="container-fluid">
-        <div className="nk-content-inne">
-          <div className="nk-content-body">
-            <div className="nk-block-head nk-block-head-sm">
-              <div className="nk-block-between">
-                <div className="nk-block-head-content">
-                  <h1 className="nk-block-title page-title">Timesheets</h1>
-                  <div className="nk-block-des text-soft">
-                    {/* <p>Timesheet Summary</p> */}
-                    <div className="mt-2 toggle-container">
-                      <label
-                        className="toggle-switch"
-                        title="Switch the Toggle between Internal and External client types"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={clientType === "external"}
-                          onChange={toggleClientType}
-                        />
-                        <span className="slider"></span>
-                        <span className="label-text">
-                          Switch to{" "}
-                          {clientType === "internal"
-                            ? "External Client"
-                            : "Internal Client"}
-                        </span>
-                      </label>
 
-                      <span
-                        className={`badge-toggle ${
-                          clientType === "internal"
-                            ? "badge-internal"
-                            : "badge-external"
-                        } mr-2`}
-                      >
-                        {clientType === "internal"
-                          ? "Internal Client"
-                          : "External Client"}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                {/* Submit Timesheet Button - Matching Employee Dashboard Design */}
-                <button
-                  className="btn-submit-timesheet"
-                  onClick={handleNewTimesheet}
-                  title="Submit a new timesheet"
-                >
-                  <em className="icon ni ni-file-plus"></em>
-                  <span>Submit Timesheet</span>
-                </button>
-              </div>
-            </div>
+  <div
+  className="timesheet-dashboard">
+
+  <div className="max-w-8xl mx-auto space-y-4">
+
+    {/* ================= TIMESHEET HEADER ================= */}
+    <div
+      className="
+        sticky top-4 z-30 mb-9
+        rounded-3xl
+        bg-[#7cbdf2]
+        dark:bg-gradient-to-br dark:from-[#0f1a25] dark:via-[#121f33] dark:to-[#162a45]
+        shadow-sm dark:shadow-[0_8px_24px_rgba(0,0,0,0.6)]
+        backdrop-blur-md
+        border border-transparent dark:border-white/5
+      "
+    >
+      <div className="px-6 py-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-[1fr_auto] md:items-center">
+
+          {/* LEFT */}
+          <div className="relative pl-5">
+            <span className="absolute left-0 top-2 h-10 w-1 rounded-full bg-purple-900 dark:bg-indigo-400" />
+
+            <h1
+              className="
+                text-[2rem]
+                font-bold
+                text-white
+                leading-[1.15]
+                tracking-tight
+                drop-shadow-[0_2px_8px_rgba(0,0,0,0.18)]
+              "
+            >
+              Timesheets
+            </h1>
+
+            <p className="mt-0 text-sm text-white/80 dark:text-slate-300">
+              Track, submit, and manage weekly work logs
+            </p>
           </div>
 
-          <div className="nk-block">
-            <div className="card card-bordered card-stretch">
-              <div className="card-inner-group">
-                <div className="card-inne">
-                  <div className="card-title-group">
-                    <div className="card-title">
-                      <h6 className="title">
-                        <span className="mr-2">
-                          Please follow basic troubleshooting if you face any
-                          discrepancies in accessing the page.
-                        </span>
-                      </h6>
-                    </div>
+          {/* RIGHT */}
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              onClick={handleNewTimesheet}
+              className="
+                flex items-center gap-2.5
+                rounded-full
+                bg-slate-900 px-6 py-3
+                text-sm font-semibold text-white
+                shadow-md
+                transition-all
+                cursor-pointer
+                hover:bg-slate-800 hover:scale-[1.04]
+                active:scale-[0.97]
+                dark:bg-indigo-600 dark:hover:bg-indigo-500
+                dark:shadow-[0_6px_18px_rgba(79,70,229,0.45)]
+              "
+            >
+              <i className="fas fa-plus-circle text-base" />
+              Submit Timesheet
+            </button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    {/* ================= CONTENT ================= */}
+    <div
+      className="
+        bg-white dark:bg-[#0f1a25]
+        rounded-2xl
+        shadow-sm dark:shadow-[0_8px_24px_rgba(0,0,0,0.6)]
+        border border-slate-200 dark:border-white/5
+        overflow-hidden
+      "
+    >
+
+      {/* ===== FILTERS ===== */}
+      <div
+  className="
+    p-4
+    bg-slate-50
+    border-b border-slate-200
+  "
+>
+
+        <p className="mb-2 text-xs font-medium uppercase text-slate-500 dark:text-slate-400">
+          Filters
+        </p>
+
+        <DataGridFilter
+          filters={filterConfig}
+          onFilterChange={handleFilterChange}
+          onClearFilters={handleClearFilters}
+          resultCount={filteredTimesheets.length}
+          totalCount={timesheets.length}
+        />
+      </div>
+
+      {/* ===== TABLE ===== */}
+      <div className="overflow-x-auto max-h-[65vh]">
+        <table className="w-full text-sm">
+          <thead
+            className="
+              sticky top-0 z-10
+              bg-slate-100 dark:bg-[#162233]
+              text-slate-700 dark:text-slate-300
+              border-b border-slate-200 dark:border-white/5
+            "
+          >
+            <tr>
+              <th className="px-4 py-3 text-left">Week Range</th>
+              <th className="px-4 py-3 text-left">Status</th>
+              <th className="px-4 py-3 text-center">Hours</th>
+              <th className="px-4 py-3 text-center">Time Off</th>
+              <th className="px-4 py-3 text-center">Total</th>
+              <th className="px-4 py-3 text-center">Actions</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {paginatedTimesheets.map((timesheet) => (
+              <tr
+                key={timesheet.id}
+                className="
+                  border-b border-slate-200 dark:border-white/5
+                  hover:bg-slate-50 dark:hover:bg-[#1a2736]
+                  transition-colors
+                "
+              >
+                <td className="px-4 py-3 font-medium text-slate-800 dark:text-slate-100">
+                  {timesheet.weekRange}
+                </td>
+
+                <td className="px-4 py-3">
+                  {getStatusBadge(timesheet.status)}
+                </td>
+
+                <td className="px-4 py-3 text-center text-slate-700 dark:text-slate-300">
+                  {timesheet.billableProjectHrs}
+                </td>
+
+                <td className="px-4 py-3 text-center text-slate-700 dark:text-slate-300">
+                  {timesheet.timeOffHolidayHrs}
+                </td>
+
+                <td className="px-4 py-3 text-center font-medium text-slate-800 dark:text-slate-100">
+                  {timesheet.totalTimeHours}
+                </td>
+
+                <td className="px-4 py-3">
+                  <div className="flex items-center justify-center gap-2">
+
+                    <button
+                      onClick={() =>
+                        router.push(
+                          `/${subdomain}/timesheets/submit/${timesheet.id}?mode=edit`
+                        )
+                      }
+                      className="
+                        p-2 rounded-lg
+                        border border-slate-200 dark:border-white/10
+                        text-indigo-600 dark:text-indigo-400
+                        hover:bg-indigo-50 dark:hover:bg-indigo-500/10
+                        transition
+                      "
+                    >
+                      <i className="fas fa-edit" />
+                    </button>
+
+                    <button
+                      onClick={() => handleInvoiceButtonClick(timesheet)}
+                      className="
+                        p-2 rounded-lg
+                        border border-slate-200 dark:border-white/10
+                        text-emerald-600 dark:text-emerald-400
+                        hover:bg-emerald-50 dark:hover:bg-emerald-500/10
+                        transition
+                      "
+                    >
+                      <i className="fas fa-file-invoice" />
+                    </button>
+
+                    <button
+                      onClick={() =>
+                        router.push(
+                          `/${subdomain}/timesheets/submit/${timesheet.id}?mode=view`
+                        )
+                      }
+                      className="
+                        p-2 rounded-lg
+                        border border-slate-200 dark:border-white/10
+                        text-slate-600 dark:text-slate-300
+                        hover:bg-slate-100 dark:hover:bg-white/5
+                        transition
+                      "
+                    >
+                      <i className="fas fa-eye" />
+                    </button>
+
                   </div>
-                </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
-                {/* Filter Section */}
-                <div className="card-inner border-top">
-                  <DataGridFilter
-                    filters={filterConfig}
-                    onFilterChange={handleFilterChange}
-                    onClearFilters={handleClearFilters}
-                    resultCount={filteredTimesheets.length}
-                    totalCount={timesheets.length}
-                  />
-                </div>
+      {/* ===== PAGINATION ===== */}
+      {totalPages > 1 && (
+        <div
+          className="
+            p-4
+            border-t border-slate-200 dark:border-white/5
+            flex flex-col md:flex-row gap-3 md:gap-0
+            md:items-center md:justify-between
+            text-sm
+          "
+        >
+          <span className="text-slate-600 dark:text-slate-400">
+            Showing {startIndex + 1} to{" "}
+            {Math.min(endIndex, filteredTimesheets.length)} of{" "}
+            {filteredTimesheets.length}
+          </span>
 
-                {/* Timesheet Table */}
-                <div className="card-inner">
-                  <div className="table-responsive">
-                    <table className="table table-hove timesheet-summary-tabl">
-                      <thead className="">
-                        <tr>
-                          <th>Week Range</th>
-                          <th>Status</th>
-                          <th>Hours</th>
-                          <th>Time off/Holiday Hrs</th>
-                          <th>Total Time Hours</th>
-                          <th>Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {paginatedTimesheets.map((timesheet) => {
-                          // Debug logging
-                          console.log('📋 Timesheet:', {
-                            id: timesheet.id,
-                            status: timesheet.status,
-                            statusLower: timesheet.status?.toLowerCase(),
-                            isApproved: timesheet.status?.toLowerCase() === "approved" || timesheet.status === "Approved",
-                            weekRange: timesheet.weekRange
-                          });
+          <ul className="flex items-center gap-1">
+            {[...Array(totalPages)].map((_, i) => (
+              <li key={i}>
+                <button
+                  onClick={() => handlePageChange(i + 1)}
+                  className={`px-3 py-1 rounded-lg border text-sm transition
+                    ${
+                      currentPage === i + 1
+                        ? "bg-indigo-600 text-white border-indigo-600"
+                        : "border-slate-300 dark:border-white/10 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5"
+                    }`}
+                >
+                  {i + 1}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+    </div>
+  </div>
+</div>
+
+    // <div className="containe">
+    //   <div className="container-fluid">
+    //     <div className="nk-content-inne">
+    //       <div className="bg-white dark:bg-[#0f1a25] rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-5 mb-6">
+    //     <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+
+    //       {/* Title + Toggle */}
+    //       <div>
+    //         <h1 className="text-xl font-semibold text-slate-800 dark:text-slate-100">
+    //           Timesheets
+    //         </h1>
+
+    //         <div className="mt-3 flex flex-wrap items-center gap-4">
+    //           {/* Toggle */}
+    //           <label className="relative inline-flex items-center cursor-pointer">
+    //             <input
+    //               type="checkbox"
+    //               checked={clientType === "external"}
+    //               onChange={toggleClientType}
+    //               className="sr-only peer"
+    //             />
+    //             <div className="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:bg-indigo-600 transition-all" />
+    //             <span className="ml-3 text-sm text-slate-600 dark:text-slate-300">
+    //               {clientType === "internal"
+    //                 ? "Switch to External Client"
+    //                 : "Switch to Internal Client"}
+    //             </span>
+    //           </label>
+
+    //           {/* Badge */}
+    //           <span
+    //             className={`px-3 py-1 rounded-full text-xs font-medium
+    //               ${
+    //                 clientType === "internal"
+    //                   ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300"
+    //                   : "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300"
+    //               }`}
+    //           >
+    //             {clientType === "internal" ? "Internal Client" : "External Client"}
+    //           </span>
+    //         </div>
+    //       </div>
+
+    //       {/* CTA */}
+    //       <button
+    //         onClick={handleNewTimesheet}
+    //         className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl
+    //                    bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium
+    //                    shadow-sm transition-all"
+    //       >
+    //         <i className="ni ni-file-plus text-base" />
+    //         Submit Timesheet
+    //       </button>
+    //     </div>
+    //   </div>
+    //       <div className="nk-block">
+    //         <div className="card card-bordered card-stretch">
+    //           <div className="card-inner-group">
+    //             {/* <div className="card-inne">
+    //               <div className="card-title-group">
+    //                 <div className="card-title">
+    //                   <h6 className="title">
+    //                     <span className="mr-2">
+    //                       Please follow basic troubleshooting if you face any
+    //                       discrepancies in accessing the page.
+    //                     </span>
+    //                   </h6>
+    //                 </div>
+    //               </div>
+    //             </div> */}
+
+    //             {/* Filter Section */}
+    //             <div className="card-inner border-top">
+    //               <DataGridFilter
+    //                 filters={filterConfig}
+    //                 onFilterChange={handleFilterChange}
+    //                 onClearFilters={handleClearFilters}
+    //                 resultCount={filteredTimesheets.length}
+    //                 totalCount={timesheets.length}
+    //               />
+    //             </div>
+
+    //             {/* Timesheet Table */}
+    //             <div className="card-inner">
+    //               <div className="table-responsive">
+    //                 <table className="table table-hove timesheet-summary-tabl">
+    //                   <thead className="">
+    //                     <tr>
+    //                       <th>Week Range</th>
+    //                       <th>Status</th>
+    //                       <th>Hours</th>
+    //                       <th>Time off/Holiday Hrs</th>
+    //                       <th>Total Time Hours</th>
+    //                       <th>Actions</th>
+    //                     </tr>
+    //                   </thead>
+    //                   <tbody>
+    //                     {paginatedTimesheets.map((timesheet) => {
+    //                       // Debug logging
+    //                       console.log('📋 Timesheet:', {
+    //                         id: timesheet.id,
+    //                         status: timesheet.status,
+    //                         statusLower: timesheet.status?.toLowerCase(),
+    //                         isApproved: timesheet.status?.toLowerCase() === "approved" || timesheet.status === "Approved",
+    //                         weekRange: timesheet.weekRange
+    //                       });
                           
+    //                       return (
+    //                       <tr key={timesheet.id} className="timesheet-row">
+    //                         <td>
+    //                           <div className="timesheet-week">
+    //                             <span className="week-range">
+    //                               {timesheet.weekRange}
+    //                             </span>
+    //                           </div>
+    //                         </td>
+    //                         <td>{getStatusBadge(timesheet.status)}</td>
+    //                         <td className="text-center">
+    //                           <span className="hours-value">
+    //                             {timesheet.billableProjectHrs}
+    //                           </span>
+    //                         </td>
+    //                         <td className="text-center">
+    //                           <span className="hours-value">
+    //                             {timesheet.timeOffHolidayHrs}
+    //                           </span>
+    //                         </td>
+    //                         <td className="text-center">
+    //                           <span className="hours-value">
+    //                             {timesheet.totalTimeHours}
+    //                           </span>
+    //                         </td>
+    //                         <td className="text-center actions-column">
+    //                           <div className="btn-group btn-group-sm" role="group" style={{display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'nowrap'}}>
+    //                             {/* Edit Button - Always visible */}
+    //                             <button
+    //                               className="btn btn-outline-primary btn-sm"
+    //                               onClick={(e) => {
+    //                                 e.stopPropagation();
+    //                                 router.push(`/${subdomain}/timesheets/submit/${timesheet.id}?mode=edit`);
+    //                               }}
+    //                               title="Edit Timesheet"
+    //                               style={{minWidth: '55px', padding: '4px 8px', fontSize: '13px'}}
+    //                             >
+    //                               <em className="icon ni ni-edit" style={{marginRight: '4px'}}></em>
+    //                               Edit
+    //                             </button>
+
+    //                             {/* Invoice Button - For employees: only show if invoice exists. For admin/manager: show for all approved */}
+    //                             {timesheet.status === "Approved" && (
+    //                               (user?.role === 'admin' || user?.role === 'manager') ? (
+    //                                 // Admin/Manager: Show button for all approved timesheets (can generate or view)
+    //                                 <button
+    //                                   className="btn btn-outline-success btn-sm"
+    //                                   onClick={(e) => {
+    //                                     e.stopPropagation();
+    //                                     handleInvoiceButtonClick(timesheet);
+    //                                   }}
+    //                                   disabled={generatingInvoiceId === timesheet.id}
+    //                                   title={generatingInvoiceId === timesheet.id ? "Checking..." : "View or Generate Invoice"}
+    //                                   style={{minWidth: '70px', padding: '4px 8px', fontSize: '13px'}}
+    //                                 >
+    //                                   {generatingInvoiceId === timesheet.id ? (
+    //                                     <span>
+    //                                       <em className="icon ni ni-loader" style={{animation: 'spin 1s linear infinite'}}></em>
+    //                                     </span>
+    //                                   ) : (
+    //                                     <>
+    //                                       <em className="icon ni ni-file-docs" style={{marginRight: '4px'}}></em>
+    //                                       Invoice
+    //                                     </>
+    //                                   )}
+    //                                 </button>
+    //                               ) : (
+    //                                 // Employee: Only show if invoice exists (view-only)
+    //                                 timesheetsWithInvoices.has(timesheet.id) && (
+    //                                   <button
+    //                                     className="btn btn-outline-info btn-sm"
+    //                                     onClick={(e) => {
+    //                                       e.stopPropagation();
+    //                                       handleViewInvoiceForEmployee(timesheet);
+    //                                     }}
+    //                                     title="View Invoice"
+    //                                     style={{minWidth: '70px', padding: '4px 8px', fontSize: '13px'}}
+    //                                   >
+    //                                     <em className="icon ni ni-eye" style={{marginRight: '4px'}}></em>
+    //                                     Invoice
+    //                                   </button>
+    //                                 )
+    //                               )
+    //                             )}
+
+    //                             {/* View Button - Always visible */}
+    //                             <button
+    //                               className="btn btn-outline-info btn-sm"
+    //                               onClick={(e) => {
+    //                                 e.stopPropagation();
+    //                                 router.push(`/${subdomain}/timesheets/submit/${timesheet.id}?mode=view`);
+    //                               }}
+    //                               title="View Details"
+    //                               style={{minWidth: '55px', padding: '4px 8px', fontSize: '13px'}}
+    //                             >
+    //                               <em className="icon ni ni-eye" style={{marginRight: '4px'}}></em>
+    //                               View
+    //                             </button>
+    //                           </div>
+    //                         </td>
+    //                       </tr>
+    //                       );
+    //                     })}
+    //                   </tbody>
+    //                 </table>
+    //               </div>
+    //             </div>
+
+    //             {/* Pagination */}
+    //             {totalPages > 1 && (
+    //               <div className="card-inner border-top">
+    //                 <div className="d-flex justify-content-between align-items-center">
+    //                   <div className="text-muted">
+    //                     Showing {startIndex + 1} to {Math.min(endIndex, filteredTimesheets.length)} of {filteredTimesheets.length} entries
+    //                   </div>
+    //                   <ul className="pagination pagination-sm">
+    //                     <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
+    //                       <button 
+    //                         className="page-link" 
+    //                         onClick={() => handlePageChange(currentPage - 1)}
+    //                         disabled={currentPage === 1}
+    //                       >
+    //                         <em className="icon ni ni-chevron-left"></em>
+    //                         <span style={{marginLeft: '4px'}}>Previous</span>
+    //                       </button>
+    //                     </li>
+    //                     {[...Array(totalPages)].map((_, i) => (
+    //                       <li key={i} className={`page-item ${currentPage === i + 1 ? 'active' : ''}`}>
+    //                         <button 
+    //                           className="page-link" 
+    //                           onClick={() => handlePageChange(i + 1)}
+    //                         >
+    //                           {i + 1}
+    //                         </button>
+    //                       </li>
+    //                     ))}
+    //                     <li className={`page-item ${currentPage === totalPages ? 'disabled' : ''}`}>
+    //                       <button 
+    //                         className="page-link" 
+    //                         onClick={() => handlePageChange(currentPage + 1)}
+    //                         disabled={currentPage === totalPages}
+    //                       >
+    //                         <span style={{marginRight: '4px'}}>Next</span>
+    //                         <em className="icon ni ni-chevron-right"></em>
+    //                       </button>
+    //                     </li>
+    //                   </ul>
+    //                 </div>
+    //               </div>
+    //             )}
+    //           </div>
+    //         </div>
+    //       </div>
+    //     </div>
+    //   </div>
                           return (
                           <tr key={timesheet.id} className="timesheet-row">
                             <td>
@@ -1270,382 +1703,382 @@ const TimesheetSummary = () => {
         </div>
       </div>
       
-      {/* Modal for alerts and confirmations */}
-      <Modal
-        isOpen={modalConfig.isOpen}
-        onClose={closeModal}
-        type={modalConfig.type}
-        title={modalConfig.title}
-        message={modalConfig.message}
-        details={modalConfig.details}
-        showCancel={modalConfig.showCancel}
-        onConfirm={modalConfig.onConfirm}
-        confirmText={modalConfig.confirmText}
-        cancelText={modalConfig.cancelText}
-      />
+    //   {/* Modal for alerts and confirmations */}
+    //   <Modal
+    //     isOpen={modalConfig.isOpen}
+    //     onClose={closeModal}
+    //     type={modalConfig.type}
+    //     title={modalConfig.title}
+    //     message={modalConfig.message}
+    //     details={modalConfig.details}
+    //     showCancel={modalConfig.showCancel}
+    //     onConfirm={modalConfig.onConfirm}
+    //     confirmText={modalConfig.confirmText}
+    //     cancelText={modalConfig.cancelText}
+    //   />
       
-      {/* Invoice Details Modal */}
-      {invoiceModalOpen && selectedInvoice && (
-        <div className="invoice-modal-overlay" onClick={() => setInvoiceModalOpen(false)}>
-          <div className="invoice-modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="invoice-modal-header">
-              <div className="invoice-modal-title">
-                <em className="icon ni ni-file-docs" style={{fontSize: '24px', color: '#10b981'}}></em>
-                <h3>Invoice Details</h3>
-              </div>
-              <button 
-                className="invoice-modal-close"
-                onClick={() => setInvoiceModalOpen(false)}
-                title="Close"
-              >
-                ×
-              </button>
-            </div>
+    //   {/* Invoice Details Modal */}
+    //   {invoiceModalOpen && selectedInvoice && (
+    //     <div className="invoice-modal-overlay" onClick={() => setInvoiceModalOpen(false)}>
+    //       <div className="invoice-modal-content" onClick={(e) => e.stopPropagation()}>
+    //         <div className="invoice-modal-header">
+    //           <div className="invoice-modal-title">
+    //             <em className="icon ni ni-file-docs" style={{fontSize: '24px', color: '#10b981'}}></em>
+    //             <h3>Invoice Details</h3>
+    //           </div>
+    //           <button 
+    //             className="invoice-modal-close"
+    //             onClick={() => setInvoiceModalOpen(false)}
+    //             title="Close"
+    //           >
+    //             ×
+    //           </button>
+    //         </div>
             
-            <div className="invoice-modal-body">
-              {/* Invoice Header Info */}
-              <div className="invoice-info-grid">
-                <div className="invoice-info-card">
-                  <div className="invoice-info-label">
-                    <em className="icon ni ni-file-text"></em>
-                    Invoice Number
-                  </div>
-                  <div className="invoice-info-value">{selectedInvoice.invoiceNumber}</div>
-                </div>
+    //         <div className="invoice-modal-body">
+    //           {/* Invoice Header Info */}
+    //           <div className="invoice-info-grid">
+    //             <div className="invoice-info-card">
+    //               <div className="invoice-info-label">
+    //                 <em className="icon ni ni-file-text"></em>
+    //                 Invoice Number
+    //               </div>
+    //               <div className="invoice-info-value">{selectedInvoice.invoiceNumber}</div>
+    //             </div>
                 
-                <div className="invoice-info-card">
-                  <div className="invoice-info-label">
-                    <em className="icon ni ni-calendar"></em>
-                    Invoice Date
-                  </div>
-                  <div className="invoice-info-value">
-                    {selectedInvoice.invoiceDate 
-                      ? new Date(selectedInvoice.invoiceDate).toLocaleDateString('en-US', { 
-                          year: 'numeric', 
-                          month: 'short', 
-                          day: '2-digit' 
-                        })
-                      : 'N/A'
-                    }
-                  </div>
-                </div>
+    //             <div className="invoice-info-card">
+    //               <div className="invoice-info-label">
+    //                 <em className="icon ni ni-calendar"></em>
+    //                 Invoice Date
+    //               </div>
+    //               <div className="invoice-info-value">
+    //                 {selectedInvoice.invoiceDate 
+    //                   ? new Date(selectedInvoice.invoiceDate).toLocaleDateString('en-US', { 
+    //                       year: 'numeric', 
+    //                       month: 'short', 
+    //                       day: '2-digit' 
+    //                     })
+    //                   : 'N/A'
+    //                 }
+    //               </div>
+    //             </div>
                 
-                <div className="invoice-info-card">
-                  <div className="invoice-info-label">
-                    <em className="icon ni ni-calendar-check"></em>
-                    Due Date
-                  </div>
-                  <div className="invoice-info-value">
-                    {selectedInvoice.dueDate 
-                      ? new Date(selectedInvoice.dueDate).toLocaleDateString('en-US', { 
-                          year: 'numeric', 
-                          month: 'short', 
-                          day: '2-digit' 
-                        })
-                      : 'N/A'
-                    }
-                  </div>
-                </div>
+    //             <div className="invoice-info-card">
+    //               <div className="invoice-info-label">
+    //                 <em className="icon ni ni-calendar-check"></em>
+    //                 Due Date
+    //               </div>
+    //               <div className="invoice-info-value">
+    //                 {selectedInvoice.dueDate 
+    //                   ? new Date(selectedInvoice.dueDate).toLocaleDateString('en-US', { 
+    //                       year: 'numeric', 
+    //                       month: 'short', 
+    //                       day: '2-digit' 
+    //                     })
+    //                   : 'N/A'
+    //                 }
+    //               </div>
+    //             </div>
                 
-                <div className="invoice-info-card">
-                  <div className="invoice-info-label">
-                    <em className="icon ni ni-sign-dollar"></em>
-                    Total Amount
-                  </div>
-                  <div className="invoice-info-value invoice-amount">
-                    ${parseFloat(selectedInvoice.totalAmount || selectedInvoice.total || 0).toFixed(2)}
-                  </div>
-                </div>
-              </div>
+    //             <div className="invoice-info-card">
+    //               <div className="invoice-info-label">
+    //                 <em className="icon ni ni-sign-dollar"></em>
+    //                 Total Amount
+    //               </div>
+    //               <div className="invoice-info-value invoice-amount">
+    //                 ${parseFloat(selectedInvoice.totalAmount || selectedInvoice.total || 0).toFixed(2)}
+    //               </div>
+    //             </div>
+    //           </div>
               
-              {/* Vendor & Employee Info */}
-              <div className="invoice-details-section">
-                <h4 className="invoice-section-title">
-                  <em className="icon ni ni-users"></em>
-                  Vendor & Employee Information
-                </h4>
-                <div className="invoice-details-grid">
-                  <div className="invoice-detail-item">
-                    <span className="invoice-detail-label">Vendor:</span>
-                    <span className="invoice-detail-value">
-                      {(() => {
-                        console.log('🔍 Full selectedInvoice object:', selectedInvoice);
-                        console.log('🔍 selectedInvoice.vendor:', selectedInvoice.vendor);
-                        console.log('🔍 selectedInvoice.employee:', selectedInvoice.employee);
-                        console.log('🔍 selectedInvoice.timesheet:', selectedInvoice.timesheet);
+    //           {/* Vendor & Employee Info */}
+    //           <div className="invoice-details-section">
+    //             <h4 className="invoice-section-title">
+    //               <em className="icon ni ni-users"></em>
+    //               Vendor & Employee Information
+    //             </h4>
+    //             <div className="invoice-details-grid">
+    //               <div className="invoice-detail-item">
+    //                 <span className="invoice-detail-label">Vendor:</span>
+    //                 <span className="invoice-detail-value">
+    //                   {(() => {
+    //                     console.log('🔍 Full selectedInvoice object:', selectedInvoice);
+    //                     console.log('🔍 selectedInvoice.vendor:', selectedInvoice.vendor);
+    //                     console.log('🔍 selectedInvoice.employee:', selectedInvoice.employee);
+    //                     console.log('🔍 selectedInvoice.timesheet:', selectedInvoice.timesheet);
                         
-                        // Try multiple paths to find vendor name
-                        const vendorName = selectedInvoice.vendor?.name || 
-                                          selectedInvoice.timesheet?.employee?.vendor?.name || 
-                                          selectedInvoice.employee?.vendor?.name;
-                        console.log('🏢 Final vendor name:', vendorName);
-                        return vendorName || 'N/A';
-                      })()}
-                    </span>
-                  </div>
-                  <div className="invoice-detail-item">
-                    <span className="invoice-detail-label">Vendor Email:</span>
-                    <span className="invoice-detail-value">
-                      {(() => {
-                        // Try multiple paths to find vendor email
-                        const vendorEmail = selectedInvoice.vendor?.email || 
-                                           selectedInvoice.timesheet?.employee?.vendor?.email || 
-                                           selectedInvoice.employee?.vendor?.email;
-                        console.log('📧 Final vendor email:', vendorEmail);
-                        return vendorEmail || 'N/A';
-                      })()}
-                    </span>
-                  </div>
-                  <div className="invoice-detail-item">
-                    <span className="invoice-detail-label">Employee:</span>
-                    <span className="invoice-detail-value">
-                      {(() => {
-                        // Try multiple paths to find employee name
-                        let employeeName = 'N/A';
-                        if (selectedInvoice.employee?.firstName && selectedInvoice.employee?.lastName) {
-                          employeeName = `${selectedInvoice.employee.firstName} ${selectedInvoice.employee.lastName}`;
-                        } else if (selectedInvoice.timesheet?.employee?.firstName && selectedInvoice.timesheet?.employee?.lastName) {
-                          employeeName = `${selectedInvoice.timesheet.employee.firstName} ${selectedInvoice.timesheet.employee.lastName}`;
-                        }
-                        console.log('👤 Final employee name:', employeeName);
-                        return employeeName;
-                      })()}
-                    </span>
-                  </div>
-                  <div className="invoice-detail-item">
-                    <span className="invoice-detail-label">Employee Email:</span>
-                    <span className="invoice-detail-value">
-                      {(() => {
-                        // Try multiple paths to find employee email
-                        const employeeEmail = selectedInvoice.employee?.email || 
-                                             selectedInvoice.timesheet?.employee?.email;
-                        console.log('📧 Final employee email:', employeeEmail);
-                        return employeeEmail || 'N/A';
-                      })()}
-                    </span>
-                  </div>
-                </div>
-              </div>
+    //                     // Try multiple paths to find vendor name
+    //                     const vendorName = selectedInvoice.vendor?.name || 
+    //                                       selectedInvoice.timesheet?.employee?.vendor?.name || 
+    //                                       selectedInvoice.employee?.vendor?.name;
+    //                     console.log('🏢 Final vendor name:', vendorName);
+    //                     return vendorName || 'N/A';
+    //                   })()}
+    //                 </span>
+    //               </div>
+    //               <div className="invoice-detail-item">
+    //                 <span className="invoice-detail-label">Vendor Email:</span>
+    //                 <span className="invoice-detail-value">
+    //                   {(() => {
+    //                     // Try multiple paths to find vendor email
+    //                     const vendorEmail = selectedInvoice.vendor?.email || 
+    //                                        selectedInvoice.timesheet?.employee?.vendor?.email || 
+    //                                        selectedInvoice.employee?.vendor?.email;
+    //                     console.log('📧 Final vendor email:', vendorEmail);
+    //                     return vendorEmail || 'N/A';
+    //                   })()}
+    //                 </span>
+    //               </div>
+    //               <div className="invoice-detail-item">
+    //                 <span className="invoice-detail-label">Employee:</span>
+    //                 <span className="invoice-detail-value">
+    //                   {(() => {
+    //                     // Try multiple paths to find employee name
+    //                     let employeeName = 'N/A';
+    //                     if (selectedInvoice.employee?.firstName && selectedInvoice.employee?.lastName) {
+    //                       employeeName = `${selectedInvoice.employee.firstName} ${selectedInvoice.employee.lastName}`;
+    //                     } else if (selectedInvoice.timesheet?.employee?.firstName && selectedInvoice.timesheet?.employee?.lastName) {
+    //                       employeeName = `${selectedInvoice.timesheet.employee.firstName} ${selectedInvoice.timesheet.employee.lastName}`;
+    //                     }
+    //                     console.log('👤 Final employee name:', employeeName);
+    //                     return employeeName;
+    //                   })()}
+    //                 </span>
+    //               </div>
+    //               <div className="invoice-detail-item">
+    //                 <span className="invoice-detail-label">Employee Email:</span>
+    //                 <span className="invoice-detail-value">
+    //                   {(() => {
+    //                     // Try multiple paths to find employee email
+    //                     const employeeEmail = selectedInvoice.employee?.email || 
+    //                                          selectedInvoice.timesheet?.employee?.email;
+    //                     console.log('📧 Final employee email:', employeeEmail);
+    //                     return employeeEmail || 'N/A';
+    //                   })()}
+    //                 </span>
+    //               </div>
+    //             </div>
+    //           </div>
               
-              {/* Timesheet Period */}
-              {selectedInvoice.timesheet && (
-                <div className="invoice-details-section">
-                  <h4 className="invoice-section-title">
-                    <em className="icon ni ni-calendar-alt"></em>
-                    Timesheet Period
-                  </h4>
-                  <div className="invoice-details-grid">
-                    <div className="invoice-detail-item">
-                      <span className="invoice-detail-label">Week Start:</span>
-                      <span className="invoice-detail-value">
-                        {new Date(selectedInvoice.timesheet.weekStart).toLocaleDateString('en-US', {
-                          year: 'numeric',
-                          month: 'short',
-                          day: '2-digit'
-                        })}
-                      </span>
-                    </div>
-                    <div className="invoice-detail-item">
-                      <span className="invoice-detail-label">Week End:</span>
-                      <span className="invoice-detail-value">
-                        {new Date(selectedInvoice.timesheet.weekEnd).toLocaleDateString('en-US', {
-                          year: 'numeric',
-                          month: 'short',
-                          day: '2-digit'
-                        })}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              )}
+    //           {/* Timesheet Period */}
+    //           {selectedInvoice.timesheet && (
+    //             <div className="invoice-details-section">
+    //               <h4 className="invoice-section-title">
+    //                 <em className="icon ni ni-calendar-alt"></em>
+    //                 Timesheet Period
+    //               </h4>
+    //               <div className="invoice-details-grid">
+    //                 <div className="invoice-detail-item">
+    //                   <span className="invoice-detail-label">Week Start:</span>
+    //                   <span className="invoice-detail-value">
+    //                     {new Date(selectedInvoice.timesheet.weekStart).toLocaleDateString('en-US', {
+    //                       year: 'numeric',
+    //                       month: 'short',
+    //                       day: '2-digit'
+    //                     })}
+    //                   </span>
+    //                 </div>
+    //                 <div className="invoice-detail-item">
+    //                   <span className="invoice-detail-label">Week End:</span>
+    //                   <span className="invoice-detail-value">
+    //                     {new Date(selectedInvoice.timesheet.weekEnd).toLocaleDateString('en-US', {
+    //                       year: 'numeric',
+    //                       month: 'short',
+    //                       day: '2-digit'
+    //                     })}
+    //                   </span>
+    //                 </div>
+    //               </div>
+    //             </div>
+    //           )}
               
-              {/* Line Items */}
-              {selectedInvoice.lineItems && selectedInvoice.lineItems.length > 0 && (
-                <div className="invoice-details-section">
-                  <h4 className="invoice-section-title">
-                    <em className="icon ni ni-list"></em>
-                    Line Items
-                  </h4>
-                  <div className="invoice-line-items">
-                    <table className="invoice-items-table">
-                      <thead>
-                        <tr>
-                          <th>Description</th>
-                          <th>Hours</th>
-                          <th>Rate</th>
-                          <th>Amount</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {selectedInvoice.lineItems.map((item, index) => (
-                          <tr key={index}>
-                            <td>{item.description}</td>
-                            <td>{item.hours || item.quantity || 0}</td>
-                            <td>${parseFloat(item.rate || item.hourlyRate || 0).toFixed(2)}</td>
-                            <td>${parseFloat(item.amount || 0).toFixed(2)}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
+    //           {/* Line Items */}
+    //           {selectedInvoice.lineItems && selectedInvoice.lineItems.length > 0 && (
+    //             <div className="invoice-details-section">
+    //               <h4 className="invoice-section-title">
+    //                 <em className="icon ni ni-list"></em>
+    //                 Line Items
+    //               </h4>
+    //               <div className="invoice-line-items">
+    //                 <table className="invoice-items-table">
+    //                   <thead>
+    //                     <tr>
+    //                       <th>Description</th>
+    //                       <th>Hours</th>
+    //                       <th>Rate</th>
+    //                       <th>Amount</th>
+    //                     </tr>
+    //                   </thead>
+    //                   <tbody>
+    //                     {selectedInvoice.lineItems.map((item, index) => (
+    //                       <tr key={index}>
+    //                         <td>{item.description}</td>
+    //                         <td>{item.hours || item.quantity || 0}</td>
+    //                         <td>${parseFloat(item.rate || item.hourlyRate || 0).toFixed(2)}</td>
+    //                         <td>${parseFloat(item.amount || 0).toFixed(2)}</td>
+    //                       </tr>
+    //                     ))}
+    //                   </tbody>
+    //                 </table>
+    //               </div>
+    //             </div>
+    //           )}
               
-              {/* Status & Payment Info */}
-              <div className="invoice-details-section">
-                <h4 className="invoice-section-title">
-                  <em className="icon ni ni-info"></em>
-                  Status Information
-                </h4>
-                <div className="invoice-details-grid">
-                  <div className="invoice-detail-item">
-                    <span className="invoice-detail-label">Invoice Status:</span>
-                    <span className="invoice-detail-value">
-                      <span className={`badge badge-${selectedInvoice.status === 'paid' ? 'success' : selectedInvoice.status === 'pending' ? 'warning' : 'info'}`}>
-                        {selectedInvoice.status || 'Pending'}
-                      </span>
-                    </span>
-                  </div>
-                  <div className="invoice-detail-item">
-                    <span className="invoice-detail-label">Payment Status:</span>
-                    <span className="invoice-detail-value">
-                      <span className={`badge badge-${selectedInvoice.paymentStatus === 'paid' ? 'success' : 'warning'}`}>
-                        {selectedInvoice.paymentStatus || 'Pending'}
-                      </span>
-                    </span>
-                  </div>
-                </div>
-              </div>
+    //           {/* Status & Payment Info */}
+    //           <div className="invoice-details-section">
+    //             <h4 className="invoice-section-title">
+    //               <em className="icon ni ni-info"></em>
+    //               Status Information
+    //             </h4>
+    //             <div className="invoice-details-grid">
+    //               <div className="invoice-detail-item">
+    //                 <span className="invoice-detail-label">Invoice Status:</span>
+    //                 <span className="invoice-detail-value">
+    //                   <span className={`badge badge-${selectedInvoice.status === 'paid' ? 'success' : selectedInvoice.status === 'pending' ? 'warning' : 'info'}`}>
+    //                     {selectedInvoice.status || 'Pending'}
+    //                   </span>
+    //                 </span>
+    //               </div>
+    //               <div className="invoice-detail-item">
+    //                 <span className="invoice-detail-label">Payment Status:</span>
+    //                 <span className="invoice-detail-value">
+    //                   <span className={`badge badge-${selectedInvoice.paymentStatus === 'paid' ? 'success' : 'warning'}`}>
+    //                     {selectedInvoice.paymentStatus || 'Pending'}
+    //                   </span>
+    //                 </span>
+    //               </div>
+    //             </div>
+    //           </div>
               
-              {/* Notes */}
-              {selectedInvoice.notes && (
-                <div className="invoice-details-section">
-                  <h4 className="invoice-section-title">
-                    <em className="icon ni ni-notes"></em>
-                    Notes
-                  </h4>
-                  <div className="invoice-notes">
-                    {selectedInvoice.notes}
-                  </div>
-                </div>
-              )}
-            </div>
+    //           {/* Notes */}
+    //           {selectedInvoice.notes && (
+    //             <div className="invoice-details-section">
+    //               <h4 className="invoice-section-title">
+    //                 <em className="icon ni ni-notes"></em>
+    //                 Notes
+    //               </h4>
+    //               <div className="invoice-notes">
+    //                 {selectedInvoice.notes}
+    //               </div>
+    //             </div>
+    //           )}
+    //         </div>
             
-            <div className="invoice-modal-footer">
-              <button 
-                className="btn btn-secondary"
-                onClick={() => setInvoiceModalOpen(false)}
-              >
-                <em className="icon ni ni-cross"></em>
-                Close
-              </button>
-              {/* Edit Invoice button removed - not needed for timesheet module */}
-              <button 
-                className="btn btn-success"
-                onClick={() => {
-                  setInvoiceModalOpen(false);
-                  handleViewInvoicePDF(selectedInvoice.id);
-                }}
-                style={{backgroundColor: '#10b981'}}
-              >
-                <em className="icon ni ni-eye"></em>
-                Preview PDF
-              </button>
-              <button 
-                className="btn btn-info"
-                onClick={async () => {
-                  try {
-                    // Fetch PDF data and trigger download
-                    const response = await axios.get(
-                      `${API_BASE}/api/invoices/${selectedInvoice.id}/pdf-data?tenantId=${user.tenantId}`
-                    );
-                    if (response.data.success) {
-                      setInvoiceForPDF(response.data.invoice);
-                      // Trigger download via InvoicePDFPreviewModal
-                      setPdfPreviewOpen(true);
-                      setTimeout(() => {
-                        // Auto-trigger download
-                        document.querySelector('.invoice-pdf-download-btn')?.click();
-                      }, 500);
-                    }
-                  } catch (error) {
-                    console.error('Error downloading invoice:', error);
-                    showModal({
-                      type: 'error',
-                      title: 'Error',
-                      message: 'Failed to download invoice.'
-                    });
-                  }
-                }}
-              >
-                <em className="icon ni ni-download"></em>
-                Download Invoice
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+    //         <div className="invoice-modal-footer">
+    //           <button 
+    //             className="btn btn-secondary"
+    //             onClick={() => setInvoiceModalOpen(false)}
+    //           >
+    //             <em className="icon ni ni-cross"></em>
+    //             Close
+    //           </button>
+    //           {/* Edit Invoice button removed - not needed for timesheet module */}
+    //           <button 
+    //             className="btn btn-success"
+    //             onClick={() => {
+    //               setInvoiceModalOpen(false);
+    //               handleViewInvoicePDF(selectedInvoice.id);
+    //             }}
+    //             style={{backgroundColor: '#10b981'}}
+    //           >
+    //             <em className="icon ni ni-eye"></em>
+    //             Preview PDF
+    //           </button>
+    //           <button 
+    //             className="btn btn-info"
+    //             onClick={async () => {
+    //               try {
+    //                 // Fetch PDF data and trigger download
+    //                 const response = await axios.get(
+    //                   `${API_BASE}/api/invoices/${selectedInvoice.id}/pdf-data?tenantId=${user.tenantId}`
+    //                 );
+    //                 if (response.data.success) {
+    //                   setInvoiceForPDF(response.data.invoice);
+    //                   // Trigger download via InvoicePDFPreviewModal
+    //                   setPdfPreviewOpen(true);
+    //                   setTimeout(() => {
+    //                     // Auto-trigger download
+    //                     document.querySelector('.invoice-pdf-download-btn')?.click();
+    //                   }, 500);
+    //                 }
+    //               } catch (error) {
+    //                 console.error('Error downloading invoice:', error);
+    //                 showModal({
+    //                   type: 'error',
+    //                   title: 'Error',
+    //                   message: 'Failed to download invoice.'
+    //                 });
+    //               }
+    //             }}
+    //           >
+    //             <em className="icon ni ni-download"></em>
+    //             Download Invoice
+    //           </button>
+    //         </div>
+    //       </div>
+    //     </div>
+    //   )}
       
-      {/* Edit Invoice Modal - REMOVED (not needed for timesheet module) */}
+    //   {/* Edit Invoice Modal - REMOVED (not needed for timesheet module) */}
       
-      {/* PDF Preview Modal */}
-      {pdfPreviewOpen && invoiceForPDF && (
-        <InvoicePDFPreviewModal
-          invoice={invoiceForPDF}
-          onClose={() => {
-            setPdfPreviewOpen(false);
-            setInvoiceForPDF(null);
-          }}
-          onUpdate={async (updatedInvoice) => {
-            try {
-              console.log('💾 Saving invoice updates to backend...', updatedInvoice);
+    //   {/* PDF Preview Modal */}
+    //   {pdfPreviewOpen && invoiceForPDF && (
+    //     <InvoicePDFPreviewModal
+    //       invoice={invoiceForPDF}
+    //       onClose={() => {
+    //         setPdfPreviewOpen(false);
+    //         setInvoiceForPDF(null);
+    //       }}
+    //       onUpdate={async (updatedInvoice) => {
+    //         try {
+    //           console.log('💾 Saving invoice updates to backend...', updatedInvoice);
               
-              // Save to backend
-              const response = await axios.put(
-                `${API_BASE}/api/invoices/${updatedInvoice.id}?tenantId=${user.tenantId}`,
-                {
-                  ...updatedInvoice,
-                  tenantId: user.tenantId
-                },
-                {
-                  headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                  }
-                }
-              );
+    //           // Save to backend
+    //           const response = await axios.put(
+    //             `${API_BASE}/api/invoices/${updatedInvoice.id}?tenantId=${user.tenantId}`,
+    //             {
+    //               ...updatedInvoice,
+    //               tenantId: user.tenantId
+    //             },
+    //             {
+    //               headers: {
+    //                 'Content-Type': 'application/json',
+    //                 'Authorization': `Bearer ${localStorage.getItem('token')}`
+    //               }
+    //             }
+    //           );
               
-              if (response.data.success) {
-                console.log('✅ Invoice saved successfully!');
+    //           if (response.data.success) {
+    //             console.log('✅ Invoice saved successfully!');
                 
-                // Close the modal
-                setPdfPreviewOpen(false);
-                setInvoiceForPDF(null);
+    //             // Close the modal
+    //             setPdfPreviewOpen(false);
+    //             setInvoiceForPDF(null);
                 
-                // Show success message
-                showModal({
-                  type: 'success',
-                  title: 'Success',
-                  message: 'Invoice updated successfully!'
-                });
+    //             // Show success message
+    //             showModal({
+    //               type: 'success',
+    //               title: 'Success',
+    //               message: 'Invoice updated successfully!'
+    //             });
                 
-                // Reload timesheet data to refresh the invoice list
-                await loadTimesheetData();
-              } else {
-                throw new Error(response.data.message || 'Failed to save invoice');
-              }
-            } catch (error) {
-              console.error('❌ Error saving invoice:', error);
-              showModal({
-                type: 'error',
-                title: 'Error',
-                message: error.response?.data?.message || error.message || 'Failed to save invoice'
-              });
-            }
-          }}
-        />
-      )}
-    </div>
+    //             // Reload timesheet data to refresh the invoice list
+    //             await loadTimesheetData();
+    //           } else {
+    //             throw new Error(response.data.message || 'Failed to save invoice');
+    //           }
+    //         } catch (error) {
+    //           console.error('❌ Error saving invoice:', error);
+    //           showModal({
+    //             type: 'error',
+    //             title: 'Error',
+    //             message: error.response?.data?.message || error.message || 'Failed to save invoice'
+    //           });
+    //         }
+    //       }}
+    //     />
+    //   )}
+    // </div>
   );
 };
 

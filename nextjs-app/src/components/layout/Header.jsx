@@ -193,9 +193,9 @@ const Header = ({ toggleSidebar }) => {
     <div className="flex items-center w-full">
 
             {/* Notification Bell - All Notifications */}
-            <div className="header-action-item">
+            {/* <div className="header-action-item">
               <NotificationBell />
-            </div>
+            </div> */}
       {/* Mobile Menu Toggle */}
       <button
         onClick={toggleSidebar}
@@ -219,6 +219,27 @@ const Header = ({ toggleSidebar }) => {
         />
       </div>
 
+<div className="hidden md:flex flex-1 max-w-xl mx-4">
+        <div className="relative w-full">
+          <i className="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-white text-sm"></i>
+
+          <input
+            type="text"
+            placeholder="Search employees, clients, timesheets..."
+            className="w-full pl-9 pr-4 py-2 rounded-lg bg-white/10 
+              text-white placeholder-gray-400 text-sm
+              focus:outline-none focus:ring-2 focus:ring-[#4da3c7]
+              transition"
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                // TODO: trigger global search
+                console.log("Search:", e.target.value);
+              }
+            }}
+          />
+        </div>
+      </div>
+
       {/* Tools */}
       <div className="flex items-center gap-4 ml-auto">
 
@@ -232,14 +253,14 @@ const Header = ({ toggleSidebar }) => {
           <TimesheetAlerts subdomain={subdomain} />
         </div>
 
-        {/* Theme Toggle */}
+        {/* Theme Toggle
         <div
           className="p-2 rounded-lg hover:bg-white/10 cursor-pointer text-[#466D81]"
           onClick={toggleTheme}
           title={`Switch to ${isDarkMode ? "light" : "dark"} mode text-white`}
         >
           <i className={`fas ${isDarkMode ? "fa-sun" : "fa-moon"} text-xl text-white`}></i>
-        </div>
+        </div> */}
 
         {/* Settings */}
         {(user?.role === "admin" || user?.role === "approver") && (

@@ -30,7 +30,18 @@ router.get('/', async (req, res) => {
     // Decrypt implementation partner data before sending to frontend
     const decryptedPartners = implementationPartners.map(partner => {
       const plainPartner = partner.toJSON ? partner.toJSON() : partner;
-      return DataEncryptionService.decryptImplementationPartnerData(plainPartner);
+      const decrypted = DataEncryptionService.decryptImplementationPartnerData(plainPartner);
+      
+      // Extract address fields from JSONB
+      if (plainPartner.address) {
+        decrypted.address = plainPartner.address.street || '';
+        decrypted.city = plainPartner.address.city || '';
+        decrypted.state = plainPartner.address.state || '';
+        decrypted.zip = plainPartner.address.zip || '';
+        decrypted.country = plainPartner.address.country || '';
+      }
+      
+      return decrypted;
     });
 
     res.json({ success: true, implementationPartners: decryptedPartners, total: decryptedPartners.length });
@@ -50,10 +61,19 @@ router.get('/:id', async (req, res) => {
     const implementationPartner = await ImplementationPartner.findOne({ where: { id, tenantId } });
     if (!implementationPartner) return res.status(404).json({ error: 'Implementation Partner not found' });
 
+    const plainPartner = implementationPartner.toJSON ? implementationPartner.toJSON() : implementationPartner;
+    
     // Decrypt implementation partner data before sending to frontend
-    const decryptedPartner = DataEncryptionService.decryptImplementationPartnerData(
-      implementationPartner.toJSON ? implementationPartner.toJSON() : implementationPartner
-    );
+    const decryptedPartner = DataEncryptionService.decryptImplementationPartnerData(plainPartner);
+
+    // Extract address fields from JSONB
+    if (plainPartner.address) {
+      decryptedPartner.address = plainPartner.address.street || '';
+      decryptedPartner.city = plainPartner.address.city || '';
+      decryptedPartner.state = plainPartner.address.state || '';
+      decryptedPartner.zip = plainPartner.address.zip || '';
+      decryptedPartner.country = plainPartner.address.country || '';
+    }
 
     res.json({ success: true, implementationPartner: decryptedPartner });
   } catch (err) {
@@ -65,16 +85,21 @@ router.get('/:id', async (req, res) => {
 // Create implementation partner
 router.post('/', async (req, res) => {
   try {
-    const { tenantId, ...payloadData } = req.body;
+    const { tenantId, address, city, state, zip, country, ...payloadData } = req.body;
     let payload = payloadData;
     if (!tenantId) return res.status(400).json({ error: 'Tenant ID is required' });
+
+    console.log('📥 Creating implementation partner with data:', { tenantId, ...payloadData });
 
     const errors = validateImplementationPartnerPayload(payload);
     if (Object.keys(errors).length > 0) {
       return res.status(400).json({ error: 'Validation failed', details: errors });
     }
 
-    // Check for duplicate name within tenant
+    // Encrypt implementation partner data before saving to database
+    payload = DataEncryptionService.encryptImplementationPartnerData(payload);
+
+    // Check for duplicate name within tenant (using encrypted name)
     const existingPartner = await ImplementationPartner.findOne({
       where: { tenantId, name: payload.name }
     });
@@ -82,18 +107,36 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: 'Implementation Partner with this name already exists' });
     }
 
-    // Encrypt implementation partner data before saving to database
-    payload = DataEncryptionService.encryptImplementationPartnerData(payload);
+    // Construct address JSONB object
+    const addressObj = {
+      street: address || '',
+      city: city || '',
+      state: state || '',
+      zip: zip || '',
+      country: country || ''
+    };
 
     const implementationPartner = await ImplementationPartner.create({
       ...payload,
+      address: addressObj,
       tenantId
     });
+
+    console.log('✅ Implementation partner created:', implementationPartner.id);
 
     // Decrypt implementation partner data for response
     const decryptedPartner = DataEncryptionService.decryptImplementationPartnerData(
       implementationPartner.toJSON ? implementationPartner.toJSON() : implementationPartner
     );
+
+    // Add address fields back to response
+    if (implementationPartner.address) {
+      decryptedPartner.address = implementationPartner.address.street || '';
+      decryptedPartner.city = implementationPartner.address.city || '';
+      decryptedPartner.state = implementationPartner.address.state || '';
+      decryptedPartner.zip = implementationPartner.address.zip || '';
+      decryptedPartner.country = implementationPartner.address.country || '';
+    }
 
     res.status(201).json({ success: true, implementationPartner: decryptedPartner });
   } catch (err) {
@@ -105,7 +148,7 @@ router.post('/', async (req, res) => {
 // Update implementation partner
 router.put('/:id', async (req, res) => {
   try {
-    const { tenantId, ...payloadData } = req.body;
+    const { tenantId, address, city, state, zip, country, ...payloadData } = req.body;
     let payload = payloadData;
     const { id } = req.params;
     if (!tenantId) return res.status(400).json({ error: 'Tenant ID is required' });
@@ -118,25 +161,45 @@ router.put('/:id', async (req, res) => {
     const implementationPartner = await ImplementationPartner.findOne({ where: { id, tenantId } });
     if (!implementationPartner) return res.status(404).json({ error: 'Implementation Partner not found' });
 
+    // Encrypt implementation partner data before checking duplicate
+    const encryptedPayload = DataEncryptionService.encryptImplementationPartnerData(payload);
+
     // Check for duplicate name within tenant (excluding current record)
-    if (payload.name && payload.name !== implementationPartner.name) {
+    if (payload.name && encryptedPayload.name !== implementationPartner.name) {
       const existingPartner = await ImplementationPartner.findOne({
-        where: { tenantId, name: payload.name, id: { [sequelize.Sequelize.Op.ne]: id } }
+        where: { tenantId, name: encryptedPayload.name, id: { [sequelize.Sequelize.Op.ne]: id } }
       });
       if (existingPartner) {
         return res.status(400).json({ error: 'Implementation Partner with this name already exists' });
       }
     }
 
-    // Encrypt implementation partner data before updating in database
-    payload = DataEncryptionService.encryptImplementationPartnerData(payload);
+    // Construct address JSONB object
+    const addressObj = {
+      street: address || '',
+      city: city || '',
+      state: state || '',
+      zip: zip || '',
+      country: country || ''
+    };
 
-    await implementationPartner.update(payload);
+    await implementationPartner.update({
+      ...encryptedPayload,
+      address: addressObj
+    });
     
     // Decrypt implementation partner data for response
-    const decryptedPartner = DataEncryptionService.decryptImplementationPartnerData(
-      implementationPartner.toJSON ? implementationPartner.toJSON() : implementationPartner
-    );
+    const plainPartner = implementationPartner.toJSON ? implementationPartner.toJSON() : implementationPartner;
+    const decryptedPartner = DataEncryptionService.decryptImplementationPartnerData(plainPartner);
+    
+    // Extract address fields from JSONB
+    if (plainPartner.address) {
+      decryptedPartner.address = plainPartner.address.street || '';
+      decryptedPartner.city = plainPartner.address.city || '';
+      decryptedPartner.state = plainPartner.address.state || '';
+      decryptedPartner.zip = plainPartner.address.zip || '';
+      decryptedPartner.country = plainPartner.address.country || '';
+    }
     
     res.json({ success: true, implementationPartner: decryptedPartner });
   } catch (err) {

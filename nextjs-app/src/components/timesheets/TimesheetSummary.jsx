@@ -6,6 +6,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import DataGridFilter from '../common/DataGridFilter';
 import Modal from '../common/Modal';
 import InvoicePDFPreviewModal from '../common/InvoicePDFPreviewModal';
+import InvoiceDetailsModal from '../common/InvoiceDetailsModal';
 import { useAuth } from '@/contexts/AuthContext';
 import axios from 'axios';
 import { API_BASE } from '@/config/api';
@@ -1276,6 +1277,17 @@ const TimesheetSummary = () => {
           setInvoiceForPDF(null);
         }}
         invoice={invoiceForPDF}
+      />
+    )}
+
+    {/* Invoice Details Modal */}
+    {invoiceModalOpen && selectedInvoice && (
+      <InvoiceDetailsModal
+        invoice={selectedInvoice}
+        onClose={() => {
+          setInvoiceModalOpen(false);
+          setSelectedInvoice(null);
+        }}
       />
     )}
   </div>

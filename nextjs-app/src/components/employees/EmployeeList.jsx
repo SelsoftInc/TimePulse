@@ -579,7 +579,7 @@ const EmployeeList = () => {
   const handleDeleteEmployee = (employee) => {
     showConfirmation({
       title: "Delete Employee",
-      message: `Are you sure you want to delete ${employee.name}? This action cannot be undone.`,
+      message: `Are you sure you want to delete ${employee.name}? This action can be done.`,
       confirmText: "Delete",
       cancelText: "Cancel",
       type: "error",

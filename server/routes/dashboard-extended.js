@@ -5,6 +5,7 @@
 
 const express = require("express");
 const { sequelize } = require("../models");
+const DataEncryptionService = require("../services/DataEncryptionService");
 const router = express.Router();
 
 // Helper function to convert BigInt and Decimal to numbers
@@ -198,7 +199,22 @@ router.get("/revenue-by-client", async (req, res) => {
       type: sequelize.QueryTypes.SELECT,
     });
 
-    res.json({ clients: convertToNumber(clients) });
+    // Decrypt client names and emails
+    const decryptedClients = clients.map(client => {
+      const decryptedData = DataEncryptionService.decryptClientData({
+        clientName: client.client_name,
+        email: client.email,
+        legalName: client.company
+      });
+      return {
+        ...client,
+        client_name: decryptedData.clientName || client.client_name,
+        email: decryptedData.email || client.email,
+        company: decryptedData.legalName || client.company
+      };
+    });
+
+    res.json({ clients: convertToNumber(decryptedClients) });
   } catch (error) {
     console.error("Revenue by Client API Error:", error);
     res.status(500).json({
@@ -271,6 +287,8 @@ router.get("/employees", async (req, res) => {
     const query = `
       SELECT
         id,
+        first_name,
+        last_name,
         first_name || ' ' || last_name AS name,
         email,
         department,
@@ -286,7 +304,19 @@ router.get("/employees", async (req, res) => {
       type: sequelize.QueryTypes.SELECT,
     });
 
-    res.json({ employees: convertToNumber(employees) });
+    // Decrypt employee names
+    const decryptedEmployees = employees.map(emp => {
+      const decryptedFirstName = emp.first_name ? DataEncryptionService.decryptEmployeeData({ firstName: emp.first_name }).firstName : '';
+      const decryptedLastName = emp.last_name ? DataEncryptionService.decryptEmployeeData({ lastName: emp.last_name }).lastName : '';
+      return {
+        ...emp,
+        firstName: decryptedFirstName,
+        lastName: decryptedLastName,
+        name: `${decryptedFirstName} ${decryptedLastName}`.trim()
+      };
+    });
+
+    res.json({ employees: convertToNumber(decryptedEmployees) });
   } catch (error) {
     console.error("Dashboard Employees API Error:", error);
     res.status(500).json({

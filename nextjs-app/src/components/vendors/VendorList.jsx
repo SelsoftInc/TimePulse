@@ -425,7 +425,7 @@ const VendorList = () => {
         <ConfirmDialog
           open={confirmOpen}
           title="Delete Vendor"
-          message="Are you sure you want to delete this vendor? This action cannot be undone."
+          message="Are you sure you want to delete this vendor? This action can be done."
           confirmLabel="Delete"
           cancelLabel="Cancel"
           onConfirm={() => pendingDeleteId && handleDelete(pendingDeleteId)}

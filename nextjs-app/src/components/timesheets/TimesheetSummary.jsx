@@ -1546,6 +1546,162 @@ const paginatedTimesheets = [
     //       </div>
     //     </div>
     //   </div>
+                          return (
+                          <tr key={timesheet.id} className="timesheet-row">
+                            <td>
+                              <div className="timesheet-week">
+                                <span className="week-range">
+                                  {timesheet.weekRange}
+                                </span>
+                              </div>
+                            </td>
+                            <td>{getStatusBadge(timesheet.status)}</td>
+                            <td className="text-center">
+                              <span className="hours-value">
+                                {timesheet.billableProjectHrs}
+                              </span>
+                            </td>
+                            <td className="text-center">
+                              <span className="hours-value">
+                                {timesheet.timeOffHolidayHrs}
+                              </span>
+                            </td>
+                            <td className="text-center">
+                              <span className="hours-value">
+                                {timesheet.totalTimeHours}
+                              </span>
+                            </td>
+                            <td className="text-center actions-column">
+                              <div className="btn-group btn-group-sm" role="group" style={{display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'nowrap'}}>
+                                {/* Edit Button - Always visible */}
+                                <button
+                                  className="btn btn-outline-primary btn-sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    router.push(`/${subdomain}/timesheets/submit/${timesheet.id}?mode=edit`);
+                                  }}
+                                  title="Edit Timesheet"
+                                  style={{minWidth: '55px', padding: '4px 8px', fontSize: '13px'}}
+                                >
+                                  <em className="icon ni ni-edit" style={{marginRight: '4px'}}></em>
+                                  Edit
+                                </button>
+
+                                {/* Invoice Button - For employees: only show if invoice exists. For admin/manager: show for all approved */}
+                                {timesheet.status === "Approved" && (
+                                  (user?.role === 'admin' || user?.role === 'manager') ? (
+                                    // Admin/Manager: Show button for all approved timesheets (can generate or view)
+                                    <button
+                                      className="btn btn-outline-success btn-sm"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleInvoiceButtonClick(timesheet);
+                                      }}
+                                      disabled={generatingInvoiceId === timesheet.id}
+                                      title={generatingInvoiceId === timesheet.id ? "Checking..." : "View or Generate Invoice"}
+                                      style={{minWidth: '70px', padding: '4px 8px', fontSize: '13px'}}
+                                    >
+                                      {generatingInvoiceId === timesheet.id ? (
+                                        <span>
+                                          <em className="icon ni ni-loader" style={{animation: 'spin 1s linear infinite'}}></em>
+                                        </span>
+                                      ) : (
+                                        <>
+                                          <em className="icon ni ni-file-docs" style={{marginRight: '4px'}}></em>
+                                          Invoice
+                                        </>
+                                      )}
+                                    </button>
+                                  ) : (
+                                    // Employee: Only show if invoice exists (view-only)
+                                    timesheetsWithInvoices.has(timesheet.id) && (
+                                      <button
+                                        className="btn btn-outline-info btn-sm"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleViewInvoiceForEmployee(timesheet);
+                                        }}
+                                        title="View Invoice"
+                                        style={{minWidth: '70px', padding: '4px 8px', fontSize: '13px'}}
+                                      >
+                                        <em className="icon ni ni-eye" style={{marginRight: '4px'}}></em>
+                                        Invoice
+                                      </button>
+                                    )
+                                  )
+                                )}
+
+                                {/* View Button - Always visible */}
+                                <button
+                                  className="btn btn-outline-info btn-sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    router.push(`/${subdomain}/timesheets/submit/${timesheet.id}?mode=view`);
+                                  }}
+                                  title="View Details"
+                                  style={{minWidth: '55px', padding: '4px 8px', fontSize: '13px'}}
+                                >
+                                  <em className="icon ni ni-eye" style={{marginRight: '4px'}}></em>
+                                  View
+                                </button>
+                              </div>
+                            </td>
+                            
+                          </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <div className="card-inner border-top">
+                    <div className="d-flex justify-content-between align-items-center">
+                      <div className="text-muted">
+                        Showing {startIndex + 1} to {Math.min(endIndex, filteredTimesheets.length)} of {filteredTimesheets.length} entries
+                      </div>
+                      <ul className="pagination pagination-sm">
+                        <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
+                          <button 
+                            className="page-link" 
+                            onClick={() => handlePageChange(currentPage - 1)}
+                            disabled={currentPage === 1}
+                          >
+                            <em className="icon ni ni-chevron-left"></em>
+                            <span style={{marginLeft: '4px'}}>Previous</span>
+                          </button>
+                        </li>
+                        {[...Array(totalPages)].map((_, i) => (
+                          <li key={i} className={`page-item ${currentPage === i + 1 ? 'active' : ''}`}>
+                            <button 
+                              className="page-link" 
+                              onClick={() => handlePageChange(i + 1)}
+                            >
+                              {i + 1}
+                            </button>
+                          </li>
+                        ))}
+                        <li className={`page-item ${currentPage === totalPages ? 'disabled' : ''}`}>
+                          <button 
+                            className="page-link" 
+                            onClick={() => handlePageChange(currentPage + 1)}
+                            disabled={currentPage === totalPages}
+                          >
+                            <span style={{marginRight: '4px'}}>Next</span>
+                            <em className="icon ni ni-chevron-right"></em>
+                          </button>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
       
     //   {/* Modal for alerts and confirmations */}
     //   <Modal

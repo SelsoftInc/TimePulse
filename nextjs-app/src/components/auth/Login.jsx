@@ -46,19 +46,14 @@ const Login = () => {
     checkOAuthConfig();
   }, [searchParams]);
 
-  // Load saved credentials on component mount
+  // Load saved email only (NOT password for security)
   useEffect(() => {
     const savedEmail = localStorage.getItem("rememberedEmail");
-    const savedPassword = localStorage.getItem("rememberedPassword");
     if (savedEmail) {
       setFormData({
         email: savedEmail,
-        password: savedPassword || ""});
-      setRememberMe(true);
-    } else {
-      setFormData({
-        email: "",
         password: ""});
+      setRememberMe(true);
     }
   }, []);
 
@@ -95,36 +90,31 @@ const Login = () => {
       setError("Session expired, please login again");
     }
 
-    // Handle remember me functionality - store both email and password
+    // Handle remember me functionality - store ONLY email (NOT password for security)
     if (rememberMe) {
       localStorage.setItem("rememberedEmail", formData.email);
-      localStorage.setItem("rememberedPassword", formData.password);
     } else {
       localStorage.removeItem("rememberedEmail");
-      localStorage.removeItem("rememberedPassword");
     }
 
     const persistAuth = (token, userInfo, tenantInfo) => {
-      // If rememberMe is ON -> persist in localStorage
-      // If rememberMe is OFF -> session-only in sessionStorage
-      const store = rememberMe ? localStorage : sessionStorage;
-      const other = rememberMe ? sessionStorage : localStorage;
+      // Always use localStorage for auth data (Remember Me only affects email prefill)
+      // Clear any old session storage data
+      sessionStorage.removeItem('token');
+      sessionStorage.removeItem('user');
+      sessionStorage.removeItem('userInfo');
+      sessionStorage.removeItem('tenants');
+      sessionStorage.removeItem('currentTenant');
+      sessionStorage.removeItem('currentEmployer');
 
-      other.removeItem('token');
-      other.removeItem('user');
-      other.removeItem('userInfo');
-      other.removeItem('tenants');
-      other.removeItem('currentTenant');
-      other.removeItem('currentEmployer');
-
-      store.setItem('token', token);
-      store.setItem('user', JSON.stringify(userInfo));
-      store.setItem('userInfo', JSON.stringify(userInfo));
+      localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify(userInfo));
+      localStorage.setItem('userInfo', JSON.stringify(userInfo));
 
       if (tenantInfo) {
-        store.setItem('tenants', JSON.stringify([tenantInfo]));
-        store.setItem('currentTenant', JSON.stringify(tenantInfo));
-        store.setItem('currentEmployer', JSON.stringify(tenantInfo));
+        localStorage.setItem('tenants', JSON.stringify([tenantInfo]));
+        localStorage.setItem('currentTenant', JSON.stringify(tenantInfo));
+        localStorage.setItem('currentEmployer', JSON.stringify(tenantInfo));
       }
     };
 

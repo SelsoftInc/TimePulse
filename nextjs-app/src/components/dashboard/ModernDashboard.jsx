@@ -86,6 +86,7 @@ const ModernDashboard = () => {
       
       setLastRefresh(new Date());
       console.log('✅ Dashboard data refreshed successfully');
+      console.log('📊 Dashboard Data:', { scope, selectedEmployeeId, kpis: mainData.kpis, revenueByClient: revenueByClient.clients });
     } catch (error) {
       console.error("Error fetching dashboard data:", error);
     } finally {
@@ -327,6 +328,52 @@ const ModernDashboard = () => {
               }`
             : "Employee View"}
         </span>
+      <div className="dashboard-header">
+        <div className="dashboard-title-section">
+          <h1 className="dashboard-title">Dashboard</h1>
+          <div className="dashboard-subtitle">
+            {/* <i className="fas fa-calendar-alt"></i> */}
+            {/* <span>
+              {dateRange.start.toLocaleDateString("en-US", {
+                weekday: "short",
+                month: "short",
+                day: "numeric",
+                year: "numeric"})}{" "}
+              -{" "}
+              {dateRange.end.toLocaleDateString("en-US", {
+                weekday: "short",
+                month: "short",
+                day: "numeric",
+                year: "numeric"})}
+            </span> */}
+            <span className="scope-indicator">
+              {scope === "company" ? (
+                <>
+                  <i className="fas fa-building"></i>
+                  Company Overview
+                </>
+              ) : (
+                <>
+                  <i className="fas fa-user"></i>
+                  {selectedEmployeeId
+                    ? `Employee: ${
+                        employees.find(
+                          (emp) => emp.id === selectedEmployeeId
+                        )?.firstName || "Selected"
+                      } ${
+                        employees.find(
+                          (emp) => emp.id === selectedEmployeeId
+                        )?.lastName || ""
+                      }`
+                    : "Employee View"}
+                </>
+              )}
+            </span>
+            {/* <span className="refresh-indicator">
+              Refreshed: {formatRelativeTime(lastRefresh)}
+            </span> */}
+          </div>
+        </div>
 
         {/* Refresh */}
         {/* <span className="rounded-full bg-white/40 px-3 py-1 text-[11px]">
@@ -452,7 +499,7 @@ const ModernDashboard = () => {
 
     <div className="flex items-center justify-center flex-col gap-1 mt-2">
       <div className="text-2xl md:text-3xl font-extrabold text-gray-900 dark:text-white">{getActiveEmployees()}</div>
-      <div className="text-xs text-gray-500 dark:text-gray-400">+2 this month</div>
+      <div className="text-xs text-gray-500 dark:text-gray-400"></div>
     </div>
 
     <div className="mt-3 grid grid-cols-2 gap-3 text-xs text-gray-600 dark:text-gray-300">

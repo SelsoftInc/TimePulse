@@ -16,9 +16,10 @@ import './Header.css';
 const Header = ({ toggleSidebar }) => {
   const router = useRouter();
   const { subdomain } = useParams();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const { isDarkMode, toggleTheme } = useTheme();
   const [tenantLogo, setTenantLogo] = useState(null);
+  const [showUserMenu, setShowUserMenu] = useState(false);
 
   // Theme is now managed by ThemeContext, so we don't need this useEffect
 
@@ -153,6 +154,37 @@ const Header = ({ toggleSidebar }) => {
     return "TP";
   };
 
+  // Handle logout
+  const handleLogout = () => {
+    // Clear all authentication data
+    logout();
+    
+    // Clear Remember Me data
+    localStorage.removeItem('rememberedEmail');
+    localStorage.removeItem('rememberedPassword');
+    
+    // Clear session storage
+    sessionStorage.clear();
+    
+    // Clear static mode flag
+    localStorage.removeItem('staticMode');
+    
+    // Redirect to login
+    router.push('/login');
+  };
+
+  // Close user menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showUserMenu && !event.target.closest('.user-menu-container')) {
+        setShowUserMenu(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showUserMenu]);
+
   return (
     <header className="w-full h-[60px] flex items-center 
   bg-[#05253D] shadow-md transition-colors duration-300">
@@ -245,13 +277,51 @@ const Header = ({ toggleSidebar }) => {
           </div>
         )}
 
-        {/* User Avatar */}
-        <div
-          onClick={goToProfileSettings}
-          className="w-8 h-8 rounded-full bg-gray-200 text-[#466D81] font-bold flex items-center justify-center cursor-pointer"
-          title="Edit Profile"
-        >
-          {getUserInitials()}
+        {/* User Avatar with Dropdown */}
+        <div className="user-menu-container relative">
+          <div
+            onClick={() => setShowUserMenu(!showUserMenu)}
+            className="w-8 h-8 rounded-full bg-gray-200 text-[#466D81] font-bold flex items-center justify-center cursor-pointer hover:bg-gray-300 transition-colors"
+            title="User Menu"
+          >
+            {getUserInitials()}
+          </div>
+
+          {/* Dropdown Menu */}
+          {showUserMenu && (
+            <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg py-2 z-50">
+              <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-700">
+                <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                  {user?.name || 'User'}
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  {user?.email || ''}
+                </p>
+              </div>
+              
+              <button
+                onClick={() => {
+                  setShowUserMenu(false);
+                  goToProfileSettings();
+                }}
+                className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+              >
+                <i className="fas fa-user"></i>
+                Profile Settings
+              </button>
+              
+              <button
+                onClick={() => {
+                  setShowUserMenu(false);
+                  handleLogout();
+                }}
+                className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+              >
+                <i className="fas fa-sign-out-alt"></i>
+                Logout
+              </button>
+            </div>
+          )}
         </div>
 
       </div>

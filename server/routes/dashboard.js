@@ -29,11 +29,8 @@ router.get("/", async (req, res) => {
       return res.status(400).json({ error: "Tenant ID is required" });
     }
 
-    if (scope === "employee" && !employeeId) {
-      return res
-        .status(400)
-        .json({ error: "Employee ID required for employee scope" });
-    }
+    // If employee scope but no employeeId, show consolidated employee data (all employees)
+    // This is similar to company view but from employee perspective
 
     // Parse dates
     const fromDate = from ? new Date(from) : null;
@@ -86,12 +83,13 @@ router.get("/", async (req, res) => {
               COALESCE(SUM(CASE WHEN t.status IN ('submitted','approved') THEN t.total_hours * (COALESCE(c.hourly_rate,0) - COALESCE(e.hourly_rate,0)) END), 0) AS gross_margin,
               COALESCE(SUM(CASE WHEN t.status IN ('submitted','approved') THEN t.total_hours END), 0) AS total_hours,
               COUNT(CASE WHEN t.status = 'submitted' THEN 1 END) AS ts_pending,
-              COUNT(CASE WHEN t.status = 'approved' THEN 1 END) AS ts_approved
+              COUNT(CASE WHEN t.status = 'approved' THEN 1 END) AS ts_approved,
+              (SELECT COUNT(*) FROM employees WHERE tenant_id = '${tenantId}' AND status = 'active') AS active_employees
             FROM timesheets t
             LEFT JOIN clients c ON c.id = t.client_id
             LEFT JOIN employees e ON e.id = t.employee_id
             WHERE t.tenant_id = '${tenantId}'
-              AND t.employee_id = '${employeeId}'
+              ${employeeId ? `AND t.employee_id = '${employeeId}'` : ''}
               ${dateFilter}
             `,
             {

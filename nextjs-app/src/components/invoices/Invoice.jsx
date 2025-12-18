@@ -489,7 +489,8 @@ const InvoiceUploadModal = ({ onClose, onUpload }) => {
         className="modal-content invoice-upload-modal"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="modal-header">
+        <div className="modal-header bg-[linear-gradient(to_right,#F0FDFA_0%,#CFFBFE_100%)]
+">
           <h4>Upload New Invoice</h4>
           <button className="modal-close" onClick={onClose}>
             ×
@@ -696,7 +697,7 @@ const InvoiceUploadModal = ({ onClose, onUpload }) => {
           <button className="btn-outline" onClick={onClose}>
             Cancel
           </button>
-          <button className="btn-primary" onClick={handleSubmit}>
+          <button className="btn-outline !bg-teal-400" onClick={handleSubmit}>
             Upload Invoice
           </button>
         </div>
@@ -1187,13 +1188,17 @@ const Invoice = () => {
   // Prevent hydration mismatch - don't render until mounted
   if (!isMounted) {
     return (
-      <div className="nk-conten">
-        <div className="container-flui">
-          <div className="nk-content-innr">
-            <div className="nk-content-body">
-              <div style={{ padding: '40px', textAlign: 'center' }}>
-                <div className="spinner-border text-primary" role="status">
-                  <span className="sr-only">Loading...</span>
+      <div className="min-h-screen bg-[var(--dashboard-bg)] p-6 text-[var(--dashboard-text-color)] font-[Inter,_-apple-system,_BlinkMacSystemFont,_'Segoe_UI',_Roboto,_sans-serif] transition-colors duration-300 ease-in-out">
+        <div className="nk-conten">
+          <div className="container-flui">
+            <div className="nk-content-innr">
+              <div className="nk-content-body">
+                <div className="mx-auto w-full max-w-7xl">
+                  <div style={{ padding: '40px', textAlign: 'center' }}>
+                    <div className="spinner-border text-primary" role="status">
+                      <span className="sr-only">Loading...</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1203,279 +1208,301 @@ const Invoice = () => {
     );
   }
 
+  
   return (
-    <div className="nk-conten">
-      <div className="container-flui">
-        <div className="nk-content-innr">
-          <div className="nk-content-body">
-            <div className="nk-block-head nk-block-head-sm">
-              <div className="nk-block-between">
-                <div className="nk-block-head-content">
-                  <h3 className="nk-block-title page-title">
-                    Invoice Management
-                  </h3>
-                  <div className="nk-block-des text-soft">
-                    <p>Manage and track all vendor invoices</p>
-                  </div>
-                </div>
+    <div className="invoicelist-dashboard">
+      <div className="nk-conten">
+        <div className="container-flui">
+          
+          {/* <div className="nk-content-innr"> */}
+            {/* <div className="nk-content-body"> */}
+              <div className="mx-auto max-w-8xl space-y-4">
+                {/* <div className="rounded-2xl border border-slate-200 bg-white shadow-sm"> */}
+                  {/* <div className="p-5 sm:p-6"> */}
+                    {/* <div className="nk-block-head nk-block-head-sm !m-0 !p-0"> */}
+                      <div
+  className="
+    sticky top-4 z-30 mb-9
+    rounded-3xl
+    bg-[#7cbdf2]
+    dark:bg-gradient-to-br dark:from-[#0f1a25] dark:via-[#121f33] dark:to-[#162a45]
+    shadow-sm dark:shadow-[0_8px_24px_rgba(0,0,0,0.6)]
+    backdrop-blur-md
+    border border-transparent dark:border-white/5
+  "
+>
+  <div className="px-6 py-4">
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-[1fr_auto] md:items-center">
 
-                <div className="nk-block-head-content">
-                  <div className="toggle-wrap nk-block-tools-toggle">
-                    <ul className="nk-block-tools g-3">
-                      <li>
+      {/* LEFT */}
+      <div className="relative pl-5">
+        <span className="absolute left-0 top-2 h-10 w-1 rounded-full bg-purple-900 dark:bg-emerald-400" />
+
+        <h1
+          className="
+            text-[2rem]
+            font-bold
+            text-white
+            leading-[1.15]
+            tracking-tight
+            drop-shadow-[0_2px_8px_rgba(0,0,0,0.18)]
+          "
+        >
+          Invoice Management
+        </h1>
+
+        <p className="mt-0 text-sm text-white/80 dark:text-slate-300">
+          Create, manage, and track vendor invoices
+        </p>
+      </div>
+
+      {/* RIGHT */}
+      <div className="flex flex-wrap items-center gap-3">
+        <button
+          onClick={handleCreateInvoice}
+          className="
+            flex items-center gap-2.5
+            rounded-full
+            bg-slate-900 px-6 py-3
+            text-sm font-semibold text-white
+            shadow-md
+            transition-all
+            cursor-pointer
+            hover:bg-slate-800 hover:scale-[1.04]
+            active:scale-[0.97]
+            dark:bg-emerald-600 dark:hover:bg-emerald-500
+            dark:shadow-[0_6px_18px_rgba(16,185,129,0.45)]
+          "
+        >
+          <i className="fas fa-plus-circle text-base" />
+          Generate Invoice
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+                      {/* <div className="mt-5 h-px bg-slate-200" /> */}
+
+                      {/* Summary Cards */}
+<div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+  
+  {/* Total Invoiced */}
+  <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+    <p className="text-xs font-medium text-slate-500">
+      Total Invoiced
+    </p>
+
+    <p className="mt-1 text-lg font-bold text-slate-900">
+      $
+      {invoices
+        .reduce((sum, inv) => sum + (parseFloat(inv.total) || 0), 0)
+        .toLocaleString('en-US', { minimumFractionDigits: 2 })}
+    </p>
+
+    <p className="mt-0.5 text-xs text-slate-400">
+      This Month
+    </p>
+  </div>
+
+  {/* Payments Received */}
+  <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+    <p className="text-xs font-medium text-slate-500">
+      Payments Received
+    </p>
+
+    <p className="mt-1 text-lg font-bold text-emerald-600">
+      $
+      {invoices
+        .filter(inv => inv.status.toLowerCase() === 'paid')
+        .reduce((sum, inv) => sum + (parseFloat(inv.total) || 0), 0)
+        .toLocaleString('en-US', { minimumFractionDigits: 2 })}
+    </p>
+
+    <p className="mt-0.5 text-xs text-slate-400">
+      This Month
+    </p>
+  </div>
+
+  {/* Outstanding Amount */}
+  <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+    <p className="text-xs font-medium text-slate-500">
+      Outstanding Amount
+    </p>
+
+    <p className="mt-1 text-lg font-bold text-rose-600">
+      $
+      {invoices
+        .filter(inv => inv.status.toLowerCase() !== 'paid')
+        .reduce((sum, inv) => sum + (parseFloat(inv.total) || 0), 0)
+        .toLocaleString('en-US', { minimumFractionDigits: 2 })}
+    </p>
+
+    <p className="mt-0.5 text-xs text-slate-400">
+      Total
+    </p>
+  </div>
+
+</div>
+
+                    {/* </div> */}
+                  {/* </div> */}
+                {/* </div> */}
+
+                
+          </div>
+
+          <div className="mt-10 rounded-2xl border border-slate-200 bg-white shadow-sm">
+
+  {/* Tabs + Filters */}
+  <div className="flex flex-col gap-4 border-b border-slate-200 px-6 py-4 md:flex-row md:items-center md:justify-between">
+    {/* Tabs */}
+    <div className="flex gap-3">
+      <button
+        onClick={() => setActiveTab("invoices")}
+        className={`rounded-lg px-4 py-2 text-sm font-semibold transition
+          ${activeTab === "invoices"
+            ? "bg-cyan-900 text-white shadow"
+            : "bg-slate-100 text-slate-700 hover:bg-slate-200"}
+        `}
+      >
+        Invoices
+      </button>
+    </div>
+
+    {/* Filters */}
+    <div className="flex flex-wrap gap-3">
+      <input
+        type="text"
+        placeholder="Search invoices..."
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        className="w-48 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+      />
+
+      <select
+        value={filterStatus}
+        onChange={(e) => setFilterStatus(e.target.value)}
+        className="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+      >
+        <option value="all">All Status</option>
+        <option value="draft">Draft</option>
+        <option value="pending">Pending</option>
+        <option value="approved">Approved</option>
+        <option value="rejected">Rejected</option>
+        <option value="sent">Sent</option>
+        <option value="paid">Paid</option>
+      </select>
+    </div>
+  </div>
+
+  {/* Table */}
+  <div className="overflow-x-auto">
+    <table className="w-full border-collapse">
+      <thead className="bg-slate-50">
+        <tr className="text-left text-xs font-semibold uppercase tracking-wide text-slate-600">
+          <th className="px-6 py-3">Invoice ID</th>
+          <th className="px-6 py-3">Vendor</th>
+          <th className="px-6 py-3">Week</th>
+          <th className="px-6 py-3">Issue Date</th>
+          <th className="px-6 py-3">Hours</th>
+          <th className="px-6 py-3">Amount</th>
+          <th className="px-6 py-3">Status</th>
+          <th className="px-6 py-3 text-right">Actions</th>
+        </tr>
+      </thead>
+
+      <tbody className="divide-y divide-slate-200">
+        {paginatedInvoices.length > 0 ? (
+          paginatedInvoices.map((invoice) => (
+            <tr
+              key={invoice.id}
+              className="transition hover:bg-slate-50"
+            >
+              <td className="px-6 py-4 font-medium text-slate-900">
+                {invoice.invoiceNumber}
+              </td>
+
+              <td className="px-6 py-4 text-slate-700">
+                {invoice.vendor}
+              </td>
+
+              <td className="px-6 py-4 text-slate-700">
+                {invoice.week}
+              </td>
+
+              <td className="px-6 py-4 text-slate-700">
+                {invoice.issueDate
+                  ? new Date(invoice.issueDate).toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "2-digit",
+                      year: "numeric",
+                    })
+                  : invoice.createdAt
+                  ? new Date(invoice.createdAt).toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "2-digit",
+                      year: "numeric",
+                    })
+                  : "N/A"}
+              </td>
+
+              <td className="px-6 py-4 text-slate-700">
+                {invoice.hours || 0}
+              </td>
+
+              <td className="px-6 py-4 font-semibold text-slate-900">
+                ${invoice.total.toLocaleString()}
+              </td>
+
+              <td className="px-6 py-4">
+                <span
+                  className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold
+                    ${
+                      invoice.status === "Paid" || invoice.status === "Active"
+                        ? "bg-emerald-100 text-emerald-700"
+                        : invoice.status === "Pending"
+                        ? "bg-amber-100 text-amber-700"
+                        : "bg-slate-200 text-slate-700"
+                    }`}
+                >
+                  {invoice.status}
+                </span>
+              </td>
+
+              {/* Actions */}
+              <td className="px-6 py-4 text-right">
+                <div className="relative inline-block">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleActions(invoice.id, "invoice");
+                    }}
+                    className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100"
+                  >
+                    Actions
+                  </button>
+
+                  {openActionsId === invoice.id &&
+                    actionsType === "invoice" && (
+                      <div className="absolute right-0 z-20 mt-2 w-44 rounded-xl border border-slate-200 bg-white shadow-lg">
                         <button
-                          className="btn btn-primary"
-                          onClick={handleCreateInvoice}
+                          className="flex w-full items-center gap-2 px-4 py-2 text-sm hover:bg-slate-100"
+                          onClick={() => {
+                            handleViewInvoice(invoice);
+                            setOpenActionsId(null);
+                            setActionsType(null);
+                          }}
                         >
-                          <em className="icon ni ni-plus"></em>
-                          <span>Create Invoice</span>
+                          👁 View Details
                         </button>
-                      </li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
 
-              {/* Summary Cards in Header */}
-              <div className="row g-gs" style={{ marginTop: '24px' }}>
-                {/* Total Invoiced Card */}
-                <div className="col-md-4">
-                  <div className="card card-bordered invoice-summary-card-header">
-                    <div className="card-inner">
-                      <div className="summary-header-content">
-                        <div className="summary-header-label">Total Invoiced</div>
-                        <div className="summary-header-value">
-                          ${invoices.reduce((sum, inv) => sum + (parseFloat(inv.total) || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </div>
-                        <div className="summary-header-period">This Month</div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Payments Received Card */}
-                <div className="col-md-4">
-                  <div className="card card-bordered invoice-summary-card-header">
-                    <div className="card-inner">
-                      <div className="summary-header-content">
-                        <div className="summary-header-label">Payments Received</div>
-                        <div className="summary-header-value">
-                          ${invoices.filter(inv => inv.status.toLowerCase() === 'paid').reduce((sum, inv) => sum + (parseFloat(inv.total) || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </div>
-                        <div className="summary-header-period">This Month</div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Outstanding Amount Card */}
-                <div className="col-md-4">
-                  <div className="card card-bordered invoice-summary-card-header">
-                    <div className="card-inner">
-                      <div className="summary-header-content">
-                        <div className="summary-header-label">Outstanding Amount</div>
-                        <div className="summary-header-value">
-                          ${invoices.filter(inv => inv.status.toLowerCase() !== 'paid').reduce((sum, inv) => sum + (parseFloat(inv.total) || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </div>
-                        <div className="summary-header-period">Total</div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="nk-block">
-              <div className="card card-bordered card-stretch">
-                <div className="card-inner-group">
-                  <div className="card-inner position-relative">
-                    <div className="card-title-group">
-                      <div className="card-tools">
-                        <ul className="nav nav-tabs">
-                          <li className="nav-item">
-                            <button
-                              className={`nav-link ${
-                                activeTab === "invoices" ? "active" : ""
-                              }`}
-                              onClick={() => setActiveTab("invoices")}
-                            >
-                              Invoices
-                            </button>
-                          </li>
-                          <li className="nav-item">
-                            <button
-                              className={`nav-link ${
-                                activeTab === "discrepancies" ? "active" : ""
-                              }`}
-                              onClick={() => setActiveTab("discrepancies")}
-                            >
-                              Discrepancies
-                            </button>
-                          </li>
-                        </ul>
-                      </div>
-
-                      <div className="card-tools mr-n1">
-                        <ul className="btn-toolbar gx-1">
-                          <li>
-                            <div className="form-group">
-                              <div className="form-control-wrap">
-                                <input
-                                  type="text"
-                                  className="form-control form-control-sm"
-                                  placeholder="Search..."
-                                  value={searchTerm}
-                                  onChange={(e) =>
-                                    setSearchTerm(e.target.value)
-                                  }
-                                />
-                              </div>
-                            </div>
-                          </li>
-                          <li>
-                            <div className="form-group">
-                              <select
-                                className="form-select form-select-sm"
-                                value={filterStatus}
-                                onChange={(e) =>
-                                  setFilterStatus(e.target.value)
-                                }
-                              >
-                                <option value="all">All Status</option>
-                                <option value="draft">Draft</option>
-                                <option value="pending">Pending</option>
-                                <option value="approved">Approved</option>
-                                <option value="rejected">Rejected</option>
-                                <option value="sent">Sent</option>
-                                <option value="paid">Paid</option>
-                              </select>
-                            </div>
-                          </li>
-                        </ul>
-                      </div>
-                    </div>
-                  </div>
-
-                  {activeTab === "invoices" ? (
-                    <div className="card-inner p-0">
-                      <div className="nk-tb-list nk-tb-orders">
-                        <div className="nk-tb-item nk-tb-head">
-                          <div className="nk-tb-col">
-                            <span>Invoice #</span>
-                          </div>
-                          <div className="nk-tb-col tb-col-md">
-                            <span>Vendor</span>
-                          </div>
-                          <div className="nk-tb-col tb-col-md">
-                            <span>Week</span>
-                          </div>
-                          <div className="nk-tb-col tb-col-md">
-                            <span>Issue Date</span>
-                          </div>
-                          <div className="nk-tb-col tb-col-md">
-                            <span>Hours</span>
-                          </div>
-                          <div className="nk-tb-col">
-                            <span>Amount</span>
-                          </div>
-                          <div className="nk-tb-col">
-                            <span>Status</span>
-                          </div>
-                          <div className="nk-tb-col nk-tb-col-tools text-end">
-                            <span className="sub-text">ACTIONS</span>
-                          </div>
-                        </div>
-
-                        {paginatedInvoices.length > 0 ? (
-                          paginatedInvoices.map((invoice) => (
-                            <div key={invoice.id} className={`nk-tb-item ${openActionsId === invoice.id && actionsType === 'invoice' ? 'dropdown-open' : ''}`}>
-                              <div className="nk-tb-col">
-                                <span className="tb-lead">
-                                  {invoice.invoiceNumber}
-                                </span>
-                              </div>
-                              <div className="nk-tb-col tb-col-md">
-                                <span>{invoice.vendor}</span>
-                              </div>
-                              <div className="nk-tb-col tb-col-md">
-                                <span>{invoice.week}</span>
-                              </div>
-                              <div className="nk-tb-col tb-col-md">
-                                <span>
-                                  {invoice.issueDate 
-                                    ? new Date(invoice.issueDate).toLocaleDateString('en-US', { 
-                                        month: 'short', 
-                                        day: '2-digit',
-                                        year: 'numeric'
-                                      })
-                                    : invoice.createdAt 
-                                      ? new Date(invoice.createdAt).toLocaleDateString('en-US', { 
-                                          month: 'short', 
-                                          day: '2-digit',
-                                          year: 'numeric'
-                                        })
-                                      : 'N/A'
-                                  }
-                                </span>
-                              </div>
-                              <div className="nk-tb-col tb-col-md">
-                                <span>{invoice.hours || 0}</span>
-                              </div>
-                              <div className="nk-tb-col">
-                                <span className="tb-amount">
-                                  ${invoice.total.toLocaleString()}
-                                </span>
-                              </div>
-                              <div className="nk-tb-col">
-                                <span
-                                  className={`badge bg-outline-${
-                                    invoice.status === "Paid" || invoice.status === "Active"
-                                      ? "success"
-                                      : invoice.status === "Pending"
-                                      ? "warning"
-                                      : "secondary"
-                                  }`}
-                                >
-                                  {invoice.status}
-                                </span>
-                              </div>
-                              <div className="nk-tb-col nk-tb-col-tools">
-                                <div className="dropdown" style={{ position: 'relative' }}>
-                                  <button
-                                    className="btn btn-sm btn-outline-secondary dropdown-toggle"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      toggleActions(invoice.id, 'invoice');
-                                    }}
-                                    type="button"
-                                    ref={(el) => {
-                                      if (el && openActionsId === invoice.id) {
-                                        const rect = el.getBoundingClientRect();
-                                        const spaceBelow = window.innerHeight - rect.bottom;
-                                        if (spaceBelow < 200) {
-                                          el.nextElementSibling?.classList.add('dropup');
-                                        }
-                                      }
-                                    }}
-                                  >
-                                    Actions
-                                  </button>
-                                  {openActionsId === invoice.id && actionsType === 'invoice' && (
-                                    <div className="dropdown-menu dropdown-menu-right show">
-                                      <button
-                                        className="dropdown-item"
-                                        onClick={() => {
-                                          handleViewInvoice(invoice);
-                                          setOpenActionsId(null);
-                                          setActionsType(null);
-                                        }}
-                                      >
-                                        <i className="fas fa-eye mr-1"></i> View Details
-                                      </button>
-                                      <button
-                                        className="dropdown-item"
-                                        onClick={async () => {
-                                          try {
+                        <button
+                          className="flex w-full items-center gap-2 px-4 py-2 text-sm hover:bg-slate-100"
+                          onClick={async () => {
+                            try {
                                             const tenantId = JSON.parse(localStorage.getItem("user"))?.tenantId;
                                             const token = localStorage.getItem("token");
                                             
@@ -1576,82 +1603,74 @@ const Invoice = () => {
                                           }
                                         }}
                                       >
-                                        <i className="fas fa-edit mr-1"></i> Edit Invoice
-                                      </button>
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          ))
-                        ) : (
-                          <div className="nk-tb-item">
-                            <div className="" colSpan="">
-                              <div className="empty-state">
-                                <p>No invoices found matching your criteria.</p>
-                              </div>
-                            </div>
-                          </div>
-                        )}
+                          ✏️ Edit Invoice
+                        </button>
                       </div>
-
-                      {/* Pagination - Employee Module Style */}
-                      {filteredInvoices.length > 0 && (
-                        <div className="card-inner">
-                          <div className="invoice-pagination">
-                            <div className="pagination-info">
-                              Showing {startIndex + 1} to {Math.min(endIndex, filteredInvoices.length)} of {filteredInvoices.length} invoices
-                            </div>
-                            <div className="pagination-controls">
-                              <button
-                                className="btn btn-sm btn-outline-light"
-                                onClick={handlePreviousPage}
-                                disabled={currentPage === 1}
-                              >
-                                <em className="icon ni ni-chevron-left"></em> Previous
-                              </button>
-                              
-                              {/* Page Numbers */}
-                              <ul className="pagination-numbers">
-                                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                                  <li key={page}>
-                                    <button
-                                      className={`page-number ${currentPage === page ? 'active' : ''}`}
-                                      onClick={() => setCurrentPage(page)}
-                                    >
-                                      {page}
-                                    </button>
-                                  </li>
-                                ))}
-                              </ul>
-
-                              <button
-                                className="btn btn-sm btn-outline-light"
-                                onClick={handleNextPage}
-                                disabled={currentPage === totalPages}
-                              >
-                                Next <em className="icon ni ni-chevron-right"></em>
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="">
-                      <div className="">
-                        <div className="">
-                          <DiscrepancyMatching discrepancy={discrepancyData} />
-                        </div>
-                      </div>
-                    </div>
-                  )}
+                    )}
                 </div>
-              </div>
-            </div>
-          </div>
-        </div>
+              </td>
+            </tr>
+          ))
+        ) : (
+          <tr>
+            <td colSpan={8} className="px-6 py-10 text-center text-slate-500">
+              No invoices found matching your criteria.
+            </td>
+          </tr>
+        )}
+      </tbody>
+    </table>
+  </div>
+
+  {/* Pagination */}
+  {filteredInvoices.length > 0 && (
+    <div className="flex flex-col items-center justify-between gap-4 border-t border-slate-200 px-6 py-4 md:flex-row">
+      <div className="text-sm text-slate-600">
+        Showing {startIndex + 1} to{" "}
+        {Math.min(endIndex, filteredInvoices.length)} of{" "}
+        {filteredInvoices.length} invoices
       </div>
+
+      <div className="flex items-center gap-2">
+        <button
+          onClick={handlePreviousPage}
+          disabled={currentPage === 1}
+          className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm disabled:opacity-50"
+        >
+          ← Prev
+        </button>
+
+        {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+          (page) => (
+            <button
+              key={page}
+              onClick={() => setCurrentPage(page)}
+              className={`rounded-lg px-3 py-1.5 text-sm font-medium
+                ${
+                  currentPage === page
+                    ? "bg-indigo-600 text-white"
+                    : "border border-slate-300 text-slate-700 hover:bg-slate-100"
+                }`}
+            >
+              {page}
+            </button>
+          )
+        )}
+
+        <button
+          onClick={handleNextPage}
+          disabled={currentPage === totalPages}
+          className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm disabled:opacity-50"
+        >
+          Next →
+        </button>
+      </div>
+    </div>
+  )}
+</div>
+
+        {/* </div> */}
+      {/* </div> */}
 
       {/* Invoice Detail Modal */}
       {showDetailModal && selectedInvoice && (
@@ -2887,6 +2906,8 @@ const Invoice = () => {
           }}
         />
       )}
+    </div>
+    </div>
     </div>
   );
 };

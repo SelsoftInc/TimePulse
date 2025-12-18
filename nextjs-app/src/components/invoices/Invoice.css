@@ -1,3 +1,12 @@
+.invoicelist-dashboard{
+min-height: 100vh;
+  background: var(--dashboard-bg);
+  padding: 24px;
+  color: var(--dashboard-text-color);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
 /* Invoice Styles */
 .invoice-modal {
   max-width: 800px;

@@ -6,7 +6,6 @@ import { useParams } from 'next/navigation';
 import React, { useState, useEffect } from 'react';
 import { API_BASE } from '@/config/api';
 import { isServerConnectedCached } from '@/utils/serverCheck';
-import "./InvoiceDashboard.css";
 import "../common/ActionsDropdown.css";
 
 const InvoiceDashboard = () => {
@@ -135,7 +134,7 @@ const InvoiceDashboard = () => {
         <div className="container-fluid">
           <div className="nk-content-inner">
             <div className="nk-content-body">
-              <div style={{ padding: '40px', textAlign: 'center' }}>
+              <div className="py-10 text-center">
                 <div className="spinner-border text-primary" role="status">
                   <span className="sr-only">Loading...</span>
                 </div>
@@ -148,295 +147,260 @@ const InvoiceDashboard = () => {
   }
 
   return (
-    <div className="nk-content">
+    <div className="invoice-dashboard min-h-screen bg-slate-50">
       <div className="container-fluid">
-        <div className="nk-content-inner">
-          <div className="nk-content-body">
-            <div className="nk-block-head nk-block-head-sm">
-              <div className="nk-block-between">
-                <div className="nk-block-head-content">
-                  <h3 className="nk-block-title page-title">
-                    Invoice Management
-                  </h3>
-                  <div className="nk-block-des text-soft">
-                    <p>
-                      Manage and track all vendor invoices
-                    </p>
+        {/* <div className="nk-content-inner">
+          <div className="nk-content-body px-1"> */}
+            <div className="mx-auto max-w-8xl px-5 py-5">
+              <div className="mb-6 mt-1 overflow-hidden rounded-3xl bg-[#7cbdf2] shadow-sm">
+                <div className="px-5 py-5 sm:px-7 sm:py-6">
+                  <div className="nk-block-head nk-block-head-sm !m-0 !p-0">
+                    <div className="nk-block-between flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                       <div className="relative pl-4">
+                        <span className="absolute left-0 top-2 h-10 w-1 rounded-full bg-purple-900 dark:bg-indigo-400" />
+                        <h3 className="nk-block-title page-title text-2xl font-bold tracking-tight text-white sm:text-[2rem]">
+                          Invoice Management
+                        </h3>
+                        <div className="nk-block-des text-soft">
+                          <p className="!mt-2 text-sm font-medium text-white/90 sm:text-base">
+                            Manage and track all vendor invoices
+                          </p>
+                        </div>
+                      </div>
+                      
+                        <div className="flex flex-wrap items-center gap-3">
+                          <Link
+                            href={`/${subdomain}/invoices/new`}
+                            className="flex items-center gap-2.5
+                rounded-full
+                bg-slate-900 px-6 py-3
+                text-sm font-semibold !text-white
+                shadow-md
+                transition-all
+                cursor-pointer
+                hover:bg-slate-800 hover:scale-[1.04]
+                active:scale-[0.97]
+                dark:bg-indigo-600 dark:hover:bg-indigo-500
+                dark:shadow-[0_6px_18px_rgba(79,70,229,0.45)] "
+                          >
+                            <i className="fas fa-plus-circle text-base" />
+                            Create Invoice
+                          </Link>
+                        </div>
+                      
+                    </div>
                   </div>
                 </div>
-                <div className="nk-block-head-content">
-                  <div className="toggle-wrap nk-block-tools-toggle">
-                    <Link href={`/${subdomain}/invoices/new`}
-                      className="btn btn-primary"
-                    >
-                      <em className="icon ni ni-plus"></em>
-                      <span>Create Invoice</span>
-                    </Link>
-                  </div>
-                </div>
+                <div className="h-px bg-white/25" />
               </div>
-            </div>
 
-            <div className="nk-block">
-              <div className="card card-bordered card-stretch">
-                <div className="card-inner-group">
-                  <div className="card-inner position-relative">
-                    <div className="card-title-group">
-                      <div className="card-title">
-                        <h5 className="title">All Invoices</h5>
-                      </div>
-                      <div className="card-tools me-n1">
-                        <ul className="btn-toolbar gx-1">
-                          <li>
-                            <div className="form-group">
-                              <div className="form-control-wrap">
-                                <select
-                                  className="form-select form-select-sm"
-                                  value={filterStatus}
-                                  onChange={(e) =>
-                                    setFilterStatus(e.target.value)
-                                  }
-                                >
-                                  <option value="all">All Status</option>
-                                  <option value="draft">Draft</option>
-                                  <option value="generated">Generated</option>
-                                  <option value="sent">Sent</option>
-                                  <option value="paid">Paid</option>
-                                </select>
-                              </div>
-                            </div>
-                          </li>
-                          <li>
-                            <div className="form-group">
-                              <div className="form-control-wrap">
-                                <select
-                                  className="form-select form-select-sm"
-                                  value={filterMonth}
-                                  onChange={(e) =>
-                                    setFilterMonth(e.target.value)
-                                  }
-                                >
-                                  <option value="all">All Months</option>
-                                  <option value="july">July</option>
-                                  <option value="june">June</option>
-                                  <option value="may">May</option>
-                                </select>
-                              </div>
-                            </div>
-                          </li>
-                        </ul>
-                      </div>
+              <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+  {/* HEADER */}
+  <div className="flex flex-col gap-4 border-b border-slate-200 bg-slate-50 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+    <h3 className="text-lg font-semibold text-slate-900">
+      All Invoices
+    </h3>
+
+    <div className="flex flex-wrap gap-2">
+      <select
+        className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+        value={filterStatus}
+        onChange={(e) => setFilterStatus(e.target.value)}
+      >
+        <option value="all">All Status</option>
+        <option value="draft">Draft</option>
+        <option value="generated">Generated</option>
+        <option value="sent">Sent</option>
+        <option value="paid">Paid</option>
+      </select>
+
+      <select
+        className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+        value={filterMonth}
+        onChange={(e) => setFilterMonth(e.target.value)}
+      >
+        <option value="all">All Months</option>
+        <option value="july">July</option>
+        <option value="june">June</option>
+        <option value="may">May</option>
+      </select>
+    </div>
+  </div>
+
+  {/* TABLE */}
+  <div className="overflow-x-auto">
+    <table className="w-full border-collapse text-sm">
+      <thead className="bg-slate-100 text-slate-600">
+        <tr>
+          <th className="px-4 py-3 text-left font-semibold">Invoice ID</th>
+          <th className="px-4 py-3 text-left font-semibold">Vendor</th>
+          <th className="px-4 py-3 text-left font-semibold">Week</th>
+          <th className="px-4 py-3 text-center font-semibold">Hours</th>
+          <th className="px-4 py-3 text-right font-semibold">Amount</th>
+          <th className="px-4 py-3 text-center font-semibold">Status</th>
+          <th className="px-4 py-3 text-right font-semibold">Actions</th>
+        </tr>
+      </thead>
+
+      <tbody className="divide-y divide-slate-200">
+        {loading ? (
+          <tr>
+            <td colSpan="7" className="px-4 py-10 text-center text-slate-500">
+              Loading invoices...
+            </td>
+          </tr>
+        ) : error ? (
+          <tr>
+            <td colSpan="7" className="px-4 py-10 text-center text-red-600">
+              {error}
+            </td>
+          </tr>
+        ) : filteredInvoices.length === 0 ? (
+          <tr>
+            <td colSpan="7" className="px-4 py-10 text-center text-slate-500">
+              No invoices found.
+            </td>
+          </tr>
+        ) : (
+          filteredInvoices.map((invoice) => (
+            <tr
+              key={invoice.id}
+              className="hover:bg-slate-50 transition"
+            >
+              <td className="px-4 py-3 font-medium text-slate-900">
+                {invoice.invoiceNumber || invoice.id}
+              </td>
+
+              <td className="px-4 py-3 text-slate-700">
+                {invoice.vendor || 'N/A'}
+              </td>
+
+              <td className="px-4 py-3 text-slate-700">
+                {invoice.week || 'N/A'}
+              </td>
+
+              <td className="px-4 py-3 text-center text-slate-700">
+                {invoice.totalHours || invoice.timesheet?.totalHours || 0}
+              </td>
+
+              <td className="px-4 py-3 text-right font-semibold text-slate-900">
+                ${(invoice.amount || invoice.total || 0).toFixed(2)}
+              </td>
+
+              <td className="px-4 py-3 text-center">
+                <span
+                  className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold
+                    ${
+                      invoice.status === 'paid'
+                        ? 'bg-green-100 text-green-700'
+                        : invoice.status === 'generated'
+                        ? 'bg-amber-100 text-amber-700'
+                        : 'bg-red-100 text-red-700'
+                    }
+                  `}
+                >
+                  {invoice.status}
+                </span>
+              </td>
+
+              <td className="px-4 py-3 text-right">
+                <div className="relative inline-block">
+                  <button
+                    className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm hover:bg-slate-100"
+                    onClick={() => toggleMenu(invoice.id)}
+                  >
+                    Actions
+                  </button>
+
+                  {openMenuId === invoice.id && (
+                    <div className="absolute right-0 z-10 mt-2 w-44 rounded-lg border border-slate-200 bg-white shadow-lg">
+                      <Link
+                        href={`/${subdomain}/invoices/view/${invoice.id}`}
+                        className="block px-4 py-2 text-sm hover:bg-slate-100"
+                        onClick={() => setOpenMenuId(null)}
+                      >
+                        View Invoice
+                      </Link>
+                      <button className="block w-full px-4 py-2 text-left text-sm hover:bg-slate-100">
+                        Download
+                      </button>
+                      <button className="block w-full px-4 py-2 text-left text-sm hover:bg-slate-100">
+                        Send Invoice
+                      </button>
                     </div>
-                  </div>
-
-                  <div className="card-inner p-0">
-                    <div className="nk-tb-list nk-tb-orders">
-                      <div className="nk-tb-item nk-tb-head">
-                        <div className="nk-tb-col">
-                          <span>Invoice ID</span>
-                        </div>
-                        <div className="nk-tb-col tb-col-md">
-                          <span>Vendor</span>
-                        </div>
-                        <div className="nk-tb-col tb-col-md">
-                          <span>Week</span>
-                        </div>
-                        <div className="nk-tb-col tb-col-md">
-                          <span>Hours</span>
-                        </div>
-                        <div className="nk-tb-col">
-                          <span>Amount</span>
-                        </div>
-                        <div className="nk-tb-col">
-                          <span>Status</span>
-                        </div>
-                        <div className="nk-tb-col nk-tb-col-tools text-end">
-                          <span className="sub-text">Actions</span>
-                        </div>
-                      </div>
-
-                      {loading ? (
-                        <div className="nk-tb-item">
-                          <div className="nk-tb-col" style={{ textAlign: 'center', padding: '40px' }}>
-                            <span>Loading invoices...</span>
-                          </div>
-                        </div>
-                      ) : error ? (
-                        <div className="nk-tb-item">
-                          <div className="nk-tb-col" style={{ textAlign: 'center', padding: '40px', color: '#e85347' }}>
-                            <span>{error}</span>
-                          </div>
-                        </div>
-                      ) : filteredInvoices.length === 0 ? (
-                        <div className="nk-tb-item">
-                          <div className="nk-tb-col" style={{ textAlign: 'center', padding: '40px' }}>
-                            <span>No invoices found matching your criteria.</span>
-                          </div>
-                        </div>
-                      ) : (
-                        filteredInvoices.map((invoice) => (
-                        <div key={invoice.id} className="nk-tb-item">
-                          <div className="nk-tb-col">
-                            <span className="tb-lead">
-                              {invoice.invoiceNumber || invoice.id}
-                            </span>
-                          </div>
-                          <div className="nk-tb-col tb-col-md">
-                            <span>{invoice.vendor || 'N/A'}</span>
-                          </div>
-                          <div className="nk-tb-col tb-col-md">
-                            <span>{invoice.week || 'N/A'}</span>
-                          </div>
-                          <div className="nk-tb-col tb-col-md">
-                            <span>{invoice.totalHours || invoice.timesheet?.totalHours || 0}</span>
-                          </div>
-                          <div className="nk-tb-col">
-                            <span className="tb-amount">
-                              ${(invoice.amount || invoice.total || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                            </span>
-                          </div>
-                          <div className="nk-tb-col">
-                            <span
-                              className={`badge bg-outline-${
-                                invoice.status === 'active' || invoice.status === 'paid'
-                                  ? 'success'
-                                  : invoice.status === 'pending' || invoice.status === 'generated'
-                                  ? 'warning'
-                                  : 'danger'
-                              }`}
-                            >
-                              {invoice.status}
-                            </span>
-                          </div>
-                          <div className="nk-tb-col nk-tb-col-tools">
-                            <div className="dropdown" style={{ position: 'relative' }}>
-                              <button
-                                className="btn btn-sm btn-outline-secondary dropdown-toggle"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  toggleMenu(invoice.id);
-                                }}
-                                type="button"
-                                ref={(el) => {
-                                  if (el && openMenuId === invoice.id) {
-                                    const rect = el.getBoundingClientRect();
-                                    const spaceBelow = window.innerHeight - rect.bottom;
-                                    if (spaceBelow < 200) {
-                                      el.nextElementSibling?.classList.add('dropup');
-                                    }
-                                  }
-                                }}
-                              >
-                                Actions
-                              </button>
-                              {openMenuId === invoice.id && (
-                                <div className="dropdown-menu dropdown-menu-right show" style={{ position: 'absolute' }}>
-                                  <Link href={`/${subdomain}/invoices/view/${invoice.id}`}
-                                    className="dropdown-item"
-                                    onClick={() => setOpenMenuId(null)}
-                                  >
-                                    <i className="fas fa-eye mr-1"></i> View Invoice
-                                  </Link>
-                                  <button
-                                    className="dropdown-item"
-                                    onClick={() => {
-                                      alert(`Viewing details for invoice ${invoice.invoiceNumber || invoice.id}`);
-                                      setOpenMenuId(null);
-                                    }}
-                                  >
-                                    <i className="fas fa-eye mr-1"></i> View Details
-                                  </button>
-                                  <button
-                                    className="dropdown-item"
-                                    onClick={() => {
-                                      alert(`Downloading invoice ${invoice.invoiceNumber || invoice.id}`);
-                                      setOpenMenuId(null);
-                                    }}
-                                  >
-                                    <i className="fas fa-download mr-1"></i> Download Invoice
-                                  </button>
-                                  <button
-                                    className="dropdown-item"
-                                    onClick={() => {
-                                      alert(`Sending invoice ${invoice.invoiceNumber || invoice.id}`);
-                                      setOpenMenuId(null);
-                                    }}
-                                  >
-                                    <i className="fas fa-paper-plane mr-1"></i> Send Invoice
-                                  </button>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      ))
-                      )}
-                    </div>
-                  </div>
+                  )}
                 </div>
-              </div>
-            </div>
+              </td>
+            </tr>
+          ))
+        )}
+      </tbody>
+    </table>
+  </div>
+</div>
 
-            <div className="nk-block mt-5">
-              <div className="row g-gs">
-                <div className="col-md-6 col-lg-4">
-                  <div className="card card-bordered">
-                    <div className="card-inner">
-                      <div className="card-title-group align-start mb-2">
-                        <div className="card-title">
-                          <h6 className="title">Total Invoiced</h6>
-                        </div>
-                      </div>
-                      <div className="align-end flex-sm-wrap g-4 flex-md-nowrap">
-                        <div className="nk-sale-data">
-                          <span className="amount">$295,000.00</span>
-                          <span className="sub-title">This Month</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
 
-                <div className="col-md-6 col-lg-4">
-                  <div className="card card-bordered">
-                    <div className="card-inner">
-                      <div className="card-title-group align-start mb-2">
-                        <div className="card-title">
-                          <h6 className="title">Payments Received</h6>
-                        </div>
-                      </div>
-                      <div className="align-end flex-sm-wrap g-4 flex-md-nowrap">
-                        <div className="nk-sale-data">
-                          <span className="amount">$135,000.00</span>
-                          <span className="sub-title">This Month</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="col-md-12 col-lg-4">
-                  <div className="card card-bordered">
-                    <div className="card-inner">
-                      <div className="card-title-group align-start mb-2">
-                        <div className="card-title">
-                          <h6 className="title">Outstanding Amount</h6>
-                        </div>
-                      </div>
-                      <div className="align-end flex-sm-wrap g-4 flex-md-nowrap">
-                        <div className="nk-sale-data">
-                          <span className="amount">$160,000.00</span>
-                          <span className="sub-title">Total</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+              <div className="mt-6">
+  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    
+    {/* Total Invoiced */}
+    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm hover:shadow-md transition">
+      <div className="flex items-start justify-between">
+        <div>
+          <p className="text-sm font-medium text-slate-500">
+            Total Invoiced
+          </p>
+          <p className="mt-2 text-2xl font-bold text-slate-900">
+            $295,000.00
+          </p>
+          <p className="mt-1 text-xs text-slate-400">
+            This Month
+          </p>
         </div>
       </div>
+    </div>
+
+    {/* Payments Received */}
+    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm hover:shadow-md transition">
+      <div className="flex items-start justify-between">
+        <div>
+          <p className="text-sm font-medium text-slate-500">
+            Payments Received
+          </p>
+          <p className="mt-2 text-2xl font-bold text-green-600">
+            $135,000.00
+          </p>
+          <p className="mt-1 text-xs text-slate-400">
+            This Month
+          </p>
+        </div>
+      </div>
+    </div>
+
+    {/* Outstanding Amount */}
+    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm hover:shadow-md transition">
+      <div className="flex items-start justify-between">
+        <div>
+          <p className="text-sm font-medium text-slate-500">
+            Outstanding Amount
+          </p>
+          <p className="mt-2 text-2xl font-bold text-amber-600">
+            $160,000.00
+          </p>
+          <p className="mt-1 text-xs text-slate-400">
+            Total
+          </p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+            </div>
+          </div>
+        {/* </div>
+      </div> */}
     </div>
   );
 };

@@ -712,25 +712,76 @@ const EmployeeList = () => {
   }
 
   return (
-    <div className="employee-list-container">
+
+    <div className="employeelist">
       <div className="container-fluid">
-        <div className="nk-block-head">
-          <div className="nk-block-between">
-            <div className="nk-block-head-content">
-              <h3 className="nk-block-title">Employees</h3>
-              <p className="nk-block-subtitle">Manage your team members</p>
-            </div>
-            <div className="nk-block-head-content">
-              <PermissionGuard requiredPermission={PERMISSIONS.CREATE_EMPLOYEE}>
-                <Link href={`/${subdomain}/employees/new`}
-                  className="btn btn-primary"
-                >
-                  <i className="fas fa-plus mr-1"></i> Add New Employee
-                </Link>
-              </PermissionGuard>
-            </div>
-          </div>
+        {/* ================= EMPLOYEES HEADER ================= */}
+<div className="sticky top-4 z-30 mb-6">
+  <div
+    className="
+      rounded-3xl
+      bg-[#7cbdf2]
+      dark:bg-gradient-to-br dark:from-[#0f1a25] dark:via-[#121f33] dark:to-[#162a45]
+      shadow-sm dark:shadow-[0_8px_24px_rgba(0,0,0,0.6)]
+      backdrop-blur-md
+      border border-transparent dark:border-white/5
+    "
+  >
+    <div className="px-6 py-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-[1fr_auto] md:items-center">
+
+        {/* LEFT */}
+        <div className="relative pl-5">
+          <span className="absolute left-0 top-2 h-10 w-1 rounded-full bg-purple-900 dark:bg-indigo-400" />
+
+          <h1
+            className="
+              text-[2rem]
+              font-bold
+              text-white
+              leading-[1.15]
+              tracking-tight
+              drop-shadow-[0_2px_8px_rgba(0,0,0,0.18)]
+            "
+          >
+            Employees
+          </h1>
+
+          <p className="mt-0 text-sm text-white/80 dark:text-slate-300">
+            Manage your team members
+          </p>
         </div>
+
+        {/* RIGHT */}
+        <div className="flex flex-wrap items-center gap-3">
+          <PermissionGuard requiredPermission={PERMISSIONS.CREATE_EMPLOYEE}>
+            <Link
+              href={`/${subdomain}/employees/new`}
+              className="
+                flex items-center gap-2.5
+                rounded-full
+                bg-slate-900 px-6 py-3
+                text-sm font-semibold !text-white
+                shadow-md
+                transition-all
+                cursor-pointer
+                hover:bg-slate-800 hover:scale-[1.04]
+                active:scale-[0.97]
+                dark:bg-indigo-600 dark:hover:bg-indigo-500
+                dark:shadow-[0_6px_18px_rgba(79,70,229,0.45)]
+              "
+            >
+              <i className="fas fa-plus-circle text-base text-white" />
+              Add New Employee
+            </Link>
+          </PermissionGuard>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
 
         <div className="nk-block">
           <div className="card card-bordered mb-4">

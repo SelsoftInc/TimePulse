@@ -265,166 +265,184 @@ const ModernDashboard = () => {
 
   return (
     <div className="modern-dashboard">
-      <div className="dashboard-header">
-        <div className="dashboard-title-section">
-          <h1 className="dashboard-title">Dashboard</h1>
-          <div className="dashboard-subtitle">
-            <i className="fas fa-calendar-alt"></i>
-            <span>
-              {dateRange.start.toLocaleDateString("en-US", {
-                weekday: "short",
-                month: "short",
-                day: "numeric",
-                year: "numeric"})}{" "}
-              -{" "}
-              {dateRange.end.toLocaleDateString("en-US", {
-                weekday: "short",
-                month: "short",
-                day: "numeric",
-                year: "numeric"})}
-            </span>
-            <span className="scope-indicator">
-              {scope === "company" ? (
-                <>
-                  <i className="fas fa-building"></i>
-                  Company Overview
-                </>
-              ) : (
-                <>
-                  <i className="fas fa-user"></i>
-                  {selectedEmployeeId
-                    ? `Employee: ${
-                        dashboardData.employees.find(
-                          (emp) => emp.id === selectedEmployeeId
-                        )?.firstName || "Selected"
-                      } ${
-                        dashboardData.employees.find(
-                          (emp) => emp.id === selectedEmployeeId
-                        )?.lastName || ""
-                      }`
-                    : "Employee View"}
-                </>
-              )}
-            </span>
-            <span className="refresh-indicator">
-              Refreshed: {formatRelativeTime(lastRefresh)}
-            </span>
-          </div>
-        </div>
+      <div className="mb-9 mt-1 rounded-3xl bg-[#7cbdf2] px-6 py-5 shadow-sm">
+  <div className="grid grid-cols-1 gap-4 md:grid-cols-[1fr_auto] md:items-center">
 
-        <div className="dashboard-controls">
-          <div className="scope-toggle">
-            <button
-              className={`toggle-btn ${scope === "company" ? "active" : ""}`}
-              onClick={() => setScope("company")}
-            >
-              Company
-            </button>
-            <button
-              className={`toggle-btn ${scope === "employee" ? "active" : ""}`}
-              onClick={() => setScope("employee")}
-            >
-              Employee
-            </button>
-          </div>
+    {/* ================= LEFT ================= */}
+    <div className="relative pl-4">
+      {/* Accent bar */}
+      <span className="absolute left-0 top-1 h-12 w-1 rounded-full bg-purple-900"></span>
 
-          {scope === "employee" && (
-            <div className="employee-selector">
-              <select
-                className="employee-dropdown"
-                value={selectedEmployeeId || ""}
-                onChange={(e) => setSelectedEmployeeId(e.target.value || null)}
-              >
-                <option value="">Select Employee</option>
-                {employees.map((emp) => (
-                  <option key={emp.id} value={emp.id}>
-                    {emp.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
+      <h1
+        className="
+          text-[2rem]
+          font-bold
+          text-white
+          leading-[1.15]
+          tracking-tight
+          drop-shadow-[0_2px_8px_rgba(0,0,0,0.2)]
+        "
+      >
+        Dashboard
+      </h1>
 
-          <div className="search-container">
-            <i className="fas fa-search search-icon"></i>
-            <input
-              type="text"
-              placeholder="Search dashboard..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="dashboard-search"
-            />
-          </div>
-        </div>
+      <div className="mt-2 flex flex-wrap items-center gap-4 text-xs font-medium text-slate-900/90">
+
+        {/* Date range */}
+        <span className="flex items-center gap-2 rounded-full bg-white/60 px-3 py-1">
+          <i className="fas fa-calendar-alt" />
+          {dateRange.start.toLocaleDateString("en-US", {
+            weekday: "short",
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+          })}{" "}
+          –{" "}
+          {dateRange.end.toLocaleDateString("en-US", {
+            weekday: "short",
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+          })}
+        </span>
+
+        {/* Scope */}
+        <span className="flex items-center gap-2 rounded-full bg-white/60 px-3 py-1">
+          <i
+            className={`fas ${
+              scope === "company" ? "fa-building" : "fa-user"
+            }`}
+          />
+          {scope === "company"
+            ? "Company Overview"
+            : selectedEmployeeId
+            ? `Employee: ${
+                dashboardData.employees.find(
+                  (emp) => emp.id === selectedEmployeeId
+                )?.firstName || "Selected"
+              } ${
+                dashboardData.employees.find(
+                  (emp) => emp.id === selectedEmployeeId
+                )?.lastName || ""
+              }`
+            : "Employee View"}
+        </span>
+
+        {/* Refresh */}
+        <span className="rounded-full bg-white/40 px-3 py-1 text-[11px]">
+          Refreshed: {formatRelativeTime(lastRefresh)}
+        </span>
+      </div>
+    </div>
+
+    {/* ================= RIGHT ================= */}
+    <div className="flex flex-wrap items-center gap-3">
+
+      {/* Scope Toggle */}
+      <div className="flex rounded-full bg-white/50 p-1">
+        <button
+          onClick={() => setScope("company")}
+          className={`px-5 py-2 text-sm font-semibold rounded-full transition
+            ${
+              scope === "company"
+                ? "bg-white text-slate-900 shadow"
+                : "text-slate-700"
+            }`}
+        >
+          Company
+        </button>
+
+        <button
+          onClick={() => setScope("employee")}
+          className={`px-5 py-2 text-sm font-semibold rounded-full transition
+            ${
+              scope === "employee"
+                ? "bg-white text-slate-900 shadow"
+                : "text-slate-700"
+            }`}
+        >
+          Employee
+        </button>
       </div>
 
-     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 p-4">
-
- <div
-  className="
-    bg-blue-100 dark:bg-[#0f1a25]
-    rounded-2xl shadow-sm 
-    p-5 
-    border border-gray-200 dark:border-gray-700
-    hover:shadow-md transition-all duration-200
-    flex flex-col gap-6
-  "
->
-  {/* Header */}
-  <div className="flex items-center justify-between">
-    <h3 className="text-base font-semibold text-gray-800 dark:text-gray-100">
-      Timesheet Overview
-    </h3>
-
-    <div
-      className="
-        w-10 h-10 flex items-center justify-center 
-        rounded-xl 
-        bg-blue-50 dark:bg-blue-900/30 
-        text-blue-600 dark:text-blue-300
-      "
-    >
-      <i className="fas fa-clock"></i>
+      {/* Employee selector */}
+      {scope === "employee" && (
+        <select
+          className="rounded-full bg-white px-4 py-2 text-sm font-medium text-slate-800 shadow outline-none"
+          value={selectedEmployeeId || ""}
+          onChange={(e) => setSelectedEmployeeId(e.target.value || null)}
+        >
+          <option value="">Select Employee</option>
+          {employees.map((emp) => (
+            <option key={emp.id} value={emp.id}>
+              {emp.name}
+            </option>
+          ))}
+        </select>
+      )}
     </div>
   </div>
-
-  {/* Stats Row */}
-  <div className="flex justify-around text-center py-6">
-    <div>
-      <p className="text-3xl font-bold text-gray-900 dark:text-white">
-        {getPendingTimesheets()}
-      </p>
-      <p className="text-xs text-gray-500 dark:text-gray-400">Pending</p>
-    </div>
-
-    <div>
-      <p className="text-3xl font-bold text-gray-900 dark:text-white">
-        {getApprovedTimesheets()}
-      </p>
-      <p className="text-xs text-gray-500 dark:text-gray-400">Approved</p>
-    </div>
-
-    <div>
-      <p className="text-3xl font-bold text-gray-900 dark:text-white">
-        {getTotalTimesheets()}
-      </p>
-      <p className="text-xs text-gray-500 dark:text-gray-400">Total</p>
-    </div>
-  </div>
-
-  {/* Pie Chart & Legend
-  <div className="flex flex-col items-center justify-center mt-2 space-y-3">
-    <ChartWidget 
-      type="pie" 
-      data={getTimesheetStatusData()} 
-      height={180} 
-      showLegend={true} 
-    />
-  </div> */}
 </div>
 
-{/* 5️⃣ Active Employees */}
-  <div className="bg-blue-200 dark:bg-[#0f1a25] rounded-2xl shadow-sm p-4 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all duration-200 flex flex-col justify-between min-h-[170px]">
+
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 p-4">
+
+  {/* 1️⃣ Timesheet Overview */}
+  <div
+    className="
+      bg-blue-100 dark:bg-[#1a202c]  // <-- Updated Dark BG
+      rounded-2xl shadow-sm 
+      p-5 
+      border border-gray-200 dark:border-gray-700
+      hover:shadow-md transition-all duration-200
+      flex flex-col gap-6
+    "
+  >
+    {/* Header */}
+    <div className="flex items-center justify-between">
+      <h3 className="text-base font-semibold text-gray-800 dark:text-gray-100">
+        Timesheet Overview
+      </h3>
+
+      <div
+        className="
+          w-10 h-10 flex items-center justify-center 
+          rounded-xl 
+          bg-blue-50 dark:bg-blue-900/30 
+          text-blue-600 dark:text-blue-300
+        "
+      >
+        <i className="fas fa-clock"></i>
+      </div>
+    </div>
+
+    {/* Stats Row */}
+    <div className="flex justify-around text-center py-6">
+      <div>
+        <p className="text-3xl font-bold text-gray-900 dark:text-white">
+          {getPendingTimesheets()}
+        </p>
+        <p className="text-xs text-gray-500 dark:text-gray-400">Pending</p>
+      </div>
+
+      <div>
+        <p className="text-3xl font-bold text-gray-900 dark:text-white">
+          {getApprovedTimesheets()}
+        </p>
+        <p className="text-xs text-gray-500 dark:text-gray-400">Approved</p>
+      </div>
+
+      <div>
+        <p className="text-3xl font-bold text-gray-900 dark:text-white">
+          {getTotalTimesheets()}
+        </p>
+        <p className="text-xs text-gray-500 dark:text-gray-400">Total</p>
+      </div>
+    </div>
+  </div>
+
+  {/* 5️⃣ Active Employees */}
+  <div className="bg-blue-200 dark:bg-[#1a202c] rounded-2xl shadow-sm p-4 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all duration-200 flex flex-col justify-between min-h-[170px]">
     <div className="flex items-center justify-between">
       <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-100">Active Employees</h3>
       <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-blue-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-300">
@@ -451,7 +469,7 @@ const ModernDashboard = () => {
 
   {/* 2️⃣ Total Revenue */}
   {user?.role === "admin" && (
-    <div className="bg-cyan-100 dark:bg-[#0f1a25] rounded-2xl shadow-sm p-4 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all duration-200 flex flex-col justify-between min-h-[170px]">
+    <div className="bg-cyan-100 dark:bg-[#1a202c] rounded-2xl shadow-sm p-4 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all duration-200 flex flex-col justify-between min-h-[170px]">
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-100">Total Revenue</h3>
         <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-cyan-50 dark:bg-green-900/30 text-green-600 dark:text-green-300">
@@ -479,9 +497,9 @@ const ModernDashboard = () => {
     </div>
   )}
 
-{/* 4️⃣ Revenue by Client */}
+  {/* 4️⃣ Revenue by Client */}
   {user?.role === "admin" && (
-    <div className="bg-cyan-50 dark:bg-[#0f1a25] rounded-2xl shadow-sm p-5 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all duration-200 flex flex-col gap-4">
+    <div className="bg-cyan-50 dark:bg-[#1a202c] rounded-2xl shadow-sm p-5 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all duration-200 flex flex-col gap-4">
       <div className="flex items-center justify-between">
         <h3 className="text-base font-semibold text-gray-800 dark:text-gray-100">Revenue by Client</h3>
         <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-cyan-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-300">
@@ -494,7 +512,8 @@ const ModernDashboard = () => {
           revenueByClient.map((client, index) => (
             <div
               key={client.id}
-              className="flex items-center justify-between bg-gray-50 dark:bg-[#1c2733] p-3 rounded-xl"
+              // Used a slightly lighter dark shade for inner list items
+              className="flex items-center justify-between bg-gray-50 dark:bg-[#2d3748] p-3 rounded-xl" 
             >
               <div className="text-sm font-semibold text-gray-700 dark:text-gray-300">#{index + 1}</div>
               <div className="flex flex-col">
@@ -515,11 +534,9 @@ const ModernDashboard = () => {
     </div>
   )}
 
-  
-
-   {/* 3️⃣ Monthly Revenue Chart (spans 2 columns on md, 1 on small) */}
+  {/* 3️⃣ Monthly Revenue Chart (spans 2 columns on md, 1 on small) */}
   {user?.role === "admin" && (
-    <div className="bg-slate-50 dark:bg-[#0f1a25] rounded-2xl shadow-sm p-4 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all duration-200 col-span-1 md:col-span-2 flex flex-col min-h-[170px]">
+    <div className="bg-slate-50 dark:bg-[#1a202c] rounded-2xl shadow-sm p-4 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all duration-200 col-span-1 md:col-span-2 flex flex-col min-h-[170px]">
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-100">Monthly Revenue Trend</h3>
         <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-300">
@@ -540,77 +557,74 @@ const ModernDashboard = () => {
     </div>
   )}
 
-  
-
-   {/* 8️⃣ Recent Activity */}
-<div className="bg-slate-100 dark:bg-[#0f1a25] rounded-2xl shadow-sm p-5 border border-gray-200 dark:border-gray-700 
+  {/* 8️⃣ Recent Activity */}
+  <div className="bg-slate-100 dark:bg-[#1a202c] rounded-2xl shadow-sm p-5 border border-gray-200 dark:border-gray-700 
      hover:shadow-md transition-all duration-200 col-span-1 md:col-span-2 
      flex flex-col h-full">
 
-  {/* Header */}
-  <div className="flex items-center justify-between mb-4">
-    <h3 className="text-base font-semibold text-gray-800 dark:text-gray-100">
-      Recent Activity
-    </h3>
-    <div className="w-10 h-10 flex items-center justify-center rounded-xl 
+    {/* Header */}
+    <div className="flex items-center justify-between mb-4">
+      <h3 className="text-base font-semibold text-gray-800 dark:text-gray-100">
+        Recent Activity
+      </h3>
+      <div className="w-10 h-10 flex items-center justify-center rounded-xl 
         bg-slate-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
-      <i className="fas fa-history"></i>
+        <i className="fas fa-history"></i>
+      </div>
+    </div>
+
+    <div className="space-y-2 overflow-y-auto pr-2"
+      style={{ maxHeight: "155px" }}>
+
+      {recentActivity.length > 0 ? (
+        recentActivity.slice(0, 5).map((activity) => (
+          <div
+            key={activity.id}
+            // Used a slightly lighter dark shade for inner list items
+            className="flex items-center justify-between bg-gray-200 dark:bg-[#2d3748] 
+                   p-2.5 rounded-lg"
+          >
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 flex items-center justify-center rounded-full 
+                          bg-blue-100 dark:bg-blue-900/30 
+                          text-blue-600 dark:text-blue-300 text-xs">
+                <i className={`fas ${activity.activity_type === 'timesheet' ? 'fa-clock' : 'fa-calendar-times'}`}></i>
+              </div>
+
+              <div>
+                <div className="font-medium text-sm dark:text-gray-100">
+                  {activity.activity_type === 'timesheet' ? 'Timesheet' : 'Leave'} by {activity.employee_name}
+                </div>
+                <div className="text-[10px] text-gray-500 dark:text-gray-400">
+                  {formatRelativeTime(activity.created_at)}
+                </div>
+              </div>
+            </div>
+
+            <span
+              className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+                activity.status === "approved"
+                  ? "bg-green-200 dark:bg-green-900 text-green-700 dark:text-green-300"
+                  : activity.status === "submitted" || activity.status === "pending"
+                    ? "bg-yellow-200 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300"
+                    : "bg-red-200 dark:bg-red-900 text-red-700 dark:text-red-300"
+              }`}
+            >
+              {activity.status}
+            </span>
+          </div>
+        ))
+      ) : (
+        <div className="text-center text-gray-500 dark:text-gray-400 py-4">
+          No recent activity
+        </div>
+      )}
     </div>
   </div>
 
-  <div className="space-y-2 overflow-y-auto pr-2"
-     style={{ maxHeight: "155px" }}>
-
-  {recentActivity.length > 0 ? (
-    recentActivity.slice(0, 5).map((activity) => (
-      <div
-        key={activity.id}
-        className="flex items-center justify-between bg-gray-200 dark:bg-[#1c2733] 
-                   p-2.5 rounded-lg"
-      >
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 flex items-center justify-center rounded-full 
-                          bg-blue-100 dark:bg-blue-900/30 
-                          text-blue-600 dark:text-blue-300 text-xs">
-            <i className={`fas ${activity.activity_type === 'timesheet' ? 'fa-clock' : 'fa-calendar-times'}`}></i>
-          </div>
-
-          <div>
-            <div className="font-medium text-sm dark:text-gray-100">
-              {activity.activity_type === 'timesheet' ? 'Timesheet' : 'Leave'} by {activity.employee_name}
-            </div>
-            <div className="text-[10px] text-gray-500 dark:text-gray-400">
-              {formatRelativeTime(activity.created_at)}
-            </div>
-          </div>
-        </div>
-
-        <span
-          className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
-            activity.status === "approved"
-              ? "bg-green-200 dark:bg-green-900 text-green-700 dark:text-green-300"
-              : activity.status === "submitted" || activity.status === "pending"
-              ? "bg-yellow-200 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300"
-              : "bg-red-200 dark:bg-red-900 text-red-700 dark:text-red-300"
-          }`}
-        >
-          {activity.status}
-        </span>
-      </div>
-    ))
-  ) : (
-    <div className="text-center text-gray-500 dark:text-gray-400 py-4">
-      No recent activity
-    </div>
-  )}
-</div>
-
-
-</div>
-
 
   {/* 7️⃣ Top Performers */}
-  <div className="bg-indigo-50 dark:bg-[#0f1a25] rounded-2xl shadow-sm p-4 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all duration-200 flex flex-col gap-3 min-h-[170px]">
+  <div className="bg-indigo-50 dark:bg-[#1a202c] rounded-2xl shadow-sm p-4 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all duration-200 flex flex-col gap-3 min-h-[170px]">
     <div className="flex items-center justify-between">
       <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-100">Top Performers</h3>
       <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-indigo-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-300">
@@ -621,7 +635,9 @@ const ModernDashboard = () => {
     <div className="space-y-2 mt-2">
       {topPerformers.length > 0 ? (
         topPerformers.slice(0, 4).map((emp, index) => (
-          <div key={emp.id} className="flex items-center justify-between bg-gray-50 dark:bg-[#1c2733] p-2 rounded-lg">
+          <div key={emp.id} 
+             // Used a slightly lighter dark shade for inner list items
+             className="flex items-center justify-between bg-gray-50 dark:bg-[#2d3748] p-2 rounded-lg">
             <div className="flex items-center gap-3 min-w-0">
               <div className="text-sm font-semibold text-gray-700 dark:text-gray-300">#{index + 1}</div>
               <div className="flex flex-col min-w-0">
@@ -639,9 +655,6 @@ const ModernDashboard = () => {
       )}
     </div>
   </div>
-
- 
-
 </div>
 
 

@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import "./DataGridFilter.css";
+import './DataGridFilter.css';
 
 const DataGridFilter = ({
   filters,
@@ -9,7 +9,8 @@ const DataGridFilter = ({
   onClearFilters,
   resultCount,
   totalCount,
-  className = ""}) => {
+  className = '',
+}) => {
   const handleFilterChange = (filterKey, value) => {
     onFilterChange(filterKey, value);
   };
@@ -21,61 +22,77 @@ const DataGridFilter = ({
   const hasActiveFilters = filters.some(
     (filter) =>
       filter.value !== filter.defaultValue &&
-      filter.value !== "" &&
-      filter.value !== "all"
+      filter.value !== '' &&
+      filter.value !== 'all'
   );
 
   return (
     <div className={`data-grid-filter ${className}`}>
-      <div className="filter-header">
-        <div className="filter-title">
-          <i className="fas fa-filter mr-2"></i>
+      {/* ===== HEADER ===== */}
+      <div className="filter-header flex items-center justify-between mb-3">
+        <div className="filter-title text-sm font-semibold text-slate-700 flex items-center">
+          <i className="fas fa-filter mr-2 text-xs" />
           Filters
           {hasActiveFilters && (
-            <span className="active-filters-count">
+            <span className="active-filters-count ml-1 text-xs text-indigo-600">
               (
               {
                 filters.filter(
                   (f) =>
                     f.value !== f.defaultValue &&
-                    f.value !== "" &&
-                    f.value !== "all"
+                    f.value !== '' &&
+                    f.value !== 'all'
                 ).length
               }
               )
             </span>
           )}
         </div>
-        <div className="filter-results">
+
+        <div className="filter-results flex items-center gap-2 text-xs text-slate-500">
           <span className="result-count">
             {resultCount} of {totalCount} items
           </span>
+
           {hasActiveFilters && (
             <button
-              className="custom-btn custom-btn-sm custom-btn-outline ml-2"
+              className="custom-btn custom-btn-sm custom-btn-outline"
               onClick={handleClearAll}
               title="Clear all filters"
             >
-              <i className="custom-icon fas fa-times mr-1"></i>
-              Clear All
+              <i className="custom-icon fas fa-times mr-1" />
+              Clear
             </button>
           )}
         </div>
       </div>
 
-      <div className="filter-controls">
+      {/* ===== CONTROLS ===== */}
+      <div className="filter-controls grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
         {filters.map((filter) => (
           <div key={filter.key} className="filter-item">
-            <label className="filter-label" htmlFor={filter.key}>
-              {filter.label}:
+            <label
+              className="filter-label block mb-1 text-[11px] font-medium text-slate-600"
+              htmlFor={filter.key}
+            >
+              {filter.label}
             </label>
 
-            {filter.type === "select" && (
+            {/* ===== SELECT ===== */}
+            {filter.type === 'select' && (
               <select
                 id={filter.key}
-                className="form-select filter-select"
+                className="
+                  w-full h-9
+                  rounded-md
+                  bg-white border border-slate-300
+                  px-2 text-xs text-slate-800
+                  focus:outline-none focus:ring-1 focus:ring-indigo-500
+                "
                 value={filter.value}
-                onChange={(e) => handleFilterChange(filter.key, e.target.value)}
+                onChange={(e) =>
+                  handleFilterChange(filter.key, e.target.value)
+                }
               >
                 {filter.options.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -85,50 +102,86 @@ const DataGridFilter = ({
               </select>
             )}
 
-            {filter.type === "text" && (
+            {/* ===== TEXT ===== */}
+            {filter.type === 'text' && (
               <input
                 id={filter.key}
                 type="text"
-                className="form-control filter-input"
+                className="
+                  w-full h-9
+                  rounded-md
+                  bg-white border border-slate-300
+                  px-2 text-xs text-slate-800
+                  placeholder-slate-400
+                  focus:outline-none focus:ring-1 focus:ring-indigo-500
+                "
                 placeholder={filter.placeholder}
                 value={filter.value}
-                onChange={(e) => handleFilterChange(filter.key, e.target.value)}
+                onChange={(e) =>
+                  handleFilterChange(filter.key, e.target.value)
+                }
               />
             )}
 
-            {filter.type === "date" && (
+            {/* ===== DATE ===== */}
+            {filter.type === 'date' && (
               <input
                 id={filter.key}
                 type="date"
-                className="form-control filter-input"
+                className="
+                  w-full h-9
+                  rounded-md
+                  bg-white border border-slate-300
+                  px-2 text-xs text-slate-800
+                  focus:outline-none focus:ring-1 focus:ring-indigo-500
+                "
                 value={filter.value}
-                onChange={(e) => handleFilterChange(filter.key, e.target.value)}
+                onChange={(e) =>
+                  handleFilterChange(filter.key, e.target.value)
+                }
               />
             )}
 
-            {filter.type === "dateRange" && (
-              <div className="date-range-filter">
+            {/* ===== DATE RANGE ===== */}
+            {filter.type === 'dateRange' && (
+              <div className="flex items-center gap-2">
                 <input
                   type="date"
-                  className="form-control filter-input"
+                  className="
+                    w-full h-9
+                    rounded-md
+                    bg-white border border-slate-300
+                    px-2 text-xs text-slate-800
+                    focus:outline-none focus:ring-1 focus:ring-indigo-500
+                  "
                   placeholder="From"
-                  value={filter.value.from || ""}
+                  value={filter.value.from || ''}
                   onChange={(e) =>
                     handleFilterChange(filter.key, {
                       ...filter.value,
-                      from: e.target.value})
+                      from: e.target.value,
+                    })
                   }
                 />
-                <span className="date-separator">to</span>
+
+                <span className="text-xs text-slate-400">to</span>
+
                 <input
                   type="date"
-                  className="form-control filter-input"
+                  className="
+                    w-full h-9
+                    rounded-md
+                    bg-white border border-slate-300
+                    px-2 text-xs text-slate-800
+                    focus:outline-none focus:ring-1 focus:ring-indigo-500
+                  "
                   placeholder="To"
-                  value={filter.value.to || ""}
+                  value={filter.value.to || ''}
                   onChange={(e) =>
                     handleFilterChange(filter.key, {
                       ...filter.value,
-                      to: e.target.value})
+                      to: e.target.value,
+                    })
                   }
                 />
               </div>

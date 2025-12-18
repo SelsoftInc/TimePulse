@@ -170,6 +170,8 @@ console.log('📍 Loading password-reset routes...');
 app.use("/api/password-reset", passwordResetRoutes);
 console.log('📍 Loading settings routes...');
 app.use("/api/settings", settingsRoutes);
+console.log('📍 Loading search routes...');
+app.use("/api/search", require("./routes/search"));
 console.log('✅ All routes loaded successfully');
 
 // Error handling middleware

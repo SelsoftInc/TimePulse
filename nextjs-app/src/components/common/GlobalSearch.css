@@ -1,0 +1,359 @@
+/* Global Search Container */
+.global-search-container {
+  position: relative;
+  width: 100%;
+  max-width: 600px;
+}
+
+/* Search Input Wrapper */
+.search-input-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 14px;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.global-search-input {
+  width: 100%;
+  padding: 10px 40px 10px 38px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background-color: rgba(255, 255, 255, 0.1);
+  color: white;
+  font-size: 14px;
+  outline: none;
+  transition: all 0.3s ease;
+}
+
+.global-search-input::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.global-search-input:focus {
+  background-color: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.4);
+  box-shadow: 0 0 0 3px rgba(77, 163, 199, 0.2);
+}
+
+.search-loading {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 14px;
+}
+
+/* Results Dropdown */
+.search-results-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  max-height: 500px;
+  overflow-y: auto;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  animation: slideDown 0.2s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Dark mode dropdown */
+.dark .search-results-dropdown {
+  background: #1e293b;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+
+/* Results Section */
+.search-results-section {
+  padding: 8px 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.dark .search-results-section {
+  border-bottom-color: #334155;
+}
+
+.search-results-section:last-child {
+  border-bottom: none;
+}
+
+.section-title {
+  padding: 8px 16px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #6b7280;
+}
+
+.dark .section-title {
+  color: #94a3b8;
+}
+
+.section-items {
+  padding: 0;
+}
+
+/* Result Item */
+.search-result-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-left: 3px solid transparent;
+}
+
+.search-result-item:hover,
+.search-result-item.selected {
+  background-color: #f3f4f6;
+  border-left-color: #4da3c7;
+}
+
+.dark .search-result-item:hover,
+.dark .search-result-item.selected {
+  background-color: #334155;
+  border-left-color: #60a5fa;
+}
+
+.result-icon {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 8px;
+  color: white;
+  font-size: 16px;
+}
+
+.result-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.result-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #1f2937;
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dark .result-label {
+  color: #f1f5f9;
+}
+
+.result-subtitle {
+  font-size: 12px;
+  color: #6b7280;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dark .result-subtitle {
+  color: #94a3b8;
+}
+
+.result-status {
+  flex-shrink: 0;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.result-status.status-pending {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.result-status.status-submitted,
+.result-status.status-submitted\ for\ approval {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+
+.result-status.status-approved {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.result-status.status-rejected {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+.result-status.status-paid {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.result-status.status-unpaid {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.result-status.status-active {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.result-status.status-inactive {
+  background-color: #f3f4f6;
+  color: #4b5563;
+}
+
+/* Dark mode status badges */
+.dark .result-status.status-pending {
+  background-color: rgba(251, 191, 36, 0.2);
+  color: #fbbf24;
+}
+
+.dark .result-status.status-submitted,
+.dark .result-status.status-submitted\ for\ approval {
+  background-color: rgba(59, 130, 246, 0.2);
+  color: #60a5fa;
+}
+
+.dark .result-status.status-approved {
+  background-color: rgba(34, 197, 94, 0.2);
+  color: #4ade80;
+}
+
+.dark .result-status.status-rejected {
+  background-color: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+}
+
+.dark .result-status.status-paid {
+  background-color: rgba(34, 197, 94, 0.2);
+  color: #4ade80;
+}
+
+.dark .result-status.status-unpaid {
+  background-color: rgba(251, 191, 36, 0.2);
+  color: #fbbf24;
+}
+
+.dark .result-status.status-active {
+  background-color: rgba(34, 197, 94, 0.2);
+  color: #4ade80;
+}
+
+.dark .result-status.status-inactive {
+  background-color: rgba(148, 163, 184, 0.2);
+  color: #94a3b8;
+}
+
+/* No Results */
+.no-results {
+  padding: 40px 20px;
+  text-align: center;
+  color: #6b7280;
+}
+
+.dark .no-results {
+  color: #94a3b8;
+}
+
+.no-results i {
+  font-size: 48px;
+  margin-bottom: 16px;
+  opacity: 0.3;
+}
+
+.no-results p {
+  font-size: 16px;
+  font-weight: 500;
+  margin-bottom: 8px;
+  color: #1f2937;
+}
+
+.dark .no-results p {
+  color: #f1f5f9;
+}
+
+.no-results span {
+  font-size: 13px;
+  color: #9ca3af;
+}
+
+.dark .no-results span {
+  color: #64748b;
+}
+
+/* Scrollbar Styling */
+.search-results-dropdown::-webkit-scrollbar {
+  width: 6px;
+}
+
+.search-results-dropdown::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.search-results-dropdown::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 3px;
+}
+
+.dark .search-results-dropdown::-webkit-scrollbar-thumb {
+  background: #475569;
+}
+
+.search-results-dropdown::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+.dark .search-results-dropdown::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .global-search-container {
+    max-width: 100%;
+  }
+
+  .search-results-dropdown {
+    max-height: 400px;
+  }
+
+  .result-label {
+    font-size: 13px;
+  }
+
+  .result-subtitle {
+    font-size: 11px;
+  }
+}

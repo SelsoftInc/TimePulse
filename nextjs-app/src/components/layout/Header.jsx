@@ -10,6 +10,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import NotificationBell from '../notifications/NotificationBell';
 import TimesheetAlerts from '../notifications/TimesheetAlerts';
 import AskAIButton from '../ai/AskAIButton';
+import GlobalSearch from '../common/GlobalSearch';
 import './Header.css';
 
 
@@ -220,24 +221,7 @@ const Header = ({ toggleSidebar }) => {
       </div>
 
 <div className="hidden md:flex flex-1 max-w-xl mx-4">
-        <div className="relative w-full">
-          <i className="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-white text-sm"></i>
-
-          <input
-            type="text"
-            placeholder="Search employees, clients, timesheets..."
-            className="w-full pl-9 pr-4 py-2 rounded-lg bg-white/10 
-              text-white placeholder-gray-400 text-sm
-              focus:outline-none focus:ring-2 focus:ring-[#4da3c7]
-              transition"
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                // TODO: trigger global search
-                console.log("Search:", e.target.value);
-              }
-            }}
-          />
-        </div>
+        <GlobalSearch />
       </div>
 
       {/* Tools */}

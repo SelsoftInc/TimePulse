@@ -454,7 +454,7 @@ p, .p {
   --border-color: var(--blue-border);
 }
 
-.theme-dark {
+.theme-dark, .dark {
   --bg-color: var(--dark-bg);
   --sidebar-bg: var(--dark-sidebar);
   --text-color: var(--dark-text);

@@ -1642,3 +1642,173 @@ body.dark-mode .ai-upload-toggle-switch.off {
   display: flex;
   gap: 0.25rem;
 }
+
+
+
+/* ===============================
+   Submit Timesheet – Visual Polish
+   CSS ONLY – Safe Overrides
+================================ */
+
+/* Page spacing */
+.nk-content-body {
+  padding-top: 8px;
+}
+
+/* Card refinements */
+.card {
+  border-radius: 10px;
+}
+
+.card-inne {
+  padding: 16px 18px; /* reduced from default */
+}
+
+/* Headings */
+.nk-block-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.card-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+/* Form groups spacing */
+.form-group {
+  margin-bottom: 16px;
+}
+
+/* Labels */
+.form-label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  margin-bottom: 6px;
+}
+
+/* Inputs & selects – unified sizing */
+.form-control,
+.form-select {
+  height: 38px;
+  padding: 6px 10px;
+  font-size: 0.85rem;
+  border-radius: 6px;
+}
+
+/* Timesheet week dropdown */
+.timesheet-dropdown {
+  height: 38px !important;
+  font-size: 0.85rem;
+}
+
+/* Input groups */
+.input-group > .form-select,
+.input-group > .form-control {
+  height: 38px;
+}
+
+/* Notes text */
+.form-note small {
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
+/* Upload card */
+.upload-zone {
+  padding: 20px;
+  border-radius: 8px;
+}
+
+.dz-message-text {
+  font-size: 0.85rem;
+}
+
+.dz-message-hint {
+  font-size: 0.7rem;
+}
+
+/* Uploaded file preview */
+.uploaded-file-preview .border {
+  border-radius: 8px;
+}
+
+/* Buttons */
+.btn {
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  border-radius: 6px;
+}
+
+.btn-sm {
+  padding: 4px 10px;
+  font-size: 0.75rem;
+}
+
+/* AI summary cards */
+.ai-summary-card {
+  padding: 14px;
+  border-radius: 8px;
+}
+
+.ai-summary-card h6 {
+  font-size: 0.8rem;
+}
+
+.ai-summary-card p {
+  font-size: 0.75rem;
+}
+
+/* Progress bars */
+.progress {
+  height: 6px;
+  border-radius: 4px;
+}
+
+/* Reduce visual noise */
+.card-bordered {
+  border-color: #e5e7eb;
+}
+
+/* Section separation */
+.nk-block + .nk-block {
+  margin-top: 16px;
+}
+
+/* ===============================
+   Submit Timesheet Header – Wrap Fix
+================================ */
+
+/* Remove extra spacing below page title */
+.nk-block-head {
+  margin-bottom: 12px;
+}
+
+/* Tighten header block */
+.nk-block-head-sm {
+  padding-bottom: 0;
+}
+
+/* Align header with card container */
+.nk-block-head-content {
+  padding-left: 8px;
+  padding-right: 8px;
+}
+
+/* Reduce title visual dominance */
+.page-title {
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+/* Pull card closer to title */
+.nk-block {
+  margin-top: 0;
+}
+
+/* Optional: make title feel “inside” card */
+.card + .nk-block-head,
+.nk-block-head + .nk-block {
+  margin-top: 8px;
+}

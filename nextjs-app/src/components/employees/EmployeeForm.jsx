@@ -500,675 +500,747 @@ const EmployeeForm = () => {
   }
 
   return (
-    <PermissionGuard requiredPermission={PERMISSIONS.CREATE_EMPLOYEE}>
-      <div className="nk-conten">
-        <div className="container-fluid">
-          <div className="nk-block-head">
-            <div className="nk-block-between">
-              <div className="nk-block-head-content">
-                <h3 className="nk-block-title">
-                  {isEditMode ? "Edit Employee" : "Add New Employee"}
-                </h3>
-                {/* <p className="nk-block-subtitle">
-                  {isEditMode ? 'Update employee information' : 'Create a new employee record'}
-                </p> */}
-              </div>
+   <PermissionGuard requiredPermission={PERMISSIONS.CREATE_EMPLOYEE}>
+  <div className="nk-content min-h-screen bg-slate-50">
+    <div className="container-fluid">
+      {/* <div className="nk-content-inner">
+      <div className="nk-content-body py-6"> */}
+        <div className="mb-6 rounded-2xl border border-slate-200 bg-indigo-50 p-5 shadow-sm">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <h1 className="text-xl font-semibold text-slate-900">
+                {isEditMode ? "Edit Employee" : "Add Employee"}
+              </h1>
+              <p className="mt-1 text-sm text-slate-600">
+                {isEditMode ? "Update employee details" : "Enter employee details"}
+              </p>
             </div>
           </div>
+        </div>
 
-          <div className="nk-block">
-            <div className="card card-bordered">
-              <div className="card-inne">
-                {employeeLoading ? (
-                  <div className="d-flex justify-content-center mt-5">
-                    <div className="spinner-border text-primary" role="status">
-                      <span className="sr-only">Loading employee data...</span>
+        {/* <div className="nk-block nk-block-lg"> */}
+          <div className="card card-bordered rounded-2xl border-slate-200 shadow-sm">
+            <div className="card-inner card-inner-lg">
+
+            {employeeLoading ? (
+              <div className="d-flex justify-content-center py-5">
+                <div className="spinner-border text-primary" role="status" />
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit}>
+                <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                  <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                    <div className="border-b border-slate-200 bg-slate-50 px-5 py-3">
+                      <div className="text-sm font-semibold text-slate-900">Personal Information</div>
                     </div>
-                  </div>
-                ) : (
-                  <form onSubmit={handleSubmit}>
-                    <div className="row g-4">
-                      <div className="col-lg-6">
-                        <div className="form-group">
-                          <label className="form-label" htmlFor="firstName">
-                            First Name*
-                          </label>
-                          <input
-                            type="text"
-                            className="form-control"
-                            id="firstName"
-                            name="firstName"
-                            value={formData.firstName}
-                            onChange={handleChange}
-                            onBlur={handleBlur}
-                            placeholder="Enter first name"
-                            required
-                          />
-                          {errors.firstName && (
-                            <div className="mt-1">
-                              <small className="text-danger">
-                                {errors.firstName}
-                              </small>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                      <div className="col-lg-6">
-                        <div className="form-group">
-                          <label className="form-label" htmlFor="lastName">
-                            Last Name*
-                          </label>
-                          <input
-                            type="text"
-                            className="form-control"
-                            id="lastName"
-                            name="lastName"
-                            value={formData.lastName}
-                            onChange={handleChange}
-                            onBlur={handleBlur}
-                            placeholder="Enter last name"
-                            required
-                          />
-                          {errors.lastName && (
-                            <div className="mt-1">
-                              <small className="text-danger">
-                                {errors.lastName}
-                              </small>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                      <div className="col-lg-6">
-                        <div className="form-group">
-                          <label className="form-label" htmlFor="email">
-                            Email Address*
-                          </label>
-                          <input
-                            type="email"
-                            className="form-control"
-                            id="email"
-                            name="email"
-                            value={formData.email}
-                            onChange={handleChange}
-                            onBlur={handleBlur}
-                            placeholder="Enter email address"
-                            required
-                          />
-                          {errors.email && (
-                            <div className="mt-1">
-                              <small className="text-danger">
-                                {errors.email}
-                              </small>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                      <div className="col-lg-6">
-                        <div className="form-group">
-                          <label className="form-label" htmlFor="phone">
-                            Phone Number
-                          </label>
-                          <input
-                            type="tel"
-                            className="form-control"
-                            id="phone"
-                            name="phone"
-                            value={formData.phone}
-                            onChange={handleChange}
-                            onBlur={handleBlur}
-                            placeholder="Enter phone number"
-                            maxLength="14"
-                          />
-                          {errors.phone && (
-                            <div className="mt-1">
-                              <small className="text-danger">
-                                {errors.phone}
-                              </small>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                      <div className="col-lg-6">
-                        <div className="form-group">
-                          <label className="form-label" htmlFor="position">
-                            Position*
-                          </label>
-                          <input
-                            type="text"
-                            className="form-control"
-                            id="position"
-                            name="position"
-                            value={formData.position}
-                            onChange={handleChange}
-                            placeholder="Enter position"
-                            required
-                          />
-                        </div>
-                      </div>
-                      <div className="col-lg-6">
-                        <div className="form-group">
-                          <label className="form-label" htmlFor="department">
-                            Department
-                          </label>
-                          <input
-                            type="text"
-                            className="form-control"
-                            id="department"
-                            name="department"
-                            value={formData.department}
-                            onChange={handleChange}
-                            placeholder="Enter department"
-                          />
-                        </div>
-                      </div>
-                      <div className="col-lg-6">
-                        <div className="form-group">
-                          <label className="form-label" htmlFor="startDate">
-                            Start Date*
-                          </label>
-                          <input
-                            type="date"
-                            className="form-control"
-                            id="startDate"
-                            name="startDate"
-                            value={formData.startDate}
-                            onChange={handleChange}
-                            required
-                          />
-                        </div>
-                      </div>
-                      <div className="col-lg-6">
-                        <div className="form-group">
-                          <label className="form-label" htmlFor="clientId">
-                            Assigned Client*
-                          </label>
-                          <select
-                            className="form-select"
-                            id="clientId"
-                            name="clientId"
-                            value={formData.clientId}
-                            onChange={handleClientChange}
-                            required
-                          >
-                            <option value="">Select Client</option>
-                            {clients.map((client) => (
-                              <option key={client.id} value={client.id}>
-                                {client.clientName || client.name}
-                                {client.clientType || client.type
-                                  ? ` (${client.clientType || client.type})`
-                                  : ""}
-                              </option>
-                            ))}
-                          </select>
-                          {clientsLoading && (
-                            <div className="form-note mt-1">
-                              <small className="text-soft">
-                                Loading clients…
-                              </small>
-                            </div>
-                          )}
-                          {clientsError && (
-                            <div className="form-note mt-1">
-                              <small className="text-danger">
-                                {clientsError}
-                              </small>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="col-lg-6">
-                        <div className="form-group">
-                          <label className="form-label" htmlFor="clientType">
-                            Client Type
-                          </label>
-                          <input
-                            type="text"
-                            className="form-control"
-                            id="clientType"
-                            name="clientType"
-                            value={formData.clientType}
-                            readOnly
-                            placeholder="Auto-filled based on client selection"
-                          />
-                          <div className="form-note mt-1">
-                            <small className="text-soft">
-                              Automatically set based on selected client
-                            </small>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="col-lg-6">
-                        <div className="form-group">
-                          <label className="form-label" htmlFor="approver">
-                            Assigned Approver*
-                          </label>
-                          <select
-                            className="form-select"
-                            id="approver"
-                            name="approver"
-                            value={formData.approver}
-                            onChange={handleChange}
-                            required
-                          >
-                            <option value="">Select Approver</option>
-                            {approvers.map((approver) => (
-                              <option key={approver.id} value={approver.id}>
-                                {approver.firstName} {approver.lastName} - {approver.department || approver.role}
-                              </option>
-                            ))}
-                          </select>
-                          {approversLoading && (
-                            <div className="form-note mt-1">
-                              <small className="text-soft">
-                                Loading approvers…
-                              </small>
-                            </div>
-                          )}
-                          {approversError && (
-                            <div className="form-note mt-1">
-                              <small className="text-danger">
-                                {approversError}
-                              </small>
-                            </div>
-                          )}
-                          <div className="form-note mt-1">
-                            <small className="text-soft">
-                              This person will approve/reject employee
-                              timesheets
-                            </small>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Hourly Rate - Only visible to Admin */}
-                      {checkPermission(PERMISSIONS.MANAGE_SETTINGS) && (
+                    <div className="p-4">
+                      <div className="row g-4">
                         <div className="col-lg-6">
                           <div className="form-group">
-                            <label className="form-label" htmlFor="hourlyRate">
-                              Hourly Rate ($)*
-                            </label>
-                            <input
-                              type="number"
-                              className="form-control"
-                              id="hourlyRate"
-                              name="hourlyRate"
-                              value={formData.hourlyRate}
-                              onChange={handleChange}
-                              placeholder="Enter hourly rate"
-                              min="0"
-                              step="0.01"
-                              required
-                            />
-                            <small className="text-muted">
-                              This information is only visible to administrators
-                            </small>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Overtime Settings - Only visible to Admin */}
-                      {checkPermission(PERMISSIONS.MANAGE_SETTINGS) && (
-                        <div className="col-lg-12">
-                          <div className="form-group mt-3">
-                            <div className="custom-control custom-switch">
-                              <input
-                                type="checkbox"
-                                className="custom-control-input"
-                                id="enableOvertime"
-                                name="enableOvertime"
-                                checked={formData.enableOvertime}
-                                onChange={(e) =>
-                                  setFormData({
-                                    ...formData,
-                                    enableOvertime: e.target.checked})
-                                }
-                              />
-                              <label
-                                className="custom-control-label"
-                                htmlFor="enableOvertime"
-                              >
-                                Enable Overtime
-                              </label>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Overtime Multiplier - Only visible if overtime is enabled and to Admin */}
-                      {checkPermission(PERMISSIONS.MANAGE_SETTINGS) &&
-                        formData.enableOvertime && (
-                          <div className="col-lg-6">
-                            <div className="form-group">
-                              <label
-                                className="form-label"
-                                htmlFor="overtimeMultiplier"
-                              >
-                                Overtime Multiplier
-                              </label>
-                              <input
-                                type="number"
-                                className="form-control"
-                                id="overtimeMultiplier"
-                                name="overtimeMultiplier"
-                                value={formData.overtimeMultiplier}
-                                onChange={handleChange}
-                                placeholder="1.5"
-                                min="1"
-                                step="0.1"
-                              />
-                              <small className="text-muted">
-                                Standard rate × multiplier = overtime rate
-                              </small>
-                            </div>
-                          </div>
-                        )}
-
-                      <div className="col-lg-6">
-                        <div className="form-group">
-                          <label className="form-label" htmlFor="status">
-                            Status
-                          </label>
-                          <select
-                            className="form-select"
-                            id="status"
-                            name="status"
-                            value={formData.status}
-                            onChange={handleChange}
-                          >
-                            <option value="active">Active</option>
-                            <option value="inactive">Inactive</option>
-                            <option value="onleave">On Leave</option>
-                          </select>
-                        </div>
-                      </div>
-
-                      {/* Work Order/SOW Upload - Only visible to Admin */}
-                      {checkPermission(PERMISSIONS.MANAGE_SETTINGS) && (
-                        <div className="col-lg-12">
-                          <div className="form-group">
-                            <label className="form-label">
-                              Work Order / SOW{" "}
-                              <span className="text-muted">(Optional)</span>
-                            </label>
-                            <div className="form-control-wrap">
-                              <div className="custom-file">
-                                <input
-                                  type="file"
-                                  className="custom-file-input"
-                                  id="workOrder"
-                                  onChange={handleFileChange}
-                                  accept=".pdf,.doc,.docx"
-                                />
-                                <label
-                                  className="custom-file-label"
-                                  htmlFor="workOrder"
-                                >
-                                  {workOrder ? workOrder.name : "Choose file"}
-                                </label>
-                              </div>
-                            </div>
-                            <small className="form-hint">
-                              Upload the Statement of Work or Work Order
-                              document
-                            </small>
-
-                            {workOrderPreview && (
-                              <div className="document-preview mt-3">
-                                <div className="document-preview-header">
-                                  <span className="document-name">
-                                    {workOrder?.name}
-                                  </span>
-                                  <span className="document-size">
-                                    {Math.round((workOrder?.size || 0) / 1024)}{" "}
-                                    KB
-                                  </span>
-                                </div>
-                                <div className="document-preview-content">
-                                  {workOrder?.type.includes("image") ? (
-                                    <img
-                                      src={workOrderPreview}
-                                      alt="Preview"
-                                      className="preview-image"
-                                    />
-                                  ) : (
-                                    <div className="document-icon">
-                                      <i className="fas fa-file-pdf"></i>
-                                      <span>
-                                        Document uploaded successfully
-                                      </span>
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* SOW Approval Settings - Only visible to Admin */}
-                      {checkPermission(PERMISSIONS.MANAGE_SETTINGS) && (
-                        <div className="col-lg-12">
-                          <div className="form-group mt-3">
-                            <label className="form-label">
-                              SOW Approval Workflow
-                            </label>
-                            <select
-                              className="form-select"
-                              id="approvalWorkflow"
-                              name="approvalWorkflow"
-                              value={formData.approvalWorkflow || "manual"}
-                              onChange={handleChange}
-                            >
-                              <option value="auto">Auto-approve</option>
-                              <option value="manual">Manual approval</option>
-                              <option value="manager">Manager approval</option>
-                              <option value="client">Client approval</option>
-                            </select>
-                            <small className="form-hint">
-                              Select how work hours for this employee should be
-                              approved
-                            </small>
-                          </div>
-                        </div>
-                      )}
-
-                      <div className="col-lg-12">
-                        <div className="form-group">
-                          <label className="form-label" htmlFor="address">
-                            Address
-                          </label>
-                          <input
-                            type="text"
-                            className="form-control"
-                            id="address"
-                            name="address"
-                            value={formData.address}
-                            onChange={handleChange}
-                            placeholder="Enter street address"
-                          />
-                        </div>
-                      </div>
-                      <div className="col-lg-4">
-                        <div className="form-group">
-                          <label className="form-label" htmlFor="city">
-                            City
-                          </label>
-                          <input
-                            type="text"
-                            className="form-control"
-                            id="city"
-                            name="city"
-                            value={formData.city}
-                            onChange={handleChange}
-                            placeholder="Enter city"
-                          />
-                        </div>
-                      </div>
-                      <div className="col-lg-4">
-                        <div className="form-group">
-                          <label className="form-label" htmlFor="state">
-                            State/Province
-                          </label>
-                          {STATES_BY_COUNTRY[formData.country] &&
-                          STATES_BY_COUNTRY[formData.country].length > 0 ? (
-                            <select
-                              className="form-select"
-                              id="state"
-                              name="state"
-                              value={formData.state}
-                              onChange={handleChange}
-                            >
-                              <option value="">Select state</option>
-                              {STATES_BY_COUNTRY[formData.country].map((st) => (
-                                <option key={st} value={st}>
-                                  {st}
-                                </option>
-                              ))}
-                            </select>
-                          ) : (
-                            <input
-                              type="text"
-                              className="form-control"
-                              id="state"
-                              name="state"
-                              value={formData.state}
-                              onChange={handleChange}
-                              placeholder="Enter state"
-                            />
-                          )}
-                        </div>
-                      </div>
-                      {/* Hide ZIP/Postal field for UAE */}
-                      {formData.country !== 'United Arab Emirates' && (
-                        <div className="col-lg-4">
-                          <div className="form-group">
-                            <label className="form-label" htmlFor="zip">
-                              {getPostalLabel(formData.country)}
+                            <label className="form-label" htmlFor="firstName">
+                              First Name
                             </label>
                             <input
                               type="text"
-                              className="form-control"
-                              id="zip"
-                              name="zip"
-                              value={formData.zip}
+                              className="form-control rounded-lg border-slate-300 bg-white shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+                              id="firstName"
+                              name="firstName"
+                              value={formData.firstName}
                               onChange={handleChange}
                               onBlur={handleBlur}
-                              placeholder={getPostalPlaceholder(formData.country)}
-                              maxLength={
-                                formData.country === 'United States'
-                                  ? 10
-                                  : formData.country === 'India'
-                                    ? 6
-                                    : formData.country === 'Canada'
-                                      ? 7
-                                      : formData.country === 'United Kingdom'
-                                        ? 8
-                                        : formData.country === 'Australia'
-                                          ? 4
-                                          : formData.country === 'Singapore'
-                                            ? 6
-                                            : formData.country === 'Germany'
-                                              ? 5
-                                              : 20
-                              }
+                              placeholder="Enter first name"
+                              required
                             />
-                            {errors.zip && (
+                            {errors.firstName && (
                               <div className="mt-1">
                                 <small className="text-danger">
-                                  {errors.zip}
+                                  {errors.firstName}
                                 </small>
                               </div>
                             )}
                           </div>
                         </div>
-                      )}
-                      <div className="col-lg-4">
-                        <div className="form-group">
-                          <label className="form-label" htmlFor="country">
-                            Country
-                          </label>
-                          <select
-                            className="form-select"
-                            id="country"
-                            name="country"
-                            value={formData.country}
-                            onChange={handleChange}
-                          >
-                            {COUNTRY_OPTIONS.map((c) => (
-                              <option key={c} value={c}>
-                                {c}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                      </div>
-                      <div className="col-lg-12">
-                        <div className="form-group">
-                          <label className="form-label" htmlFor="notes">
-                            Notes
-                          </label>
-                          <textarea
-                            className="form-control"
-                            id="notes"
-                            name="notes"
-                            value={formData.notes}
-                            onChange={handleChange}
-                            placeholder="Enter any additional notes"
-                            rows="4"
-                          ></textarea>
-                        </div>
-                      </div>
-                      <div className="col-12">
-                        <div className="form-group">
-                          <button
-                            type="submit"
-                            className="btn btn-primary btn-create-employee"
-                            disabled={loading}
-                          >
-                            {loading ? (
-                              <>
-                                <span
-                                  className="spinner-border spinner-border-sm mr-1"
-                                  role="status"
-                                  aria-hidden="true"
-                                ></span>
-                                {isEditMode ? "Updating..." : "Creating..."}
-                              </>
-                            ) : isEditMode ? (
-                              "Update Employee"
-                            ) : (
-                              "Create Employee"
+
+                        <div className="col-lg-6">
+                          <div className="form-group">
+                            <label className="form-label" htmlFor="lastName">
+                              Last Name*
+                            </label>
+                            <input
+                              type="text"
+                              className="form-control rounded-lg border-slate-300 bg-white shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+                              id="lastName"
+                              name="lastName"
+                              value={formData.lastName}
+                              onChange={handleChange}
+                              onBlur={handleBlur}
+                              placeholder="Enter last name"
+                              required
+                            />
+                            {errors.lastName && (
+                              <div className="mt-1">
+                                <small className="text-danger">
+                                  {errors.lastName}
+                                </small>
+                              </div>
                             )}
-                          </button>
-                          <button
-                            type="button"
-                            className="btn btn-outline-light ml-3"
-                            onClick={() => {
-                              const params = new URLSearchParams(
-                                location.search
-                              );
-                              const qpClientId = params.get("clientId");
-                              if (qpClientId) {
-                                router.push(`/${subdomain}/clients/${qpClientId}`);
-                              } else {
-                                router.push(`/${subdomain}/employees`);
-                              }
-                            }}
-                          >
-                            Cancel
-                          </button>
+                          </div>
+                        </div>
+
+                        <div className="col-lg-6">
+                          <div className="form-group">
+                            <label className="form-label" htmlFor="email">
+                              Email Address*
+                            </label>
+                            <input
+                              type="email"
+                              className="form-control rounded-lg border-slate-300 bg-white shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+                              id="email"
+                              name="email"
+                              value={formData.email}
+                              onChange={handleChange}
+                              onBlur={handleBlur}
+                              placeholder="Enter email address"
+                              required
+                            />
+                            {errors.email && (
+                              <div className="mt-1">
+                                <small className="text-danger">
+                                  {errors.email}
+                                </small>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="col-lg-6">
+                          <div className="form-group">
+                            <label className="form-label" htmlFor="phone">
+                              Phone Number
+                            </label>
+                            <input
+                              type="tel"
+                              className="form-control rounded-lg border-slate-300 bg-white shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+                              id="phone"
+                              name="phone"
+                              value={formData.phone}
+                              onChange={handleChange}
+                              onBlur={handleBlur}
+                              placeholder="Enter phone number"
+                              maxLength="14"
+                            />
+                            {errors.phone && (
+                              <div className="mt-1">
+                                <small className="text-danger">
+                                  {errors.phone}
+                                </small>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
+                  </section>
+
+                  <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                    <div className="border-b border-slate-200 bg-slate-50 px-5 py-3">
+                      <div className="text-sm font-semibold text-slate-900">Job & Assignment Details</div>
+                    </div>
+                    <div className="p-4">
+                      <div className="row g-4">
+                        <div className="col-lg-6">
+                          <div className="form-group">
+                            <label className="form-label" htmlFor="position">
+                              Position*
+                            </label>
+                            <input
+                              type="text"
+                              className="form-control rounded-lg border-slate-300 bg-white shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+                              id="position"
+                              name="position"
+                              value={formData.position}
+                              onChange={handleChange}
+                              placeholder="Enter position"
+                              required
+                            />
+                          </div>
+                        </div>
+
+                        <div className="col-lg-6">
+                          <div className="form-group">
+                            <label className="form-label" htmlFor="department">
+                              Department
+                            </label>
+                            <input
+                              type="text"
+                              className="form-control rounded-lg border-slate-300 bg-white shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+                              id="department"
+                              name="department"
+                              value={formData.department}
+                              onChange={handleChange}
+                              placeholder="Enter department"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="col-lg-6">
+                          <div className="form-group">
+                            <label className="form-label" htmlFor="startDate">
+                              Start Date*
+                            </label>
+                            <input
+                              type="date"
+                              className="form-control rounded-lg border-slate-300 bg-white shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+                              id="startDate"
+                              name="startDate"
+                              value={formData.startDate}
+                              onChange={handleChange}
+                              required
+                            />
+                          </div>
+                        </div>
+
+                        <div className="col-lg-6">
+                          <div className="form-group">
+                            <label className="form-label" htmlFor="status">
+                              Status
+                            </label>
+                            <select
+                              className="form-select rounded-lg border-slate-300 bg-white shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+                              id="status"
+                              name="status"
+                              value={formData.status}
+                              onChange={handleChange}
+                            >
+                              <option value="active">Active</option>
+                              <option value="inactive">Inactive</option>
+                              <option value="onleave">On Leave</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        {checkPermission(PERMISSIONS.MANAGE_SETTINGS) && (
+                          <div className="col-lg-12">
+                            <div className="form-group mt-3">
+                              <div className="custom-control custom-switch">
+                                <input
+                                  type="checkbox"
+                                  className="custom-control-input"
+                                  id="enableOvertime"
+                                  name="enableOvertime"
+                                  checked={formData.enableOvertime}
+                                  onChange={(e) =>
+                                    setFormData({
+                                      ...formData,
+                                      enableOvertime: e.target.checked})
+                                  }
+                                />
+                                <label
+                                  className="custom-control-label"
+                                  htmlFor="enableOvertime"
+                                >
+                                  Enable Overtime
+                                </label>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </section>
+
+                  <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                    <div className="border-b border-slate-200 bg-slate-50 px-5 py-3">
+                      <div className="text-sm font-semibold text-slate-900">Client & Approval Details</div>
+                    </div>
+                    <div className="p-4">
+                      <div className="row g-4">
+                        <div className="col-lg-6">
+                          <div className="form-group">
+                            <label className="form-label" htmlFor="clientId">
+                              Assigned Client*
+                            </label>
+                            <select
+                              className="form-select rounded-lg border-slate-300 bg-white shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+                              id="clientId"
+                              name="clientId"
+                              value={formData.clientId}
+                              onChange={handleClientChange}
+                              required
+                            >
+                              <option value="">Select Client</option>
+                              {clients.map((client) => (
+                                <option key={client.id} value={client.id}>
+                                  {client.clientName || client.name}
+                                  {client.clientType || client.type
+                                    ? ` (${client.clientType || client.type})`
+                                    : ""}
+                                </option>
+                              ))}
+                            </select>
+                            {clientsLoading && (
+                              <div className="form-note mt-1">
+                                <small className="text-soft">
+                                  Loading clients…
+                                </small>
+                              </div>
+                            )}
+                            {clientsError && (
+                              <div className="form-note mt-1">
+                                <small className="text-danger">
+                                  {clientsError}
+                                </small>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="col-lg-6">
+                          <div className="form-group">
+                            <label className="form-label" htmlFor="clientType">
+                              Client Type
+                            </label>
+                            <input
+                              type="text"
+                              className="form-control rounded-lg border-slate-300 bg-slate-100 text-slate-700 shadow-sm"
+                              id="clientType"
+                              name="clientType"
+                              value={formData.clientType}
+                              readOnly
+                              placeholder="Auto-filled based on client selection"
+                            />
+                            <div className="form-note mt-1">
+                              <small className="text-soft">
+                                Automatically set based on selected client
+                              </small>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="col-lg-6">
+                          <div className="form-group">
+                            <label className="form-label" htmlFor="approver">
+                              Assigned Approver*
+                            </label>
+                            <select
+                              className="form-select rounded-lg border-slate-300 bg-white shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+                              id="approver"
+                              name="approver"
+                              value={formData.approver}
+                              onChange={handleChange}
+                              required
+                            >
+                              <option value="">Select Approver</option>
+                              {approvers.map((approver) => (
+                                <option key={approver.id} value={approver.id}>
+                                  {approver.firstName} {approver.lastName} - {approver.department || approver.role}
+                                </option>
+                              ))}
+                            </select>
+                            {approversLoading && (
+                              <div className="form-note mt-1">
+                                <small className="text-soft">
+                                  Loading approvers…
+                                </small>
+                              </div>
+                            )}
+                            {approversError && (
+                              <div className="form-note mt-1">
+                                <small className="text-danger">
+                                  {approversError}
+                                </small>
+                              </div>
+                            )}
+                            <div className="form-note mt-1">
+                              <small className="text-soft">
+                                This person will approve/reject employee
+                                timesheets
+                              </small>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </section>
+
+                  {checkPermission(PERMISSIONS.MANAGE_SETTINGS) && (
+                    <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                      <div className="border-b border-slate-200 bg-slate-50 px-5 py-3">
+                        <div className="text-sm font-semibold text-slate-900">Compensation (Admin Only)</div>
+                      </div>
+                      <div className="p-4">
+                        <div className="row g-4">
+                          <div className="col-lg-6">
+                            <div className="form-group">
+                              <label className="form-label" htmlFor="hourlyRate">
+                                Hourly Rate ($)*
+                              </label>
+                              <input
+                                type="number"
+                                className="form-control rounded-lg border-slate-300 bg-white shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+                                id="hourlyRate"
+                                name="hourlyRate"
+                                value={formData.hourlyRate}
+                                onChange={handleChange}
+                                placeholder="Enter hourly rate"
+                                min="0"
+                                step="0.01"
+                                required
+                              />
+                              <small className="text-muted">
+                                This information is only visible to administrators
+                              </small>
+                            </div>
+                          </div>
+
+                          {formData.enableOvertime && (
+                            <div className="col-lg-6">
+                              <div className="form-group">
+                                <label
+                                  className="form-label"
+                                  htmlFor="overtimeMultiplier"
+                                >
+                                  Overtime Multiplier
+                                </label>
+                                <input
+                                  type="number"
+                                  className="form-control"
+                                  id="overtimeMultiplier"
+                                  name="overtimeMultiplier"
+                                  value={formData.overtimeMultiplier}
+                                  onChange={handleChange}
+                                  placeholder="1.5"
+                                  min="1"
+                                  step="0.1"
+                                />
+                                <small className="text-muted">
+                                  Standard rate × multiplier = overtime rate
+                                </small>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </section>
+                  )}
+
+                  {checkPermission(PERMISSIONS.MANAGE_SETTINGS) && (
+                    <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm lg:col-span-2">
+                      <div className="border-b border-slate-200 bg-slate-50 px-5 py-3">
+                        <div className="text-sm font-semibold text-slate-900">Work Order / SOW</div>
+                      </div>
+                      <div className="p-4">
+                        <div className="row g-4">
+                          <div className="col-lg-12">
+                            <div className="form-group">
+                              <label className="form-label">
+                                Work Order / SOW{" "}
+                                <span className="text-muted">(Optional)</span>
+                              </label>
+                              <div className="form-control-wrap">
+                                <div className="custom-file">
+                                  <input
+                                    type="file"
+                                    className="custom-file-input rounded-lg"
+                                    id="workOrder"
+                                    onChange={handleFileChange}
+                                    accept=".pdf,.doc,.docx"
+                                  />
+                                  <label
+                                    className="custom-file-label rounded-lg"
+                                    htmlFor="workOrder"
+                                  >
+                                    {workOrder ? workOrder.name : "Choose file"}
+                                  </label>
+                                </div>
+                              </div>
+                              <small className="form-hint">
+                                Upload the Statement of Work or Work Order
+                                document
+                              </small>
+
+                              {workOrderPreview && (
+                                <div className="document-preview mt-3">
+                                  <div className="document-preview-header">
+                                    <span className="document-name">
+                                      {workOrder?.name}
+                                    </span>
+                                    <span className="document-size">
+                                      {Math.round((workOrder?.size || 0) / 1024)}{" "}
+                                      KB
+                                    </span>
+                                  </div>
+                                  <div className="document-preview-content">
+                                    {workOrder?.type.includes("image") ? (
+                                      <img
+                                        src={workOrderPreview}
+                                        alt="Preview"
+                                        className="preview-image"
+                                      />
+                                    ) : (
+                                      <div className="document-icon">
+                                        <i className="fas fa-file-pdf"></i>
+                                        <span>
+                                          Document uploaded successfully
+                                        </span>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="col-lg-12">
+                            <div className="form-group mt-3">
+                              <label className="form-label">
+                                SOW Approval Workflow
+                              </label>
+                              <select
+                                className="form-select rounded-lg border-slate-300 bg-white shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+                                id="approvalWorkflow"
+                                name="approvalWorkflow"
+                                value={formData.approvalWorkflow || "manual"}
+                                onChange={handleChange}
+                              >
+                                <option value="auto">Auto-approve</option>
+                                <option value="manual">Manual approval</option>
+                                <option value="manager">Manager approval</option>
+                                <option value="client">Client approval</option>
+                              </select>
+                              <small className="form-hint">
+                                Select how work hours for this employee should be
+                                approved
+                              </small>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </section>
+                  )}
+
+                  <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm lg:col-span-2">
+                    <div className="border-b border-slate-200 bg-slate-50 px-5 py-3">
+                      <div className="text-sm font-semibold text-slate-900">Address Information</div>
+                    </div>
+                    <div className="p-4">
+                      <div className="row g-4">
+                        <div className="col-lg-12">
+                          <div className="form-group">
+                            <label className="form-label" htmlFor="address">
+                              Address
+                            </label>
+                            <input
+                              type="text"
+                              className="form-control rounded-lg border-slate-300 bg-white shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+                              id="address"
+                              name="address"
+                              value={formData.address}
+                              onChange={handleChange}
+                              placeholder="Enter street address"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="col-lg-4">
+                          <div className="form-group">
+                            <label className="form-label" htmlFor="city">
+                              City
+                            </label>
+                            <input
+                              type="text"
+                              className="form-control rounded-lg border-slate-300 bg-white shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+                              id="city"
+                              name="city"
+                              value={formData.city}
+                              onChange={handleChange}
+                              placeholder="Enter city"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="col-lg-4">
+                          <div className="form-group">
+                            <label className="form-label" htmlFor="state">
+                              State/Province
+                            </label>
+                            {STATES_BY_COUNTRY[formData.country] &&
+                            STATES_BY_COUNTRY[formData.country].length > 0 ? (
+                              <select
+                                className="form-select rounded-lg border-slate-300 bg-white shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+                                id="state"
+                                name="state"
+                                value={formData.state}
+                                onChange={handleChange}
+                              >
+                                <option value="">Select state</option>
+                                {STATES_BY_COUNTRY[formData.country].map((st) => (
+                                  <option key={st} value={st}>
+                                    {st}
+                                  </option>
+                                ))}
+                              </select>
+                            ) : (
+                              <input
+                                type="text"
+                                className="form-control rounded-lg border-slate-300 bg-white shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+                                id="state"
+                                name="state"
+                                value={formData.state}
+                                onChange={handleChange}
+                                placeholder="Enter state"
+                              />
+                            )}
+                          </div>
+                        </div>
+
+                        {formData.country !== 'United Arab Emirates' && (
+                          <div className="col-lg-4">
+                            <div className="form-group">
+                              <label className="form-label" htmlFor="zip">
+                                {getPostalLabel(formData.country)}
+                              </label>
+                              <input
+                                type="text"
+                                className="form-control rounded-lg border-slate-300 bg-white shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+                                id="zip"
+                                name="zip"
+                                value={formData.zip}
+                                onChange={handleChange}
+                                onBlur={handleBlur}
+                                placeholder={getPostalPlaceholder(formData.country)}
+                                maxLength={
+                                  formData.country === 'United States'
+                                    ? 10
+                                    : formData.country === 'India'
+                                      ? 6
+                                      : formData.country === 'Canada'
+                                        ? 7
+                                        : formData.country === 'United Kingdom'
+                                          ? 8
+                                          : formData.country === 'Australia'
+                                            ? 4
+                                            : formData.country === 'Singapore'
+                                              ? 6
+                                              : formData.country === 'Germany'
+                                                ? 5
+                                                : 20
+                                }
+                              />
+                              {errors.zip && (
+                                <div className="mt-1">
+                                  <small className="text-danger">
+                                    {errors.zip}
+                                  </small>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="col-lg-4">
+                          <div className="form-group">
+                            <label className="form-label" htmlFor="country">
+                              Country
+                            </label>
+                            <select
+                              className="form-select rounded-lg border-slate-300 bg-white shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+                              id="country"
+                              name="country"
+                              value={formData.country}
+                              onChange={handleChange}
+                            >
+                              {COUNTRY_OPTIONS.map((c) => (
+                                <option key={c} value={c}>
+                                  {c}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </section>
+
+                  <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm lg:col-span-2">
+                    <div className="border-b border-slate-200 bg-slate-50 px-5 py-3">
+                      <div className="text-sm font-semibold text-slate-900">Notes</div>
+                    </div>
+                    <div className="p-4">
+                      <div className="row g-4">
+                        <div className="col-lg-12">
+                          <div className="form-group">
+                            <label className="form-label" htmlFor="notes">
+                              Notes
+                            </label>
+                            <textarea
+                              className="form-control rounded-lg border-slate-300 bg-white shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+                              id="notes"
+                              name="notes"
+                              value={formData.notes}
+                              onChange={handleChange}
+                              placeholder="Enter any additional notes"
+                              rows="4"
+                            ></textarea>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </section>
+                </div>
+
+                <div className="sticky bottom-0 z-10 mt-3 rounded-2xl border border-slate-200 bg-white/90 p-3 shadow-sm backdrop-blur">
+                  <div className="d-flex flex-wrap align-items-center justify-content-between gap-3">
+                    <div className="d-flex align-items-center gap-3">
+                      <button
+                        type="submit"
+                        className="btn btn-primary btn-create-employee !bg-sky-600"
+                        disabled={loading}
+                      >
+                        {loading ? (
+                          <>
+                            <span
+                              className="spinner-border spinner-border-sm mr-1"
+                              role="status"
+                              aria-hidden="true"
+                            ></span>
+                            {isEditMode ? "Updating..." : "Creating..."}
+                          </>
+                        ) : isEditMode ? (
+                          "Update Employee"
+                        ) : (
+                          "Create Employee"
+                        )}
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-outline-light ml-3"
+                        onClick={() => {
+                          const params = new URLSearchParams(
+                            location.search
+                          );
+                          const qpClientId = params.get("clientId");
+                          if (qpClientId) {
+                            router.push(`/${subdomain}/clients/${qpClientId}`);
+                          } else {
+                            router.push(`/${subdomain}/employees`);
+                          }
+                        }}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                </div>
                   </form>
                 )}
-              </div>
             </div>
           </div>
         </div>
-      </div>
+      {/* </div> */}
+    {/* </div>
+    </div> */}
+  </div>
     </PermissionGuard>
   );
 };

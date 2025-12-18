@@ -12,17 +12,14 @@ const EmployerLayout = ({ children }) => {
   // and for potential future features like employer-specific styling
   const { subdomain } = useParams();
   const { currentEmployer } = useAuth();
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    if (typeof window === 'undefined') return true;
+    const savedSidebarState = localStorage.getItem('sidebarCollapsed');
+    if (savedSidebarState !== null) return savedSidebarState === 'true';
+    return true;
+  });
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 991);
-  
-  // Initialize sidebar state from localStorage on component mount
-  useEffect(() => {
-    const savedSidebarState = localStorage.getItem('sidebarCollapsed');
-    if (savedSidebarState !== null) {
-      setSidebarCollapsed(savedSidebarState === 'true');
-    }
-  }, []);
   
   // Handle window resize to detect mobile/desktop
   useEffect(() => {

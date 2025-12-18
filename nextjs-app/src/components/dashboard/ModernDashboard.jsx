@@ -266,185 +266,81 @@ const ModernDashboard = () => {
 
   return (
     <div className="modern-dashboard">
+      {/* Header Card */}
       <div className="mb-9 mt-1 rounded-3xl bg-[#7cbdf2] px-6 py-5 shadow-sm">
-  <div className="grid grid-cols-1 gap-4 md:grid-cols-[1fr_auto] md:items-center">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-[1fr_auto] md:items-center">
+          {/* ================= LEFT ================= */}
+          <div className="relative pl-4">
+            {/* Accent bar */}
+            <span className="absolute left-0 top-1 h-12 w-1 rounded-full bg-purple-900"></span>
 
-    {/* ================= LEFT ================= */}
-    <div className="relative pl-4">
-      {/* Accent bar */}
-      <span className="absolute left-0 top-1 h-12 w-1 rounded-full bg-purple-900"></span>
+            <h1 className="text-[2rem] font-bold text-white leading-[1.15] tracking-tight drop-shadow-[0_2px_8px_rgba(0,0,0,0.2)]">
+              Dashboard
+            </h1>
 
-      <h1
-        className="
-          text-[2rem]
-          font-bold
-          text-white
-          leading-[1.15]
-          tracking-tight
-          drop-shadow-[0_2px_8px_rgba(0,0,0,0.2)]
-        "
-      >
-        Dashboard
-      </h1>
+            <div className="mt-2 flex flex-wrap items-center gap-4 text-xs font-medium text-slate-900/90">
+              {/* Scope */}
+              <span className="flex items-center gap-2 rounded-full bg-white/60 px-3 py-1">
+                <i className={`fas ${scope === "company" ? "fa-building" : "fa-user"}`} />
+                {scope === "company"
+                  ? "Company Overview"
+                  : selectedEmployeeId
+                  ? `Employee: ${
+                      employees.find((emp) => emp.id === selectedEmployeeId)?.firstName || "Selected"
+                    } ${
+                      employees.find((emp) => emp.id === selectedEmployeeId)?.lastName || ""
+                    }`
+                  : "Employee View"}
+              </span>
+            </div>
+          </div>
 
-      <div className="mt-2 flex flex-wrap items-center gap-4 text-xs font-medium text-slate-900/90">
+          {/* ================= RIGHT ================= */}
+          <div className="flex flex-wrap items-center gap-3">
+            {/* Scope Toggle */}
+            <div className="flex rounded-full bg-white/50 p-1">
+              <button
+                onClick={() => setScope("company")}
+                className={`px-5 py-2 text-sm font-semibold rounded-full transition ${
+                  scope === "company" ? "bg-white text-slate-900 shadow" : "text-slate-700"
+                }`}
+              >
+                Company
+              </button>
 
-        {/* Date range */}
-        {/* <span className="flex items-center gap-2 rounded-full bg-white/60 px-3 py-1">
-          <i className="fas fa-calendar-alt" />
-          {dateRange.start.toLocaleDateString("en-US", {
-            weekday: "short",
-            month: "short",
-            day: "numeric",
-            year: "numeric",
-          })}{" "}
-          –{" "}
-          {dateRange.end.toLocaleDateString("en-US", {
-            weekday: "short",
-            month: "short",
-            day: "numeric",
-            year: "numeric",
-          })}
-        </span> */}
+              <button
+                onClick={() => setScope("employee")}
+                className={`px-5 py-2 text-sm font-semibold rounded-full transition ${
+                  scope === "employee" ? "bg-white text-slate-900 shadow" : "text-slate-700"
+                }`}
+              >
+                Employee
+              </button>
+            </div>
 
-        {/* Scope */}
-        <span className="flex items-center gap-2 rounded-full bg-white/60 px-3 py-1">
-          <i
-            className={`fas ${
-              scope === "company" ? "fa-building" : "fa-user"
-            }`}
-          />
-          {scope === "company"
-            ? "Company Overview"
-            : selectedEmployeeId
-            ? `Employee: ${
-                dashboardData.employees.find(
-                  (emp) => emp.id === selectedEmployeeId
-                )?.firstName || "Selected"
-              } ${
-                dashboardData.employees.find(
-                  (emp) => emp.id === selectedEmployeeId
-                )?.lastName || ""
-              }`
-            : "Employee View"}
-        </span>
-      <div className="dashboard-header">
-        <div className="dashboard-title-section">
-          <h1 className="dashboard-title">Dashboard</h1>
-          <div className="dashboard-subtitle">
-            {/* <i className="fas fa-calendar-alt"></i> */}
-            {/* <span>
-              {dateRange.start.toLocaleDateString("en-US", {
-                weekday: "short",
-                month: "short",
-                day: "numeric",
-                year: "numeric"})}{" "}
-              -{" "}
-              {dateRange.end.toLocaleDateString("en-US", {
-                weekday: "short",
-                month: "short",
-                day: "numeric",
-                year: "numeric"})}
-            </span> */}
-            <span className="scope-indicator">
-              {scope === "company" ? (
-                <>
-                  <i className="fas fa-building"></i>
-                  Company Overview
-                </>
-              ) : (
-                <>
-                  <i className="fas fa-user"></i>
-                  {selectedEmployeeId
-                    ? `Employee: ${
-                        employees.find(
-                          (emp) => emp.id === selectedEmployeeId
-                        )?.firstName || "Selected"
-                      } ${
-                        employees.find(
-                          (emp) => emp.id === selectedEmployeeId
-                        )?.lastName || ""
-                      }`
-                    : "Employee View"}
-                </>
-              )}
-            </span>
-            {/* <span className="refresh-indicator">
-              Refreshed: {formatRelativeTime(lastRefresh)}
-            </span> */}
+            {/* Employee selector */}
+            {scope === "employee" && (
+              <select
+                className="rounded-full bg-white px-4 py-2 text-sm font-medium text-slate-800 shadow outline-none"
+                value={selectedEmployeeId || ""}
+                onChange={(e) => setSelectedEmployeeId(e.target.value || null)}
+              >
+                <option value="">Select Employee</option>
+                {employees.map((emp) => (
+                  <option key={emp.id} value={emp.id}>
+                    {emp.name}
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
         </div>
-
-        {/* Refresh */}
-        {/* <span className="rounded-full bg-white/40 px-3 py-1 text-[11px]">
-          Refreshed: {formatRelativeTime(lastRefresh)}
-        </span> */}
-      </div>
-    </div>
-
-    {/* ================= RIGHT ================= */}
-    <div className="flex flex-wrap items-center gap-3">
-
-      {/* Scope Toggle */}
-      <div className="flex rounded-full bg-white/50 p-1">
-        <button
-          onClick={() => setScope("company")}
-          className={`px-5 py-2 text-sm font-semibold rounded-full transition
-            ${
-              scope === "company"
-                ? "bg-white text-slate-900 shadow"
-                : "text-slate-700"
-            }`}
-        >
-          Company
-        </button>
-
-        <button
-          onClick={() => setScope("employee")}
-          className={`px-5 py-2 text-sm font-semibold rounded-full transition
-            ${
-              scope === "employee"
-                ? "bg-white text-slate-900 shadow"
-                : "text-slate-700"
-            }`}
-        >
-          Employee
-        </button>
       </div>
 
-      {/* Employee selector */}
-      {scope === "employee" && (
-        <select
-          className="rounded-full bg-white px-4 py-2 text-sm font-medium text-slate-800 shadow outline-none"
-          value={selectedEmployeeId || ""}
-          onChange={(e) => setSelectedEmployeeId(e.target.value || null)}
-        >
-          <option value="">Select Employee</option>
-          {employees.map((emp) => (
-            <option key={emp.id} value={emp.id}>
-              {emp.name}
-            </option>
-          ))}
-        </select>
-      )}
-    </div>
-  </div>
-</div>
-
-
-    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 p-4">
-
-  {/* 1️⃣ Timesheet Overview */}
-  <div
-    className="
-      bg-blue-100 dark:bg-[#1a202c]  // <-- Updated Dark BG
-      rounded-2xl shadow-sm 
-      p-5 
-      border border-gray-200 dark:border-gray-700
-      hover:shadow-md transition-all duration-200
-      flex flex-col gap-6
-    "
-  >
+      {/* Dashboard Cards Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 p-4">
+        {/* 1️⃣ Timesheet Overview */}
+        <div className="bg-blue-100 dark:bg-[#1a202c] rounded-2xl shadow-sm p-5 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all duration-200 flex flex-col gap-6">
     {/* Header */}
     <div className="flex items-center justify-between">
       <h3 className="text-base font-semibold text-gray-800 dark:text-gray-100">
@@ -485,11 +381,11 @@ const ModernDashboard = () => {
         </p>
         <p className="text-xs text-gray-500 dark:text-gray-400">Total</p>
       </div>
-    </div>
-  </div>
+        </div>
+      </div>
 
-  {/* 5️⃣ Active Employees */}
-  <div className="bg-blue-200 dark:bg-[#1a202c] rounded-2xl shadow-sm p-4 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all duration-200 flex flex-col justify-between min-h-[170px]">
+        {/* 5️⃣ Active Employees */}
+        <div className="bg-blue-200 dark:bg-[#1a202c] rounded-2xl shadow-sm p-4 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all duration-200 flex flex-col justify-between min-h-[170px]">
     <div className="flex items-center justify-between">
       <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-100">Active Employees</h3>
       <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-blue-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-300">
@@ -511,12 +407,12 @@ const ModernDashboard = () => {
         <div className="text-[11px] text-gray-500 dark:text-gray-400">Hours This Week</div>
         <div className="font-semibold text-gray-900 dark:text-white">{formatHours(getTotalHoursThisWeek())}</div>
       </div>
-    </div>
-  </div>
+        </div>
+      </div>
 
-  {/* 2️⃣ Total Revenue */}
-  {user?.role === "admin" && (
-    <div className="bg-cyan-100 dark:bg-[#1a202c] rounded-2xl shadow-sm p-4 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all duration-200 flex flex-col justify-between min-h-[170px]">
+        {/* 2️⃣ Total Revenue */}
+        {user?.role === "admin" && (
+          <div className="bg-cyan-100 dark:bg-[#1a202c] rounded-2xl shadow-sm p-4 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all duration-200 flex flex-col justify-between min-h-[170px]">
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-100">Total Revenue</h3>
         <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-cyan-50 dark:bg-green-900/30 text-green-600 dark:text-green-300">
@@ -540,13 +436,13 @@ const ModernDashboard = () => {
           <div className="text-[11px] text-gray-500 dark:text-gray-400">Outstanding</div>
           <div className="font-semibold text-gray-900 dark:text-white">{formatCurrency(getOutstandingInvoices())}</div>
         </div>
-      </div>
-    </div>
-  )}
+          </div>
+        </div>
+        )}
 
-  {/* 4️⃣ Revenue by Client */}
-  {user?.role === "admin" && (
-    <div className="bg-cyan-50 dark:bg-[#1a202c] rounded-2xl shadow-sm p-5 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all duration-200 flex flex-col gap-4">
+        {/* 4️⃣ Revenue by Client */}
+        {user?.role === "admin" && (
+          <div className="bg-cyan-50 dark:bg-[#1a202c] rounded-2xl shadow-sm p-5 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all duration-200 flex flex-col gap-4">
       <div className="flex items-center justify-between">
         <h3 className="text-base font-semibold text-gray-800 dark:text-gray-100">Revenue by Client</h3>
         <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-cyan-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-300">
@@ -577,13 +473,13 @@ const ModernDashboard = () => {
             No client revenue data available
           </div>
         )}
-      </div>
-    </div>
-  )}
+          </div>
+        </div>
+        )}
 
-  {/* 3️⃣ Monthly Revenue Chart (spans 2 columns on md, 1 on small) */}
-  {user?.role === "admin" && (
-    <div className="bg-slate-50 dark:bg-[#1a202c] rounded-2xl shadow-sm p-4 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all duration-200 col-span-1 md:col-span-2 flex flex-col min-h-[170px]">
+        {/* 3️⃣ Monthly Revenue Chart (spans 2 columns on md, 1 on small) */}
+        {user?.role === "admin" && (
+          <div className="bg-slate-50 dark:bg-[#1a202c] rounded-2xl shadow-sm p-4 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all duration-200 col-span-1 md:col-span-2 flex flex-col min-h-[170px]">
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-100">Monthly Revenue Trend</h3>
         <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-300">
@@ -600,14 +496,12 @@ const ModernDashboard = () => {
           color="#1c398e"
           showValues={true}
         />
-      </div>
-    </div>
-  )}
+          </div>
+        </div>
+        )}
 
-  {/* 8️⃣ Recent Activity */}
-  <div className="bg-slate-100 dark:bg-[#1a202c] rounded-2xl shadow-sm p-5 border border-gray-200 dark:border-gray-700 
-     hover:shadow-md transition-all duration-200 col-span-1 md:col-span-2 
-     flex flex-col h-full">
+        {/* 8️⃣ Recent Activity */}
+        <div className="bg-slate-100 dark:bg-[#1a202c] rounded-2xl shadow-sm p-5 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all duration-200 col-span-1 md:col-span-2 flex flex-col h-full">
 
     {/* Header */}
     <div className="flex items-center justify-between mb-4">
@@ -666,12 +560,11 @@ const ModernDashboard = () => {
           No recent activity
         </div>
       )}
-    </div>
-  </div>
+        </div>
+      </div>
 
-
-  {/* 7️⃣ Top Performers */}
-  <div className="bg-indigo-50 dark:bg-[#1a202c] rounded-2xl shadow-sm p-4 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all duration-200 flex flex-col gap-3 min-h-[170px]">
+        {/* 7️⃣ Top Performers */}
+        <div className="bg-indigo-50 dark:bg-[#1a202c] rounded-2xl shadow-sm p-4 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all duration-200 flex flex-col gap-3 min-h-[170px]">
     <div className="flex items-center justify-between">
       <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-100">Top Performers</h3>
       <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-indigo-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-300">
@@ -700,12 +593,9 @@ const ModernDashboard = () => {
           No performance data available
         </div>
       )}
-    </div>
-  </div>
-</div>
-
-
-
+        </div>
+        </div>
+      </div>
     </div>
   );
 };

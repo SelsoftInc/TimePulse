@@ -43,7 +43,7 @@ const GlobalSearch = () => {
     setLoading(true);
     try {
       const response = await fetch(
-        `${API_BASE}/api/search/global?query=${encodeURIComponent(searchQuery)}&tenantId=${user?.tenantId}`,
+        `${API_BASE}/api/search/global?query=${encodeURIComponent(searchQuery)}&tenantId=${user?.tenantId}&userId=${user?.id}`,
         {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -64,7 +64,7 @@ const GlobalSearch = () => {
     } finally {
       setLoading(false);
     }
-  }, [user?.tenantId]);
+  }, [user?.tenantId, user?.id]);
 
   // Handle input change with debounce
   const handleInputChange = (e) => {
@@ -282,7 +282,7 @@ const GlobalSearch = () => {
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
           onFocus={() => query.length >= 2 && setIsOpen(true)}
-          placeholder="Search employees, clients, timesheets..."
+          placeholder={user?.role === 'employee' ? "Search timesheets, leave requests..." : "Search employees, clients, timesheets..."}
           className="global-search-input"
         />
         {loading && (
@@ -306,7 +306,11 @@ const GlobalSearch = () => {
             <div className="no-results">
               <i className="fas fa-search"></i>
               <p>No results found for "{query}"</p>
-              <span>Try searching for employees, timesheets, invoices, or navigation items</span>
+              <span>
+                {user?.role === 'employee' 
+                  ? 'Try searching for timesheets, leave requests, or settings'
+                  : 'Try searching for employees, timesheets, invoices, or navigation items'}
+              </span>
             </div>
           )}
         </div>

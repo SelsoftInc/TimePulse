@@ -211,6 +211,11 @@ const ClientsList = () => {
     }
   };
 
+  const handleEdit = (clientId) => {
+    setOpenMenuId(null);
+    router.push(`/${subdomain}/clients/edit/${clientId}`);
+  };
+
   // Prevent hydration mismatch - don't render until mounted
   if (!isMounted) {
     return (
@@ -223,223 +228,259 @@ const ClientsList = () => {
   }
 
   return (
-    <div className="nk-conten">
-      <div className="container-fluid">
-        <div className="nk-block-head">
-          <div className="nk-block-between">
-            <div className="nk-block-head-content">
-              <h3 className="nk-block-title">End Clients</h3>
-              <p className="nk-block-subtitle">
-                Manage your end client relationships
-              </p>
-            </div>
-            <div className="nk-block-head-content">
-              <PermissionGuard requiredPermission={PERMISSIONS.CREATE_CLIENT}>
-                <Link href={`/${subdomain}/clients/new`}
-                  className="btn btn-primary"
-                >
-                  <i className="fas fa-plus mr-1"></i> Add End Client
-                </Link>
-              </PermissionGuard>
-            </div>
+     <div className="nk-content min-h-screen bg-slate-50">
+  <div className="max-w-8xl mx-auto space-y-4">
+
+    {/* ================= PAGE HEADER ================= */}
+    <div
+      className="
+        sticky top-4 z-30 mb-9
+        rounded-3xl
+        bg-[#7cbdf2]
+        dark:bg-gradient-to-br dark:from-[#0f1a25] dark:via-[#121f33] dark:to-[#162a45]
+        shadow-sm dark:shadow-[0_8px_24px_rgba(0,0,0,0.6)]
+        backdrop-blur-md
+        border border-transparent dark:border-white/5
+      "
+    >
+      <div className="px-6 py-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-[1fr_auto] md:items-center">
+
+          {/* LEFT */}
+          <div className="relative pl-5">
+            <span className="absolute left-0 top-2 h-10 w-1 rounded-full bg-purple-900 dark:bg-indigo-400" />
+
+            <h1
+              className="
+                text-[2rem]
+                font-bold
+                text-white
+                leading-[1.15]
+                tracking-tight
+                drop-shadow-[0_2px_8px_rgba(0,0,0,0.18)]
+              "
+            >
+              Clients
+            </h1>
+
+            <p className="mt-0 text-sm text-white/80 dark:text-slate-300">
+              Manage end clients and their information
+            </p>
           </div>
-        </div>
 
-        <div className="nk-block">
-          {error ? (
-            <div className="alert alert-danger" role="alert">
-              <i className="fas fa-exclamation-triangle mr-2"></i>
-              {error}
-              <button className="btn-retry" onClick={fetchClients}>
-                <i className=""></i> Retry
-              </button>
-            </div>
-          ) : loading ? (
-            <div className="d-flex justify-content-center mt-5">
-              <div className="spinner-border text-primary" role="status">
-                <span className="sr-only">Loading...</span>
-              </div>
-            </div>
-          ) : (
-            <div className="card">
-              <div className="card-inner table-responsive">
-                <table className="table table-clients">
-                  <thead>
-                    <tr>
-                      <th>End Client Name</th>
-                      <th>Contact Person</th>
-                      <th>Email</th>
-                      <th>Phone</th>
-                      <th>Status</th>
-                      <th>Employees</th>
-                      <th className="text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {paginatedClients.map((client) => (
-                      <tr key={client.id} className={openMenuId === client.id ? 'dropdown-open' : ''}>
-                        <td>
-                          <Link href={`/${subdomain}/clients/${client.id}`}
-                            className="client-name"
-                          >
-                            {client.name}
-                          </Link>
-                        </td>
-                        <td>{client.contactPerson}</td>
-                        <td>{client.email}</td>
-                        <td>{client.phone}</td>
-                        <td>
-                          <span
-                            className={`badge badge-${
-                              client.status === "active" ? "success" : "warning"
-                            }`}
-                          >
-                            {client.status === "active" ? "Active" : "Inactive"}
-                          </span>
-                        </td>
-                        <td>{client.employeeCount}</td>
-                        <td className="text-right">
-                          <div 
-                            className="dropdown"
-                            data-dropdown-id={client.id}
-                            style={{ position: "relative" }}
-                          >
-                              <button
-                                className="btn btn-sm btn-outline-secondary dropdown-toggle"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  toggleMenu(client.id);
-                                }}
-                                type="button"
-                                ref={(el) => {
-                                  if (el && openMenuId === client.id) {
-                                    const rect = el.getBoundingClientRect();
-                                    const spaceBelow = window.innerHeight - rect.bottom;
-                                    // Open upward if less than 180px space below
-                                    if (spaceBelow < 180) {
-                                      el.nextElementSibling?.classList.add('dropup');
-                                    } else {
-                                      el.nextElementSibling?.classList.remove('dropup');
-                                    }
-                                  }
-                                }}
-                              >
-                                Actions
-                              </button>
-                            <div
-                              className={`dropdown-menu dropdown-menu-right ${
-                                openMenuId === client.id ? "show" : ""
-                              }`}
-                            >
-                                <Link href={`/${subdomain}/clients/${client.id}`}
-                                  className="dropdown-item"
-                                  onClick={() => setOpenMenuId(null)}
-                                >
-                                  <i className="fas fa-eye mr-1"></i> View
-                                  Details
-                                </Link>
-                                <PermissionGuard
-                                  requiredPermission={PERMISSIONS.EDIT_CLIENT}
-                                >
-                                  <Link href={`/${subdomain}/clients/edit/${client.id}`}
-                                    className="dropdown-item"
-                                    onClick={() => setOpenMenuId(null)}
-                                  >
-                                    <i className="fas fa-edit mr-1"></i> Edit
-                                  </Link>
-                                </PermissionGuard>
-                                <PermissionGuard
-                                  requiredPermission={PERMISSIONS.DELETE_CLIENT}
-                                >
-                                  <button
-                                    type="button"
-                                    className="dropdown-item text-danger"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleDelete(client.id);
-                                    }}
-                                  >
-                                    <i className="fas fa-trash-alt mr-1"></i>{" "}
-                                    Delete
-                                  </button>
-                                </PermissionGuard>
-                              </div>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+          {/* RIGHT */}
+          <div className="flex flex-wrap items-center gap-3">
+           <PermissionGuard requiredPermission={PERMISSIONS.CREATE_CLIENT}>
+        <Link
+          href={`/${subdomain}/clients/new`}
+          className="
+            flex items-center gap-2.5
+                rounded-full
+                bg-slate-900 px-6 py-3
+                text-sm font-semibold !text-white
+                shadow-md
+                transition-all
+                cursor-pointer
+                hover:bg-slate-800 hover:scale-[1.04]
+                active:scale-[0.97]
+                dark:bg-indigo-600 dark:hover:bg-indigo-500
+                dark:shadow-[0_6px_18px_rgba(79,70,229,0.45)]
+          "
+        >
+          <i className="fas fa-plus-circle text-base text-white" />
+          Add End Client
+        </Link>
+      </PermissionGuard>
+          </div>
 
-                {/* Pagination Controls */}
-                {clients.length > itemsPerPage && (
-                  <div className="card-inner">
-                    <div className="d-flex justify-content-between align-items-center">
-                      <div className="text-muted">
-                        Showing {startIndex + 1} to{" "}
-                        {Math.min(endIndex, clients.length)} of {clients.length}{" "}
-                        clients
-                      </div>
-                      <nav>
-                        <ul className="pagination pagination-sm mb-0">
-                          <li
-                            className={`page-item ${
-                              currentPage === 1 ? "disabled" : ""
-                            }`}
-                          >
-                            <button
-                              className="page-link"
-                              onClick={() =>
-                                setCurrentPage((prev) => Math.max(1, prev - 1))
-                              }
-                              disabled={currentPage === 1}
-                            >
-                              Previous
-                            </button>
-                          </li>
-                          {[...Array(totalPages)].map((_, index) => (
-                            <li
-                              key={index + 1}
-                              className={`page-item ${
-                                currentPage === index + 1 ? "active" : ""
-                              }`}
-                            >
-                              <button
-                                className="page-link"
-                                onClick={() => setCurrentPage(index + 1)}
-                              >
-                                {index + 1}
-                              </button>
-                            </li>
-                          ))}
-                          <li
-                            className={`page-item ${
-                              currentPage === totalPages ? "disabled" : ""
-                            }`}
-                          >
-                            <button
-                              className="page-link"
-                              onClick={() =>
-                                setCurrentPage((prev) =>
-                                  Math.min(totalPages, prev + 1)
-                                )
-                              }
-                              disabled={currentPage === totalPages}
-                            >
-                              Next
-                            </button>
-                          </li>
-                        </ul>
-                      </nav>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </div>
+
+    {/* ================= CONTENT ================= */}
+    <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
+
+      {/* ERROR */}
+      {error ? (
+        <div className="m-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          <div className="flex items-center justify-between">
+            <div>
+              <i className="fas fa-exclamation-triangle mr-2" />
+              {error}
+            </div>
+            <button
+              onClick={fetchClients}
+              className="text-sm font-medium text-red-700 hover:underline"
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      ) : loading ? (
+        <div className="flex justify-center py-16">
+          <div className="spinner-border text-indigo-600" role="status" />
+        </div>
+      ) : (
+        <>
+          {/* ================= TABLE ================= */}
+          <div className="overflow-x-auto">
+            <table className="min-w-full border-collapse">
+              <thead className="bg-slate-50">
+                <tr className="text-left text-xs font-semibold uppercase tracking-wide text-slate-600">
+                  <th className="px-4 py-3">End Client Name</th>
+                  <th className="px-4 py-3">Contact Person</th>
+                  <th className="px-4 py-3">Email</th>
+                  <th className="px-4 py-3">Phone</th>
+                  <th className="px-4 py-3">Status</th>
+                  <th className="px-4 py-3">Employees</th>
+                  <th className="px-4 py-3 text-right">Actions</th>
+                </tr>
+              </thead>
+
+              <tbody className="divide-y divide-slate-200">
+                {paginatedClients.map((client) => (
+                  <tr
+                    key={client.id}
+                    className="hover:bg-slate-50"
+                  >
+                    <td className="px-4 py-3 font-medium text-indigo-600">
+                      <Link href={`/${subdomain}/clients/${client.id}`}>
+                        {client.name}
+                      </Link>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-slate-700">
+                      {client.contactPerson}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-slate-700">
+                      {client.email}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-slate-700">
+                      {client.phone}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span
+                        className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${
+                          client.status === "active"
+                            ? "bg-emerald-100 text-emerald-700"
+                            : "bg-amber-100 text-amber-700"
+                        }`}
+                      >
+                        {client.status === "active" ? "Active" : "Inactive"}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-slate-700">
+                      {client.employeeCount}
+                    </td>
+
+                    {/* ACTIONS */}
+                    <td className="px-4 py-3 text-right">
+                      <div className="relative inline-block">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleMenu(client.id);
+                          }}
+                          className="rounded-md border border-slate-300 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-100"
+                        >
+                          Actions
+                        </button>
+
+                        {openMenuId === client.id && (
+                          <div className="absolute right-0 z-20 mt-2 w-44 rounded-lg border border-slate-200 bg-white shadow-lg">
+                            <Link
+                              href={`/${subdomain}/clients/${client.id}`}
+                              className="block px-4 py-2 text-sm hover:bg-slate-50"
+                              onClick={() => setOpenMenuId(null)}
+                            >
+                              View Details
+                            </Link>
+
+                            <PermissionGuard requiredPermission={PERMISSIONS.EDIT_CLIENT}>
+                              <button
+                                onClick={() => handleEdit(client.id)}
+                                className="block w-full px-4 py-2 text-left text-sm hover:bg-slate-50"
+                              >
+                                Edit
+                              </button>
+                            </PermissionGuard>
+
+                            <PermissionGuard requiredPermission={PERMISSIONS.CREATE_CLIENT}>
+                              <button
+                                onClick={() => handleDuplicate(client.id)}
+                                className="block w-full px-4 py-2 text-left text-sm hover:bg-slate-50"
+                              >
+                                Duplicate
+                              </button>
+                            </PermissionGuard>
+
+                            <PermissionGuard requiredPermission={PERMISSIONS.DELETE_CLIENT}>
+                              <button
+                                onClick={() => handleDelete(client.id)}
+                                className="block w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50"
+                              >
+                                Delete
+                              </button>
+                            </PermissionGuard>
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* ================= PAGINATION ================= */}
+          {clients.length > itemsPerPage && (
+            <div className="flex flex-col gap-3 border-t border-slate-200 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-sm text-slate-600">
+                Showing {startIndex + 1}–{Math.min(endIndex, clients.length)} of{" "}
+                {clients.length} clients
+              </p>
+
+              <div className="flex gap-1">
+                <button
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  className="rounded-md border px-3 py-1 text-sm disabled:opacity-50"
+                >
+                  Previous
+                </button>
+
+                {[...Array(totalPages)].map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setCurrentPage(i + 1)}
+                    className={`rounded-md border px-3 py-1 text-sm ${
+                      currentPage === i + 1
+                        ? "bg-indigo-600 text-white"
+                        : "hover:bg-slate-100"
+                    }`}
+                  >
+                    {i + 1}
+                  </button>
+                ))}
+
+                <button
+                  disabled={currentPage === totalPages}
+                  onClick={() =>
+                    setCurrentPage((p) => Math.min(totalPages, p + 1))
+                  }
+                  className="rounded-md border px-3 py-1 text-sm disabled:opacity-50"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  </div>
+</div>
+
   );
 };
 

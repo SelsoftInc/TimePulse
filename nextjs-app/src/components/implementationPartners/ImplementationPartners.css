@@ -350,11 +350,11 @@
     margin-top: 60px; /* Account for fixed header */
   }
   
-  .card {
+  .implementation-partner-form .card {
     border-radius: 10px;
   }
   
-  .card-inner {
+  .implementation-partner-form .card-inner {
     padding: 0;
   }
   
@@ -424,7 +424,7 @@
   }
   
   /* Buttons */
-  .btn {
+  .implementation-partner-form .btn {
     width: 100%;
     margin-bottom: 8px;
   }

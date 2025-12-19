@@ -93,10 +93,10 @@ const VendorEdit = () => {
 
   return (
     <PermissionGuard requiredPermission={PERMISSIONS.EDIT_VENDOR}>
-      <div className="nk-content">
+      <div className="nk-content min-h-screen bg-slate-50">
         <div className="container-fluid">
-          <div className="nk-block-head nk-block-head-sm">
-            <div className="nk-block-between">
+<div className="mb-6 rounded-xl border border-slate-200 bg-indigo-50 p-5 shadow-sm">
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div className="nk-block-head-content">
                 <h3 className="nk-block-title">Edit Vendor</h3>
                 <div className="nk-block-des text-soft">

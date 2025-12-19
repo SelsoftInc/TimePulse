@@ -391,14 +391,7 @@ const LeaveManagement = () => {
           <div className="nk-content-body">
             <div className="nk-block-head nk-block-head-sm">
               <div className="nk-block-between">
-                <div className="nk-block-head-content">
-                  <h3 className="nk-block-title page-title">
-                    Leave Management
-                  </h3>
-                  {/* <div className="nk-block-des text-soft">
-                    <p>Welcome {userFullName}, {isOwner ? 'review and approve leave requests from your team' : 'request and manage your leave and absences'}</p>
-                  </div> */}
-                </div>
+               
               </div>
             </div>
 

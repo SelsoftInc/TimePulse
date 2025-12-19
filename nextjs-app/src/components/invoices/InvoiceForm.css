@@ -3,6 +3,17 @@
 .invoice-form-container {
   min-height: 100vh;
   background-color: #f5f6fa;
+  padding: 20px;
+}
+
+.invoice-form-container .nk-content-inner {
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.invoice-form-container .nk-content-body {
+  width: 100%;
 }
 
 /* Timesheet Source Info */

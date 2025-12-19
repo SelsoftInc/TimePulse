@@ -99,64 +99,74 @@ router.get("/", async (req, res) => {
       console.log('📋 Unique IDs:', uniqueIds);
     }
 
-    // Transform the data to match frontend expectations
-    const transformedEmployees = employees.map((emp) => ({
-      id: emp.id,
-      name: `${emp.firstName} ${emp.lastName}`,
-      firstName: emp.firstName,
-      lastName: emp.lastName,
-      position: emp.title || "N/A", // Use title field instead of position
-      email: emp.email,
-      phone: emp.phone || null,
-      status: emp.status || "active",
-      department: emp.department || "N/A",
-      joinDate: emp.startDate || null,
-      hourlyRate: emp.hourlyRate || null,
-      // Include role from linked user
-      role: emp.user?.role || null,
-      // Client relationship data
-      client: emp.client
-        ? {
-            id: emp.client.id,
-            name: emp.client.clientName || emp.client.legalName,
-            legalName: emp.client.legalName,
-          }
-        : null,
-      clientId: emp.clientId,
-      employmentType: "W2", // Default value since employmentType model is not included
-      // Vendor relationship data
-      vendor: emp.vendor
-        ? {
-            id: emp.vendor.id,
-            name: emp.vendor.name,
-            category: emp.vendor.category,
-            email: emp.vendor.email,
-          }
-        : null,
-      vendorId: emp.vendorId,
-      // Implementation partner relationship data (not included in query)
-      implPartner: null,
-      implPartnerId: emp.implPartnerId,
-      endClient: emp.client
-        ? {
-            id: emp.client.id,
-            name: emp.client.clientName || emp.client.legalName,
-            location: emp.client.legalName, // Using legalName as location placeholder
-          }
-        : null,
-      // Additional fields from database
-      employeeId: emp.employeeId,
-      salaryAmount: emp.salaryAmount,
-      contactInfo: emp.contactInfo,
-    }));
-
-    console.log('✅ Sending', transformedEmployees.length, 'employees to frontend');
-
-    // Decrypt employee data before sending to frontend
-    const decryptedEmployees = transformedEmployees.map(emp => {
+    // First decrypt the raw employee data from database
+    const decryptedRawEmployees = employees.map(emp => {
       const plainEmp = emp.toJSON ? emp.toJSON() : emp;
       return DataEncryptionService.decryptEmployeeData(plainEmp);
     });
+
+    // Then transform the decrypted data to match frontend expectations
+    const transformedEmployees = decryptedRawEmployees.map((emp) => {
+      // Decrypt client data if present
+      let clientData = null;
+      if (emp.client) {
+        const plainClient = emp.client.toJSON ? emp.client.toJSON() : emp.client;
+        const decryptedClient = DataEncryptionService.decryptClientData(plainClient);
+        clientData = {
+          id: decryptedClient.id,
+          name: decryptedClient.clientName || decryptedClient.legalName,
+          legalName: decryptedClient.legalName,
+        };
+      }
+
+      // Decrypt vendor data if present
+      let vendorData = null;
+      if (emp.vendor) {
+        const plainVendor = emp.vendor.toJSON ? emp.vendor.toJSON() : emp.vendor;
+        const decryptedVendor = DataEncryptionService.decryptVendorData(plainVendor);
+        vendorData = {
+          id: decryptedVendor.id,
+          name: decryptedVendor.name,
+          category: decryptedVendor.category,
+          email: decryptedVendor.email,
+        };
+      }
+
+      return {
+        id: emp.id,
+        name: `${emp.firstName} ${emp.lastName}`,
+        firstName: emp.firstName,
+        lastName: emp.lastName,
+        position: emp.title || "N/A",
+        email: emp.email,
+        phone: emp.phone || null,
+        status: emp.status || "active",
+        department: emp.department || "N/A",
+        joinDate: emp.startDate || null,
+        hourlyRate: emp.hourlyRate || null,
+        role: emp.user?.role || null,
+        client: clientData,
+        clientId: emp.clientId,
+        employmentType: "W2",
+        vendor: vendorData,
+        vendorId: emp.vendorId,
+        implPartner: null,
+        implPartnerId: emp.implPartnerId,
+        endClient: clientData ? {
+          id: clientData.id,
+          name: clientData.name,
+          location: clientData.legalName,
+        } : null,
+        employeeId: emp.employeeId,
+        salaryAmount: emp.salaryAmount,
+        contactInfo: emp.contactInfo,
+      };
+    });
+
+    console.log('✅ Sending', transformedEmployees.length, 'employees to frontend');
+
+    // Data is already decrypted, just use it directly
+    const decryptedEmployees = transformedEmployees;
 
     const responseData = {
       success: true,

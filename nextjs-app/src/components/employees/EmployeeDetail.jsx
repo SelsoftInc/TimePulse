@@ -83,8 +83,21 @@ const EmployeeDetail = () => {
         }
       });
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-      const data = await response.json();
-      return data.employee || data;
+      const rawData = await response.json();
+      console.log('📦 Raw employee API response:', rawData);
+      
+      // Handle encrypted response
+      let data = rawData;
+      if (rawData.encrypted && rawData.data) {
+        // Response is encrypted, decrypt it
+        const { decryptApiResponse } = await import('@/utils/encryption');
+        data = decryptApiResponse(rawData);
+        console.log('🔓 Decrypted employee data:', data);
+      }
+      
+      const employeeData = data.employee || data;
+      console.log('👤 Final employee data:', employeeData);
+      return employeeData;
     },
     enabled: isMounted && !!tenantId && !!id
   });
@@ -93,16 +106,57 @@ const EmployeeDetail = () => {
   useEffect(() => {
     if (!employeeData) return;
     const emp = employeeData;
+    
+    console.log('🔄 Transforming employee data:', emp);
+    
     const transformedEmployee = {
       ...emp,
+      // Name: combine firstName and lastName
+      name: emp.name || `${emp.firstName || ''} ${emp.lastName || ''}`.trim() || 'N/A',
+      firstName: emp.firstName || '',
+      lastName: emp.lastName || '',
+      // Contact info
+      email: emp.email || 'N/A',
+      phone: emp.phone || 'N/A',
+      // Position: API returns 'title' field
+      position: emp.position || emp.title || 'N/A',
+      department: emp.department || 'N/A',
+      status: emp.status || 'active',
+      employmentType: emp.employmentType || 'W2',
+      // Dates
       joinDate: emp.joinDate ? new Date(emp.joinDate).toISOString().split('T')[0] : (emp.startDate ? new Date(emp.startDate).toISOString().split('T')[0] : ''),
-      address: emp.address?.street || emp.address || '—',
-      city: emp.address?.city || '',
-      state: emp.address?.state || '',
-      zip: emp.address?.zip || '',
-      country: emp.address?.country || '',
-      client: emp.client || emp.clientName || emp.clientId || 'Not assigned'
+      // Address - handle both object and string formats
+      address: typeof emp.address === 'object' ? (emp.address?.street || '—') : (emp.address || '—'),
+      city: emp.address?.city || '—',
+      state: emp.address?.state || '—',
+      zip: emp.address?.zip || '—',
+      country: emp.address?.country || '—',
+      // Client relationship - handle object structure from API
+      client: emp.client?.name || emp.clientName || 'Not assigned',
+      clientId: emp.clientId || null,
+      // Vendor relationship - handle object structure from API
+      vendor: emp.vendor?.name || emp.vendorName || null,
+      vendorId: emp.vendorId || null,
+      // Impl Partner relationship
+      implPartner: emp.implPartner?.name || emp.implPartnerName || null,
+      implPartnerId: emp.implPartnerId || null,
+      // Financial info
+      hourlyRate: emp.hourlyRate || 0,
+      enableOvertime: emp.enableOvertime || false,
+      overtimeMultiplier: emp.overtimeMultiplier || 1.5,
+      overtimeRate: emp.overtimeRate || (emp.hourlyRate || 0) * (emp.overtimeMultiplier || 1.5),
+      // Workflow
+      approvalWorkflow: emp.approvalWorkflow || 'manual',
+      sowDocument: emp.sowDocument || null,
+      clientType: emp.clientType || 'external',
+      approver: emp.approver || emp.approverName || 'Not assigned',
+      notes: emp.notes || '',
+      // End client details
+      endClient: emp.endClient || null
     };
+    
+    console.log('✅ Transformed employee:', transformedEmployee);
+    
     setEmployee(transformedEmployee);
     setFormValues({
       joinDate: transformedEmployee.joinDate || '',

@@ -164,7 +164,7 @@ const Sidebar = ({ collapsed, toggleSidebar, mobileVisible = false, isMobile = f
                 }`}
               >
                 <div className="sidebar-icon">
-                  <i className="fa fa-truck"></i>
+                  <i class="fa-solid fa-people-carry-box"></i>
                 </div>
                 {(isMobile || !collapsed) && <span className="sidebar-text">Vendors</span>}
               </Link>

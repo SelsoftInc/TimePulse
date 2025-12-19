@@ -321,439 +321,297 @@ const VendorForm = ({
 
   return (
     <PermissionGuard requiredPermission={PERMISSIONS.CREATE_VENDOR}>
-      <div className="nk-conten">
-        <div className="container-fluid">
-          <div className="nk-block-head">
-            <div className="nk-block-between">
-              <div className="nk-block-head-content">
-                <h3 className="nk-block-title">Add New Vendor</h3>
-                {/* <p className="nk-block-subtitle">Create a new vendor record</p> */}
+      <div className="nk-conten bg-slate-50">
+        <div className="container-fluid px-4 py-6 sm:px-6 lg:px-8">
+          <form onSubmit={handleSubmit}>
+            <div className="nk-block-head">
+              <div className="mb-6 rounded-xl border border-slate-200 bg-indigo-50 p-5 shadow-sm">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <h1 className="text-xl font-semibold text-slate-900">
+                      Add New Vendor
+                    </h1>
+                    <p className="mt-1 text-sm text-slate-600">
+                      Create a new vendor record
+                    </p>
+                    {/* <p className="nk-block-subtitle">Create a new vendor record</p> */}
+                  </div>
+                </div>
               </div>
             </div>
+
+            <div className="nk-block">
+  <div className="mx-auto max-w-7xl">
+
+    {error && (
+      <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <i className="fas fa-exclamation-triangle mr-2" />
+        {error}
+      </div>
+    )}
+
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+
+      {/* ================= Vendor Information ================= */}
+      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 className="mb-6 text-sm font-semibold uppercase tracking-wide text-slate-700">
+          Vendor Information
+        </h2>
+
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+          {/* name */}
+          <div>
+            <label className="mb-1 block text-xs font-semibold text-slate-600">
+              Vendor Name *
+            </label>
+            <input
+              id="name"
+              name="name"
+              value={formData.name}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm shadow-sm focus:border-sky-500 focus:ring-2 focus:ring-sky-200"
+            />
+            {errors.name && (
+              <p className="mt-1 text-xs text-red-600">{errors.name}</p>
+            )}
           </div>
 
-          <div className="nk-block">
-            <div className="card card-bordered">
-              <div className="card-inne">
-                {error && (
-                  <div className="alert alert-danger" role="alert">
-                    <i className="fas fa-exclamation-triangle mr-2"></i>
-                    {error}
-                  </div>
-                )}
-                <form onSubmit={handleSubmit}>
-                  <div className="row g-4">
-                    <div className="col-lg-6">
-                      <div className="form-group">
-                        <label className="form-label" htmlFor="name">
-                          Vendor Name*
-                        </label>
-                        <input
-                          type="text"
-                          className="form-control"
-                          id="name"
-                          name="name"
-                          value={formData.name}
-                          onChange={handleChange}
-                          onBlur={handleBlur}
-                          placeholder="Enter vendor name"
-                          required
-                        />
-                        {errors.name && (
-                          <div className="mt-1">
-                            <small className="text-danger">{errors.name}</small>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <div className="col-lg-6">
-                      <div className="form-group">
-                        <label className="form-label" htmlFor="contactPerson">
-                          Contact Person*
-                        </label>
-                        <input
-                          type="text"
-                          className="form-control"
-                          id="contactPerson"
-                          name="contactPerson"
-                          value={formData.contactPerson}
-                          onChange={handleChange}
-                          onBlur={handleBlur}
-                          placeholder="Enter contact person name"
-                          required
-                        />
-                        {errors.contactPerson && (
-                          <div className="mt-1">
-                            <small className="text-danger">
-                              {errors.contactPerson}
-                            </small>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <div className="col-lg-6">
-                      <div className="form-group">
-                        <label className="form-label" htmlFor="email">
-                          Email Address*
-                        </label>
-                        <input
-                          type="email"
-                          className="form-control"
-                          id="email"
-                          name="email"
-                          value={formData.email}
-                          onChange={handleChange}
-                          onBlur={handleBlur}
-                          placeholder="Enter email address"
-                          required
-                        />
-                        {errors.email && (
-                          <div className="mt-1">
-                            <small className="text-danger">
-                              {errors.email}
-                            </small>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <div className="col-lg-6">
-                      <div className="form-group">
-                        <label className="form-label" htmlFor="phone">
-                          Phone Number*
-                        </label>
-                        <input
-                          type="tel"
-                          className="form-control"
-                          id="phone"
-                          name="phone"
-                          value={formData.phone}
-                          onChange={handleChange}
-                          onBlur={handleBlur}
-                          placeholder="Enter phone number"
-                          maxLength="14"
-                          required
-                        />
-                        {errors.phone && (
-                          <div className="mt-1">
-                            <small className="text-danger">
-                              {errors.phone}
-                            </small>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <div className="col-lg-12">
-                      <div className="form-group">
-                        <label className="form-label" htmlFor="address">
-                          Address
-                        </label>
-                        <input
-                          type="text"
-                          className="form-control"
-                          id="address"
-                          name="address"
-                          value={formData.address}
-                          onChange={handleChange}
-                          placeholder="Enter street address"
-                        />
-                      </div>
-                    </div>
-                    <div className="col-lg-4">
-                      <div className="form-group">
-                        <label className="form-label" htmlFor="city">
-                          City
-                        </label>
-                        <input
-                          type="text"
-                          className="form-control"
-                          id="city"
-                          name="city"
-                          value={formData.city}
-                          onChange={handleChange}
-                          placeholder="Enter city"
-                        />
-                      </div>
-                    </div>
-                    <div className="col-lg-4">
-                      <div className="form-group">
-                        <label className="form-label" htmlFor="state">
-                          State
-                        </label>
-                        {STATES_BY_COUNTRY[formData.country] &&
-                        STATES_BY_COUNTRY[formData.country].length > 0 ? (
-                          <select
-                            className="form-select"
-                            id="state"
-                            name="state"
-                            value={formData.state}
-                            onChange={handleChange}
-                          >
-                            <option value="">Select state</option>
-                            {STATES_BY_COUNTRY[formData.country].map((st) => (
-                              <option key={st} value={st}>
-                                {st}
-                              </option>
-                            ))}
-                          </select>
-                        ) : (
-                          <input
-                            type="text"
-                            className="form-control"
-                            id="state"
-                            name="state"
-                            value={formData.state}
-                            onChange={handleChange}
-                            placeholder="Enter state"
-                          />
-                        )}
-                      </div>
-                    </div>
-                    {/* Hide ZIP/Postal field for UAE */}
-                    {formData.country !== 'United Arab Emirates' && (
-                      <div className="col-lg-4">
-                        <div className="form-group">
-                          <label className="form-label" htmlFor="zip">
-                            {getPostalLabel(formData.country)}
-                          </label>
-                          <input
-                            type="text"
-                            className="form-control"
-                            id="zip"
-                            name="zip"
-                            value={formData.zip}
-                            onChange={handleChange}
-                            onBlur={handleBlur}
-                            placeholder={getPostalPlaceholder(formData.country)}
-                            maxLength={
-                              formData.country === 'United States'
-                                ? 10
-                                : formData.country === 'India'
-                                  ? 6
-                                  : formData.country === 'Canada'
-                                    ? 7
-                                    : formData.country === 'United Kingdom'
-                                      ? 8
-                                      : formData.country === 'Australia'
-                                        ? 4
-                                        : formData.country === 'Singapore'
-                                          ? 6
-                                          : formData.country === 'Germany'
-                                            ? 5
-                                            : 20
-                            }
-                          />
-                          {errors.zip && (
-                            <div className="mt-1">
-                              <small className="text-danger">{errors.zip}</small>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                    <div className="col-lg-6">
-                      <div className="form-group">
-                        <label className="form-label" htmlFor="country">
-                          Country
-                        </label>
-                        <select
-                          className="form-select"
-                          id="country"
-                          name="country"
-                          value={formData.country}
-                          onChange={handleChange}
-                        >
-                          {COUNTRY_OPTIONS.map((c) => (
-                            <option key={c} value={c}>
-                              {c}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-                    <div className="col-lg-6">
-                      <div className="form-group">
-                        <label className="form-label" htmlFor="taxId">
-                          {TAX_ID_LABELS[formData.country] || "Tax ID"}
-                        </label>
-                        <input
-                          type="text"
-                          className="form-control"
-                          id="taxId"
-                          name="taxId"
-                          value={formData.taxId}
-                          onChange={handleChange}
-                          placeholder={
-                            TAX_ID_PLACEHOLDERS[formData.country] ||
-                            "Enter tax identifier"
-                          }
-                        />
-                        <small className="text-muted">
-                          This identifier varies by country (e.g., EIN in US,
-                          GSTIN in India, VAT in UK).
-                        </small>
-                      </div>
-                    </div>
-                    <div className="col-lg-6">
-                      <div className="form-group">
-                        <label className="form-label" htmlFor="vendorType">
-                          Vendor Type*
-                        </label>
-                        <select
-                          className="form-select"
-                          id="vendorType"
-                          name="vendorType"
-                          value={formData.vendorType}
-                          onChange={handleChange}
-                          required
-                        >
-                          <option value="consultant">Consultant</option>
-                          <option value="contractor">Contractor</option>
-                          <option value="supplier">Supplier</option>
-                          <option value="service">Service Provider</option>
-                          <option value="other">Other</option>
-                        </select>
-                      </div>
-                    </div>
-                    <div className="col-lg-6">
-                      <div className="form-group">
-                        <label className="form-label" htmlFor="paymentTerms">
-                          Payment Term*
-                        </label>
-                        <select
-                          className="form-select"
-                          id="paymentTerms"
-                          name="paymentTerms"
-                          value={formData.paymentTerms}
-                          onChange={handleChange}
-                          required
-                        >
-                          {paymentTermsOptions.map((opt) => (
-                            <option key={opt.value} value={opt.value}>
-                              {opt.label}
-                            </option>
-                          ))}
-                        </select>
-                        <small className="text-muted">
-                          Invoices are generated after timesheet approval.
-                          Invoice cycle controls when the invoice is created
-                          (e.g., Net 30).
-                        </small>
-                      </div>
-                    </div>
-                    <div className="col-lg-6">
-                      <div className="form-group">
-                        <label className="form-label" htmlFor="status">
-                          Status
-                        </label>
-                        <select
-                          className="form-select"
-                          id="status"
-                          name="status"
-                          value={formData.status}
-                          onChange={handleChange}
-                        >
-                          <option value="active">Active</option>
-                          <option value="inactive">Inactive</option>
-                          <option value="pending">Pending Approval</option>
-                        </select>
-                      </div>
-                    </div>
-                    <div className="col-lg-12">
-                      <div className="form-group">
-                        <label className="form-label">
-                          Contract / Agreement
-                        </label>
-                        <div className="form-control-wrap">
-                          <div className="custom-file">
-                            <input
-                              type="file"
-                              className="custom-file-input"
-                              id="contractFile"
-                              accept=".pdf,.doc,.docx"
-                              onChange={handleFileChange}
-                            />
-                            <label
-                              className="custom-file-label"
-                              htmlFor="contractFile"
-                            >
-                              {contractFile ? contractFile.name : "Choose file"}
-                            </label>
-                          </div>
-                        </div>
-                        <small className="text-muted">
-                          Upload vendor contract or agreement (PDF, DOC, DOCX)
-                        </small>
-
-                        {contractPreview && (
-                          <div className="document-preview mt-3">
-                            <p>Document uploaded: {contractFile.name}</p>
-                            {contractFile.type.includes("image") ? (
-                              <img
-                                src={contractPreview}
-                                alt="Contract Preview"
-                                style={{ maxWidth: "100%", maxHeight: "200px" }}
-                              />
-                            ) : (
-                              <div className="document-icon">
-                                <i className="fas fa-file-pdf fa-3x"></i>
-                                <p>Document ready for upload</p>
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <div className="col-lg-12">
-                      <div className="form-group">
-                        <label className="form-label" htmlFor="notes">
-                          Notes
-                        </label>
-                        <textarea
-                          className="form-control"
-                          id="notes"
-                          name="notes"
-                          value={formData.notes}
-                          onChange={handleChange}
-                          placeholder="Enter any additional notes"
-                          rows="4"
-                        ></textarea>
-                      </div>
-                    </div>
-                    <div className="col-12">
-                      <div className="form-group">
-                        <button
-                          type="submit"
-                          className="btn btn-primary btn-create-vendor"
-                          disabled={loading}
-                        >
-                          {loading ? (
-                            <>
-                              <span
-                                className="spinner-border spinner-border-sm mr-1"
-                                role="status"
-                                aria-hidden="true"
-                              ></span>
-                              {mode === "edit" ? "Saving..." : "Creating..."}
-                            </>
-                          ) : (
-                            submitLabel ||
-                            (mode === "edit" ? "Save Changes" : "Create Vendor")
-                          )}
-                        </button>
-                        <button
-                          type="button"
-                          className="btn btn-outline-light ml-3"
-                          onClick={() => router.push(`/${subdomain}/vendors`)}
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </form>
-              </div>
-            </div>
+          {/* contact */}
+          <div>
+            <label className="mb-1 block text-xs font-semibold text-slate-600">
+              Contact Person *
+            </label>
+            <input
+              name="contactPerson"
+              value={formData.contactPerson}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm shadow-sm"
+            />
           </div>
+
+          {/* email */}
+          <div>
+            <label className="mb-1 block text-xs font-semibold text-slate-600">
+              Email *
+            </label>
+            <input
+              type="email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm shadow-sm"
+            />
+          </div>
+
+          {/* phone */}
+          <div>
+            <label className="mb-1 block text-xs font-semibold text-slate-600">
+              Phone *
+            </label>
+            <input
+              type="tel"
+              name="phone"
+              value={formData.phone}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              maxLength="14"
+              className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm shadow-sm"
+            />
+          </div>
+
+          {/* vendor type */}
+          <div>
+            <label className="mb-1 block text-xs font-semibold text-slate-600">
+              Vendor Type *
+            </label>
+            <select
+              name="vendorType"
+              value={formData.vendorType}
+              onChange={handleChange}
+              className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm shadow-sm"
+            >
+              <option value="consultant">Consultant</option>
+              <option value="contractor">Contractor</option>
+              <option value="supplier">Supplier</option>
+              <option value="service">Service Provider</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+
+          {/* status */}
+          <div>
+            <label className="mb-1 block text-xs font-semibold text-slate-600">
+              Status
+            </label>
+            <select
+              name="status"
+              value={formData.status}
+              onChange={handleChange}
+              className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm shadow-sm"
+            >
+              <option value="active">Active</option>
+              <option value="pending">Pending Approval</option>
+              <option value="inactive">Inactive</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {/* ================= Address Information ================= */}
+      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 className="mb-6 text-sm font-semibold uppercase tracking-wide text-slate-700">
+          Address Information
+        </h2>
+
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
+          <div className="md:col-span-3">
+            <label className="mb-1 block text-xs font-semibold text-slate-600">
+              Address
+            </label>
+            <input
+              name="address"
+              value={formData.address}
+              onChange={handleChange}
+              className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm shadow-sm"
+            />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-xs font-semibold text-slate-600">
+              City
+            </label>
+            <input
+              name="city"
+              value={formData.city}
+              onChange={handleChange}
+              className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm shadow-sm"
+            />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-xs font-semibold text-slate-600">
+              State
+            </label>
+            <input
+              name="state"
+              value={formData.state}
+              onChange={handleChange}
+              className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm shadow-sm"
+            />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-xs font-semibold text-slate-600">
+              Postal Code
+            </label>
+            <input
+              name="zip"
+              value={formData.zip}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm shadow-sm"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* ================= Tax & Payment ================= */}
+      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 className="mb-6 text-sm font-semibold uppercase tracking-wide text-slate-700">
+          Tax & Payment Information
+        </h2>
+
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+          <div>
+            <label className="mb-1 block text-xs font-semibold text-slate-600">
+              Tax ID
+            </label>
+            <input
+              name="taxId"
+              value={formData.taxId}
+              onChange={handleChange}
+              className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm shadow-sm"
+            />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-xs font-semibold text-slate-600">
+              Payment Terms *
+            </label>
+            <select
+              name="paymentTerms"
+              value={formData.paymentTerms}
+              onChange={handleChange}
+              className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm shadow-sm"
+            >
+              {paymentTermsOptions.map(opt => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {/* ================= Contract ================= */}
+      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 className="mb-6 text-sm font-semibold uppercase tracking-wide text-slate-700">
+          Contract / Agreement
+        </h2>
+
+        <input
+          type="file"
+          accept=".pdf,.doc,.docx"
+          onChange={handleFileChange}
+          className="block w-full text-sm file:mr-4 file:rounded-xl file:border-0 file:bg-sky-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-sky-700 hover:file:bg-sky-100"
+        />
+      </div>
+
+      {/* ================= Notes ================= */}
+      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm lg:col-span-2">
+        <h2 className="mb-6 text-sm font-semibold uppercase tracking-wide text-slate-700">
+          Notes
+        </h2>
+
+        <textarea
+          rows={4}
+          name="notes"
+          value={formData.notes}
+          onChange={handleChange}
+          className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm shadow-sm"
+        />
+      </div>
+
+      {/* ================= Actions ================= */}
+      <div className="flex justify-end gap-3 lg:col-span-2">
+        <button
+          type="button"
+          onClick={() => router.push(`/${subdomain}/vendors`)}
+          className="rounded-xl border border-slate-300 bg-white px-6 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+        >
+          Cancel
+        </button>
+
+        <button
+          type="submit"
+          disabled={loading}
+          className="rounded-xl bg-sky-700 px-6 py-2.5 text-sm font-semibold text-white shadow hover:bg-sky-800 disabled:opacity-60"
+        >
+          {mode === "edit" ? "Save Changes" : "Add Vendor"}
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+
+          </form>
         </div>
       </div>
     </PermissionGuard>

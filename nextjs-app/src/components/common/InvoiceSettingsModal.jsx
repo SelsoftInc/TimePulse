@@ -39,13 +39,13 @@ const InvoiceSettingsModal = ({ onClose, onCreateAnyway }) => {
           
           <div className="modal-actions">
             <button 
-              className="btn btn-outline-secondary"
+              className="btn btn-outline-secondary !bg-sky-100"
               onClick={handleCreateAnyway}
             >
               Create Anyway
             </button>
             <button 
-              className="btn btn-primary"
+              className="btn !bg-sky-300"
               onClick={handleGoToSettings}
             >
               Go to Settings

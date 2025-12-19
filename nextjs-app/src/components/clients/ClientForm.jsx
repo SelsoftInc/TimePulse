@@ -353,434 +353,271 @@ const ClientForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
 
   return (
     <PermissionGuard requiredPermission={mode === 'edit' ? PERMISSIONS.EDIT_CLIENT : PERMISSIONS.CREATE_CLIENT}>
-      <div className="nk-conten">
+     <div className="nk-content min-h-screen bg-slate-50">
         <div className="container-fluid">
-          <div className="nk-block-head">
-            <div className="nk-block-between">
-              <div className="nk-block-head-content">
-                <h3 className="nk-block-title">{mode === 'edit' ? 'Edit Client' : 'Add New Client'}</h3>
-                <p className="nk-block-subtitle">{mode === 'edit' ? 'Update client information' : 'Create a new client record'}</p>
-              </div>
-            </div>
-          </div>
+          <div className="nk-content-inner">
+      <div className="nk-content-body py-6">
+             <div className="mb-6 rounded-xl border border-slate-200 bg-indigo-50 p-5 shadow-sm">
+  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+    
+    {/* LEFT */}
+    <div>
+      <h1 className="text-xl font-semibold text-slate-900">
+        {mode === "edit" ? "Edit Client" : "Add New Client"}
+      </h1>
 
-          <div className="nk-block">
-            <div className="card card-bordered">
-              <div className="card-inne">
-                <form onSubmit={handleSubmit}>
-                  <div className="row g-4">
-                    <div className="col-lg-6">
-                      <div className="form-group">
-                        <label className="form-label" htmlFor="name">Client Name*</label>
-                        <input
-                          type="text"
-                          className="form-control"
-                          id="name"
-                          name="name"
-                          value={formData.name}
-                          onChange={handleChange}
-                          placeholder="Enter client name"
-                          required
-                        />
+      <p className="mt-1 text-sm text-slate-600">
+        {mode === "edit"
+          ? "Update client details, billing, and payment information"
+          : "Create a new client with contact, billing, and payment details"}
+      </p>
+    </div>
+    </div>
+    </div>
+
+              {/* <div className="px-6 py-6 sm:px-8"> */}
+                <div className="nk-block">
+                  <div className="space-y-6">
+                    <form onSubmit={handleSubmit}>
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                       {/* <div className="grid grid-cols-1 gap-6 lg:grid-cols-2"> */}
+
+  {/* ================= LEFT COLUMN ================= */}
+  <div className="space-y-6">
+
+    {/* CLIENT INFORMATION */}
+    <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
+      <header className="rounded-t-xl border-b border-slate-200 bg-slate-50 px-6 py-4">
+        <h4 className="text-sm font-semibold text-slate-900">
+          Client Information
+        </h4>
+      </header>
+
+      <div className="p-6 grid grid-cols-1 gap-5 sm:grid-cols-2">
+        {/* Client Name */}
+        <div>
+          <label className="mb-1 block text-sm font-medium text-slate-700">
+            Client Name <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            name="name"
+            value={formData.name}
+            onChange={handleChange}
+            required
+            placeholder="e.g. Acme Corporation"
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm
+                       focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+          />
+        </div>
+
+        {/* Contact Person */}
+        <div>
+          <label className="mb-1 block text-sm font-medium text-slate-700">
+            Contact Person <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            name="contactPerson"
+            value={formData.contactPerson}
+            onChange={handleChange}
+            required
+            placeholder="John Doe"
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm
+                       focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+          />
+        </div>
+
+        {/* Email */}
+        <div>
+          <label className="mb-1 block text-sm font-medium text-slate-700">
+            Email Address <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="email"
+            name="email"
+            value={formData.email}
+            onChange={handleChange}
+            required
+            placeholder="email@example.com"
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm
+                       focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+          />
+        </div>
+
+        {/* Phone */}
+        <div>
+          <label className="mb-1 block text-sm font-medium text-slate-700">
+            Phone Number <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="tel"
+            value={formData.phone}
+            onChange={(e) => {
+              const formatted = formatPhoneInput(e.target.value);
+              setFormData((p) => ({ ...p, phone: formatted }));
+            }}
+            required
+            placeholder="+1 555 123 4567"
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm
+                       focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+          />
+          {errors.phone && (
+            <p className="mt-1 text-xs text-red-500">{errors.phone}</p>
+          )}
+        </div>
+
+        {/* Status */}
+        <div>
+          <label className="mb-1 block text-sm font-medium text-slate-700">
+            Status
+          </label>
+          <select
+            name="status"
+            value={formData.status}
+            onChange={handleChange}
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm
+                       focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+          >
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+            <option value="pending">Pending</option>
+          </select>
+        </div>
+
+        {/* Client Type */}
+        <div>
+          <label className="mb-1 block text-sm font-medium text-slate-700">
+            Client Type <span className="text-red-500">*</span>
+          </label>
+          <select
+            name="clientType"
+            value={formData.clientType}
+            onChange={handleChange}
+            required
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm
+                       focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+          >
+            {CLIENT_TYPES.map((ct) => (
+              <option key={ct.value} value={ct.value}>
+                {ct.label}
+              </option>
+            ))}
+          </select>
+          <p className="mt-1 text-xs text-slate-500">
+            {formData.clientType === "internal"
+              ? "Internal clients allow manual hours & AI upload"
+              : "External clients require uploaded timesheets"}
+          </p>
+        </div>
+      </div>
+    </section>
+
+    {/* NOTES */}
+    <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
+      <header className="rounded-t-xl border-b border-slate-200 bg-slate-50 px-6 py-4">
+        <h4 className="text-sm font-semibold text-slate-900">Notes</h4>
+      </header>
+      <div className="p-6">
+        <textarea
+          name="notes"
+          value={formData.notes}
+          onChange={handleChange}
+          rows={4}
+          placeholder="Any additional notes..."
+          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm
+                     focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+        />
+      </div>
+    </section>
+  </div>
+
+  {/* ================= RIGHT COLUMN ================= */}
+  <div className="space-y-6">
+
+    {/* ADDRESS INFORMATION */}
+    <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
+      <header className="rounded-t-xl border-b border-slate-200 bg-slate-50 px-6 py-4">
+        <h4 className="text-sm font-semibold text-slate-900">
+          Address Information
+        </h4>
+      </header>
+
+      <div className="p-6 space-y-4">
+        <input
+          ref={addressInputRef}
+          name="address"
+          value={formData.address}
+          onChange={handleChange}
+          placeholder="Start typing address"
+          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm
+                     focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+        />
+
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <input
+            name="city"
+            value={formData.city}
+            onChange={handleChange}
+            placeholder="City"
+            className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+          />
+          <input
+            name="state"
+            value={formData.state}
+            onChange={handleChange}
+            placeholder="State"
+            className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+          />
+          <input
+            name="zip"
+            value={formData.zip}
+            onChange={handleChange}
+            placeholder="ZIP / Postal"
+            className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+          />
+        </div>
+      </div>
+    </section>
+  </div>
+
+  {/* ================= ACTION BUTTONS ================= */}
+  <div className="mt-6 flex flex-col gap-3 border-t border-slate-200 pt-6 sm:flex-row sm:items-center sm:justify-end">
+    <button
+      type="button"
+      className="rounded-lg border border-slate-200 bg-white px-5 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-blue-600 focus:z-10 focus:outline-none focus:ring-4 focus:ring-slate-100 w-full sm:w-auto"
+      onClick={() => router.push(`/${subdomain}/clients`)}
+    >
+      Cancel
+    </button>
+
+    <button
+      type="submit"
+      className="inline-flex items-center justify-center rounded-lg bg-sky-800 px-5 py-2.5 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-300 disabled:opacity-70 w-full sm:w-auto"
+      disabled={loading}
+    >
+      {loading ? (
+        <>
+          <svg className="mr-2 h-4 w-4 animate-spin text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          {mode === 'edit' ? 'Saving...' : 'Creating...'}
+        </>
+      ) : (
+        submitLabel || (mode === 'edit' ? 'Save Changes' : 'Add New Client')
+      )}
+    </button>
+  </div>
+
                       </div>
-                    </div>
-                    <div className="col-lg-6">
-                      <div className="form-group">
-                        <label className="form-label" htmlFor="contactPerson">Contact Person*</label>
-                        <input
-                          type="text"
-                          className="form-control"
-                          id="contactPerson"
-                          name="contactPerson"
-                          value={formData.contactPerson}
-                          onChange={handleChange}
-                          placeholder="Enter contact person name"
-                          required
-                        />
-                      </div>
-                    </div>
-                    <div className="col-lg-6">
-                      <div className="form-group">
-                        <label className="form-label" htmlFor="email">Email Address*</label>
-                        <input
-                          type="email"
-                          className="form-control"
-                          id="email"
-                          name="email"
-                          value={formData.email}
-                          onChange={handleChange}
-                          placeholder="Enter email address"
-                          required
-                        />
-                      </div>
-                    </div>
-                    <div className="col-lg-6">
-                      <div className="form-group">
-                        <label className="form-label" htmlFor="phone">Phone Number*</label>
-                        <div className="input-group">
-                          <span className="input-group-text" style={{ backgroundColor: '#f8f9fa', fontWeight: '600', minWidth: '70px' }}>
-                            {phoneCountryCode}
-                          </span>
-                          <input
-                            type="tel"
-                            className="form-control"
-                            id="phone"
-                            name="phone"
-                            value={formData.phone}
-                            onChange={(e) => {
-                              const formatted = formatPhoneInput(e.target.value);
-                              setFormData(prev => ({ ...prev, phone: formatted }));
-                              if (errors.phone) setErrors(prev => ({ ...prev, phone: '' }));
-                            }}
-                            onBlur={handleBlur}
-                            inputMode="tel"
-                            maxLength={20}
-                            placeholder={getPhonePlaceholder(formData.country)}
-                            required
-                          />
-                        </div>
-                        <small className="text-muted">Phone number must be exactly {formData.country === 'United States' || formData.country === 'Canada' || formData.country === 'India' ? '10' : formData.country === 'Singapore' ? '8' : formData.country === 'Australia' || formData.country === 'United Arab Emirates' ? '9' : '10-11'} digits for {formData.country}</small>
-                        {errors.phone && (
-                          <div className="mt-1"><small className="text-danger">{errors.phone}</small></div>
-                        )}
-                      </div>
-                    </div>
-                    <div className="col-lg-12">
-                      <div className="form-group">
-                        <label className="form-label" htmlFor="address">Address</label>
-                        <input
-                          ref={addressInputRef}
-                          type="text"
-                          className="form-control"
-                          id="address"
-                          name="address"
-                          autoComplete="street-address"
-                          value={formData.address}
-                          onChange={handleChange}
-                          placeholder="Start typing an address"
-                        />
-                      </div>
-                    </div>
-                    <div className="col-lg-4">
-                      <div className="form-group">
-                        <label className="form-label" htmlFor="city">City</label>
-                        <input
-                          type="text"
-                          className="form-control"
-                          id="city"
-                          name="city"
-                          value={formData.city}
-                          onChange={handleChange}
-                          placeholder="Enter city"
-                        />
-                      </div>
-                    </div>
-                    <div className="col-lg-4">
-                      <div className="form-group">
-                        <label className="form-label" htmlFor="state">State/Province</label>
-                        {STATES_BY_COUNTRY[formData.country] ? (
-                          <select
-                            className="form-select"
-                            id="state"
-                            name="state"
-                            value={formData.state}
-                            onChange={handleChange}
-                          >
-                            <option value="" disabled>Select state</option>
-                            {STATES_BY_COUNTRY[formData.country].map((s) => (
-                              <option key={s} value={s}>{s}</option>
-                            ))}
-                          </select>
-                        ) : (
-                          <input
-                            type="text"
-                            className="form-control"
-                            id="state"
-                            name="state"
-                            value={formData.state}
-                            onChange={handleChange}
-                            placeholder="Enter state"
-                          />
-                        )}
-                      </div>
-                    </div>
-                    {/* Hide ZIP/Postal field for UAE */}
-                    {formData.country !== 'United Arab Emirates' && (
-                      <div className="col-lg-4">
-                        <div className="form-group">
-                          <label className="form-label" htmlFor="zip">{getPostalLabel(formData.country)}</label>
-                          <input
-                            type="text"
-                            className="form-control"
-                            id="zip"
-                            name="zip"
-                            value={formData.zip}
-                            onChange={(e) => {
-                              const formatted = formatPostalInput(e.target.value, formData.country);
-                              setFormData(prev => ({ ...prev, zip: formatted }));
-                              if (errors.zip) setErrors(prev => ({ ...prev, zip: '' }));
-                            }}
-                            onBlur={handleBlur}
-                            placeholder={getPostalPlaceholder(formData.country)}
-                            maxLength={formData.country === 'United States' ? 10 : 20}
-                          />
-                          {errors.zip && (
-                            <div className="mt-1"><small className="text-danger">{errors.zip}</small></div>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                    <div className="col-lg-6">
-                      <div className="form-group">
-                        <label className="form-label" htmlFor="country">Country</label>
-                        <select
-                          className="form-select"
-                          id="country"
-                          name="country"
-                          value={formData.country}
-                          onChange={handleChange}
-                        >
-                          {COUNTRY_OPTIONS.map((c) => (
-                            <option key={c} value={c}>{c}</option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-                    
-                    <div className="col-lg-6">
-                      <div className="form-group">
-                        <label className="form-label" htmlFor="status">Status</label>
-                        <select
-                          className="form-select"
-                          id="status"
-                          name="status"
-                          value={formData.status}
-                          onChange={handleChange}
-                        >
-                          <option value="active">Active</option>
-                          <option value="inactive">Inactive</option>
-                          <option value="pending">Pending</option>
-                        </select>
-                      </div>
-                    </div>
-                    <div className="col-lg-6">
-                      <div className="form-group">
-                        <label className="form-label" htmlFor="clientType">Client Type*</label>
-                        <select
-                          className="form-select"
-                          id="clientType"
-                          name="clientType"
-                          value={formData.clientType}
-                          onChange={handleChange}
-                          required
-                        >
-                          {CLIENT_TYPES.map(ct => (
-                            <option key={ct.value} value={ct.value}>{ct.label}</option>
-                          ))}
-                        </select>
-                        <div className="form-note mt-2">
-                          <small>
-                            {formData.clientType === 'internal' 
-                              ? 'Internal clients allow manual hour entry and AI timesheet upload'
-                              : 'External clients require uploading client-submitted timesheet files'
-                            }
-                          </small>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    {/* Billing & Payment Information Section */}
-                    <div className="col-12">
-                      <hr className="my-4" />
-                      <h5 className="mb-3">
-                        <em className="icon ni ni-credit-card mr-2"></em>
-                        Billing & Payment Information
-                      </h5>
-                    </div>
-                    
-                    <div className="col-lg-6">
-                      <div className="form-group">
-                        <label className="form-label" htmlFor="paymentTerms">Payment Term*</label>
-                        <select
-                          className="form-select"
-                          id="paymentTerms"
-                          name="paymentTerms"
-                          value={formData.paymentTerms}
-                          onChange={handleChange}
-                          required
-                        >
-                          {paymentTermsOptions.map(pt => (
-                            <option key={pt.value} value={pt.value}>{pt.label}</option>
-                          ))}
-                        </select>
-                        <small className="text-muted">Invoices are generated after timesheet approval. Invoice cycle determines when an invoice is created (e.g., Net 30 = monthly after approval).</small>
-                      </div>
-                    </div>
-                    
-                    <div className="col-lg-6">
-                      <div className="form-group">
-                        <label className="form-label" htmlFor="paymentMethod">Payment Method*</label>
-                        <select
-                          className="form-select"
-                          id="paymentMethod"
-                          name="paymentMethod"
-                          value={formData.paymentMethod}
-                          onChange={handleChange}
-                          required
-                        >
-                          {PAYMENT_METHODS.map(m => (
-                            <option key={m} value={m}>{m}</option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-                    
-                    <div className="col-lg-6">
-                      <div className="form-group">
-                        <label className="form-label" htmlFor="currency">Currency*</label>
-                        <select
-                          className="form-select"
-                          id="currency"
-                          name="currency"
-                          value={formData.currency}
-                          onChange={handleChange}
-                          required
-                        >
-                          {CURRENCIES.map(c => (
-                            <option key={c.value} value={c.value}>{c.label}</option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-                    
-                    <div className="col-lg-6">
-                      <div className="form-group">
-                        <label className="form-label" htmlFor="taxId">{TAX_ID_LABELS[formData.country] || 'Tax ID'}</label>
-                        <input
-                          type="text"
-                          className="form-control"
-                          id="taxId"
-                          name="taxId"
-                          value={formData.taxId}
-                          onChange={(e) => {
-                            setFormData(prev => ({ ...prev, taxId: e.target.value }));
-                          }}
-                          placeholder={TAX_ID_PLACEHOLDERS[formData.country] || 'Enter tax identifier (optional)'}
-                        />
-                        <small className="text-muted">Optional. This identifier varies by country (e.g., EIN in US, GSTIN in India, VAT in UK).</small>
-                      </div>
-                    </div>
-                    
-                    <div className="col-lg-6">
-                      <div className="form-group">
-                        <label className="form-label" htmlFor="vatNumber">VAT Number</label>
-                        <input
-                          type="text"
-                          className="form-control"
-                          id="vatNumber"
-                          name="vatNumber"
-                          value={formData.vatNumber}
-                          onChange={handleChange}
-                          placeholder="Enter VAT Number (if applicable)"
-                        />
-                      </div>
-                    </div>
-                    
-                    {(formData.paymentMethod === 'Bank Transfer' || formData.paymentMethod === 'Wire Transfer') && (
-                      <div className="col-12">
-                        <div className="form-group">
-                          <label className="form-label" htmlFor="bankDetails">Bank Details</label>
-                          <textarea
-                            className="form-control"
-                            id="bankDetails"
-                            name="bankDetails"
-                            value={formData.bankDetails}
-                            onChange={handleChange}
-                            placeholder="Enter bank details (Bank name, Account number, Routing number, etc.)"
-                            rows="3"
-                          ></textarea>
-                        </div>
-                      </div>
-                    )}
-                    
-                    <div className="col-12">
-                      <div className="form-group">
-                        <div className="custom-control custom-checkbox">
-                          <input
-                            type="checkbox"
-                            className="custom-control-input"
-                            id="billingAddressSameAsMain"
-                            name="billingAddressSameAsMain"
-                            checked={formData.billingAddressSameAsMain}
-                            onChange={handleChange}
-                          />
-                          <label className="custom-control-label" htmlFor="billingAddressSameAsMain">
-                            Billing address is the same as main address
-                          </label>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    {!formData.billingAddressSameAsMain && (
-                      <div className="col-12">
-                        <div className="form-group">
-                          <label className="form-label" htmlFor="billingAddress">Billing Address*</label>
-                          <textarea
-                            className="form-control"
-                            id="billingAddress"
-                            name="billingAddress"
-                            value={formData.billingAddress}
-                            onChange={handleChange}
-                            placeholder="Enter billing address"
-                            rows="3"
-                            required={!formData.billingAddressSameAsMain}
-                          ></textarea>
-                        </div>
-                      </div>
-                    )}
-                    
-                    <div className="col-lg-12">
-                      <div className="form-group">
-                        <label className="form-label" htmlFor="notes">Notes</label>
-                        <textarea
-                          className="form-control"
-                          id="notes"
-                          name="notes"
-                          value={formData.notes}
-                          onChange={handleChange}
-                          placeholder="Enter any additional notes"
-                          rows="4"
-                        ></textarea>
-                      </div>
-                    </div>
-                    <div className="col-12">
-                      <div className="form-group">
-                        <button type="submit" className="btn btn-primary btn-create-client" disabled={loading}>
-                          {loading ? (
-                            <>
-                              <span className="spinner-border spinner-border-sm mr-1" role="status" aria-hidden="true"></span>
-                              {mode === 'edit' ? 'Saving...' : 'Creating...'}
-                            </>
-                          ) : (
-                            submitLabel || (mode === 'edit' ? 'Save Changes' : 'Create Client')
-                          )}
-                        </button>
-                        <button 
-                          type="button" 
-                          className="btn btn-outline-light ml-3"
-                          onClick={() => router.push(`/${subdomain}/clients`)}
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    </div>
+                    </form>
                   </div>
-                </form>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
     </PermissionGuard>
   );
 };

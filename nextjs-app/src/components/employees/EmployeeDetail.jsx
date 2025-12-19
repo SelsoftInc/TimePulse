@@ -83,8 +83,21 @@ const EmployeeDetail = () => {
         }
       });
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-      const data = await response.json();
-      return data.employee || data;
+      const rawData = await response.json();
+      console.log('📦 Raw API response:', rawData);
+      
+      // Handle encrypted response
+      let data = rawData;
+      if (rawData.encrypted && rawData.data) {
+        // Response is encrypted, decrypt it
+        const { decryptApiResponse } = await import('@/utils/encryption');
+        data = decryptApiResponse(rawData);
+        console.log('🔓 Decrypted response:', data);
+      }
+      
+      const employeeData = data.employee || data;
+      console.log('👤 Employee data to use:', employeeData);
+      return employeeData;
     },
     enabled: isMounted && !!tenantId && !!id
   });
@@ -93,16 +106,59 @@ const EmployeeDetail = () => {
   useEffect(() => {
     if (!employeeData) return;
     const emp = employeeData;
+    
+    // Build full name from firstName and lastName
+    const fullName = emp.name || `${emp.firstName || ''} ${emp.lastName || ''}`.trim() || 'N/A';
+    
+    // Handle client data - could be object or string
+    let clientDisplay = 'Not assigned';
+    if (emp.client) {
+      if (typeof emp.client === 'object') {
+        clientDisplay = emp.client.name || emp.client.clientName || emp.client.legalName || 'Not assigned';
+      } else {
+        clientDisplay = emp.client;
+      }
+    } else if (emp.clientName) {
+      clientDisplay = emp.clientName;
+    }
+    
+    // Handle vendor data - could be object or string
+    let vendorDisplay = null;
+    if (emp.vendor) {
+      if (typeof emp.vendor === 'object') {
+        vendorDisplay = emp.vendor.name || null;
+      } else {
+        vendorDisplay = emp.vendor;
+      }
+    } else if (emp.vendorName) {
+      vendorDisplay = emp.vendorName;
+    }
+    
     const transformedEmployee = {
       ...emp,
+      name: fullName,
+      firstName: emp.firstName || '',
+      lastName: emp.lastName || '',
+      email: emp.email || 'N/A',
+      phone: emp.phone || 'N/A',
+      position: emp.position || emp.title || 'N/A',
+      department: emp.department || 'N/A',
+      status: emp.status || 'active',
+      employmentType: emp.employmentType || 'W2',
       joinDate: emp.joinDate ? new Date(emp.joinDate).toISOString().split('T')[0] : (emp.startDate ? new Date(emp.startDate).toISOString().split('T')[0] : ''),
       address: emp.address?.street || emp.address || '—',
       city: emp.address?.city || '',
       state: emp.address?.state || '',
       zip: emp.address?.zip || '',
       country: emp.address?.country || '',
-      client: emp.client || emp.clientName || emp.clientId || 'Not assigned'
+      client: clientDisplay,
+      clientId: emp.clientId || null,
+      vendor: vendorDisplay,
+      vendorId: emp.vendorId || null,
+      implPartnerId: emp.implPartnerId || null
     };
+    
+    console.log('📊 Transformed employee data:', transformedEmployee);
     setEmployee(transformedEmployee);
     setFormValues({
       joinDate: transformedEmployee.joinDate || '',

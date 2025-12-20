@@ -418,11 +418,17 @@ router.get("/:id/pdf-data", async (req, res) => {
     // Fetch client if clientId exists
     if (invoice.clientId) {
       try {
-        client = await models.Client.findOne({
+        const clientRaw = await models.Client.findOne({
           where: { id: invoice.clientId },
           attributes: ["id", "clientName", "email", "billingAddress"]
         });
-        console.log('✅ Client found:', client?.clientName);
+        
+        if (clientRaw) {
+          // Decrypt client data
+          const clientPlain = clientRaw.toJSON ? clientRaw.toJSON() : clientRaw;
+          client = DataEncryptionService.decryptClientData(clientPlain);
+          console.log('✅ Client found and decrypted for PDF:', client?.clientName);
+        }
       } catch (err) {
         console.log('⚠️ Client fetch error:', err.message);
       }
@@ -623,11 +629,17 @@ router.get("/:id", async (req, res) => {
     // Fetch client
     if (invoice.clientId) {
       try {
-        client = await models.Client.findOne({
+        const clientRaw = await models.Client.findOne({
           where: { id: invoice.clientId },
           attributes: ["id", "clientName", "email", "billingAddress"]
         });
-        console.log('✅ Client found:', client?.clientName);
+        
+        if (clientRaw) {
+          // Decrypt client data
+          const clientPlain = clientRaw.toJSON ? clientRaw.toJSON() : clientRaw;
+          client = DataEncryptionService.decryptClientData(clientPlain);
+          console.log('✅ Client found and decrypted:', client?.clientName);
+        }
       } catch (err) {
         console.log('⚠️ Client fetch error:', err.message);
       }

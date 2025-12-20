@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useParams, usePathname } from 'next/navigation';
+import { useParams, usePathname, useRouter } from 'next/navigation';
 import React, { useState, useEffect } from 'react';
 import { API_BASE } from '@/config/api';
 import { isServerConnectedCached } from '@/utils/serverCheck';
@@ -19,6 +19,7 @@ import "./VendorsDropdownFix.css";
 import "./Vendors.css"
 
 const VendorList = () => {
+  const router = useRouter();
   const { subdomain } = useParams();
   const { user } = useAuth();
   const pathname = usePathname();
@@ -125,35 +126,6 @@ const VendorList = () => {
     return () => document.removeEventListener("mousedown", handler);
   }, [openMenuId]);
 
-
-useEffect(() => {
-    const sampleVendors = [
-      {
-        id: 1,
-        name: "TechNova Solutions",
-        contactPerson: "Arjun Mehta",
-        category: "IT Services",
-        email: "arjun@technova.com",
-        phone: "+91 98765 43210",
-        status: "active",
-      },
-      {
-        id: 2,
-        name: "BlueWave Consulting",
-        contactPerson: "Priya Sharma",
-        category: "Consulting",
-        email: "priya@bluewave.com",
-        phone: "+91 91234 56789",
-        status: "pending",
-      },
-    ];
-
-    setTimeout(() => {
-      setVendors(sampleVendors);
-      setLoading(false);
-    }, 500); // simulate loader
-  }, []);
-
   const toggleMenu = (id) => setOpenMenuId((prev) => (prev === id ? null : id));
 
   // Pagination calculations
@@ -161,6 +133,13 @@ useEffect(() => {
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const paginatedVendors = vendors.slice(startIndex, endIndex);
+
+  const handleEdit = (vendorId) => {
+    console.log('📝 handleEdit called for vendor:', vendorId);
+    console.log('📍 Navigating to:', `/${subdomain}/vendors/edit/${vendorId}`);
+    setOpenMenuId(null);
+    router.push(`/${subdomain}/vendors/edit/${vendorId}`);
+  };
 
   const handleDelete = async (vendorId) => {
     try {
@@ -279,220 +258,206 @@ useEffect(() => {
 </div>
 
 
-        <div className="nk-block">
+        {/* ================= CONTENT ================= */}
+        <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
+          {/* ERROR */}
           {error ? (
-            <div className="alert alert-danger" role="alert">
-              <i className="fas fa-exclamation-triangle mr-2"></i>
-              {error}
-            </div>
-          ) : loading ? (
-            <div className="d-flex justify-content-center mt-5">
-              <div className="spinner-border text-primary" role="status">
-                <span className="sr-only">Loading...</span>
+            <div className="m-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+              <div className="flex items-center justify-between">
+                <div>
+                  <i className="fas fa-exclamation-triangle mr-2" />
+                  {error}
+                </div>
               </div>
             </div>
+          ) : loading ? (
+            <div className="flex justify-center py-16">
+              <div className="spinner-border text-indigo-600" role="status" />
+            </div>
+          ) : vendors.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <p className="mb-4 text-slate-600">No vendors found.</p>
+              <PermissionGuard requiredPermission={PERMISSIONS.CREATE_VENDOR}>
+                <Link
+                  href={`/${subdomain}/vendors/new`}
+                  className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+                >
+                  <i className="fas fa-plus"></i> Add Your First Vendor
+                </Link>
+              </PermissionGuard>
+            </div>
           ) : (
-            <div className="card">
-              <div className="card-inner table-responsive">
-                {vendors.length === 0 ? (
-                  <div className="text-center text-muted py-5">
-                    <p className="mb-2">No vendors found.</p>
-                    <PermissionGuard
-                      requiredPermission={PERMISSIONS.CREATE_VENDOR}
-                    >
-                      <Link href={`/${subdomain}/vendors/new`}
-                        className="btn btn-primary"
-                      >
-                        <i className="fas fa-plus mr-1"></i> Add Your First
-                        Vendor
-                      </Link>
-                    </PermissionGuard>
-                  </div>
-                ) : (
-                  <table className="table table-vendors">
-                    <thead>
-                      <tr>
-                        <th>Vendor Name</th>
-                        <th>Contact Person</th>
-                        <th>Category</th>
-                        <th>Email</th>
-                        <th>Phone</th>
-                        <th>Status</th>
-                        <th className="text-right">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {paginatedVendors.map((vendor) => (
-                        <tr key={vendor.id} className={openMenuId === vendor.id ? 'dropdown-open' : ''}>
-                          <td>
-                            <Link href={`/${subdomain}/vendors/${vendor.id}`}
-                              className="vendor-name"
-                            >
-                              {vendor.name}
-                            </Link>
-                          </td>
-                          <td>{vendor.contactPerson}</td>
-                          <td>{vendor.category}</td>
-                          <td>{vendor.email}</td>
-                          <td>{vendor.phone}</td>
-                          <td>
-                            <span
-                              className={`badge badge-${
-                                vendor.status === "active"
-                                  ? "success"
-                                  : vendor.status === "pending"
-                                  ? "warning"
-                                  : "secondary"
-                              }`}
-                            >
-                              {vendor.status === "active"
-                                ? "Active"
+            <>
+              {/* ================= TABLE ================= */}
+              <div className="overflow-x-auto">
+                <table className="min-w-full border-collapse">
+                  <thead className="bg-slate-50">
+                    <tr className="text-left text-xs font-semibold uppercase tracking-wide text-slate-600">
+                      <th className="px-4 py-3">Vendor Name</th>
+                      <th className="px-4 py-3">Contact Person</th>
+                      <th className="px-4 py-3">Category</th>
+                      <th className="px-4 py-3">Email</th>
+                      <th className="px-4 py-3">Phone</th>
+                      <th className="px-4 py-3">Status</th>
+                      <th className="px-4 py-3 text-right">Actions</th>
+                    </tr>
+                  </thead>
+
+                  <tbody className="divide-y divide-slate-200">
+                    {paginatedVendors.map((vendor) => (
+                      <tr key={vendor.id} className="hover:bg-slate-50">
+                        <td className="px-4 py-3 font-medium text-indigo-600">
+                          <Link href={`/${subdomain}/vendors/${vendor.id}`}>
+                            {vendor.name}
+                          </Link>
+                        </td>
+                        <td className="px-4 py-3 text-sm text-slate-700">
+                          {vendor.contactPerson}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-slate-700">
+                          {vendor.category}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-slate-700">
+                          {vendor.email}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-slate-700">
+                          {vendor.phone}
+                        </td>
+                        <td className="px-4 py-3">
+                          <span
+                            className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${
+                              vendor.status === "active"
+                                ? "bg-emerald-100 text-emerald-700"
                                 : vendor.status === "pending"
-                                ? "Pending"
-                                : "Inactive"}
-                            </span>
-                          </td>
-                          <td className="text-right">
-                            <div
-                              className="dropdown"
-                              data-dropdown-id={vendor.id}
-                              style={{ position: "relative" }}
+                                ? "bg-amber-100 text-amber-700"
+                                : "bg-slate-100 text-slate-700"
+                            }`}
+                          >
+                            {vendor.status === "active"
+                              ? "Active"
+                              : vendor.status === "pending"
+                              ? "Pending"
+                              : "Inactive"}
+                          </span>
+                        </td>
+
+                        {/* ACTIONS */}
+                        <td className="px-4 py-3 text-right">
+                          <div className="relative inline-block" data-dropdown-id={vendor.id}>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                console.log('🔘 Actions button clicked for vendor:', vendor.id);
+                                toggleMenu(vendor.id);
+                              }}
+                              className="rounded-md border border-slate-300 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-100"
                             >
-                              <button
-                                className="btn btn-sm btn-outline-secondary dropdown-toggle"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  toggleMenu(vendor.id);
-                                }}
-                                type="button"
-                                ref={(el) => {
-                                  if (el && openMenuId === vendor.id) {
-                                    const rect = el.getBoundingClientRect();
-                                    const spaceBelow = window.innerHeight - rect.bottom;
-                                    // Open upward if less than 180px space below
-                                    if (spaceBelow < 180) {
-                                      el.nextElementSibling?.classList.add('dropup');
-                                    } else {
-                                      el.nextElementSibling?.classList.remove('dropup');
-                                    }
-                                  }
-                                }}
-                              >
-                                Actions
-                              </button>
-                              <div
-                                className={`dropdown-menu dropdown-menu-right ${
-                                  openMenuId === vendor.id ? "show" : ""
-                                }`}
-                              >
-                                <Link href={`/${subdomain}/vendors/${vendor.id}`}
-                                  className="dropdown-item"
-                                  onClick={() => setOpenMenuId(null)}
+                              Actions
+                            </button>
+
+                            {openMenuId === vendor.id && (
+                              <div className="absolute right-0 z-[9999] mt-2 w-44 rounded-lg border border-slate-200 bg-white shadow-lg">
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    console.log('👁️ View Details clicked for vendor:', vendor.id);
+                                    console.log('📍 Navigating to:', `/${subdomain}/vendors/${vendor.id}`);
+                                    setOpenMenuId(null);
+                                    router.push(`/${subdomain}/vendors/${vendor.id}`);
+                                  }}
+                                  className="block w-full px-4 py-2 text-left text-sm hover:bg-slate-50"
                                 >
-                                  <i className="fas fa-eye mr-1"></i> View
-                                  Details
-                                </Link>
-                                <PermissionGuard
-                                  requiredPermission={PERMISSIONS.EDIT_VENDOR}
-                                >
-                                  <Link href={`/${subdomain}/vendors/edit/${vendor.id}`}
-                                    className="dropdown-item"
-                                    onClick={() => setOpenMenuId(null)}
-                                  >
-                                    <i className="fas fa-edit mr-1"></i> Edit
-                                  </Link>
-                                </PermissionGuard>
-                                <PermissionGuard
-                                  requiredPermission={PERMISSIONS.DELETE_VENDOR}
-                                >
+                                  View Details
+                                </button>
+
+                                <PermissionGuard requiredPermission={PERMISSIONS.EDIT_VENDOR}>
                                   <button
                                     type="button"
-                                    className="dropdown-item text-danger"
                                     onClick={(e) => {
+                                      e.preventDefault();
                                       e.stopPropagation();
+                                      console.log('✏️ Edit clicked for vendor:', vendor.id);
+                                      handleEdit(vendor.id);
+                                    }}
+                                    className="block w-full px-4 py-2 text-left text-sm hover:bg-slate-50"
+                                  >
+                                    Edit
+                                  </button>
+                                </PermissionGuard>
+
+                                <PermissionGuard requiredPermission={PERMISSIONS.DELETE_VENDOR}>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      console.log('🗑️ Delete clicked for vendor:', vendor.id);
                                       setOpenMenuId(null);
                                       setPendingDeleteId(vendor.id);
                                       setConfirmOpen(true);
                                     }}
+                                    className="block w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50"
                                   >
-                                    <i className="fas fa-trash-alt mr-1"></i>{" "}
                                     Delete
                                   </button>
                                 </PermissionGuard>
                               </div>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
-
-                {/* Pagination Controls */}
-                {vendors.length > itemsPerPage && (
-                  <div className="card-inner">
-                    <div className="d-flex justify-content-between align-items-center">
-                      <div className="text-muted">
-                        Showing {startIndex + 1} to{" "}
-                        {Math.min(endIndex, vendors.length)} of {vendors.length}{" "}
-                        vendors
-                      </div>
-                      <nav>
-                        <ul className="pagination pagination-sm mb-0">
-                          <li
-                            className={`page-item ${
-                              currentPage === 1 ? "disabled" : ""
-                            }`}
-                          >
-                            <button
-                              className="page-link"
-                              onClick={() =>
-                                setCurrentPage((prev) => Math.max(1, prev - 1))
-                              }
-                              disabled={currentPage === 1}
-                            >
-                              Previous
-                            </button>
-                          </li>
-                          {[...Array(totalPages)].map((_, index) => (
-                            <li
-                              key={index + 1}
-                              className={`page-item ${
-                                currentPage === index + 1 ? "active" : ""
-                              }`}
-                            >
-                              <button
-                                className="page-link"
-                                onClick={() => setCurrentPage(index + 1)}
-                              >
-                                {index + 1}
-                              </button>
-                            </li>
-                          ))}
-                          <li
-                            className={`page-item ${
-                              currentPage === totalPages ? "disabled" : ""
-                            }`}
-                          >
-                            <button
-                              className="page-link"
-                              onClick={() =>
-                                setCurrentPage((prev) =>
-                                  Math.min(totalPages, prev + 1)
-                                )
-                              }
-                              disabled={currentPage === totalPages}
-                            >
-                              Next
-                            </button>
-                          </li>
-                        </ul>
-                      </nav>
-                    </div>
-                  </div>
-                )}
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-            </div>
+
+              {/* ================= PAGINATION ================= */}
+              {vendors.length > itemsPerPage && (
+                <div className="flex flex-col gap-3 border-t border-slate-200 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                  <p className="text-sm text-slate-600">
+                    Showing {startIndex + 1}–{Math.min(endIndex, vendors.length)} of{" "}
+                    {vendors.length} vendors
+                  </p>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                      disabled={currentPage === 1}
+                      className="rounded-md border border-slate-300 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      Previous
+                    </button>
+
+                    {[...Array(totalPages)].map((_, index) => (
+                      <button
+                        key={index + 1}
+                        onClick={() => setCurrentPage(index + 1)}
+                        className={`rounded-md px-3 py-1.5 text-sm ${
+                          currentPage === index + 1
+                            ? "bg-indigo-600 text-white"
+                            : "border border-slate-300 text-slate-700 hover:bg-slate-50"
+                        }`}
+                      >
+                        {index + 1}
+                      </button>
+                    ))}
+
+                    <button
+                      onClick={() =>
+                        setCurrentPage((prev) => Math.min(totalPages, prev + 1))
+                      }
+                      disabled={currentPage === totalPages}
+                      className="rounded-md border border-slate-300 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      Next
+                    </button>
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
         <ConfirmDialog

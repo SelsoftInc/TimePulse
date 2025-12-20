@@ -590,9 +590,7 @@ class DataEncryptionService {
         encrypted.contactPerson = encryptionService.encrypt(encrypted.contactPerson);
       }
       
-      if (encrypted.address) {
-        encrypted.address = encryptionService.encrypt(encrypted.address);
-      }
+      // Note: address is handled as JSONB in the route, not encrypted here
 
       console.log('🔒 Implementation Partner data encrypted');
       return encrypted;
@@ -630,9 +628,7 @@ class DataEncryptionService {
         decrypted.contactPerson = encryptionService.decrypt(decrypted.contactPerson);
       }
       
-      if (decrypted.address && typeof decrypted.address === 'string') {
-        decrypted.address = encryptionService.decrypt(decrypted.address);
-      }
+      // Note: address is handled as JSONB in the route, not decrypted here
 
       console.log('🔓 Implementation Partner data decrypted');
       return decrypted;

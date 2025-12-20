@@ -558,28 +558,27 @@ router.get("/pending-approval", async (req, res, next) => {
         }
       }
 
-      // Get employee info - use stored employeeName first, then fallback to Employee/User
-      let employeeName = ts.employeeName || "Unknown Employee";
+      // Get employee info from Employee association or User
+      let employeeName = "Unknown Employee";
       let employeeEmail = "N/A";
       let department = "N/A";
 
-      // If no stored name or need email/department, get from Employee or User
-      if (!ts.employeeName || !employeeEmail || employeeEmail === "N/A") {
-        if (ts.employee) {
-          if (!ts.employeeName) {
-            employeeName = `${ts.employee.firstName || ""} ${ts.employee.lastName || ""}`.trim();
-          }
-          employeeEmail = ts.employee.email || "N/A";
-          department = ts.employee.department || "N/A";
-        } else {
-          // Try to get user directly if employee record doesn't exist
-          const user = await models.User.findByPk(ts.employeeId);
-          if (user) {
-            if (!ts.employeeName) {
-              employeeName = `${user.firstName} ${user.lastName}`;
-            }
-            employeeEmail = user.email;
-          }
+      if (ts.employee) {
+        // Decrypt employee data
+        const decryptedEmployee = DataEncryptionService.decryptEmployeeData(ts.employee);
+        
+        employeeName = `${decryptedEmployee.firstName || ""} ${decryptedEmployee.lastName || ""}`.trim() || "Unknown Employee";
+        employeeEmail = decryptedEmployee.email || "N/A";
+        department = decryptedEmployee.department || "N/A";
+      } else if (ts.employeeName) {
+        // Fallback to stored employeeName if no employee association
+        employeeName = ts.employeeName;
+      } else {
+        // Try to get user directly if employee record doesn't exist
+        const user = await models.User.findByPk(ts.employeeId);
+        if (user) {
+          employeeName = `${user.firstName} ${user.lastName}`;
+          employeeEmail = user.email;
         }
       }
 
@@ -615,7 +614,7 @@ router.get("/pending-approval", async (req, res, next) => {
               year: "numeric",
             })
           : "N/A",
-        clientName: ts.client?.name || ts.client?.clientName || "No Client",
+        clientName: ts.client ? (DataEncryptionService.decryptClientData(ts.client).clientName || ts.client.name || "No Client") : "No Client",
         clientType: ts.client?.clientType || "N/A",
         reviewer: ts.reviewer
           ? {

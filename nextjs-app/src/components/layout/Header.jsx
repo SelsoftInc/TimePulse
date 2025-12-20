@@ -193,10 +193,6 @@ const Header = ({ toggleSidebar }) => {
   <div className="w-full px-4 lg:px-6">
     <div className="flex items-center w-full">
 
-            {/* Notification Bell - All Notifications */}
-            {/* <div className="header-action-item">
-              <NotificationBell />
-            </div> */}
       {/* Mobile Menu Toggle */}
       <button
         onClick={toggleSidebar}
@@ -232,10 +228,15 @@ const Header = ({ toggleSidebar }) => {
           <AskAIButton />
         </div>
 
-        {/* Notification Bell */}
+        {/* Notification Bell - All Notifications */}
         <div className="text-[#466D81]">
-          <TimesheetAlerts subdomain={subdomain} />
+          <NotificationBell />
         </div>
+
+        {/* Timesheet Alerts - Specific to Timesheets */}
+        {/* <div className="text-[#466D81]">
+          <TimesheetAlerts subdomain={subdomain} />
+        </div> */}
 
         {/* Theme Toggle
         <div

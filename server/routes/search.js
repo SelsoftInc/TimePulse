@@ -3,6 +3,7 @@ const router = express.Router();
 const { models } = require('../models');
 const { Employee, Timesheet, Invoice, Client, Vendor, LeaveRequest, User } = models;
 const { Op } = require('sequelize');
+const DataEncryptionService = require('../services/DataEncryptionService');
 
 router.get('/global', async (req, res) => {
   try {
@@ -92,22 +93,38 @@ router.get('/global', async (req, res) => {
       try {
         const employees = await Employee.findAll({
           where: {
-            tenantId,
-            [Op.or]: [
-              { firstName: { [Op.like]: `%${searchTerm}%` } },
-              { lastName: { [Op.like]: `%${searchTerm}%` } },
-              { department: { [Op.like]: `%${searchTerm}%` } }
-            ]
+            tenantId
           },
-          limit: 5,
-          attributes: ['id', 'firstName', 'lastName', 'email', 'department', 'status']
+          limit: 100, // Get more to filter after decryption
+          attributes: ['id', 'firstName', 'lastName', 'email', 'department', 'status', 'title']
         });
 
-        results.employees = employees.map(emp => ({
+        // Decrypt employee data
+        const decryptedEmployees = employees.map(emp => {
+          const plainEmp = emp.toJSON ? emp.toJSON() : emp;
+          return DataEncryptionService.decryptEmployeeData(plainEmp);
+        });
+
+        // Filter decrypted employees by search term
+        const filteredEmployees = decryptedEmployees.filter(emp => {
+          const firstName = (emp.firstName || '').toLowerCase();
+          const lastName = (emp.lastName || '').toLowerCase();
+          const fullName = `${firstName} ${lastName}`.trim();
+          const email = (emp.email || '').toLowerCase();
+          const department = (emp.department || '').toLowerCase();
+          
+          return firstName.includes(searchTerm) ||
+                 lastName.includes(searchTerm) ||
+                 fullName.includes(searchTerm) ||
+                 email.includes(searchTerm) ||
+                 department.includes(searchTerm);
+        }).slice(0, 5); // Limit to 5 results
+
+        results.employees = filteredEmployees.map(emp => ({
           type: 'employee',
           id: emp.id,
-          label: `${emp.firstName} ${emp.lastName}`,
-          subtitle: emp.email || 'No email',
+          label: `${emp.firstName || ''} ${emp.lastName || ''}`.trim() || 'Unknown Employee',
+          subtitle: `${emp.email || 'No email'} | ${emp.department || 'No department'}`,
           department: emp.department,
           status: emp.status,
           icon: 'fa-user'

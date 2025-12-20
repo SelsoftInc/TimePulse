@@ -6,7 +6,7 @@ import autoTable from 'jspdf-autotable';
 import { API_BASE } from '@/config/api';
 import './InvoicePDFPreviewModal.css';
 
-const InvoicePDFPreviewModal = ({ invoice, onClose, onUpdate }) => {
+const InvoicePDFPreviewModal = ({ invoice, onClose, onUpdate, show }) => {
   const [loading, setLoading] = useState(true);
   const [employees, setEmployees] = useState([]);
   const [companyLogo, setCompanyLogo] = useState(invoice?.companyLogo || null);
@@ -813,6 +813,11 @@ const InvoicePDFPreviewModal = ({ invoice, onClose, onUpdate }) => {
     const doc = await generatePDF();
     doc.save(`${formData.invoiceNumber}.pdf`);
   };
+
+  // Don't render if show is false or invoice is null
+  if (!show || !invoice) {
+    return null;
+  }
 
   return (
     <div className="invoice-pdf-modal" onClick={onClose}>

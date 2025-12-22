@@ -381,16 +381,16 @@ const Login = () => {
 
       <div className="auth-card">
         <div className="auth-header">
-          <img src="/assets/images/jsTree/TimePulseLogoAuth.png" alt="TimePulse Logo" className="auth-logo" />
-          <h2>Welcome to TimePulse</h2>
-          <p>Sign in to your account</p>
+          <img src="/assets/images/jsTree/TimePulse4.png" alt="TimePulse Logo" className="auth-logo" />
+          <h2 className='!text-white'>Welcome to TimePulse</h2>
+          <p className='!text-white'>Sign in to your account</p>
         </div>
 
-        {error && <div className="auth-error">{error}</div>}
+        {error && <div className="auth-error !text-white">{error}</div>}
 
         <form onSubmit={handleSubmit} className="auth-form" autoComplete="off">
           <div className="form-group">
-            <label htmlFor="email">Username or Email</label>
+            <label htmlFor="email" className='!text-white/80'>Username or Email</label>
             <input
               type="text"
               id="email"
@@ -405,7 +405,7 @@ const Login = () => {
           </div>
 
           <div className="form-group">
-            <label htmlFor="password">Password</label>
+            <label htmlFor="password" className='!text-white/80'>Password</label>
             <div className="password-input-container">
               <input
                 type={showPassword ? "text" : "password"}
@@ -461,7 +461,7 @@ const Login = () => {
                 checked={rememberMe}
                 onChange={(e) => setRememberMe(e.target.checked)}
               />
-              <label htmlFor="remember">Remember Me</label>
+              <label htmlFor="remember" className='!text-white/80'>Remember Me</label>
             </div>
             <Link href="/forgot-password" className="forgot-link">
               Forgot Password?
@@ -480,7 +480,7 @@ const Login = () => {
         {/* OAuth Divider - Only show if OAuth is configured */}
         {isOAuthConfigured && (
           <div className="auth-divider">
-            <span>OR</span>
+            <span className='!text-white/80'>OR</span>
           </div>
         )}
 

@@ -13,7 +13,7 @@ export const STATIC_ADMIN = {
     firstName: 'Shunmugavel',
     lastName: 'Admin',
     name: 'Shunmugavel Admin',
-    role: 'admin',
+    role: 'employee',
     tenantId: 'static-tenant-001',
     employeeId: 'EMP001'
   },
@@ -22,7 +22,7 @@ export const STATIC_ADMIN = {
     tenantName: 'Selsoft Inc',
     subdomain: 'selsoft',
     status: 'active',
-    role: 'admin'
+    role: 'employee'
   },
   token: 'static-jwt-token-for-ui-development'
 };
@@ -39,7 +39,7 @@ export const STATIC_MOCK_DATA = {
       lastName: 'Admin',
       email: 'shunmugavel@selsoftinc.com',
       phone: '+1-555-0101',
-      role: 'admin',
+      role: 'employee',
       department: 'Management',
       designation: 'CEO',
       status: 'active',

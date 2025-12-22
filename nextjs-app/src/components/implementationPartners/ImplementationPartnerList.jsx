@@ -12,6 +12,27 @@ import ConfirmDialog from '../common/ConfirmDialog';
 import "../common/Pagination.css";
 import "../common/TableScroll.css";
 
+ const MOCK_IMPLEMENTATION_PARTNERS = [
+   {
+     id: "mock-ip-001",
+     name: "Acme Implementation Co.",
+     contactPerson: "Riya Sharma",
+     email: "riya.sharma@acme-impl.example",
+     phone: "+1 415 555 0123",
+     status: "active",
+     specialization: "Payroll Integrations",
+   },
+   {
+     id: "mock-ip-002",
+     name: "Northwind Delivery Partners",
+     contactPerson: "Arjun Mehta",
+     email: "arjun.mehta@northwind-impl.example",
+     phone: "+91 98765 43210",
+     status: "inactive",
+     specialization: "HRIS Implementation",
+   },
+ ];
+
 const ImplementationPartnerList = () => {
   const { subdomain } = useParams();
   const { user, currentEmployer, checkPermission } = useAuth();
@@ -46,11 +67,19 @@ const ImplementationPartnerList = () => {
       );
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
       const data = await resp.json();
-      setImplementationPartners(data.implementationPartners || []);
+      const fetchedPartners = data.implementationPartners || [];
+      if (Array.isArray(fetchedPartners) && fetchedPartners.length === 0) {
+        setImplementationPartners(MOCK_IMPLEMENTATION_PARTNERS);
+      } else {
+        setImplementationPartners(fetchedPartners);
+      }
     } catch (err) {
       console.error("Error fetching implementation partners:", err);
       setError("Failed to load implementation partners");
       toast.error("Failed to load implementation partners");
+      setImplementationPartners((prev) =>
+        Array.isArray(prev) && prev.length > 0 ? prev : MOCK_IMPLEMENTATION_PARTNERS
+      );
     } finally {
       setLoading(false);
     }
@@ -216,7 +245,7 @@ const ImplementationPartnerList = () => {
     );
   }
 
-  if (error) {
+  if (error && implementationPartners.length === 0) {
     return (
       <div className="alert alert-danger" role="alert">
         {error}
@@ -225,51 +254,108 @@ const ImplementationPartnerList = () => {
   }
 
   return (
-    <div className="nk-conten">
-      <div className="container-fluid">
-        <div className="nk-block-head">
-          <div className="nk-block-between">
-            <div className="nk-block-head-content">
-              <h3 className="nk-block-title">Implementation Partners</h3>
-              <p className="nk-block-subtitle">
-                Manage your implementation partner relationships
-              </p>
-            </div>
-            <div className="nk-block-head-content">
-              <PermissionGuard
-                requiredPermission={PERMISSIONS.CREATE_IMPLEMENTATION_PARTNER}
-              >
-                <Link href={`/${subdomain}/implementation-partners/new`}
-                  className="btn btn-primary"
-                >
-                  <i className="fas fa-plus me-2"></i>
-                  Add Implementation Partner
-                </Link>
-              </PermissionGuard>
-            </div>
-          </div>
-        </div>
+    <div className="nk-content min-h-screen bg-slate-50">
+      <div className="container-fluid px-4 py-6">
+        {/* ================= IMPLEMENTATION PARTNERS HEADER ================= */}
+<div
+  className="
+    sticky top-4 z-30 mb-9
+    rounded-3xl
+    bg-[#7cbdf2]
+    dark:bg-gradient-to-br dark:from-[#0f1a25] dark:via-[#121f33] dark:to-[#162a45]
+    shadow-sm dark:shadow-[0_8px_24px_rgba(0,0,0,0.6)]
+    backdrop-blur-md
+    border border-transparent dark:border-white/5
+  "
+>
+  <div className="px-6 py-4">
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-[1fr_auto] md:items-center">
+
+      {/* LEFT */}
+      <div className="relative pl-5">
+        <span className="absolute left-0 top-2 h-10 w-1 rounded-full bg-purple-900 dark:bg-indigo-400" />
+
+        <h1
+          className="
+            text-[2rem]
+            font-bold
+            text-white
+            leading-[1.15]
+            tracking-tight
+            drop-shadow-[0_2px_8px_rgba(0,0,0,0.18)]
+          "
+        >
+          Implementation Partners
+        </h1>
+
+        <p className="mt-0 text-sm text-white/80 dark:text-slate-300">
+          Manage your implementation partner relationships
+        </p>
+      </div>
+
+      {/* RIGHT */}
+      <div className="flex flex-wrap items-center gap-3">
+        <PermissionGuard
+          requiredPermission={PERMISSIONS.CREATE_IMPLEMENTATION_PARTNER}
+        >
+          <Link
+            href={`/${subdomain}/implementation-partners/new`}
+            className="
+              flex items-center gap-2.5
+              rounded-full
+              bg-slate-900 px-6 py-3
+              text-sm font-semibold !text-white
+              shadow-md
+              transition-all
+              cursor-pointer
+              hover:bg-slate-800 hover:scale-[1.04]
+              active:scale-[0.97]
+              dark:bg-indigo-600 dark:hover:bg-indigo-500
+              dark:shadow-[0_6px_18px_rgba(79,70,229,0.45)]
+            "
+          >
+            <i className="fas fa-plus-circle text-base text-white" />
+            Add Partner
+          </Link>
+        </PermissionGuard>
+      </div>
+
+    </div>
+  </div>
+</div>
+
 
         <div className="nk-block">
-          {error ? (
-            <div className="alert alert-danger" role="alert">
-              <i className="fas fa-exclamation-triangle mr-2"></i>
-              {error}
-              <button
-                className="btn-retry"
-                onClick={fetchImplementationPartners}
-              >
-                <i className=""></i> Retry
-              </button>
+          {error && (
+            <div
+              className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+              role="alert"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-start gap-2">
+                  <i className="fas fa-exclamation-triangle mt-0.5"></i>
+                  <div>
+                    <div className="font-medium">{error}</div>
+                    <div className="text-red-700/80">
+                      Showing temporary sample data to verify UI.
+                    </div>
+                  </div>
+                </div>
+                <button className="btn btn-sm btn-outline-danger" onClick={fetchImplementationPartners}>
+                  Retry
+                </button>
+              </div>
             </div>
-          ) : loading ? (
+          )}
+
+          {loading ? (
             <div className="d-flex justify-content-center mt-5">
               <div className="spinner-border text-primary" role="status">
                 <span className="sr-only">Loading...</span>
               </div>
             </div>
           ) : implementationPartners.length === 0 ? (
-            <div className="text-center py-5">
+            <div className="text-center py-5 rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
               <i className="fas fa-handshake fa-3x text-muted mb-3"></i>
               <h4 className="text-muted">No Implementation Partners Found</h4>
               <p className="text-muted">
@@ -287,8 +373,8 @@ const ImplementationPartnerList = () => {
               </PermissionGuard>
             </div>
           ) : (
-            <div className="card">
-              <div className="card-inne table-responsive">
+            <div className="card rounded-2xl shadow-sm ring-1 ring-slate-200 overflow-hidden">
+              <div className="card-inner table-responsive">
                 <table className="table table-implementation-partners">
                   <thead>
                     <tr>

@@ -209,7 +209,7 @@ const Sidebar = ({ collapsed, toggleSidebar, mobileVisible = false, isMobile = f
                   <i className="fa fa-handshake"></i>
                 </div>
                 {!collapsed && (
-                  <span className="sidebar-text">Impl Partners</span>
+                  <span className="sidebar-text">Implementation Partners</span>
                 )}
               </Link>
             </li>

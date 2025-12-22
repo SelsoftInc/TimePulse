@@ -906,13 +906,16 @@ const TimesheetSummary = () => {
         );
         
         console.log('📦 Employees API Response:', employeesResponse);
+        console.log('📦 Total employees returned:', employeesResponse?.employees?.length);
         
         if (!employeesResponse.success || !employeesResponse.employees) {
+          console.error('❌ Invalid employee API response:', employeesResponse);
           throw new Error('Failed to fetch employees from Employee API');
         }
         
         // Find the employee by email or name
         const allEmployees = employeesResponse.employees;
+        console.log('🔍 Searching for employee with email:', employeeEmail, 'or name:', employeeName);
         
         if (employeeEmail) {
           employeeData = allEmployees.find(emp => 
@@ -940,7 +943,11 @@ const TimesheetSummary = () => {
           name: `${employeeData.firstName} ${employeeData.lastName}`,
           email: employeeData.email,
           hasVendor: !!employeeData.vendor,
-          hasClient: !!employeeData.client
+          hasClient: !!employeeData.client,
+          vendorData: employeeData.vendor,
+          clientData: employeeData.client,
+          vendorId: employeeData.vendorId,
+          clientId: employeeData.clientId
         });
         
         // ============================================================
@@ -960,16 +967,20 @@ const TimesheetSummary = () => {
         else if (employeeData.client && employeeData.client.id) {
           vendorClientInfo = employeeData.client;
           vendorClientType = 'Client';
-          console.log('✅ Found client from employee API:', {
+          console.log('✅ Found client from employee API - RAW:', employeeData.client);
+          console.log('✅ Found client from employee API - PROCESSED:', {
             id: vendorClientInfo.id,
-            name: vendorClientInfo.clientName,
-            email: vendorClientInfo.email
+            name: vendorClientInfo.name || vendorClientInfo.clientName,
+            email: vendorClientInfo.email,
+            allKeys: Object.keys(vendorClientInfo)
           });
         }
         // No vendor or client found
         else {
           console.error('❌ No vendor or client assigned to employee');
           console.error('Employee data:', employeeData);
+          console.log('🔄 Preparing to show vendor assignment modal...');
+          
           setGeneratingInvoiceId(null);
           closeModal();
           
@@ -977,11 +988,17 @@ const TimesheetSummary = () => {
           setCurrentEmployeeForAssignment(employeeData);
           setCurrentTimesheetForRetry(timesheet);
           
+          console.log('📋 Fetching vendors list...');
           // Fetch vendors list
           await fetchVendorsForAssignment();
           
+          console.log('✅ Vendors fetched, showing modal...');
+          console.log('📋 Vendors list:', vendorsList);
+          console.log('👤 Employee for assignment:', employeeData);
+          
           // Show vendor assignment modal
           setTimeout(() => {
+            console.log('🎯 Setting showVendorAssignModal to true');
             setShowVendorAssignModal(true);
           }, 100);
           return;
@@ -990,6 +1007,38 @@ const TimesheetSummary = () => {
       } catch (error) {
         console.error('❌ Error fetching employee data:', error);
         console.error('❌ Error details:', error.response?.data);
+        
+        // If we have basic employee info from timesheet, try to show vendor assignment modal
+        if (employeeName || employeeEmail) {
+          console.log('⚠️ Employee API failed, but we have basic info. Attempting vendor assignment...');
+          
+          // Create a basic employee object from timesheet data
+          const basicEmployeeData = {
+            id: null,
+            firstName: employeeName ? employeeName.split(' ')[0] : 'Unknown',
+            lastName: employeeName ? employeeName.split(' ').slice(1).join(' ') : '',
+            email: employeeEmail || '',
+            vendor: null,
+            client: null
+          };
+          
+          setGeneratingInvoiceId(null);
+          closeModal();
+          
+          setCurrentEmployeeForAssignment(basicEmployeeData);
+          setCurrentTimesheetForRetry(timesheet);
+          
+          console.log('📋 Fetching vendors list for fallback assignment...');
+          await fetchVendorsForAssignment();
+          
+          setTimeout(() => {
+            console.log('🎯 Showing vendor assignment modal (fallback mode)');
+            setShowVendorAssignModal(true);
+          }, 100);
+          return;
+        }
+        
+        // If we don't have any employee info, show error
         setGeneratingInvoiceId(null);
         closeModal();
         setTimeout(() => {
@@ -1016,7 +1065,7 @@ const TimesheetSummary = () => {
         setEmailMissingInfo({
           type: vendorClientType,
           id: vendorClientInfo.id,
-          name: vendorClientInfo.vendorName || vendorClientInfo.clientName || vendorClientInfo.name || 'Unknown',
+          name: vendorClientInfo.name || vendorClientInfo.vendorName || vendorClientInfo.clientName || 'Unknown',
           employeeData: employeeData,
           timesheet: timesheet
         });
@@ -1033,6 +1082,12 @@ const TimesheetSummary = () => {
       console.log('✅ Vendor/Client assignment confirmed');
       console.log('✅ Vendor/Client email verified');
       console.log('📤 Proceeding with invoice generation...');
+      console.log('📤 Final vendor/client info before API call:', {
+        type: vendorClientType,
+        id: vendorClientInfo.id,
+        name: vendorClientInfo.name || vendorClientInfo.vendorName || vendorClientInfo.clientName,
+        email: vendorClientInfo.email
+      });
 
       const response = await axios.post(
         `${API_BASE}/api/timesheets/${timesheet.id}/generate-invoice`,

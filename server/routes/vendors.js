@@ -10,9 +10,31 @@ const { Vendor } = models;
 function validateVendorPayload(payload) {
   const errors = {};
   if (!payload.name) errors.name = 'Vendor name is required';
-  if (payload.email && !/.+@.+\..+/.test(String(payload.email))) {
+  if (payload.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(payload.email))) {
     errors.email = 'Email is invalid';
   }
+  return errors;
+}
+
+// Validate only the fields being updated (for partial updates)
+function validateVendorUpdatePayload(payload) {
+  const errors = {};
+  
+  // Only validate fields that are present in the payload
+  if (payload.name !== undefined) {
+    if (!payload.name) {
+      errors.name = 'Vendor name cannot be empty';
+    }
+  }
+  
+  if (payload.email !== undefined) {
+    if (!payload.email) {
+      errors.email = 'Email cannot be empty';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(payload.email))) {
+      errors.email = 'Email is invalid';
+    }
+  }
+  
   return errors;
 }
 
@@ -116,9 +138,14 @@ router.put('/:id', async (req, res) => {
     if (!tenantId) return res.status(400).json({ error: 'Tenant ID is required' });
 
     let payload = req.body || {};
-    const errors = validateVendorPayload({ ...payload, name: payload.name || 'x' }); // allow partial but keep name if provided
-    if (payload.email && errors.email) {
-      return res.status(400).json({ error: 'Validation failed', details: { email: errors.email } });
+    
+    console.log('📝 Updating vendor with payload:', JSON.stringify(payload, null, 2));
+    
+    // Use partial validation for updates (only validate provided fields)
+    const errors = validateVendorUpdatePayload(payload);
+    if (Object.keys(errors).length > 0) {
+      console.error('❌ Validation errors:', errors);
+      return res.status(400).json({ error: 'Validation failed', details: errors });
     }
 
     const vendor = await Vendor.findOne({ where: { id, tenantId } });

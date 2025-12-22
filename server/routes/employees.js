@@ -64,7 +64,7 @@ router.get("/", async (req, res) => {
         {
           model: models.Client,
           as: "client",
-          attributes: ["id", "clientName", "legalName", "email"],
+          attributes: ["id", "clientName", "legalName", "email", "contactPerson", "phone"],
           required: false,
         },
         {
@@ -114,8 +114,10 @@ router.get("/", async (req, res) => {
         const decryptedClient = DataEncryptionService.decryptClientData(plainClient);
         clientData = {
           id: decryptedClient.id,
-          name: decryptedClient.clientName || decryptedClient.legalName,
+          name: decryptedClient.clientName || decryptedClient.legalName || decryptedClient.name,
+          clientName: decryptedClient.clientName || decryptedClient.name,
           legalName: decryptedClient.legalName,
+          email: decryptedClient.email,
         };
       }
 

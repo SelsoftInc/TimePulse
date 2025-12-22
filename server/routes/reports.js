@@ -388,49 +388,68 @@ router.get("/invoices", async (req, res) => {
     // Decrypt invoice data including lineItems
     const decryptedInvoices = DataEncryptionService.decryptInstances(invoices, 'invoice');
 
-    // Decrypt client and vendor names and convert to plain objects
+    // Process invoices and decrypt vendor/client data
     const processedInvoices = decryptedInvoices.map((invoice, index) => {
       const plainInvoice = invoice.toJSON ? invoice.toJSON() : invoice;
       
-      console.log(`🔍 Processing invoice ${index + 1}:`, {
-        invoiceNumber: plainInvoice.invoiceNumber,
+      console.log(`🔍 Processing invoice ${index + 1} (${plainInvoice.invoiceNumber}):`, {
         hasVendor: !!plainInvoice.vendor,
+        hasClient: !!plainInvoice.client,
         vendorId: plainInvoice.vendorId,
-        vendorData: plainInvoice.vendor ? {
-          id: plainInvoice.vendor.id,
-          name: plainInvoice.vendor.name,
-          email: plainInvoice.vendor.email
-        } : null
+        clientId: plainInvoice.clientId
       });
       
-      // Decrypt client name
+      // Decrypt client name if present
       if (plainInvoice.client && plainInvoice.client.clientName) {
-        plainInvoice.client.clientName = DataEncryptionService.decryptClientData({ 
-          clientName: plainInvoice.client.clientName 
-        }).clientName;
+        try {
+          const decryptedClient = DataEncryptionService.decryptClientData({ 
+            clientName: plainInvoice.client.clientName 
+          });
+          plainInvoice.client.clientName = decryptedClient.clientName;
+          console.log(`✅ Decrypted client name: ${plainInvoice.client.clientName}`);
+        } catch (err) {
+          console.error(`❌ Failed to decrypt client name:`, err.message);
+        }
       }
       
-      // Decrypt vendor data
+      // Decrypt vendor data if present
       if (plainInvoice.vendor) {
-        console.log(`🔐 Decrypting vendor data for invoice ${plainInvoice.invoiceNumber}`, {
-          vendorNameEncrypted: plainInvoice.vendor.name,
-          vendorEmailEncrypted: plainInvoice.vendor.email
-        });
-        
-        // Create a plain object from vendor
-        const vendorObj = typeof plainInvoice.vendor.toJSON === 'function' 
-          ? plainInvoice.vendor.toJSON() 
-          : { ...plainInvoice.vendor };
-        
-        const decryptedVendor = DataEncryptionService.decryptVendorData(vendorObj);
-        
-        console.log(`✅ Decrypted vendor:`, {
-          id: decryptedVendor.id,
-          name: decryptedVendor.name,
-          email: decryptedVendor.email
-        });
-        
-        plainInvoice.vendor = decryptedVendor;
+        try {
+          console.log(`🔐 Decrypting vendor for invoice ${plainInvoice.invoiceNumber}:`, {
+            vendorId: plainInvoice.vendor.id,
+            vendorNameRaw: plainInvoice.vendor.name,
+            vendorEmailRaw: plainInvoice.vendor.email
+          });
+          
+          // Convert to plain object
+          const vendorPlain = typeof plainInvoice.vendor.toJSON === 'function' 
+            ? plainInvoice.vendor.toJSON() 
+            : { ...plainInvoice.vendor };
+          
+          // Decrypt vendor data
+          const decryptedVendor = DataEncryptionService.decryptVendorData(vendorPlain);
+          
+          console.log(`✅ Decrypted vendor:`, {
+            id: decryptedVendor.id,
+            name: decryptedVendor.name,
+            email: decryptedVendor.email
+          });
+          
+          // Replace with clean decrypted object
+          plainInvoice.vendor = {
+            id: decryptedVendor.id,
+            name: decryptedVendor.name,
+            email: decryptedVendor.email,
+            phone: decryptedVendor.phone,
+            address: decryptedVendor.address,
+            city: decryptedVendor.city,
+            state: decryptedVendor.state,
+            zipCode: decryptedVendor.zipCode
+          };
+        } catch (err) {
+          console.error(`❌ Failed to decrypt vendor for invoice ${plainInvoice.invoiceNumber}:`, err.message);
+          plainInvoice.vendor = null;
+        }
       } else {
         console.log(`⚠️ No vendor found for invoice ${plainInvoice.invoiceNumber}`);
       }
@@ -466,12 +485,21 @@ router.get("/invoices", async (req, res) => {
       
       console.log(`Invoice ${invoice.invoiceNumber}: ${totalHours} hours from ${lineItems.length} line items`);
 
+      // Extract vendor name - ensure it's decrypted
+      let vendorName = "N/A";
+      if (invoice.vendor && invoice.vendor.name) {
+        vendorName = invoice.vendor.name;
+        console.log(`📋 Using vendor name for ${invoice.invoiceNumber}: "${vendorName}"`);
+      } else if (invoice.vendorId) {
+        console.log(`⚠️ Invoice ${invoice.invoiceNumber} has vendorId but no vendor object`);
+      }
+      
       const reportData = {
         id: invoice.id,
         invoiceNumber: invoice.invoiceNumber,
         clientId: invoice.clientId,
         clientName: invoice.client?.clientName || invoice.vendor?.name || "Unknown Client",
-        vendorName: invoice.vendor?.name || "N/A",
+        vendorName: vendorName,
         month,
         year,
         totalHours: totalHours,

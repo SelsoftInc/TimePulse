@@ -723,9 +723,25 @@ router.get("/:id", async (req, res) => {
       }
     }
 
+    // Parse lineItems if it's a string (JSONB stored as string)
+    let lineItems = decryptedInvoice.lineItems;
+    if (typeof lineItems === 'string') {
+      try {
+        lineItems = JSON.parse(lineItems);
+        console.log('✅ Parsed lineItems from string:', lineItems);
+      } catch (err) {
+        console.error('❌ Failed to parse lineItems:', err);
+        lineItems = [];
+      }
+    } else if (!Array.isArray(lineItems)) {
+      console.log('⚠️ lineItems is not an array, defaulting to empty array');
+      lineItems = [];
+    }
+
     // Build complete response with decrypted data
     const completeInvoice = {
       ...decryptedInvoice,
+      lineItems: lineItems, // Ensure lineItems is properly parsed
       vendor: vendor,
       client: client,
       employee: employee,
@@ -736,6 +752,7 @@ router.get("/:id", async (req, res) => {
     };
 
     console.log('✅ Complete invoice data prepared');
+    console.log('📋 LineItems in response:', completeInvoice.lineItems);
     console.log('📋 Final vendor in response:', completeInvoice.vendor ? `${completeInvoice.vendor.name} (${completeInvoice.vendor.email})` : 'NULL');
     console.log('👤 Final employee in response:', completeInvoice.employee ? `${completeInvoice.employee.firstName} ${completeInvoice.employee.lastName}` : 'NULL');
 

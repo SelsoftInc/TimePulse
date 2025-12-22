@@ -43,7 +43,7 @@ function validateClientPayload(payload) {
   if (!payload.email) {
     errors.email = 'Email is required';
   } else {
-    const emailOk = /.+@.+\..+/.test(String(payload.email));
+    const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(payload.email));
     if (!emailOk) errors.email = 'Email is invalid';
   }
   const phoneMsg = validatePhone(payload.phone);
@@ -53,6 +53,46 @@ function validateClientPayload(payload) {
     const taxMsg = validateTaxId(payload.taxId);
     if (taxMsg) errors.taxId = taxMsg;
   }
+  return errors;
+}
+
+// Validate only the fields being updated (for partial updates)
+function validateClientUpdatePayload(payload) {
+  const errors = {};
+  
+  // Only validate fields that are present in the payload
+  if (payload.clientName !== undefined || payload.name !== undefined) {
+    if (!payload.clientName && !payload.name) {
+      errors.clientName = 'Client name cannot be empty';
+    }
+  }
+  
+  if (payload.contactPerson !== undefined) {
+    if (!payload.contactPerson) {
+      errors.contactPerson = 'Contact person cannot be empty';
+    }
+  }
+  
+  if (payload.email !== undefined) {
+    if (!payload.email) {
+      errors.email = 'Email cannot be empty';
+    } else {
+      const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(payload.email));
+      if (!emailOk) errors.email = 'Email is invalid';
+    }
+  }
+  
+  if (payload.phone !== undefined) {
+    const phoneMsg = validatePhone(payload.phone);
+    if (phoneMsg) errors.phone = phoneMsg;
+  }
+  
+  // Tax ID is optional - only validate if provided
+  if (payload.taxId !== undefined && payload.taxId) {
+    const taxMsg = validateTaxId(payload.taxId);
+    if (taxMsg) errors.taxId = taxMsg;
+  }
+  
   return errors;
 }
 
@@ -301,12 +341,19 @@ router.put('/:id', async (req, res) => {
     const { tenantId } = req.query;
     let updateData = req.body;
 
-    const validationErrors = validateClientPayload(updateData);
+    console.log('📝 Updating client with payload:', JSON.stringify(updateData, null, 2));
+
+    // Use partial validation for updates (only validate provided fields)
+    const validationErrors = validateClientUpdatePayload(updateData);
     if (Object.keys(validationErrors).length > 0) {
+      console.error('❌ Validation errors:', validationErrors);
       return res.status(400).json({ error: 'Validation failed', details: validationErrors });
     }
-    // Normalize
-    updateData.phone = toE164(updateData.phone);
+    
+    // Normalize phone only if provided
+    if (updateData.phone !== undefined) {
+      updateData.phone = toE164(updateData.phone);
+    }
     // Only normalize taxId if provided
     if (updateData.taxId) {
       updateData.taxId = normalizeTaxId(updateData.taxId);

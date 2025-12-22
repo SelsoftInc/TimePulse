@@ -1,5 +1,14 @@
 const { models } = require("../models");
-const { Notification, User, Employee } = models;
+let Notification, User, Employee;
+
+// Safely initialize models with error handling
+try {
+  Notification = models.Notification;
+  User = models.User;
+  Employee = models.Employee;
+} catch (error) {
+  console.error("⚠️ Error initializing NotificationService models:", error.message);
+}
 
 class NotificationService {
   /**

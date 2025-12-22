@@ -33,14 +33,17 @@ export default function RootLayout({ children }) {
   }));
 
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <link
           rel="stylesheet"
           href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
         />
+        {/* Preconnect to API server for faster requests */}
+        <link rel="preconnect" href="http://localhost:5001" />
+        <link rel="dns-prefetch" href="http://localhost:5001" />
       </head>
-      <body className={inter.className}>
+      <body className={inter.className} suppressHydrationWarning>
         <SessionProvider>
           <QueryClientProvider client={queryClient}>
             <ThemeProvider>

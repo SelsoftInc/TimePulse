@@ -13,6 +13,7 @@ import {
   validateExtractedData} from '@/services/timesheetExtractor';
 import { API_BASE } from '@/config/api';
 import axios from 'axios';
+import { decryptApiResponse } from '@/utils/encryption';
 import OvertimeConfirmationModal from './OvertimeConfirmationModal';
 import "./Timesheet.css";
 
@@ -227,14 +228,18 @@ const TimesheetSubmit = () => {
             const employeesResponse = await axios.get(
               `${API_BASE}/api/employees?tenantId=${tenantId}`
             );
-            console.log("📥 Employees API response:", employeesResponse.data);
+            console.log("📥 Employees API raw response:", employeesResponse.data);
+            
+            // Decrypt the response if encrypted
+            const decryptedData = decryptApiResponse(employeesResponse.data);
+            console.log("🔓 Decrypted employees data:", decryptedData);
 
             if (
-              employeesResponse.data.success &&
-              employeesResponse.data.employees
+              decryptedData.success &&
+              decryptedData.employees
             ) {
               // Filter out admin users - they don't submit timesheets
-              const employees = employeesResponse.data.employees
+              const employees = decryptedData.employees
                 .filter((emp) => emp.role !== "admin")
                 .map((emp) => ({
                   id: emp.id,

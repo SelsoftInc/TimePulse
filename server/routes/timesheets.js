@@ -139,17 +139,32 @@ router.get("/", async (req, res, next) => {
         }
       }
 
+      // Decrypt client data if present
+      let clientName = "No Client";
+      if (ts.client) {
+        // Convert Sequelize instance to plain object if needed
+        const clientObj = ts.client.get ? ts.client.get({ plain: true }) : ts.client;
+        const decryptedClient = DataEncryptionService.decryptClientData(clientObj);
+        clientName = decryptedClient.clientName || decryptedClient.name || "No Client";
+        console.log('🏢 Decrypted client name:', clientName);
+      }
+
       return {
         id: ts.id,
         employeeId: ts.employeeId,
         employeeName: employeeName,
-        client: ts.client ? ts.client.clientName : "No Client",
+        client: clientName,
+        clientName: clientName,
+        clientId: ts.clientId || (ts.client ? ts.client.id : null),
         weekEnding: ts.weekEnd,
+        weekStart: ts.weekStart,
         hours: ts.totalHours || 0,
         overtimeHours: 0, // Calculate if needed
         billRate: ts.billRate || 0,
         payRate: ts.payRate || 0,
         approved: ts.status === "approved",
+        status: ts.status,
+        projectName: ts.projectName || 'N/A',
       };
     }));
 
@@ -2189,6 +2204,15 @@ router.post("/:timesheetId/generate-invoice", async (req, res) => {
     }
 
     const vendor = employee.vendor;
+    
+    // Log vendor data before decryption
+    console.log('🔍 Vendor data (encrypted):', {
+      id: vendor.id,
+      name: vendor.name,
+      email: vendor.email,
+      contactPerson: vendor.contactPerson
+    });
+    
     if (!vendor.email) {
       return res.status(400).json({
         success: false,
@@ -2265,10 +2289,26 @@ router.post("/:timesheetId/generate-invoice", async (req, res) => {
       totalAmount: invoice.totalAmount,
     });
 
-    // Generate invoice link
+    // Generate invoice link with subdomain
     const baseUrl = process.env.APP_URL || 'http://localhost:3000';
-    const invoiceLink = `${baseUrl}/invoice/${invoice.invoiceHash}`;
+    const tenant = timesheet.tenant || await models.Tenant.findByPk(tenantId);
+    const subdomain = tenant?.subdomain || 'app';
+    const invoiceLink = `${baseUrl}/${subdomain}/invoices/${invoice.id}`;
 
+    console.log('📄 Generated invoice link:', invoiceLink);
+
+    // Decrypt vendor data before sending to frontend
+    const DataEncryptionService = require('../services/DataEncryptionService');
+    const vendorPlainObject = vendor.toJSON ? vendor.toJSON() : vendor;
+    const decryptedVendor = DataEncryptionService.decryptVendorData(vendorPlainObject);
+    
+    console.log('🔓 Decrypted vendor data:', {
+      id: decryptedVendor.id,
+      name: decryptedVendor.name,
+      email: decryptedVendor.email,
+      contactPerson: decryptedVendor.contactPerson
+    });
+    
     // Return success response
     res.json({
       success: true,
@@ -2279,7 +2319,7 @@ router.post("/:timesheetId/generate-invoice", async (req, res) => {
         totalAmount: parseFloat(invoice.totalAmount),
         dueDate: invoice.dueDate,
         invoiceLink,
-        vendorEmail: vendor.email,
+        vendorEmail: decryptedVendor.email,
         emailSent: false,
       },
     });

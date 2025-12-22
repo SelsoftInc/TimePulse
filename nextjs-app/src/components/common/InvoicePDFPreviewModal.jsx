@@ -137,23 +137,120 @@ const InvoicePDFPreviewModal = ({ invoice, onClose, onUpdate, show }) => {
       invoiceDurationTo: endDate,
       
       // Line Items - Prefilled with invoice data
-      lineItems: invoice?.lineItems?.map(item => ({
-        employeeName: item.employeeName || invoice?.employeeName || 'Employee Name',
-        role: item.role || item.position || invoice?.position || 'Software Engineer',
-        description: `${startDate} to ${endDate}`,
-        hoursWorked: parseFloat(item.hours || item.hoursWorked || 0),
-        hourlyRate: parseFloat(item.rate || item.hourlyRate || invoice?.hourlyRate || 45.00),
-        total: parseFloat(item.amount || item.total || 0)
-      })) || [
-        {
-          employeeName: invoice?.employeeName || 'Employee Name',
-          role: invoice?.role || invoice?.position || 'Software Engineer',
-          description: `${startDate} to ${endDate}`,
-          hoursWorked: parseFloat(invoice?.hours || 0),
-          hourlyRate: parseFloat(invoice?.hourlyRate || 45.00),
-          total: parseFloat(invoice?.total || invoice?.totalAmount || 0)
+      lineItems: (() => {
+        console.log('🔧 Initializing lineItems from invoice:', invoice);
+        console.log('📦 Invoice lineItems field:', invoice?.lineItems);
+        console.log('💰 Invoice totals:', {
+          totalHours: invoice?.totalHours,
+          hours: invoice?.hours,
+          total: invoice?.total,
+          totalAmount: invoice?.totalAmount,
+          subtotal: invoice?.subtotal
+        });
+        
+        // Parse lineItems if it's a string or ensure it's an array
+        let items = invoice?.lineItems;
+        
+        // If lineItems is a string, try to parse it
+        if (typeof items === 'string') {
+          try {
+            items = JSON.parse(items);
+            console.log('✅ Parsed lineItems from string:', items);
+          } catch (e) {
+            console.error('❌ Failed to parse lineItems:', e);
+            items = null;
+          }
         }
-      ],
+        
+        // If items is an array, map it
+        if (Array.isArray(items) && items.length > 0) {
+          console.log('📋 Processing', items.length, 'line items from array');
+          const processedItems = items.map((item, idx) => {
+            // Extract hours from multiple possible fields
+            const hours = parseFloat(
+              item.hoursWorked || 
+              item.hours || 
+              item.quantity || 
+              item.totalHours || 
+              0
+            );
+            
+            // Extract rate from multiple possible fields
+            const rate = parseFloat(
+              item.hourlyRate || 
+              item.rate || 
+              item.unitPrice || 
+              item.billRate || 
+              invoice?.hourlyRate || 
+              45.00
+            );
+            
+            // Calculate total if not provided
+            const calculatedTotal = hours * rate;
+            const total = parseFloat(
+              item.total || 
+              item.amount || 
+              calculatedTotal || 
+              0
+            );
+            
+            console.log(`  📊 Item ${idx + 1}:`, { 
+              employeeName: item.employeeName,
+              hours, 
+              rate, 
+              total,
+              rawItem: item 
+            });
+            
+            return {
+              employeeName: item.employeeName || item.employee || invoice?.employeeName || 'Employee Name',
+              role: item.role || item.position || invoice?.position || 'Software Engineer',
+              description: item.description || `${startDate} to ${endDate}`,
+              hoursWorked: hours,
+              hourlyRate: rate,
+              total: total
+            };
+          });
+          
+          console.log('✅ Processed lineItems:', processedItems);
+          return processedItems;
+        }
+        
+        // Fallback: create default line item from invoice data
+        console.log('⚠️ No lineItems array, creating fallback from invoice data');
+        const hours = parseFloat(
+          invoice?.totalHours || 
+          invoice?.hours || 
+          0
+        );
+        const rate = parseFloat(
+          invoice?.hourlyRate || 
+          invoice?.rate || 
+          45.00
+        );
+        const calculatedTotal = hours * rate;
+        const total = parseFloat(
+          invoice?.total || 
+          invoice?.totalAmount || 
+          invoice?.amount || 
+          invoice?.subtotal ||
+          calculatedTotal || 
+          0
+        );
+        
+        console.log('📊 Fallback line item:', { hours, rate, total, calculatedTotal });
+        
+        return [
+          {
+            employeeName: invoice?.employeeName || 'Employee Name',
+            role: invoice?.role || invoice?.position || 'Software Engineer',
+            description: `${startDate} to ${endDate}`,
+            hoursWorked: hours,
+            hourlyRate: rate,
+            total: total
+          }
+        ];
+      })(),
       
       // Payment Details
       bankName: invoice?.bankName || 'Chase Bank',
@@ -180,7 +277,14 @@ const InvoicePDFPreviewModal = ({ invoice, onClose, onUpdate, show }) => {
         const token = localStorage.getItem('token');
         
         
-        console.log('Fetching employee data for invoice:', invoice);
+        console.log('🔍 Fetching employee data for invoice:', {
+          id: invoice?.id,
+          clientName: invoice?.clientName,
+          month: invoice?.month,
+          year: invoice?.year,
+          totalHours: invoice?.totalHours,
+          employeeName: invoice?.employeeName
+        });
         
         // Use new API endpoint to fetch employee details for invoice
         if (invoice?.id) {
@@ -195,9 +299,11 @@ const InvoicePDFPreviewModal = ({ invoice, onClose, onUpdate, show }) => {
               }
             );
             
+            console.log('📡 Employee API response status:', response.status);
+            
             if (response.ok) {
               const data = await response.json();
-              console.log('Employee data from API:', data);
+              console.log('✅ Employee data from API:', data);
               
               if (data.success && data.lineItems && data.lineItems.length > 0) {
                 const processedItems = data.lineItems.map(item => ({
@@ -270,15 +376,29 @@ const InvoicePDFPreviewModal = ({ invoice, onClose, onUpdate, show }) => {
               }
             }
           } catch (err) {
-            console.error('Error fetching employee data from new API:', err);
+            console.error('❌ Error fetching employee data from new API:', err);
           }
+        } else {
+          console.log('⚠️ No invoice ID available, skipping employee API call');
         }
         
         // Fallback: try to use lineItems from invoice if available
-        if (invoice?.lineItems && Array.isArray(invoice.lineItems) && invoice.lineItems.length > 0) {
-          console.log('Using invoice lineItems:', invoice.lineItems);
+        let parsedLineItems = invoice?.lineItems;
+        
+        // Parse lineItems if it's a string
+        if (typeof parsedLineItems === 'string') {
+          try {
+            parsedLineItems = JSON.parse(parsedLineItems);
+          } catch (e) {
+            console.error('Failed to parse lineItems in useEffect:', e);
+            parsedLineItems = null;
+          }
+        }
+        
+        if (parsedLineItems && Array.isArray(parsedLineItems) && parsedLineItems.length > 0) {
+          console.log('Using invoice lineItems:', parsedLineItems);
           
-          const processedItems = invoice.lineItems.map(item => ({
+          const processedItems = parsedLineItems.map(item => ({
             employeeName: item.employeeName || invoice?.employeeName || 'Employee Name',
             description: item.description || `${invoice?.month || 'Period'} ${invoice?.year || new Date().getFullYear()}`,
             hoursWorked: parseFloat(item.hours || item.hoursWorked || 0),
@@ -298,6 +418,7 @@ const InvoicePDFPreviewModal = ({ invoice, onClose, onUpdate, show }) => {
         // If no lineItems in invoice, fetch from timesheets API
         const invoiceMonth = invoice?.month || new Date().toLocaleDateString('en-US', { month: 'long' });
         const invoiceYear = invoice?.year || new Date().getFullYear();
+        const clientName = invoice?.clientName;
         
         // Convert month name to number
         const monthMap = {
@@ -307,7 +428,8 @@ const InvoicePDFPreviewModal = ({ invoice, onClose, onUpdate, show }) => {
         };
         const monthNum = monthMap[invoiceMonth] || new Date().getMonth() + 1;
         
-        console.log(`Fetching timesheets for ${invoiceMonth} ${invoiceYear} (month: ${monthNum})`);
+        console.log(`📅 Fetching timesheets for ${invoiceMonth} ${invoiceYear} (month: ${monthNum}) for client: ${clientName}`);
+        console.log('🔗 Timesheet API URL:', `${API_BASE}/timesheets?tenantId=${tenantId}&month=${monthNum}&year=${invoiceYear}`);
         
         const response = await fetch(
           `${API_BASE}/timesheets?tenantId=${tenantId}&month=${monthNum}&year=${invoiceYear}`,
@@ -321,11 +443,27 @@ const InvoicePDFPreviewModal = ({ invoice, onClose, onUpdate, show }) => {
         
         if (response.ok) {
           const data = await response.json();
-          console.log('Timesheets response:', data);
+          console.log('✅ Timesheets response:', data);
           const timesheets = data.timesheets || data.data || [];
+          console.log(`📊 Total timesheets fetched: ${timesheets.length}`);
+          
+          // Filter timesheets by client name if available
+          const filteredTimesheets = clientName 
+            ? timesheets.filter(ts => 
+                ts.clientName === clientName || 
+                ts.client?.name === clientName ||
+                ts.client?.clientName === clientName
+              )
+            : timesheets;
+          
+          console.log(`🔍 Filtered ${filteredTimesheets.length} timesheets for client: ${clientName}`);
+          
+          if (filteredTimesheets.length > 0) {
+            console.log('📋 Sample timesheet data:', filteredTimesheets[0]);
+          }
           
           // Transform timesheet data to line items with employee info
-          const lineItems = timesheets.map(ts => ({
+          const lineItems = filteredTimesheets.map(ts => ({
             employeeName: ts.employeeName || `${ts.employee?.firstName || ''} ${ts.employee?.lastName || ''}`.trim() || ts.employee?.name || 'Employee Name',
             position: ts.employee?.title || ts.employee?.position || ts.employee?.department || ts.position || 'Position',
             hoursWorked: parseFloat(ts.totalHours || ts.hours || 0),
@@ -333,7 +471,8 @@ const InvoicePDFPreviewModal = ({ invoice, onClose, onUpdate, show }) => {
             total: (parseFloat(ts.totalHours || ts.hours || 0)) * (parseFloat(ts.employee?.hourlyRate || ts.hourlyRate || ts.rate || 45.00))
           }));
           
-          console.log('Processed line items:', lineItems);
+          console.log('✨ Processed line items:', lineItems);
+          console.log(`👥 Found ${lineItems.length} employees with data`);
           
           // Update form data with fetched employee data
           if (lineItems.length > 0) {
@@ -342,12 +481,59 @@ const InvoicePDFPreviewModal = ({ invoice, onClose, onUpdate, show }) => {
               lineItems: lineItems
             }));
             setEmployees(lineItems);
+            setLoading(false);
+            return;
           }
         } else {
-          console.error('Failed to fetch timesheets:', response.status);
+          const errorText = await response.text();
+          console.error('❌ Failed to fetch timesheets:', response.status, errorText);
+        }
+        
+        // Final fallback: Create a default line item from invoice data
+        if (employees.length === 0) {
+          console.warn('⚠️ Creating default line item from invoice data (no employee data found)');
+          console.log('📄 Invoice data:', invoice);
+          const hours = parseFloat(invoice?.totalHours || invoice?.hours || 0);
+          const amount = parseFloat(invoice?.amount || invoice?.totalAmount || 0);
+          const rate = hours > 0 ? amount / hours : 45.00;
+          
+          const defaultItem = {
+            employeeName: invoice?.employeeName || 'Employee Name',
+            description: `${invoice?.month || 'Period'} ${invoice?.year || new Date().getFullYear()} - ${invoice?.clientName || 'Client'}`,
+            hoursWorked: hours,
+            hourlyRate: rate,
+            total: amount
+          };
+          
+          console.log('Created default line item:', defaultItem);
+          
+          setFormData(prev => ({
+            ...prev,
+            lineItems: [defaultItem]
+          }));
+          setEmployees([defaultItem]);
         }
       } catch (error) {
         console.error('Error fetching employee data:', error);
+        
+        // Create fallback line item even on error
+        const hours = parseFloat(invoice?.totalHours || invoice?.hours || 0);
+        const amount = parseFloat(invoice?.amount || invoice?.totalAmount || 0);
+        const rate = hours > 0 ? amount / hours : 45.00;
+        
+        const defaultItem = {
+          employeeName: invoice?.employeeName || 'Employee Name',
+          description: `${invoice?.month || 'Period'} ${invoice?.year || new Date().getFullYear()} - ${invoice?.clientName || 'Client'}`,
+          hoursWorked: hours,
+          hourlyRate: rate,
+          total: amount
+        };
+        
+        setFormData(prev => ({
+          ...prev,
+          lineItems: [defaultItem]
+        }));
+        setEmployees([defaultItem]);
       } finally {
         setLoading(false);
       }

@@ -5,6 +5,7 @@ import InvoiceSettingsModal from '../common/InvoiceSettingsModal';
 import InvoicePDFPreviewModal from '../common/InvoicePDFPreviewModal';
 import InvoiceSuccessModal from '../common/InvoiceSuccessModal';
 import InvoiceDetailsModal from '../common/InvoiceDetailsModal';
+import GenerateInvoiceModal from './GenerateInvoiceModal';
 import axios from 'axios';
 import { API_BASE } from '@/config/api';
 import { apiClient } from '@/utils/apiClient';
@@ -776,6 +777,9 @@ const Invoice = () => {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successInvoiceData, setSuccessInvoiceData] = useState(null);
   
+  // Generate Invoice modal state
+  const [showGenerateInvoiceModal, setShowGenerateInvoiceModal] = useState(false);
+  
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
@@ -860,9 +864,9 @@ const Invoice = () => {
         end: endDate.toISOString()
       });
 
-      // Build URL with query params (EXACTLY like Reports module)
-      const apiUrl = `${API_BASE}/api/reports/invoices`;
-      const queryParams = `tenantId=${userInfo.tenantId}&startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`;
+      // Build URL with query params
+      const apiUrl = `${API_BASE}/api/invoices`;
+      const queryParams = `tenantId=${userInfo.tenantId}`;
       const fullUrl = `${apiUrl}?${queryParams}`;
       
       console.log('🌐 Full API URL:', fullUrl);
@@ -888,8 +892,8 @@ const Invoice = () => {
       const data = await response.json();
       console.log('📊 Response data:', data);
 
-      if (data.success && data.data) {
-        const invoiceData = data.data;
+      if (data.success && data.invoices) {
+        const invoiceData = data.invoices;
         console.log('✅ API Success! Invoices count:', invoiceData.length);
         console.log('📦 Received invoices:', invoiceData);
         
@@ -902,29 +906,31 @@ const Invoice = () => {
         // Format invoices
         const formattedInvoices = invoiceData.map((inv, index) => {
           console.log(`🔄 Formatting invoice ${index + 1}:`, inv.invoiceNumber);
+          console.log(`   Vendor: ${inv.vendor}, Hours: ${inv.totalHours}`);
           
-          // Calculate week from invoice date
-          const invoiceDate = new Date(inv.issueDate || inv.createdAt);
-          const weekStart = new Date(invoiceDate);
-          weekStart.setDate(invoiceDate.getDate() - invoiceDate.getDay());
-          const weekEnd = new Date(weekStart);
-          weekEnd.setDate(weekStart.getDate() + 6);
-          
-          const week = `${weekStart.toLocaleDateString('en-US', { month: 'short', day: '2-digit' })} - ${weekEnd.toLocaleDateString('en-US', { month: 'short', day: '2-digit' })}`;
+          // Use week from backend if available, otherwise calculate
+          const week = inv.week || (() => {
+            const invoiceDate = new Date(inv.issueDate || inv.createdAt);
+            const weekStart = new Date(invoiceDate);
+            weekStart.setDate(invoiceDate.getDate() - invoiceDate.getDay());
+            const weekEnd = new Date(weekStart);
+            weekEnd.setDate(weekStart.getDate() + 6);
+            return `${weekStart.toLocaleDateString('en-US', { month: 'short', day: '2-digit' })} - ${weekEnd.toLocaleDateString('en-US', { month: 'short', day: '2-digit' })}`;
+          })();
           
           return {
             id: inv.id,
             invoiceNumber: inv.invoiceNumber,
-            vendor: inv.clientName || 'N/A',
+            vendor: inv.vendor || inv.vendorName || 'N/A',
             week: week,
-            issueDate: inv.issueDate || inv.createdAt,
+            issueDate: inv.issueDate || inv.issuedOn || inv.createdAt,
             createdAt: inv.createdAt,
-            total: parseFloat(inv.amount) || 0,
-            status: inv.status || 'Draft',
-            lineItems: [],
-            attachments: [],
-            discrepancies: null,
-            notes: '',
+            total: parseFloat(inv.total || inv.amount) || 0,
+            status: inv.status || 'active',
+            lineItems: inv.lineItems || [],
+            attachments: inv.attachments || [],
+            discrepancies: inv.discrepancies || null,
+            notes: inv.notes || '',
             hours: inv.totalHours || 0};
         });
         
@@ -1259,7 +1265,7 @@ const Invoice = () => {
       {/* RIGHT */}
       <div className="flex flex-wrap items-center gap-3">
         <button
-          onClick={handleCreateInvoice}
+          onClick={() => setShowGenerateInvoiceModal(true)}
           className="
             flex items-center gap-2.5
             rounded-full
@@ -1704,6 +1710,7 @@ const Invoice = () => {
       {/* Invoice PDF Preview Modal */}
       {showPDFModal && selectedInvoiceForPDF && (
         <InvoicePDFPreviewModal
+          show={true}
           invoice={selectedInvoiceForPDF}
           onClose={() => {
             setShowPDFModal(false);
@@ -1726,6 +1733,7 @@ const Invoice = () => {
       {/* Invoice Preview & Edit Modal - From Reports & Analytics */}
       {editModalOpen && editInvoiceData && (
         <InvoicePDFPreviewModal
+          show={true}
           invoice={editInvoiceData}
           onClose={() => {
             setEditModalOpen(false);
@@ -2903,6 +2911,18 @@ const Invoice = () => {
               }
             };
             handleDownload();
+          }}
+        />
+      )}
+
+      {/* Generate Invoice Modal */}
+      {showGenerateInvoiceModal && (
+        <GenerateInvoiceModal
+          isOpen={showGenerateInvoiceModal}
+          onClose={() => setShowGenerateInvoiceModal(false)}
+          onInvoiceGenerated={() => {
+            setShowGenerateInvoiceModal(false);
+            fetchInvoices(); // Refresh invoice list
           }}
         />
       )}

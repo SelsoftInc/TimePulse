@@ -1,11 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  swcMinify: true, // Enable SWC minification for faster builds
   
-  // Disable caching in development for instant UI updates
+  // Optimize on-demand entries
   onDemandEntries: {
-    maxInactiveAge: 25 * 1000,
-    pagesBufferLength: 2,
+    maxInactiveAge: 60 * 1000, // Increased for better caching
+    pagesBufferLength: 5, // Increased buffer
   },
   
   // API proxy to backend server
@@ -60,17 +61,28 @@ const nextConfig = {
   // Compiler options for better performance
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production',
+    // Remove React properties in production
+    reactRemoveProperties: process.env.NODE_ENV === 'production',
   },
   
-  // Experimental features
-  experimental: {
-    // Enable faster refresh
-    optimizeCss: false,
-    // Disable SWC minification in dev for faster builds
-    ...(process.env.NODE_ENV === 'development' && {
-      swcMinify: false,
-    }),
+  // Modularize imports for tree shaking
+  modularizeImports: {
+    '@fortawesome/react-fontawesome': {
+      transform: '@fortawesome/react-fontawesome',
+    },
   },
+  
+  // Experimental features for performance
+  experimental: {
+    // optimizeCss disabled - requires 'critters' package
+    optimizePackageImports: ['@fortawesome/react-fontawesome', 'react-icons'],
+  },
+  
+  // Production optimizations
+  ...(process.env.NODE_ENV === 'production' && {
+    compress: true,
+    poweredByHeader: false,
+  }),
 };
 
 module.exports = nextConfig;

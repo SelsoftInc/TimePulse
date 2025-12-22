@@ -1868,7 +1868,8 @@ body.dark-mode .reports-dashboard-scope .nk-tb-item.dropdown-open .dropdown-menu
 @media (max-width: 767px) {
    .reports-dashboard-scope .col-md-6,
    .reports-dashboard-scope .col-lg-4 {
-    flex: 1 1 100%;
+    flex: 0 0 100%;
+    max-width: 100%;
   }
 
    .reports-dashboard-scope .form-inline {

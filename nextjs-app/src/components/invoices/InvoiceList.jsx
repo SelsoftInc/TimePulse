@@ -102,7 +102,12 @@ const InvoiceList = () => {
         
         // Format invoices for display
         const formattedInvoices = data.data.map((inv, index) => {
-          console.log(`🔄 Formatting invoice ${index + 1}:`, inv.invoiceNumber);
+          console.log(`🔄 Formatting invoice ${index + 1}:`, {
+            invoiceNumber: inv.invoiceNumber,
+            vendorName: inv.vendorName,
+            clientName: inv.clientName,
+            rawInvoice: inv
+          });
           
           // Calculate week from invoice date
           const invoiceDate = new Date(inv.issueDate || inv.createdAt);
@@ -113,10 +118,15 @@ const InvoiceList = () => {
           
           const week = `${weekStart.toLocaleDateString('en-US', { month: 'short', day: '2-digit' })} - ${weekEnd.toLocaleDateString('en-US', { month: 'short', day: '2-digit' })}`;
           
+          // Use vendorName if available, otherwise fallback to clientName
+          const vendorDisplay = inv.vendorName || inv.clientName || 'N/A';
+          
+          console.log(`✅ Vendor display for ${inv.invoiceNumber}: "${vendorDisplay}"`);
+          
           return {
             id: inv.id,
             invoiceNumber: inv.invoiceNumber,
-            vendor: inv.clientName || 'N/A',
+            vendor: vendorDisplay,
             week: week,
             issueDate: inv.issueDate || inv.createdAt,
             total: parseFloat(inv.amount) || 0,

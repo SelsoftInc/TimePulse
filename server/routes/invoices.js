@@ -104,7 +104,7 @@ router.get("/", async (req, res) => {
     includeClause.push({
       model: models.Timesheet,
       as: "timesheet",
-      attributes: ["id", "weekStart", "weekEnd", "employeeId"],
+      attributes: ["id", "weekStart", "weekEnd", "employeeId", "totalHours"],
       required: false,
       include: [{
         model: models.Employee,
@@ -152,7 +152,7 @@ router.get("/", async (req, res) => {
           : "N/A",
       weekStart: inv.weekStart,
       weekEnd: inv.weekEnd,
-      total: parseFloat(inv.total),
+      total: parseFloat(inv.totalAmount || inv.total || 0),
       status: inv.status,
       lineItems: inv.lineItems || [],
       attachments: inv.attachments || [],
@@ -247,6 +247,7 @@ router.post("/", async (req, res) => {
       total,
       subtotal,
       tax,
+      invoiceDate,
       dueDate,
       notes,
       attachments,
@@ -257,6 +258,17 @@ router.post("/", async (req, res) => {
       return res
         .status(400)
         .json({ success: false, message: "tenantId is required" });
+    }
+
+    if (!clientId) {
+      console.error('❌ Missing clientId in invoice creation request');
+      console.error('Request body:', JSON.stringify(req.body, null, 2));
+      return res
+        .status(400)
+        .json({ 
+          success: false, 
+          message: "clientId is required. Please ensure timesheets have valid client associations."
+        });
     }
 
     // Generate invoice number in format IN-2025-XXX
@@ -289,24 +301,41 @@ router.post("/", async (req, res) => {
     const newInvoice = await models.Invoice.create({
       tenantId,
       invoiceNumber,
+      invoiceDate: invoiceDate || new Date().toISOString().split('T')[0],
+      dueDate: dueDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       vendorId,
       clientId,
       employeeId,
       timesheetId,
-      weekStart,
-      weekEnd,
       lineItems: encryptedData.lineItems || [],
       subtotal: subtotal || 0,
-      tax: tax || 0,
-      total: total || 0,
-      status: "draft",
-      dueDate,
+      taxAmount: tax || 0,
+      totalAmount: total || 0,
+      status: "active",
+      paymentStatus: "pending",
       notes: encryptedData.notes || "",
-      attachments: attachments || [],
-      quickbooksSync: quickbooksSync || false,
     });
 
-    res.status(201).json({ success: true, invoice: newInvoice });
+    // Decrypt the invoice data before returning to frontend
+    const decryptedInvoice = DataEncryptionService.decryptInstance(newInvoice, 'invoice');
+    
+    // Convert to plain object if it's a Sequelize instance
+    const decryptedData = decryptedInvoice.toJSON ? decryptedInvoice.toJSON() : decryptedInvoice;
+    
+    // Add additional fields from request body that aren't stored in DB
+    const responseInvoice = {
+      ...decryptedData,
+      month: req.body.month,
+      year: req.body.year,
+      totalHours: req.body.totalHours,
+      clientName: req.body.clientName,
+      weekStart: req.body.weekStart,
+      weekEnd: req.body.weekEnd
+    };
+
+    console.log('✅ Returning decrypted invoice with lineItems:', responseInvoice.lineItems);
+
+    res.status(201).json({ success: true, invoice: responseInvoice });
   } catch (error) {
     console.error("❌ Error creating invoice:", error);
     res.status(500).json({
@@ -1053,7 +1082,8 @@ router.post("/generate-from-timesheet", (req, res) => {
         parseFloat(timesheetData?.results?.Entry?.[0]?.Total_Hours || 0) *
         (clientInfo?.hourlyRate || 125),
 
-      status: "draft",
+      status: "active",
+      paymentStatus: "pending",
       notes: `Invoice generated from timesheet analysis.`,
 
       metadata: {

@@ -205,6 +205,12 @@ const ReportsDashboard = () => {
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedInvoiceForDetails, setSelectedInvoiceForDetails] = useState(null);
 
+  // Pagination state
+  const [clientPage, setClientPage] = useState(1);
+  const [employeePage, setEmployeePage] = useState(1);
+  const [invoicePage, setInvoicePage] = useState(1);
+  const itemsPerPage = 10;
+
   // Fetch data from API - wrapped in useCallback to prevent infinite loops
   const fetchReportsData = useCallback(async () => {
     try {
@@ -523,68 +529,53 @@ const ReportsDashboard = () => {
 
   // Function to render client-wise report
   const renderClientReport = () => {
+    // Pagination calculations
+    const totalClients = clientReportData.length;
+    const totalPages = Math.ceil(totalClients / itemsPerPage);
+    const startIndex = (clientPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const paginatedClients = clientReportData.slice(startIndex, endIndex);
+
     return (
       <>
-        <div className="nk-bloc">
-          <div className="row g-g">
-            <div className="col-md-6 col-lg-4">
-              <div className="card card-bordered">
-                <div className="card-inne">
-                  <div className="card-title-group align-start mb-">
-                    <div className="card-title">
-                      <h6 className="title">Total Hours</h6>
-                    </div>
-                  </div>
-                  <div className="align-end flex-sm-wrap g-4 flex-md-nowrap">
-                    <div className="nk-sale-data">
-                      <span className="amount">{totalHours}</span>
-                      <span className="sub-title">
-                        {selectedMonth} {selectedYear}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
+        {/* Summary Cards - Tailwind Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+          {/* Total Hours Card */}
+          <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+            <div className="mb-4">
+              <h6 className="text-sm font-semibold text-gray-700">Total Hours</h6>
             </div>
-
-            <div className="col-md-6 col-lg-4">
-              <div className="card card-bordered">
-                <div className="card-inne">
-                  <div className="card-title-group align-start mb-">
-                    <div className="card-title">
-                      <h6 className="title">Total Billed Amount</h6>
-                    </div>
-                  </div>
-                  <div className="align-end flex-sm-wrap g-4 flex-md-nowrap">
-                    <div className="nk-sale-data">
-                      <span className="amount">
-                        ${totalAmount.toLocaleString()}
-                      </span>
-                      <span className="sub-title">
-                        {selectedMonth} {selectedYear}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
+            <div className="flex flex-col">
+              <span className="text-3xl font-bold text-gray-900">{totalHours}</span>
+              <span className="text-sm text-gray-500 mt-1">
+                {selectedMonth} {selectedYear}
+              </span>
             </div>
+          </div>
 
-            <div className="col-md-12 col-lg-4">
-              <div className="card card-bordered">
-                <div className="card-inne">
-                  <div className="card-title-group align-start mb-">
-                    <div className="card-title">
-                      <h6 className="title">Total Clients</h6>
-                    </div>
-                  </div>
-                  <div className="align-end flex-sm-wrap g-4 flex-md-nowrap">
-                    <div className="nk-sale-data">
-                      <span className="amount">{clientReportData.length}</span>
-                      <span className="sub-title">Active Clients</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
+          {/* Total Billed Amount Card */}
+          <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+            <div className="mb-4">
+              <h6 className="text-sm font-semibold text-gray-700">Total Billed Amount</h6>
+            </div>
+            <div className="flex flex-col">
+              <span className="text-3xl font-bold text-gray-900">
+                ${totalAmount.toLocaleString()}
+              </span>
+              <span className="text-sm text-gray-500 mt-1">
+                {selectedMonth} {selectedYear}
+              </span>
+            </div>
+          </div>
+
+          {/* Total Clients Card */}
+          <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+            <div className="mb-4">
+              <h6 className="text-sm font-semibold text-gray-700">Total Clients</h6>
+            </div>
+            <div className="flex flex-col">
+              <span className="text-3xl font-bold text-gray-900">{clientReportData.length}</span>
+              <span className="text-sm text-gray-500 mt-1">Active Clients</span>
             </div>
           </div>
         </div>
@@ -601,7 +592,7 @@ const ReportsDashboard = () => {
               </div>
 
               <div className="card-inner p-0">
-                <div className="nk-tb-list nk-tb-ulis">
+                <div className="nk-tb-list nk-tb-ulist">
                   <div className="nk-tb-item nk-tb-head">
                     <div className="nk-tb-col">
                       <span className="sub-text">Client Name</span>
@@ -620,7 +611,7 @@ const ReportsDashboard = () => {
                     </div>
                   </div>
 
-                  {clientReportData.map((client) => (
+                  {paginatedClients.map((client) => (
                     <div key={client.id} className="nk-tb-item">
                       <div className="nk-tb-col">
                         <span className="tb-lead">{client.name}</span>
@@ -693,6 +684,39 @@ const ReportsDashboard = () => {
                   ))}
                 </div>
               </div>
+
+              {totalClients > itemsPerPage && (
+                <div className="card-inner">
+                  <div className="flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                    <div className="text-sm text-gray-700 dark:text-gray-300">
+                      Showing <span className="font-semibold">{startIndex + 1}</span> to{" "}
+                      <span className="font-semibold">{Math.min(endIndex, totalClients)}</span> of{" "}
+                      <span className="font-semibold">{totalClients}</span> entries
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => setClientPage(clientPage - 1)}
+                        disabled={clientPage === 1}
+                        className="flex items-center justify-center w-9 h-9 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-blue-500 hover:text-white hover:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white dark:disabled:hover:bg-gray-700 disabled:hover:text-gray-700 dark:disabled:hover:text-gray-300 disabled:hover:border-gray-300 dark:disabled:hover:border-gray-600 transition-all duration-200"
+                      >
+                        <i className="fas fa-chevron-left text-xs"></i>
+                      </button>
+                      <div className="flex items-center gap-2 px-3">
+                        <span className="text-base font-bold text-blue-600 dark:text-blue-400">{clientPage}</span>
+                        <span className="text-sm text-gray-400 dark:text-gray-500">/</span>
+                        <span className="text-base font-semibold text-gray-600 dark:text-gray-400">{totalPages}</span>
+                      </div>
+                      <button
+                        onClick={() => setClientPage(clientPage + 1)}
+                        disabled={clientPage === totalPages}
+                        className="flex items-center justify-center w-9 h-9 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-blue-500 hover:text-white hover:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white dark:disabled:hover:bg-gray-700 disabled:hover:text-gray-700 dark:disabled:hover:text-gray-300 disabled:hover:border-gray-300 dark:disabled:hover:border-gray-600 transition-all duration-200"
+                      >
+                        <i className="fas fa-chevron-right text-xs"></i>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -769,6 +793,13 @@ const ReportsDashboard = () => {
 
   // Function to render employee-wise report
   const renderEmployeeReport = () => {
+    // Pagination calculations
+    const totalEmployees = employeeReportData.length;
+    const totalPages = Math.ceil(totalEmployees / itemsPerPage);
+    const startIndex = (employeePage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const paginatedEmployees = employeeReportData.slice(startIndex, endIndex);
+
     return (
       <>
         <div className="nk-block">
@@ -805,7 +836,7 @@ const ReportsDashboard = () => {
                     </div>
                   </div>
 
-                  {employeeReportData.map((employee) => (
+                  {paginatedEmployees.map((employee) => (
                     <div key={employee.id} className="nk-tb-item">
                       <div className="nk-tb-col">
                         <div className="user-card">
@@ -911,6 +942,40 @@ const ReportsDashboard = () => {
                   ))}
                 </div>
               </div>
+
+              {/* Pagination */}
+              {totalEmployees > itemsPerPage && (
+                <div className="card-inner">
+                  <div className="flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                    <div className="text-sm text-gray-700 dark:text-gray-300">
+                      Showing <span className="font-semibold">{startIndex + 1}</span> to{" "}
+                      <span className="font-semibold">{Math.min(endIndex, totalEmployees)}</span> of{" "}
+                      <span className="font-semibold">{totalEmployees}</span> entries
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => setEmployeePage(employeePage - 1)}
+                        disabled={employeePage === 1}
+                        className="flex items-center justify-center w-9 h-9 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-blue-500 hover:text-white hover:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white dark:disabled:hover:bg-gray-700 disabled:hover:text-gray-700 dark:disabled:hover:text-gray-300 disabled:hover:border-gray-300 dark:disabled:hover:border-gray-600 transition-all duration-200"
+                      >
+                        <i className="fas fa-chevron-left text-xs"></i>
+                      </button>
+                      <div className="flex items-center gap-2 px-3">
+                        <span className="text-base font-bold text-blue-600 dark:text-blue-400">{employeePage}</span>
+                        <span className="text-sm text-gray-400 dark:text-gray-500">/</span>
+                        <span className="text-base font-semibold text-gray-600 dark:text-gray-400">{totalPages}</span>
+                      </div>
+                      <button
+                        onClick={() => setEmployeePage(employeePage + 1)}
+                        disabled={employeePage === totalPages}
+                        className="flex items-center justify-center w-9 h-9 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-blue-500 hover:text-white hover:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white dark:disabled:hover:bg-gray-700 disabled:hover:text-gray-700 dark:disabled:hover:text-gray-300 disabled:hover:border-gray-300 dark:disabled:hover:border-gray-600 transition-all duration-200"
+                      >
+                        <i className="fas fa-chevron-right text-xs"></i>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -989,6 +1054,13 @@ const ReportsDashboard = () => {
 
   // Function to render invoice report
   const renderInvoiceReport = () => {
+    // Pagination calculations
+    const totalInvoices = invoiceReportData.length;
+    const totalPages = Math.ceil(totalInvoices / itemsPerPage);
+    const startIndex = (invoicePage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const paginatedInvoices = invoiceReportData.slice(startIndex, endIndex);
+
     return (
       <div className="nk-block">
         <div className="card card-bordered card-stretch">
@@ -1026,7 +1098,7 @@ const ReportsDashboard = () => {
                     <span className="sub-text">Actions</span>
                   </div>
                 </div>
-                {invoiceReportData.map((invoice) => (
+                {paginatedInvoices.map((invoice) => (
                   <div key={invoice.id} className={`nk-tb-item ${openActionsId === invoice.id ? 'dropdown-open' : ''}`}>
                     <div className="nk-tb-col">
                       <span className="tb-lead">{invoice.invoiceNumber || invoice.id}</span>
@@ -1123,6 +1195,40 @@ const ReportsDashboard = () => {
                   </div>
                 ))}
               </div>
+
+              {/* Pagination */}
+              {totalInvoices > itemsPerPage && (
+                <div className="card-inner">
+                  <div className="flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                    <div className="text-sm text-gray-700 dark:text-gray-300">
+                      Showing <span className="font-semibold">{startIndex + 1}</span> to{" "}
+                      <span className="font-semibold">{Math.min(endIndex, totalInvoices)}</span> of{" "}
+                      <span className="font-semibold">{totalInvoices}</span> entries
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => setInvoicePage(invoicePage - 1)}
+                        disabled={invoicePage === 1}
+                        className="flex items-center justify-center w-9 h-9 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-blue-500 hover:text-white hover:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white dark:disabled:hover:bg-gray-700 disabled:hover:text-gray-700 dark:disabled:hover:text-gray-300 disabled:hover:border-gray-300 dark:disabled:hover:border-gray-600 transition-all duration-200"
+                      >
+                        <i className="fas fa-chevron-left text-xs"></i>
+                      </button>
+                      <div className="flex items-center gap-2 px-3">
+                        <span className="text-base font-bold text-blue-600 dark:text-blue-400">{invoicePage}</span>
+                        <span className="text-sm text-gray-400 dark:text-gray-500">/</span>
+                        <span className="text-base font-semibold text-gray-600 dark:text-gray-400">{totalPages}</span>
+                      </div>
+                      <button
+                        onClick={() => setInvoicePage(invoicePage + 1)}
+                        disabled={invoicePage === totalPages}
+                        className="flex items-center justify-center w-9 h-9 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-blue-500 hover:text-white hover:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white dark:disabled:hover:bg-gray-700 disabled:hover:text-gray-700 dark:disabled:hover:text-gray-300 disabled:hover:border-gray-300 dark:disabled:hover:border-gray-600 transition-all duration-200"
+                      >
+                        <i className="fas fa-chevron-right text-xs"></i>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -1362,35 +1468,37 @@ const ReportsDashboard = () => {
                 ) : null}
 
                 {/* Export */}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShowExportDropdown(!showExportDropdown);
-                  }}
-                  className="flex items-center gap-2 rounded-full bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white shadow-md hover:bg-slate-800"
-                >
-                  <i className="fas fa-download" />
-                  Export
-                </button>
-                
-                {showExportDropdown && (
-                  <div className="export-dropdown-menu">
-                    <button
-                      className="export-dropdown-item"
-                      onClick={() => handleExport('excel')}
-                    >
-                      <i className="fas fa-file-excel" style={{ color: '#10b981' }}></i>
-                      <span>Export as Excel</span>
-                    </button>
-                    <button
-                      className="export-dropdown-item"
-                      onClick={() => handleExport('pdf')}
-                    >
-                      <i className="fas fa-file-pdf" style={{ color: '#ef4444' }}></i>
-                      <span>Export as PDF</span>
-                    </button>
-                  </div>
-                )}
+                <div className="export-dropdown-container">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowExportDropdown(!showExportDropdown);
+                    }}
+                    className="flex items-center gap-2 rounded-full bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white shadow-md hover:bg-slate-800"
+                  >
+                    <i className="fas fa-download" />
+                    Export
+                  </button>
+                  
+                  {showExportDropdown && (
+                    <div className="export-dropdown-menu">
+                      <button
+                        className="export-dropdown-item"
+                        onClick={() => handleExport('excel')}
+                      >
+                        <i className="fas fa-file-excel" style={{ color: '#10b981' }}></i>
+                        <span>Export as Excel</span>
+                      </button>
+                      <button
+                        className="export-dropdown-item"
+                        onClick={() => handleExport('pdf')}
+                      >
+                        <i className="fas fa-file-pdf" style={{ color: '#ef4444' }}></i>
+                        <span>Export as PDF</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -1924,6 +2032,80 @@ const ReportsDashboard = () => {
                 }}
               >
                 <i className="fas fa-trash mr-1"></i> Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Invoice Details Modal */}
+      {showDetailsModal && selectedInvoiceForDetails && (
+        <div className="modal-overlay" onClick={() => setShowDetailsModal(false)}>
+          <div className="modal-container" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h5 className="modal-title">Invoice Details</h5>
+              <button className="close-btn" onClick={() => setShowDetailsModal(false)}>
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+            <div className="modal-body">
+              <div className="details-grid">
+                <div className="detail-item">
+                  <label>Invoice Number:</label>
+                  <span>{selectedInvoiceForDetails.invoiceNumber || selectedInvoiceForDetails.id}</span>
+                </div>
+                <div className="detail-item">
+                  <label>Client:</label>
+                  <span>{selectedInvoiceForDetails.clientName}</span>
+                </div>
+                <div className="detail-item">
+                  <label>Month:</label>
+                  <span>{selectedInvoiceForDetails.month} {selectedInvoiceForDetails.year}</span>
+                </div>
+                <div className="detail-item">
+                  <label>Issue Date:</label>
+                  <span>
+                    {selectedInvoiceForDetails.issueDate 
+                      ? new Date(selectedInvoiceForDetails.issueDate).toLocaleDateString('en-US', { 
+                          month: 'long', 
+                          day: '2-digit',
+                          year: 'numeric'
+                        })
+                      : selectedInvoiceForDetails.createdAt 
+                        ? new Date(selectedInvoiceForDetails.createdAt).toLocaleDateString('en-US', { 
+                            month: 'long', 
+                            day: '2-digit',
+                            year: 'numeric'
+                          })
+                        : 'N/A'
+                    }
+                  </span>
+                </div>
+                <div className="detail-item">
+                  <label>Total Hours:</label>
+                  <span>{selectedInvoiceForDetails.totalHours} hrs</span>
+                </div>
+                <div className="detail-item">
+                  <label>Amount:</label>
+                  <span className="amount">${selectedInvoiceForDetails.amount?.toLocaleString()}</span>
+                </div>
+                <div className="detail-item">
+                  <label>Status:</label>
+                  <span className={`badge bg-outline-${
+                    selectedInvoiceForDetails.status === "Paid"
+                      ? "success"
+                      : selectedInvoiceForDetails.status === "Pending"
+                      ? "warning"
+                      : "danger"
+                  }`}>
+                    {selectedInvoiceForDetails.status}
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-secondary" onClick={() => setShowDetailsModal(false)}>
+                Close
               </button>
             </div>
           </div>

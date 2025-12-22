@@ -10,6 +10,7 @@ const InvoiceDetailsModal = ({ invoice, onClose }) => {
   const [loading, setLoading] = useState(true);
   const [fullInvoiceData, setFullInvoiceData] = useState(null);
   const [showPDFModal, setShowPDFModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [error, setError] = useState(null);
 
   const fetchCompleteInvoiceData = useCallback(async () => {
@@ -59,8 +60,16 @@ const InvoiceDetailsModal = ({ invoice, onClose }) => {
 
   const handleDownloadPDF = () => {
     if (fullInvoiceData) {
-      setShowPDFModal(true);
+      console.log('📝 Opening edit invoice modal with data:', fullInvoiceData);
+      setShowEditModal(true);
     }
+  };
+
+  const handleUpdateInvoice = (updatedInvoice) => {
+    console.log('✅ Invoice updated:', updatedInvoice);
+    setShowEditModal(false);
+    // Refresh invoice data after update
+    fetchCompleteInvoiceData();
   };
 
   if (loading) {
@@ -348,11 +357,16 @@ const InvoiceDetailsModal = ({ invoice, onClose }) => {
         </div>
       </div>
 
-      {/* PDF Preview Modal */}
-      {showPDFModal && fullInvoiceData && (
+      {/* Edit Invoice Modal - Opens when Download PDF is clicked */}
+      {showEditModal && fullInvoiceData && (
         <InvoicePDFPreviewModal
+          show={true}
           invoice={fullInvoiceData}
-          onClose={() => setShowPDFModal(false)}
+          onClose={() => {
+            setShowEditModal(false);
+            console.log('📋 Edit modal closed');
+          }}
+          onUpdate={handleUpdateInvoice}
         />
       )}
     </>

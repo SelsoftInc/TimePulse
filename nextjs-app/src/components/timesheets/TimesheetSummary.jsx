@@ -91,6 +91,20 @@ const TimesheetSummary = () => {
     onConfirm: null
   });
   
+  // Vendor assignment modal state
+  const [showVendorAssignModal, setShowVendorAssignModal] = useState(false);
+  const [vendorsList, setVendorsList] = useState([]);
+  const [selectedVendor, setSelectedVendor] = useState('');
+  const [assigningVendor, setAssigningVendor] = useState(false);
+  const [currentEmployeeForAssignment, setCurrentEmployeeForAssignment] = useState(null);
+  const [currentTimesheetForRetry, setCurrentTimesheetForRetry] = useState(null);
+  
+  // Email missing modal state
+  const [showEmailMissingModal, setShowEmailMissingModal] = useState(false);
+  const [emailMissingInfo, setEmailMissingInfo] = useState(null);
+  const [newEmail, setNewEmail] = useState('');
+  const [savingEmail, setSavingEmail] = useState(false);
+  
   const closeModal = () => {
     setModalConfig(prev => ({ ...prev, isOpen: false }));
   };
@@ -627,9 +641,203 @@ const TimesheetSummary = () => {
     }
   };
   
-  // Generate invoice from approved timesheet
+  // Fetch vendors list for assignment
+  const fetchVendorsForAssignment = async () => {
+    try {
+      const tenantId = user?.tenantId;
+      const token = localStorage.getItem('token');
+      
+      console.log('📦 Fetching vendors for assignment...', { tenantId });
+      
+      const response = await fetch(
+        `${API_BASE}/api/vendors?tenantId=${tenantId}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      
+      const rawData = await response.json();
+      console.log('📥 Vendors API raw response:', rawData);
+      
+      // Import decryptAuthResponse dynamically
+      const { decryptAuthResponse } = await import('@/utils/encryption');
+      
+      // Decrypt the response using the proper decryption function
+      const decryptedData = decryptAuthResponse(rawData);
+      console.log('🔓 Decrypted vendors data:', decryptedData);
+      
+      if (decryptedData.success && decryptedData.vendors && Array.isArray(decryptedData.vendors)) {
+        setVendorsList(decryptedData.vendors);
+        console.log('✅ Loaded vendors:', decryptedData.vendors.length, decryptedData.vendors);
+      } else {
+        console.error('❌ No vendors found in response or invalid format');
+        console.error('Response structure:', decryptedData);
+        setVendorsList([]);
+      }
+    } catch (error) {
+      console.error('❌ Error fetching vendors:', error);
+      console.error('Error details:', error.message, error.stack);
+      setVendorsList([]);
+    }
+  };
+  
+  const handleAssignVendor = async () => {
+    if (!selectedVendor || !currentEmployeeForAssignment) {
+      showModal({
+        type: 'error',
+        title: 'Selection Required',
+        message: 'Please select a vendor before proceeding.'
+      });
+      return;
+    }
+
+    setAssigningVendor(true);
+
+    try {
+      const token = localStorage.getItem('token');
+      const tenantId = user?.tenantId;
+
+      if (!token || !tenantId) {
+        throw new Error('Authentication required');
+      }
+
+      console.log('📤 Assigning vendor to employee:', {
+        employeeId: currentEmployeeForAssignment.id,
+        vendorId: selectedVendor,
+        tenantId
+      });
+
+      const response = await fetch(
+        `${API_BASE}/api/employees/${currentEmployeeForAssignment.id}?tenantId=${tenantId}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            vendorId: selectedVendor
+          })
+        }
+      );
+
+      if (response.ok) {
+        console.log('✅ Vendor assigned successfully');
+        
+        setShowVendorAssignModal(false);
+        setSelectedVendor('');
+        setCurrentEmployeeForAssignment(null);
+        
+        if (currentTimesheetForRetry) {
+          console.log('🔄 Retrying invoice generation after vendor assignment...');
+          const timesheetToRetry = currentTimesheetForRetry;
+          setCurrentTimesheetForRetry(null);
+          
+          await generateInvoice(timesheetToRetry);
+        }
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to assign vendor');
+      }
+    } catch (error) {
+      console.error('❌ Error assigning vendor:', error);
+      showModal({
+        type: 'error',
+        title: 'Assignment Failed',
+        message: `Failed to assign vendor: ${error.message}`
+      });
+    } finally {
+      setAssigningVendor(false);
+    }
+  };
+  
+  const handleSaveEmailAndGenerateInvoice = async () => {
+    if (!newEmail || !emailMissingInfo) {
+      showModal({
+        type: 'error',
+        title: 'Email Required',
+        message: 'Please enter a valid email address.'
+      });
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(newEmail)) {
+      showModal({
+        type: 'error',
+        title: 'Invalid Email',
+        message: 'Please enter a valid email address format.'
+      });
+      return;
+    }
+
+    setSavingEmail(true);
+
+    try {
+      const token = localStorage.getItem('token');
+      const tenantId = user?.tenantId;
+
+      if (!token || !tenantId) {
+        throw new Error('Authentication required');
+      }
+
+      console.log('📤 Updating email for:', {
+        type: emailMissingInfo.type,
+        id: emailMissingInfo.id,
+        email: newEmail
+      });
+
+      const endpoint = emailMissingInfo.type === 'Vendor' 
+        ? `${API_BASE}/api/vendors/${emailMissingInfo.id}`
+        : `${API_BASE}/api/clients/${emailMissingInfo.id}`;
+
+      const response = await fetch(
+        `${endpoint}?tenantId=${tenantId}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            email: newEmail
+          })
+        }
+      );
+
+      if (response.ok) {
+        console.log('✅ Email updated successfully');
+        
+        setShowEmailMissingModal(false);
+        setNewEmail('');
+        
+        if (emailMissingInfo.timesheet) {
+          console.log('🔄 Retrying invoice generation after email update...');
+          const timesheetToRetry = emailMissingInfo.timesheet;
+          setEmailMissingInfo(null);
+          
+          await generateInvoice(timesheetToRetry);
+        }
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.error || errorData.message || 'Failed to update email');
+      }
+    } catch (error) {
+      console.error('❌ Error updating email:', error);
+      showModal({
+        type: 'error',
+        title: 'Update Failed',
+        message: `Failed to update email: ${error.message}`
+      });
+    } finally {
+      setSavingEmail(false);
+    }
+  };
+  
   const handleGenerateInvoiceFromTimesheet = async (timesheet) => {
-    // Show confirmation modal
     showModal({
       type: 'confirm',
       title: 'Generate Invoice',
@@ -764,12 +972,17 @@ const TimesheetSummary = () => {
           console.error('Employee data:', employeeData);
           setGeneratingInvoiceId(null);
           closeModal();
+          
+          // Store employee and timesheet for retry after vendor assignment
+          setCurrentEmployeeForAssignment(employeeData);
+          setCurrentTimesheetForRetry(timesheet);
+          
+          // Fetch vendors list
+          await fetchVendorsForAssignment();
+          
+          // Show vendor assignment modal
           setTimeout(() => {
-            showModal({
-              type: 'error',
-              title: 'Vendor/Client Not Assigned',
-              message: `Employee "${employeeData.firstName} ${employeeData.lastName}" must be associated with a vendor or client to generate invoice.\n\nAction Required:\n1. Go to Employees menu\n2. Edit employee: ${employeeData.firstName} ${employeeData.lastName}\n3. Assign a vendor OR client with email address\n4. Save and try generating invoice again`
-            });
+            setShowVendorAssignModal(true);
           }, 100);
           return;
         }
@@ -796,20 +1009,21 @@ const TimesheetSummary = () => {
         console.error('Vendor/Client info:', vendorClientInfo);
         setGeneratingInvoiceId(null);
         
-        // Close confirmation modal first, then show error
+        // Close confirmation modal first, then show email input modal
         closeModal();
+        
+        // Store info for email addition
+        setEmailMissingInfo({
+          type: vendorClientType,
+          id: vendorClientInfo.id,
+          name: vendorClientInfo.vendorName || vendorClientInfo.clientName || vendorClientInfo.name || 'Unknown',
+          employeeData: employeeData,
+          timesheet: timesheet
+        });
+        setNewEmail('');
+        
         setTimeout(() => {
-          showModal({
-            type: 'error',
-            title: `${vendorClientType} Email Missing`,
-            message: `${vendorClientType} "${vendorClientInfo.vendorName || vendorClientInfo.clientName || vendorClientInfo.name || 'Unknown'}" does not have an email address configured.\n\nAction Required:\n1. Go to ${vendorClientType}s menu\n2. Edit ${vendorClientType}: ${vendorClientInfo.vendorName || vendorClientInfo.clientName || vendorClientInfo.name || 'Unknown'}\n3. Add a valid email address\n4. Save and try generating invoice again`,
-            details: {
-              'Employee': `${employeeData.firstName} ${employeeData.lastName}`,
-              [`${vendorClientType} Name`]: vendorClientInfo.vendorName || vendorClientInfo.clientName || vendorClientInfo.name || 'Unknown',
-              [`${vendorClientType} ID`]: vendorClientInfo.id,
-              'Email Status': '❌ Missing'
-            }
-          });
+          setShowEmailMissingModal(true);
         }, 100);
         return;
       }
@@ -1289,6 +1503,354 @@ const TimesheetSummary = () => {
           setSelectedInvoice(null);
         }}
       />
+    )}
+
+    {/* Vendor Assignment Modal */}
+    {showVendorAssignModal && currentEmployeeForAssignment && (
+      <div className="modal-overlay" style={{ zIndex: 10001 }}>
+        <div className="modal-container" style={{ maxWidth: '500px' }} onClick={(e) => e.stopPropagation()}>
+          <div className="modal-header" style={{ 
+            background: 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)', 
+            color: '#ffffff',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '16px 20px',
+            borderTopLeftRadius: '8px',
+            borderTopRightRadius: '8px'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', flex: 1, minWidth: 0 }}>
+              <i className="fas fa-exclamation-circle" style={{ fontSize: '24px', marginRight: '12px', flexShrink: 0 }}></i>
+              <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '600', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Vendor/Client Not Assigned</h3>
+            </div>
+            <button 
+              className="modal-close" 
+              onClick={() => {
+                setShowVendorAssignModal(false);
+                setSelectedVendor('');
+                setCurrentEmployeeForAssignment(null);
+                setCurrentTimesheetForRetry(null);
+              }}
+              style={{ 
+                background: 'rgba(255,255,255,0.2)', 
+                border: 'none', 
+                color: '#ffffff', 
+                fontSize: '24px', 
+                width: '32px', 
+                height: '32px', 
+                borderRadius: '6px', 
+                cursor: 'pointer',
+                flexShrink: 0,
+                marginLeft: '12px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'background 0.2s ease'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.3)'}
+              onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
+            >
+              ×
+            </button>
+          </div>
+          
+          <div className="modal-body" style={{ padding: '24px' }}>
+            <p style={{ marginBottom: '16px', color: 'var(--text-secondary, #4b5563)', lineHeight: '1.6' }}>
+              Employee <strong>"{currentEmployeeForAssignment.firstName} {currentEmployeeForAssignment.lastName}"</strong> must be associated with a vendor or client to generate invoice.
+            </p>
+            
+            <div style={{ 
+              background: 'var(--bg-secondary, #f9fafb)', 
+              padding: '16px', 
+              borderRadius: '8px', 
+              marginBottom: '20px',
+              border: '1px solid var(--border-color, #e5e7eb)'
+            }}>
+              <p style={{ margin: '0 0 12px 0', fontWeight: '600', color: 'var(--text-primary, #1f2937)' }}>
+                Quick Assignment:
+              </p>
+              <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '500', color: 'var(--text-primary, #1f2937)' }}>
+                Select Vendor:
+              </label>
+              <select
+                value={selectedVendor}
+                onChange={(e) => setSelectedVendor(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '10px 12px',
+                  border: '1px solid var(--border-color, #d1d5db)',
+                  borderRadius: '6px',
+                  fontSize: '14px',
+                  background: 'var(--card-bg, #ffffff)',
+                  color: 'var(--text-primary, #1f2937)',
+                  cursor: 'pointer'
+                }}
+                disabled={assigningVendor}
+              >
+                <option value="">-- Select a Vendor --</option>
+                {vendorsList.map((vendor) => (
+                  <option key={vendor.id} value={vendor.id}>
+                    {vendor.name} {vendor.email ? `(${vendor.email})` : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div style={{ 
+              background: '#fff3cd', 
+              border: '1px solid #ffc107', 
+              borderRadius: '6px', 
+              padding: '12px',
+              marginBottom: '16px'
+            }}>
+              <p style={{ margin: 0, fontSize: '13px', color: '#856404' }}>
+                <i className="fas fa-info-circle" style={{ marginRight: '6px' }}></i>
+                After assigning a vendor, the invoice will be generated automatically.
+              </p>
+            </div>
+          </div>
+          
+          <div className="modal-footer" style={{ padding: '16px 24px', display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+            <button
+              onClick={() => {
+                setShowVendorAssignModal(false);
+                setSelectedVendor('');
+                setCurrentEmployeeForAssignment(null);
+                setCurrentTimesheetForRetry(null);
+              }}
+              disabled={assigningVendor}
+              style={{
+                padding: '10px 20px',
+                borderRadius: '6px',
+                border: 'none',
+                background: 'var(--bg-secondary, #f3f4f6)',
+                color: 'var(--text-secondary, #6b7280)',
+                fontSize: '14px',
+                fontWeight: '600',
+                cursor: assigningVendor ? 'not-allowed' : 'pointer',
+                opacity: assigningVendor ? 0.6 : 1
+              }}
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleAssignVendor}
+              disabled={assigningVendor || !selectedVendor}
+              style={{
+                padding: '10px 20px',
+                borderRadius: '6px',
+                border: 'none',
+                background: selectedVendor && !assigningVendor ? '#3b82f6' : '#9ca3af',
+                color: '#ffffff',
+                fontSize: '14px',
+                fontWeight: '600',
+                cursor: selectedVendor && !assigningVendor ? 'pointer' : 'not-allowed',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}
+            >
+              {assigningVendor ? (
+                <>
+                  <i className="fas fa-spinner fa-spin"></i>
+                  Assigning...
+                </>
+              ) : (
+                <>
+                  <i className="fas fa-check"></i>
+                  Assign Vendor & Generate Invoice
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+
+    {/* Email Missing Modal */}
+    {showEmailMissingModal && emailMissingInfo && (
+      <div className="modal-overlay" style={{ zIndex: 10001 }}>
+        <div className="modal-container" style={{ maxWidth: '550px' }} onClick={(e) => e.stopPropagation()}>
+          <div className="modal-header" style={{ 
+            background: 'linear-gradient(135deg, #9333ea 0%, #7e22ce 100%)', 
+            color: '#ffffff',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '16px 20px',
+            borderTopLeftRadius: '8px',
+            borderTopRightRadius: '8px'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', flex: 1, minWidth: 0 }}>
+              <i className="fas fa-envelope" style={{ fontSize: '24px', marginRight: '12px', flexShrink: 0 }}></i>
+              <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '600', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {emailMissingInfo.type} Email Missing
+              </h3>
+            </div>
+            <button 
+              className="modal-close" 
+              onClick={() => {
+                setShowEmailMissingModal(false);
+                setNewEmail('');
+                setEmailMissingInfo(null);
+              }}
+              style={{ 
+                background: 'rgba(255,255,255,0.2)', 
+                border: 'none', 
+                color: '#ffffff', 
+                fontSize: '24px', 
+                width: '32px', 
+                height: '32px', 
+                borderRadius: '6px', 
+                cursor: 'pointer',
+                flexShrink: 0,
+                marginLeft: '12px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'background 0.2s ease'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.3)'}
+              onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
+            >
+              ×
+            </button>
+          </div>
+          
+          <div className="modal-body" style={{ padding: '24px' }}>
+            <p style={{ marginBottom: '20px', color: 'var(--text-secondary, #4b5563)', lineHeight: '1.6' }}>
+              {emailMissingInfo.type} <strong>"{emailMissingInfo.name}"</strong> does not have an email address configured.
+            </p>
+            
+            <div style={{ 
+              background: 'var(--bg-secondary, #f9fafb)', 
+              padding: '16px', 
+              borderRadius: '8px', 
+              marginBottom: '20px',
+              border: '1px solid var(--border-color, #e5e7eb)'
+            }}>
+              <div style={{ marginBottom: '12px' }}>
+                <label style={{ display: 'block', marginBottom: '4px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary, #6b7280)' }}>
+                  Employee:
+                </label>
+                <div style={{ fontSize: '14px', fontWeight: '600', color: 'var(--text-primary, #1f2937)' }}>
+                  {emailMissingInfo.employeeData ? `${emailMissingInfo.employeeData.firstName} ${emailMissingInfo.employeeData.lastName}` : 'N/A'}
+                </div>
+              </div>
+              
+              <div style={{ marginBottom: '12px' }}>
+                <label style={{ display: 'block', marginBottom: '4px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary, #6b7280)' }}>
+                  {emailMissingInfo.type} Name:
+                </label>
+                <div style={{ fontSize: '14px', fontWeight: '600', color: 'var(--text-primary, #1f2937)' }}>
+                  {emailMissingInfo.name}
+                </div>
+              </div>
+              
+              <div style={{ marginBottom: '12px' }}>
+                <label style={{ display: 'block', marginBottom: '4px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary, #6b7280)' }}>
+                  {emailMissingInfo.type} ID:
+                </label>
+                <div style={{ fontSize: '13px', fontFamily: 'monospace', color: 'var(--text-secondary, #6b7280)' }}>
+                  {emailMissingInfo.id}
+                </div>
+              </div>
+              
+              <div>
+                <label style={{ display: 'block', marginBottom: '4px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary, #6b7280)' }}>
+                  Email Status:
+                </label>
+                <div style={{ fontSize: '14px', fontWeight: '600', color: '#dc2626' }}>
+                  ❌ Missing
+                </div>
+              </div>
+            </div>
+            
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: 'var(--text-primary, #1f2937)' }}>
+                Add Email Address: <span style={{ color: '#dc2626' }}>*</span>
+              </label>
+              <input
+                type="email"
+                value={newEmail}
+                onChange={(e) => setNewEmail(e.target.value)}
+                placeholder={`Enter ${emailMissingInfo.type.toLowerCase()} email address`}
+                style={{
+                  width: '100%',
+                  padding: '12px 14px',
+                  border: '2px solid var(--border-color, #d1d5db)',
+                  borderRadius: '6px',
+                  fontSize: '14px',
+                  background: 'var(--card-bg, #ffffff)',
+                  color: 'var(--text-primary, #1f2937)',
+                  outline: 'none',
+                  transition: 'border-color 0.2s ease'
+                }}
+                onFocus={(e) => e.target.style.borderColor = '#9333ea'}
+                onBlur={(e) => e.target.style.borderColor = 'var(--border-color, #d1d5db)'}
+                disabled={savingEmail}
+              />
+              <p style={{ marginTop: '8px', fontSize: '12px', color: 'var(--text-secondary, #6b7280)', fontStyle: 'italic' }}>
+                <i className="fas fa-info-circle" style={{ marginRight: '4px' }}></i>
+                This email will be saved to the database and used for invoice delivery.
+              </p>
+            </div>
+          </div>
+          
+          <div className="modal-footer" style={{ padding: '16px 24px', display: 'flex', gap: '12px', justifyContent: 'flex-end', borderTop: '1px solid var(--border-color, #e5e7eb)' }}>
+            <button
+              onClick={() => {
+                setShowEmailMissingModal(false);
+                setNewEmail('');
+                setEmailMissingInfo(null);
+              }}
+              disabled={savingEmail}
+              style={{
+                padding: '10px 20px',
+                borderRadius: '6px',
+                border: 'none',
+                background: 'var(--bg-secondary, #f3f4f6)',
+                color: 'var(--text-secondary, #6b7280)',
+                fontSize: '14px',
+                fontWeight: '600',
+                cursor: savingEmail ? 'not-allowed' : 'pointer',
+                opacity: savingEmail ? 0.6 : 1
+              }}
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSaveEmailAndGenerateInvoice}
+              disabled={savingEmail || !newEmail}
+              style={{
+                padding: '10px 20px',
+                borderRadius: '6px',
+                border: 'none',
+                background: newEmail && !savingEmail ? '#9333ea' : '#9ca3af',
+                color: '#ffffff',
+                fontSize: '14px',
+                fontWeight: '600',
+                cursor: newEmail && !savingEmail ? 'pointer' : 'not-allowed',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}
+            >
+              {savingEmail ? (
+                <>
+                  <i className="fas fa-spinner fa-spin"></i>
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <i className="fas fa-save"></i>
+                  Save & Generate Invoice
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
     )}
   </div>
   );

@@ -22,6 +22,8 @@ const UserManagement = () => {
   const [saving, setSaving] = useState(false);
   const [roleOptions, setRoleOptions] = useState([]);
   const [loadingRoles, setLoadingRoles] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
 
   // Default role options as fallback
   const defaultRoleOptions = [
@@ -198,9 +200,13 @@ const UserManagement = () => {
 
   const handleSelectAll = (e) => {
     if (e.target.checked) {
-      setSelectedUsers(filteredUsers.map(u => u.id));
+      // Select all users on current page
+      const currentPageIds = paginatedUsers.map(u => u.id);
+      setSelectedUsers([...new Set([...selectedUsers, ...currentPageIds])]);
     } else {
-      setSelectedUsers([]);
+      // Deselect all users on current page
+      const currentPageIds = paginatedUsers.map(u => u.id);
+      setSelectedUsers(selectedUsers.filter(id => !currentPageIds.includes(id)));
     }
   };
 
@@ -224,6 +230,21 @@ const UserManagement = () => {
     return matchesSearch && matchesRole && matchesStatus;
   });
 
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedUsers = filteredUsers.slice(startIndex, endIndex);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, filterRole, filterStatus]);
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
+
   if (loading) {
     return (
       <div className="d-flex justify-content-center mt-5">
@@ -245,7 +266,7 @@ const UserManagement = () => {
 
       <div className="user-management-controls">
         <div className="controls-left">
-          <h3 className="user-count">All users <span className="count">{users.length}</span></h3>
+          <h3 className="user-count">All users <span className="count">{filteredUsers.length}</span></h3>
         </div>
         <div className="controls-right">
           <div className="search-box">
@@ -296,7 +317,7 @@ const UserManagement = () => {
               <th className="checkbox-col">
                 <input
                   type="checkbox"
-                  checked={selectedUsers.length === filteredUsers.length && filteredUsers.length > 0}
+                  checked={selectedUsers.length === paginatedUsers.length && paginatedUsers.length > 0 && paginatedUsers.every(u => selectedUsers.includes(u.id))}
                   onChange={handleSelectAll}
                 />
               </th>
@@ -308,7 +329,7 @@ const UserManagement = () => {
             </tr>
           </thead>
           <tbody>
-            {filteredUsers.map((u) => (
+            {paginatedUsers.map((u) => (
               <tr key={u.id}>
                 <td className="checkbox-col">
                   <input
@@ -355,6 +376,38 @@ const UserManagement = () => {
           </div>
         )}
       </div>
+
+      {/* Pagination */}
+      {filteredUsers.length > itemsPerPage && (
+        <div className="pagination-wrapper">
+          <div className="pagination-info">
+            Showing {startIndex + 1} to {Math.min(endIndex, filteredUsers.length)} of {filteredUsers.length} entries
+          </div>
+          <div className="pagination-controls">
+            <button
+              className="pagination-btn"
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              title="Previous page"
+            >
+              <i className="fas fa-chevron-left"></i>
+            </button>
+            <div className="pagination-pages">
+              <span className="current-page">{currentPage}</span>
+              <span className="page-separator">/</span>
+              <span className="total-pages">{totalPages}</span>
+            </div>
+            <button
+              className="pagination-btn"
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              title="Next page"
+            >
+              <i className="fas fa-chevron-right"></i>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Edit User Modal */}
       {showEditModal && editingUser && (

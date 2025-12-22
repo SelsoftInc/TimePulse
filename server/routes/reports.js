@@ -4,7 +4,7 @@ const { models, sequelize } = require("../models");
 const { Op } = require("sequelize");
 const DataEncryptionService = require("../services/DataEncryptionService");
 
-const { Employee, Timesheet, User, Client, Invoice } = models;
+const { Employee, Timesheet, User, Client, Invoice, Vendor } = models;
 
 // Helper function to safely parse dates
 const parseDate = (dateStr) => {
@@ -360,38 +360,118 @@ router.get("/invoices", async (req, res) => {
           attributes: ["id", "clientName"],
           required: false,
         },
+        {
+          model: Vendor,
+          as: "vendor",
+          attributes: ["id", "name", "email"],
+          required: false,
+        },
       ],
       order: [["invoiceDate", "DESC"]],
     });
 
-    // Decrypt client names in invoices
-    const decryptedInvoices = invoices.map(invoice => {
-      const plainInvoice = invoice.get({ plain: true });
+    console.log(`📊 Found ${invoices.length} invoices for tenant ${tenantId}`);
+    
+    // Log first few invoices to debug vendor association
+    invoices.slice(0, 3).forEach((inv, idx) => {
+      const plainInv = inv.toJSON ? inv.toJSON() : inv;
+      console.log(`🔍 Invoice ${idx + 1} (${plainInv.invoiceNumber}):`, {
+        vendorId: plainInv.vendorId,
+        clientId: plainInv.clientId,
+        hasVendor: !!plainInv.vendor,
+        hasClient: !!plainInv.client,
+        vendorName: plainInv.vendor?.name,
+        clientName: plainInv.client?.clientName
+      });
+    });
+
+    // Decrypt invoice data including lineItems
+    const decryptedInvoices = DataEncryptionService.decryptInstances(invoices, 'invoice');
+
+    // Decrypt client and vendor names and convert to plain objects
+    const processedInvoices = decryptedInvoices.map((invoice, index) => {
+      const plainInvoice = invoice.toJSON ? invoice.toJSON() : invoice;
+      
+      console.log(`🔍 Processing invoice ${index + 1}:`, {
+        invoiceNumber: plainInvoice.invoiceNumber,
+        hasVendor: !!plainInvoice.vendor,
+        vendorId: plainInvoice.vendorId,
+        vendorData: plainInvoice.vendor ? {
+          id: plainInvoice.vendor.id,
+          name: plainInvoice.vendor.name,
+          email: plainInvoice.vendor.email
+        } : null
+      });
+      
+      // Decrypt client name
       if (plainInvoice.client && plainInvoice.client.clientName) {
         plainInvoice.client.clientName = DataEncryptionService.decryptClientData({ 
           clientName: plainInvoice.client.clientName 
         }).clientName;
       }
+      
+      // Decrypt vendor data
+      if (plainInvoice.vendor) {
+        console.log(`🔐 Decrypting vendor data for invoice ${plainInvoice.invoiceNumber}`, {
+          vendorNameEncrypted: plainInvoice.vendor.name,
+          vendorEmailEncrypted: plainInvoice.vendor.email
+        });
+        
+        // Create a plain object from vendor
+        const vendorObj = typeof plainInvoice.vendor.toJSON === 'function' 
+          ? plainInvoice.vendor.toJSON() 
+          : { ...plainInvoice.vendor };
+        
+        const decryptedVendor = DataEncryptionService.decryptVendorData(vendorObj);
+        
+        console.log(`✅ Decrypted vendor:`, {
+          id: decryptedVendor.id,
+          name: decryptedVendor.name,
+          email: decryptedVendor.email
+        });
+        
+        plainInvoice.vendor = decryptedVendor;
+      } else {
+        console.log(`⚠️ No vendor found for invoice ${plainInvoice.invoiceNumber}`);
+      }
+      
       return plainInvoice;
     });
 
+    console.log('✅ Decrypted invoice data with lineItems');
+
     // Process data to create invoice reports
-    const invoiceReports = decryptedInvoices.map((invoice) => {
+    const invoiceReports = processedInvoices.map((invoice) => {
       const invoiceDate = new Date(invoice.invoiceDate);
       const month = invoiceDate.toLocaleDateString("en-US", { month: "long" });
       const year = invoiceDate.getFullYear();
       
-      // Calculate total hours from line items
-      const lineItems = invoice.lineItems || [];
-      const totalHours = lineItems.reduce((sum, item) => {
-        return sum + (parseFloat(item.hours) || 0);
-      }, 0);
+      // Calculate total hours from decrypted line items
+      let lineItems = invoice.lineItems || [];
+      
+      // Parse lineItems if it's a string
+      if (typeof lineItems === 'string') {
+        try {
+          lineItems = JSON.parse(lineItems);
+        } catch (e) {
+          console.error('Failed to parse lineItems for invoice', invoice.id, e);
+          lineItems = [];
+        }
+      }
+      
+      const totalHours = Array.isArray(lineItems) ? lineItems.reduce((sum, item) => {
+        const hours = parseFloat(item.hoursWorked || item.hours || item.quantity || 0);
+        return sum + hours;
+      }, 0) : 0;
+      
+      console.log(`Invoice ${invoice.invoiceNumber}: ${totalHours} hours from ${lineItems.length} line items`);
 
-      return {
+      const reportData = {
         id: invoice.id,
         invoiceNumber: invoice.invoiceNumber,
         clientId: invoice.clientId,
-        clientName: invoice.client?.clientName || "Unknown Client",
+        clientName: invoice.client?.clientName || invoice.vendor?.name || "Unknown Client",
+        vendorName: invoice.vendor?.name || "N/A",
         month,
         year,
         totalHours: totalHours,
@@ -400,6 +480,14 @@ router.get("/invoices", async (req, res) => {
         issueDate: invoice.issueDate || invoice.createdAt,
         createdAt: invoice.createdAt,
       };
+      
+      console.log(`📋 Report data for ${invoice.invoiceNumber}:`, {
+        invoiceNumber: reportData.invoiceNumber,
+        vendorName: reportData.vendorName,
+        clientName: reportData.clientName
+      });
+      
+      return reportData;
     });
 
     // Group by month for summary
@@ -418,6 +506,15 @@ router.get("/invoices", async (req, res) => {
       monthlySummary[key].totalAmount += invoice.amount;
       monthlySummary[key].totalHours += invoice.totalHours;
       monthlySummary[key].invoiceCount += 1;
+    });
+
+    console.log('📤 Sending response with invoice reports:', {
+      totalInvoices: invoiceReports.length,
+      sampleInvoice: invoiceReports[0] ? {
+        invoiceNumber: invoiceReports[0].invoiceNumber,
+        vendorName: invoiceReports[0].vendorName,
+        clientName: invoiceReports[0].clientName
+      } : null
     });
 
     res.json({

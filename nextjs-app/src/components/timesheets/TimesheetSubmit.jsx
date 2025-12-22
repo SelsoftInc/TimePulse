@@ -1866,7 +1866,7 @@ const TimesheetSubmit = () => {
   return (
   <div className="nk-content min-h-screen bg-slate-50">
   <div className="container-fluid">
-    <div className="nk-content-inner">
+    {/* <div className="nk-content-inner"> */}
       <div className="nk-content-body py-6">
 <div className="mb-6 rounded-xl border border-slate-200 bg-indigo-50 p-5 shadow-sm">
                       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -3176,7 +3176,7 @@ const TimesheetSubmit = () => {
         </div>
       )}
     </div>
-  </div>
+  {/* </div> */}
   </div>
   );
 };

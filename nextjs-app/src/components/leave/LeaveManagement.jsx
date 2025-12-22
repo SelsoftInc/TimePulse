@@ -365,18 +365,62 @@ const LeaveManagement = () => {
 
   if (loading) {
     return (
-      <div className="nk-content">
-        <div className="container-fluid">
-          <div className="nk-content-inner">
-            <div className="nk-content-body">
-              <div className="nk-block">
-                <div className="text-center p-5">
-                  <div className="spinner-border text-primary" role="status">
-                    <span className="visually-hidden">Loading...</span>
-                  </div>
-                  <p className="mt-3">Loading leave data...</p>
+      <div
+        style={{
+          minHeight: '100vh',
+          background: 'var(--dashboard-bg)',
+          padding: 24,
+          color: 'var(--dashboard-text-color)',
+          fontFamily:
+            "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+          transition: 'background-color 0.3s ease, color 0.3s ease',
+        }}
+        className="w-full"
+      >
+        <div className="max-w-7xl mx-auto">
+          <div
+            className="
+              mb-6
+              rounded-3xl
+              bg-[#7cbdf2]
+              dark:bg-gradient-to-br dark:from-[#0f1a25] dark:via-[#121f33] dark:to-[#162a45]
+              shadow-sm dark:shadow-[0_8px_24px_rgba(0,0,0,0.6)]
+              backdrop-blur-md
+              border border-transparent dark:border-white/5
+            "
+          >
+            <div className="px-6 py-4">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-[1fr_auto] md:items-center">
+                <div className="relative pl-5">
+                  <span className="absolute left-0 top-2 h-10 w-1 rounded-full bg-purple-900 dark:bg-indigo-400" />
+                  <h1
+                    className="
+                      text-[2rem]
+                      font-bold
+                      text-white
+                      leading-[1.15]
+                      tracking-tight
+                      drop-shadow-[0_2px_8px_rgba(0,0,0,0.18)]
+                    "
+                  >
+                    Leave Management
+                  </h1>
+                  <p className="mt-0 text-sm text-white/80 dark:text-slate-300">
+                    Apply for leave and track your requests
+                  </p>
                 </div>
               </div>
+            </div>
+          </div>
+
+          <div className="mt-6 rounded-2xl border border-slate-200/60 bg-white/70 shadow-sm backdrop-blur dark:border-white/10 dark:bg-white/5">
+            <div className="px-6 py-8 text-center">
+              <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-slate-600 dark:bg-white/10 dark:text-slate-200">
+                <span className="spinner-border text-primary" role="status">
+                  <span className="visually-hidden">Loading...</span>
+                </span>
+              </div>
+              <p className="text-sm text-slate-600 dark:text-slate-300">Loading leave data...</p>
             </div>
           </div>
         </div>
@@ -385,298 +429,119 @@ const LeaveManagement = () => {
   }
 
   return (
-    <div className="nk-conten">
-      <div className="container-fluid">
-        <div className="nk-content-inne">
-          <div className="nk-content-body">
-            <div className="nk-block-head nk-block-head-sm">
-              <div className="nk-block-between">
-               
+    <div
+      style={{
+        minHeight: '100vh',
+        background: 'var(--dashboard-bg)',
+        padding: 24,
+        color: 'var(--dashboard-text-color)',
+        fontFamily:
+          "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+        transition: 'background-color 0.3s ease, color 0.3s ease',
+      }}
+      className="w-full"
+    >
+      <div className="max-w-7xl mx-auto space-y-6">
+        <div
+          className="
+            rounded-3xl
+            bg-[#7cbdf2]
+            dark:bg-gradient-to-br dark:from-[#0f1a25] dark:via-[#121f33] dark:to-[#162a45]
+            shadow-sm dark:shadow-[0_8px_24px_rgba(0,0,0,0.6)]
+            backdrop-blur-md
+            border border-transparent dark:border-white/5
+          "
+        >
+          <div className="px-6 py-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-[1fr_auto] md:items-center">
+              <div className="relative pl-5">
+                <span className="absolute left-0 top-2 h-10 w-1 rounded-full bg-purple-900 dark:bg-indigo-400" />
+                <h1
+                  className="
+                    text-[2rem]
+                    font-bold
+                    text-white
+                    leading-[1.15]
+                    tracking-tight
+                    drop-shadow-[0_2px_8px_rgba(0,0,0,0.18)]
+                  "
+                >
+                  Leave Management
+                </h1>
+                <p className="mt-0 text-sm text-white/80 dark:text-slate-300">
+                  Apply for leave and track your requests
+                </p>
               </div>
             </div>
+          </div>
+        </div>
 
-            <div className="nk-block">
-              {/* Employee Sections - Only show for non-owners */}
-              {!isOwner && (
-                <div className="row mb-4 leave-cards-row">
-                  {/* Leave Balance */}
-                  <div className="col-lg-5 col-md-12">
-                    <div className="card card-bordered h-100">
-                      <div className="card-inner">
-                        <div className="card-title-group align-start mb-4">
-                          <div className="card-title">
-                            <h6 className="title">Leave Balance</h6>
-                          </div>
-                        </div>
+        <div className="space-y-6">
+          {/* Employee Sections - Only show for non-owners */}
+          {!isOwner && (
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
 
-                        <div className="leave-balance-vertical">
-                          {Object.keys(leaveData.balance).length > 0 ? (
-                            <>
-                              {/* Calculate totals from database */}
-                              {(() => {
-                                const vacationData = leaveData.balance
-                                  .vacation || {
-                                  total: 0,
-                                  used: 0,
-                                  pending: 0,
-                                  remaining: 0,
-                                };
-                                const sickData = leaveData.balance.sick || {
-                                  total: 0,
-                                  used: 0,
-                                  pending: 0,
-                                  remaining: 0,
-                                };
-                                const totalDays =
-                                  vacationData.total + sickData.total;
-                                const totalUsed =
-                                  vacationData.used + sickData.used;
-                                const totalPending =
-                                  vacationData.pending + sickData.pending;
-                                const totalRemaining =
-                                  vacationData.remaining + sickData.remaining;
-
-                                return (
-                                  <>
-                                    {/* Total Leave Card */}
-                                    <div className="leave-card-modern total-card mb-3">
-                                      <div className="d-flex justify-content-between align-items-center mb-3">
-                                        <div className="flex-grow-1">
-                                          <h6 className="mb-1 fw-bold text-dark" style={{ fontSize: "14px" }}>
-                                            <i className="fas fa-calendar-check text-success me-2"></i>
-                                            Total Leaves
-                                          </h6>
-                                          <p
-                                            className="text-muted mb-0"
-                                            style={{ fontSize: "11.5px" }}
-                                          >
-                                            {Math.round(totalRemaining)} of{" "}
-                                            {totalDays} days remaining
-                                          </p>
-                                        </div>
-                                        {/* <div className="leave-badge-modern total-badge">
-                                            {Math.round(totalRemaining)}
-                                          </div> */}
-                                      </div>
-                                      <div className="progress">
-                                        <div
-                                          className="progress-bar bg-success"
-                                          style={{
-                                            width: `${
-                                              (totalUsed / totalDays) * 100
-                                            }%`,
-                                          }}
-                                        ></div>
-                                        {/* <div
-                                          className="progress-bar bg-warning"
-                                          style={{
-                                            width: `${
-                                              (totalPending / totalDays) * 100
-                                            }%`,
-                                          }}
-                                        ></div> */}
-                                      </div>
-                                      <div className="d-flex justify-content-between mt-2" style={{ fontSize: "10.5px" }}>
-                                        <small className="text-muted">
-                                          <span className="text-success fw-semibold">
-                                            {Math.round(totalUsed)}
-                                          </span>{" "}
-                                          used
-                                        </small>
-                                        <small className="text-muted">
-                                          Total: {totalDays} days
-                                        </small>
-                                      </div>
-                                    </div>
-
-                                    {/* Vacation Leave Card */}
-                                    {leaveData.balance.vacation && (
-                                      <div className="leave-card-modern vacation-card mb-3">
-                                        <div className="d-flex justify-content-between align-items-center mb-3">
-                                          <div className="flex-grow-1">
-                                            <h6 className="mb-1 fw-bold text-dark" style={{ fontSize: "14px" }}>
-                                              <i className="fas fa-plane text-primary me-2"></i>
-                                              Vacation
-                                            </h6>
-                                            <p
-                                              className="text-muted mb-0"
-                                              style={{ fontSize: "11.5px" }}
-                                            >
-                                              {Math.round(
-                                                vacationData.remaining
-                                              )}{" "}
-                                              of {vacationData.total} days
-                                              remaining
-                                            </p>
-                                          </div>
-                                          {/* <div className="leave-badge-modern vacation-badge">
-                                              {Math.round(vacationData.remaining)}
-                                            </div> */}
-                                        </div>
-                                        <div className="progress">
-                                          <div
-                                            className="progress-bar bg-primary"
-                                            style={{
-                                              width: `${
-                                                (vacationData.used /
-                                                  vacationData.total) *
-                                                100
-                                              }%`,
-                                            }}
-                                          ></div>
-                                          {/* <div
-                                            className="progress-bar bg-warning"
-                                            style={{
-                                              width: `${
-                                                (vacationData.pending /
-                                                  vacationData.total) *
-                                                100
-                                              }%`,
-                                            }}
-                                          ></div> */}
-                                        </div>
-                                        <div className="d-flex justify-content-between mt-2" style={{ fontSize: "10.5px" }}>
-                                          <small className="text-muted">
-                                            <span className="text-primary fw-semibold">
-                                              {Math.round(vacationData.used)}
-                                            </span>{" "}
-                                            used
-                                          </small>
-                                          <small className="text-muted">
-                                            Total: {vacationData.total} days
-                                          </small>
-                                        </div>
-                                      </div>
-                                    )}
-
-                                    {/* Sick Leave Card */}
-                                    {leaveData.balance.sick && (
-                                      <div className="leave-card-modern sick-card mb-3">
-                                        <div className="d-flex justify-content-between align-items-center mb-3">
-                                          <div className="flex-grow-1">
-                                            <h6 className="mb-1 fw-bold text-dark" style={{ fontSize: "14px" }}>
-                                              <i className="fas fa-heartbeat text-danger me-2"></i>
-                                              Sick Leave
-                                            </h6>
-                                            <p
-                                              className="text-muted mb-0"
-                                              style={{ fontSize: "11.5px" }}
-                                            >
-                                              {Math.round(sickData.remaining)}{" "}
-                                              of {sickData.total} days remaining
-                                            </p>
-                                          </div>
-                                          {/* <div className="leave-badge-modern sick-badge">
-                                              {Math.round(sickData.remaining)}
-                                            </div> */}
-                                        </div>
-                                        <div className="progress">
-                                          <div
-                                            className="progress-bar bg-danger"
-                                            style={{
-                                              width: `${
-                                                (sickData.used /
-                                                  sickData.total) *
-                                                100
-                                              }%`,
-                                            }}
-                                          ></div>
-                                          {/* <div
-                                            className="progress-bar bg-warning"
-                                            style={{
-                                              width: `${
-                                                (sickData.pending /
-                                                  sickData.total) *
-                                                100
-                                              }%`,
-                                            }}
-                                          ></div> */}
-                                        </div>
-                                        <div className="d-flex justify-content-between mt-2" style={{ fontSize: "10.5px" }}>
-                                          <small className="text-muted">
-                                            <span className="text-danger fw-semibold">
-                                              {Math.round(sickData.used)}
-                                            </span>{" "}
-                                            used
-                                          </small>
-                                          <small className="text-muted">
-                                            Total: {sickData.total} days
-                                          </small>
-                                        </div>
-                                      </div>
-                                    )}
-                                  </>
-                                );
-                              })()}
-                            </>
-                          ) : (
-                            <div className="text-center py-4">
-                              <p className="text-muted">
-                                No leave balance data available
-                              </p>
-                            </div>
-                          )}
-                        </div>
+{/* Request Leave Form */}
+              <div className="lg:col-span-7">
+                <div className="rounded-2xl border border-slate-200/60 bg-white/70 shadow-sm backdrop-blur dark:border-white/10 dark:bg-white/5">
+                  <div className="px-6 py-5">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <h6 className="text-sm font-semibold">Request Leave</h6>
+                        <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">
+                          Submit a leave request for approval
+                        </p>
                       </div>
                     </div>
-                  </div>
 
-                  {/* Request Leave Form */}
-                  <div className="col-lg-7 col-md-12">
-                    <div className="card card-bordered h-100">
-                      <div className="card-inner">
-                        <div className="card-title-group align-start mb-3">
-                          <div className="card-title">
-                            <h6 className="title">Request Leave</h6>
+                    <form onSubmit={handleSubmit} className="mt-4 d-flex flex-column flex-grow-1">
+                      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                        <div className="md:col-span-2">
+                          <div className="form-group">
+                            <label className="form-label">Leave Type</label>
+                            <select
+                              className="form-select rounded-lg"
+                              name="leaveType"
+                              value={formData.leaveType}
+                              onChange={handleInputChange}
+                              required
+                            >
+                              <option value="" disabled>
+                                Select Leave Type
+                              </option>
+                              <option value="vacation">Vacation</option>
+                              <option value="sick">Sick Leave</option>
+                            </select>
                           </div>
                         </div>
 
-                        <form onSubmit={handleSubmit} className="d-flex flex-column flex-grow-1">
-                          <div className="row g-2">
-                            <div className="col-12">
-                              <div className="form-group">
-                                <label className="form-label">Leave Type</label>
-                                <select
-                                  className="form-select"
-                                  name="leaveType"
-                                  value={formData.leaveType}
-                                  onChange={handleInputChange}
-                                  required
-                                >
-                                  <option value="" disabled>
-                                    Select Leave Type
-                                  </option>
-                                  <option value="vacation">Vacation</option>
-                                  <option value="sick">Sick Leave</option>
-                                </select>
-                              </div>
-                            </div>
-                            <div className="col-md-6">
-                              <div className="form-group">
-                                <label className="form-label">Start Date</label>
-                                <input
-                                  type="date"
-                                  className="form-control"
-                                  name="startDate"
-                                  value={formData.startDate}
-                                  onChange={handleInputChange}
-                                  required
-                                />
-                              </div>
-                            </div>
-                            <div className="col-md-6">
-                              <div className="form-group">
-                                <label className="form-label">End Date</label>
-                                <input
-                                  type="date"
-                                  className="form-control"
-                                  name="endDate"
-                                  value={formData.endDate}
-                                  onChange={handleInputChange}
-                                  required
-                                />
-                              </div>
-                            </div>
+                        <div>
+                          <div className="form-group">
+                            <label className="form-label">Start Date</label>
+                            <input
+                              type="date"
+                              className="form-control rounded-lg"
+                              name="startDate"
+                              value={formData.startDate}
+                              onChange={handleInputChange}
+                              required
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <div className="form-group">
+                            <label className="form-label">End Date</label>
+                            <input
+                              type="date"
+                              className="form-control rounded-lg"
+                              name="endDate"
+                              value={formData.endDate}
+                              onChange={handleInputChange}
+                              required
+                            />
+                          </div>
+                        </div>
                             {/* {allRequests.length > 0 && (
                               <div className="col-12">
                                 <div className="form-note">
@@ -696,378 +561,621 @@ const LeaveManagement = () => {
                                 </div>
                               </div>
                             )} */}
-                            <div className="col-12">
-                              <div className="form-group">
-                                <label className="form-label">Approver *</label>
-                                <select
-                                  className="form-select"
-                                  name="approverId"
-                                  value={formData.approverId}
-                                  onChange={handleInputChange}
-                                  required
-                                >
-                                  <option value="">Select Approver</option>
-                                  {approvers.length === 0 ? (
-                                    <option value="" disabled>No approvers available</option>
-                                  ) : (
-                                    approvers.map((approver) => (
-                                      <option
-                                        key={approver.id}
-                                        value={approver.id}
-                                      >
-                                        {approver.name} ({approver.role === 'admin' ? 'Admin' : approver.role === 'manager' ? 'Manager' : approver.role === 'hr' ? 'HR' : 'Approver'})
-                                      </option>
-                                    ))
-                                  )}
-                                </select>
-                                {approvers.length === 0 && (
-                                  <div className="form-note text-danger">
-                                    <small>No approvers found. Please contact your administrator.</small>
-                                  </div>
-                                )}
+                        <div className="md:col-span-2">
+                          <div className="form-group">
+                            <label className="form-label">Approver *</label>
+                            <select
+                              className="form-select rounded-lg"
+                              name="approverId"
+                              value={formData.approverId}
+                              onChange={handleInputChange}
+                              required
+                            >
+                              <option value="">Select Approver</option>
+                              {approvers.length === 0 ? (
+                                <option value="" disabled>No approvers available</option>
+                              ) : (
+                                approvers.map((approver) => (
+                                  <option
+                                    key={approver.id}
+                                    value={approver.id}
+                                  >
+                                    {approver.name} ({approver.role === 'admin' ? 'Admin' : approver.role === 'manager' ? 'Manager' : approver.role === 'hr' ? 'HR' : 'Approver'})
+                                  </option>
+                                ))
+                              )}
+                            </select>
+                            {approvers.length === 0 && (
+                              <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-amber-900">
+                                <small>No approvers found. Please contact your administrator.</small>
                               </div>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="md:col-span-2">
+                          <div className="form-group">
+                            <label className="form-label">Reason</label>
+                            <textarea
+                              className="form-control rounded-lg"
+                              name="reason"
+                              value={formData.reason}
+                              onChange={handleInputChange}
+                              rows="2"
+                            ></textarea>
+                          </div>
+                        </div>
+
+                        <div className="md:col-span-2">
+                          <div className="form-group">
+                            <label className="form-label">
+                              Attachment (optional)
+                            </label>
+                            <div className="form-control-wrap">
+                              <input
+                                type="file"
+                                className="form-control rounded-lg"
+                                onChange={handleFileChange}
+                              />
                             </div>
-                            <div className="col-12">
-                              <div className="form-group">
-                                <label className="form-label">Reason</label>
-                                <textarea
-                                  className="form-control"
-                                  name="reason"
-                                  value={formData.reason}
-                                  onChange={handleInputChange}
-                                  rows="2"
-                                ></textarea>
-                              </div>
-                            </div>
-                            <div className="col-12">
-                              <div className="form-group">
-                                <label className="form-label">
-                                  Attachment (optional)
-                                </label>
-                                <div className="form-control-wrap">
-                                  <input
-                                    type="file"
-                                    className="form-control"
-                                    onChange={handleFileChange}
-                                  />
-                                </div>
-                                <div className="form-note">
-                                  Upload any supporting documents (e.g., medical
-                                  certificate)
-                                </div>
-                              </div>
-                            </div>
-                            <div className="col-12">
-                              <button
-                                type="submit"
-                                className="btn btn-primary"
-                                disabled={submitting}
-                              >
-                                {submitting ? (
-                                  <>
-                                    <span
-                                      className="spinner-border spinner-border-sm me-1"
-                                      role="status"
-                                      aria-hidden="true"
-                                    ></span>
-                                    Submitting...
-                                  </>
-                                ) : (
-                                  "Submit Request"
-                                )}
-                              </button>
+                            <div className="form-note">
+                              Upload any supporting documents (e.g., medical
+                              certificate)
                             </div>
                           </div>
-                        </form>
+                        </div>
+
+                        <div className="md:col-span-2">
+                          <button
+                            type="submit"
+                            className="btn btn-outline !bg-sky-700 !text-white w-100 sm:w-auto"
+                            disabled={submitting}
+                          >
+                            {submitting ? (
+                              <>
+                                <span
+                                  className="spinner-border spinner-border-sm me-1"
+                                  role="status"
+                                  aria-hidden="true"
+                                ></span>
+                                Submitting...
+                              </>
+                            ) : (
+                              "Submit Request"
+                            )}
+                          </button>
+                        </div>
                       </div>
+                    </form>
+                  </div>
+                </div>
+              </div>
+
+              {/* Leave Balance */}
+              <div className="lg:col-span-5">
+                <div className="rounded-2xl border border-slate-200/60 bg-white/70 shadow-sm backdrop-blur dark:border-white/10 dark:bg-white/5">
+                  <div className="px-6 py-5">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <h6 className="text-sm font-semibold">Leave Balance</h6>
+                        <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">
+                          Your available leave balance
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 leave-balance-vertical">
+                      {Object.keys(leaveData.balance).length > 0 ? (
+                        <>
+                          {/* Calculate totals from database */}
+                          {(() => {
+                            const vacationData = leaveData.balance
+                              .vacation || {
+                              total: 0,
+                              used: 0,
+                              pending: 0,
+                              remaining: 0,
+                            };
+                            const sickData = leaveData.balance.sick || {
+                              total: 0,
+                              used: 0,
+                              pending: 0,
+                              remaining: 0,
+                            };
+                            const totalDays =
+                              vacationData.total + sickData.total;
+                            const totalUsed =
+                              vacationData.used + sickData.used;
+                            const totalPending =
+                              vacationData.pending + sickData.pending;
+                            const totalRemaining =
+                              vacationData.remaining + sickData.remaining;
+
+                            return (
+                              <>
+                                {/* Total Leave Card */}
+                                <div className="leave-card-modern total-card mb-3">
+                                  <div className="d-flex justify-content-between align-items-center mb-3">
+                                    <div className="flex-grow-1">
+                                      <h6 className="mb-1 fw-bold text-dark" style={{ fontSize: "14px" }}>
+                                        <i className="fas fa-calendar-check text-success me-2"></i>
+                                        Total Leaves
+                                      </h6>
+                                      <p
+                                        className="text-muted mb-0"
+                                        style={{ fontSize: "11.5px" }}
+                                      >
+                                        {Math.round(totalRemaining)} of{" "}
+                                        {totalDays} days remaining
+                                      </p>
+                                    </div>
+                                    {/* <div className="leave-badge-modern total-badge">
+                                        {Math.round(totalRemaining)}
+                                      </div> */}
+                                  </div>
+                                  <div className="progress">
+                                    <div
+                                      className="progress-bar bg-success"
+                                      style={{
+                                        width: `${
+                                          (totalUsed / totalDays) * 100
+                                        }%`,
+                                      }}
+                                    ></div>
+                                    {/* <div
+                                      className="progress-bar bg-warning"
+                                      style={{
+                                        width: `${
+                                          (totalPending / totalDays) * 100
+                                        }%`,
+                                      }}
+                                    ></div> */}
+                                  </div>
+                                  <div className="d-flex justify-content-between mt-2" style={{ fontSize: "10.5px" }}>
+                                    <small className="text-muted">
+                                      <span className="text-success fw-semibold">
+                                        {Math.round(totalUsed)}
+                                      </span>{" "}
+                                      used
+                                    </small>
+                                    <small className="text-muted">
+                                      Total: {totalDays} days
+                                    </small>
+                                  </div>
+                                </div>
+
+                                {/* Vacation Leave Card */}
+                                {leaveData.balance.vacation && (
+                                  <div className="leave-card-modern vacation-card mb-3">
+                                    <div className="d-flex justify-content-between align-items-center mb-3">
+                                      <div className="flex-grow-1">
+                                        <h6 className="mb-1 fw-bold text-dark" style={{ fontSize: "14px" }}>
+                                          <i className="fas fa-plane text-primary me-2"></i>
+                                          Vacation
+                                        </h6>
+                                        <p
+                                          className="text-muted mb-0"
+                                          style={{ fontSize: "11.5px" }}
+                                        >
+                                          {Math.round(
+                                            vacationData.remaining
+                                          )}{" "}
+                                          of {vacationData.total} days
+                                          remaining
+                                        </p>
+                                      </div>
+                                      {/* <div className="leave-badge-modern vacation-badge">
+                                          {Math.round(vacationData.remaining)}
+                                        </div> */}
+                                    </div>
+                                    <div className="progress">
+                                      <div
+                                        className="progress-bar bg-primary"
+                                        style={{
+                                          width: `${
+                                            (vacationData.used /
+                                              vacationData.total) *
+                                            100
+                                          }%`,
+                                        }}
+                                      ></div>
+                                      {/* <div
+                                        className="progress-bar bg-warning"
+                                        style={{
+                                          width: `${
+                                            (vacationData.pending /
+                                              vacationData.total) *
+                                            100
+                                          }%`,
+                                        }}
+                                      ></div> */}
+                                    </div>
+                                    <div className="d-flex justify-content-between mt-2" style={{ fontSize: "10.5px" }}>
+                                      <small className="text-muted">
+                                        <span className="text-primary fw-semibold">
+                                          {Math.round(vacationData.used)}
+                                        </span>{" "}
+                                        used
+                                      </small>
+                                      <small className="text-muted">
+                                        Total: {vacationData.total} days
+                                      </small>
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* Sick Leave Card */}
+                                {leaveData.balance.sick && (
+                                  <div className="leave-card-modern sick-card mb-3">
+                                    <div className="d-flex justify-content-between align-items-center mb-3">
+                                      <div className="flex-grow-1">
+                                        <h6 className="mb-1 fw-bold text-dark" style={{ fontSize: "14px" }}>
+                                          <i className="fas fa-heartbeat text-danger me-2"></i>
+                                          Sick Leave
+                                        </h6>
+                                        <p
+                                          className="text-muted mb-0"
+                                          style={{ fontSize: "11.5px" }}
+                                        >
+                                          {Math.round(sickData.remaining)}{" "}
+                                          of {sickData.total} days remaining
+                                        </p>
+                                      </div>
+                                      {/* <div className="leave-badge-modern sick-badge">
+                                          {Math.round(sickData.remaining)}
+                                        </div> */}
+                                    </div>
+                                    <div className="progress">
+                                      <div
+                                        className="progress-bar bg-danger"
+                                        style={{
+                                          width: `${
+                                            (sickData.used /
+                                              sickData.total) *
+                                            100
+                                          }%`,
+                                        }}
+                                      ></div>
+                                      {/* <div
+                                        className="progress-bar bg-warning"
+                                        style={{
+                                          width: `${
+                                            (sickData.pending /
+                                              sickData.total) *
+                                            100
+                                          }%`,
+                                        }}
+                                      ></div> */}
+                                    </div>
+                                    <div className="d-flex justify-content-between mt-2" style={{ fontSize: "10.5px" }}>
+                                      <small className="text-muted">
+                                        <span className="text-danger fw-semibold">
+                                          {Math.round(sickData.used)}
+                                        </span>{" "}
+                                        used
+                                      </small>
+                                      <small className="text-muted">
+                                        Total: {sickData.total} days
+                                      </small>
+                                    </div>
+                                  </div>
+                                )}
+                              </>
+                            );
+                          })()}
+                        </>
+                      ) : (
+                        <div className="rounded-xl border border-slate-200/60 bg-white/40 px-5 py-8 text-center dark:border-white/10 dark:bg-white/5">
+                          <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-slate-600 dark:bg-white/10 dark:text-slate-200">
+                            <i className="fas fa-layer-group"></i>
+                          </div>
+                          <p className="text-sm text-slate-600 dark:text-slate-300">
+                            No leave balance data available
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
-              )}
+              </div>
 
-              <div className="row g-gs">
-                {/* Leave Approvals Section (for Approvers and Admins) */}
-                {isApprover && (
-                  <div className="col-12">
-                    <LeaveApprovals />
+              
+            </div>
+          )}
+
+          {/* Leave Approvals Section (for Approvers and Admins) */}
+          {isApprover && (
+            <div className="rounded-2xl border border-slate-200/60 bg-white/70 shadow-sm backdrop-blur dark:border-white/10 dark:bg-white/5">
+              <div className="px-6 py-5">
+                <LeaveApprovals />
+              </div>
+            </div>
+          )}
+
+          {/* Pending Requests - Only show for non-owners */}
+          {!isOwner && (
+            <div className="rounded-2xl border border-slate-200/60 bg-white/70 shadow-sm backdrop-blur dark:border-white/10 dark:bg-white/5">
+              <div className="px-6 py-5">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <h6 className="text-sm font-semibold">Pending Requests</h6>
+                    <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">
+                      Requests awaiting approval
+                    </p>
                   </div>
-                )}
+                </div>
 
-                {/* Pending Requests - Only show for non-owners */}
-                {!isOwner && (
+                {leaveData.pending.length > 0 ? (
                   <>
-                    <div className="col-12">
-                      <div className="card card-bordered">
-                        <div className="card-inner">
-                          <div className="card-title-group align-start mb-3">
-                            <div className="card-title">
-                              <h6 className="title">Pending Requests</h6>
-                            </div>
-                          </div>
-
-                          {leaveData.pending.length > 0 ? (
-                            <>
-                              <div className="leave-requests-table">
-                                <table className="table table-bordered">
-                                  <thead>
-                                    <tr>
-                                      <th>TYPE</th>
-                                      <th>START DATE</th>
-                                      <th>END DATE</th>
-                                      <th>DAYS</th>
-                                      <th>STATUS</th>
-                                      <th>REQUESTED ON</th>
-                                      <th>ACTION</th>
-                                    </tr>
-                                  </thead>
-                                  <tbody>
-                                    {leaveData.pending
-                                      .slice(
-                                        (pendingPage - 1) * rowsPerPage,
-                                        pendingPage * rowsPerPage
-                                      )
-                                      .map((request) => (
-                                        <tr key={request.id}>
-                                          <td>
-                                            <span className="badge badge-dim badge-outline-primary">
-                                              {request.type}
-                                            </span>
-                                          </td>
-                                          <td>{request.startDate}</td>
-                                          <td>{request.endDate}</td>
-                                          <td>{request.days}</td>
-                                          <td>
-                                            <span className="badge badge-warning">
-                                              {request.status}
-                                            </span>
-                                          </td>
-                                          <td>{request.requestedOn}</td>
-                                          <td>
-                                            <button
-                                              className="btn btn-sm btn-danger"
-                                              onClick={() =>
-                                                cancelRequest(request.id)
-                                              }
-                                              title="Cancel Leave Request"
-                                            >
-                                              <i className="fas fa-times mr-1"></i>
-                                              Cancel
-                                            </button>
-                                          </td>
-                                        </tr>
-                                      ))}
-                                  </tbody>
-                                </table>
-                              </div>
-
-                              {/* Pagination Controls */}
-                              {leaveData.pending.length > rowsPerPage && (
-                                <div className="pagination-wrapper">
-                                  <div className="pagination-info">
-                                    Showing{" "}
-                                    {(pendingPage - 1) * rowsPerPage + 1} to{" "}
-                                    {Math.min(
-                                      pendingPage * rowsPerPage,
-                                      leaveData.pending.length
-                                    )}{" "}
-                                    of {leaveData.pending.length} entries
-                                  </div>
-                                  <div className="pagination-controls">
+                    <div className="mt-4 overflow-x-auto rounded-xl border border-slate-200/60 dark:border-white/10">
+                      <div className="leave-requests-table">
+                        <table className="table table-bordered mb-0">
+                          <thead>
+                            <tr>
+                              <th>TYPE</th>
+                              <th>START DATE</th>
+                              <th>END DATE</th>
+                              <th>DAYS</th>
+                              <th>STATUS</th>
+                              <th>REQUESTED ON</th>
+                              <th>ACTION</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {leaveData.pending
+                              .slice(
+                                (pendingPage - 1) * rowsPerPage,
+                                pendingPage * rowsPerPage
+                              )
+                              .map((request) => (
+                                <tr key={request.id}>
+                                  <td>
+                                    <span className="badge badge-dim badge-outline-primary">
+                                      {request.type}
+                                    </span>
+                                  </td>
+                                  <td>{request.startDate}</td>
+                                  <td>{request.endDate}</td>
+                                  <td>{request.days}</td>
+                                  <td>
+                                    <span className="badge badge-warning">
+                                      {request.status}
+                                    </span>
+                                  </td>
+                                  <td>{request.requestedOn}</td>
+                                  <td>
                                     <button
-                                      className="pagination-btn"
+                                      className="btn btn-sm btn-danger"
                                       onClick={() =>
-                                        setPendingPage((prev) =>
-                                          Math.max(1, prev - 1)
-                                        )
+                                        cancelRequest(request.id)
                                       }
-                                      disabled={pendingPage === 1}
-                                      title="Previous Page"
+                                      title="Cancel Leave Request"
                                     >
-                                      <i className="fas fa-chevron-left"></i>
+                                      <i className="fas fa-times mr-1"></i>
+                                      Cancel
                                     </button>
-                                    <div className="pagination-pages">
-                                      <span className="current-page">
-                                        {pendingPage}
-                                      </span>
-                                      <span className="page-separator">/</span>
-                                      <span className="total-pages">
-                                        {Math.ceil(
-                                          leaveData.pending.length / rowsPerPage
-                                        )}
-                                      </span>
-                                    </div>
-                                    <button
-                                      className="pagination-btn"
-                                      onClick={() =>
-                                        setPendingPage((prev) =>
-                                          Math.min(
-                                            Math.ceil(
-                                              leaveData.pending.length /
-                                                rowsPerPage
-                                            ),
-                                            prev + 1
-                                          )
-                                        )
-                                      }
-                                      disabled={
-                                        pendingPage >=
-                                        Math.ceil(
-                                          leaveData.pending.length / rowsPerPage
-                                        )
-                                      }
-                                      title="Next Page"
-                                    >
-                                      <i className="fas fa-chevron-right"></i>
-                                    </button>
-                                  </div>
-                                </div>
-                              )}
-                            </>
-                          ) : (
-                            <div className="text-center py-4">
-                              <p>No pending leave requests</p>
-                            </div>
-                          )}
-                        </div>
+                                  </td>
+                                </tr>
+                              ))}
+                          </tbody>
+                        </table>
                       </div>
                     </div>
 
-                    {/* Leave History - Only show for non-owners */}
-                    <div className="col-12 leave-history-section">
-                      <div className="card card-bordered">
-                        <div className="card-inner">
-                          <div className="card-title-group align-start mb-3">
-                            <div className="card-title">
-                              <h6 className="title">Leave History</h6>
-                            </div>
-                          </div>
-
-                          {leaveData.history.length > 0 ? (
-                            <>
-                              <div className="leave-requests-table">
-                                <table className="table table-bordered">
-                                  <thead>
-                                    <tr>
-                                      <th>TYPE</th>
-                                      <th>START DATE</th>
-                                      <th>END DATE</th>
-                                      <th>DAYS</th>
-                                      <th>STATUS</th>
-                                      <th>APPROVED BY</th>
-                                      <th>APPROVED ON</th>
-                                    </tr>
-                                  </thead>
-                                  <tbody>
-                                    {leaveData.history
-                                      .slice(
-                                        (historyPage - 1) * rowsPerPage,
-                                        historyPage * rowsPerPage
-                                      )
-                                      .map((request) => (
-                                        <tr key={request.id}>
-                                          <td>
-                                            <span className="badge badge-dim badge-outline-primary">
-                                              {request.type}
-                                            </span>
-                                          </td>
-                                          <td>{request.startDate}</td>
-                                          <td>{request.endDate}</td>
-                                          <td>{request.days}</td>
-                                          <td>
-                                            <span
-                                              className={`badge ${
-                                                request.status === "Approved"
-                                                  ? "badge-success"
-                                                  : "badge-danger"
-                                              }`}
-                                            >
-                                              {request.status}
-                                            </span>
-                                          </td>
-                                          <td>{request.approvedBy}</td>
-                                          <td>{request.approvedOn}</td>
-                                        </tr>
-                                      ))}
-                                  </tbody>
-                                </table>
-                              </div>
-
-                              {/* Pagination Controls */}
-                              {leaveData.history.length > rowsPerPage && (
-                                <div className="pagination-wrapper">
-                                  <div className="pagination-info">
-                                    Showing{" "}
-                                    {(historyPage - 1) * rowsPerPage + 1} to{" "}
-                                    {Math.min(
-                                      historyPage * rowsPerPage,
-                                      leaveData.history.length
-                                    )}{" "}
-                                    of {leaveData.history.length} entries
-                                  </div>
-                                  <div className="pagination-controls">
-                                    <button
-                                      className="pagination-btn"
-                                      onClick={() =>
-                                        setHistoryPage((prev) =>
-                                          Math.max(1, prev - 1)
-                                        )
-                                      }
-                                      disabled={historyPage === 1}
-                                      title="Previous Page"
-                                    >
-                                      <i className="fas fa-chevron-left"></i>
-                                    </button>
-                                    <div className="pagination-pages">
-                                      <span className="current-page">
-                                        {historyPage}
-                                      </span>
-                                      <span className="page-separator">/</span>
-                                      <span className="total-pages">
-                                        {Math.ceil(
-                                          leaveData.history.length / rowsPerPage
-                                        )}
-                                      </span>
-                                    </div>
-                                    <button
-                                      className="pagination-btn"
-                                      onClick={() =>
-                                        setHistoryPage((prev) =>
-                                          Math.min(
-                                            Math.ceil(
-                                              leaveData.history.length /
-                                                rowsPerPage
-                                            ),
-                                            prev + 1
-                                          )
-                                        )
-                                      }
-                                      disabled={
-                                        historyPage >=
-                                        Math.ceil(
-                                          leaveData.history.length / rowsPerPage
-                                        )
-                                      }
-                                      title="Next Page"
-                                    >
-                                      <i className="fas fa-chevron-right"></i>
-                                    </button>
-                                  </div>
-                                </div>
+                    {/* Pagination Controls */}
+                    {leaveData.pending.length > rowsPerPage && (
+                      <div className="pagination-wrapper mt-4">
+                        <div className="pagination-info">
+                          Showing{" "}
+                          {(pendingPage - 1) * rowsPerPage + 1} to{" "}
+                          {Math.min(
+                            pendingPage * rowsPerPage,
+                            leaveData.pending.length
+                          )}{" "}
+                          of {leaveData.pending.length} entries
+                        </div>
+                        <div className="pagination-controls">
+                          <button
+                            className="pagination-btn"
+                            onClick={() =>
+                              setPendingPage((prev) =>
+                                Math.max(1, prev - 1)
+                              )
+                            }
+                            disabled={pendingPage === 1}
+                            title="Previous Page"
+                          >
+                            <i className="fas fa-chevron-left"></i>
+                          </button>
+                          <div className="pagination-pages">
+                            <span className="current-page">
+                              {pendingPage}
+                            </span>
+                            <span className="page-separator">/</span>
+                            <span className="total-pages">
+                              {Math.ceil(
+                                leaveData.pending.length / rowsPerPage
                               )}
-                            </>
-                          ) : (
-                            <div className="text-center py-4">
-                              <p>No leave history</p>
-                            </div>
-                          )}
+                            </span>
+                          </div>
+                          <button
+                            className="pagination-btn"
+                            onClick={() =>
+                              setPendingPage((prev) =>
+                                Math.min(
+                                  Math.ceil(
+                                    leaveData.pending.length /
+                                      rowsPerPage
+                                  ),
+                                  prev + 1
+                                )
+                              )
+                            }
+                            disabled={
+                              pendingPage >=
+                              Math.ceil(
+                                leaveData.pending.length / rowsPerPage
+                              )
+                            }
+                            title="Next Page"
+                          >
+                            <i className="fas fa-chevron-right"></i>
+                          </button>
                         </div>
                       </div>
-                    </div>
+                    )}
                   </>
+                ) : (
+                  <div className="mt-4 rounded-xl border border-slate-200/60 bg-white/40 px-5 py-10 text-center dark:border-white/10 dark:bg-white/5">
+                    <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-slate-600 dark:bg-white/10 dark:text-slate-200">
+                      <i className="fas fa-hourglass-half"></i>
+                    </div>
+                    <p className="text-sm text-slate-600 dark:text-slate-300">No pending leave requests</p>
+                  </div>
                 )}
               </div>
             </div>
-          </div>
+          )}
+
+          {/* Leave History - Only show for non-owners */}
+          {!isOwner && (
+            <div className="rounded-2xl border border-slate-200/60 bg-white/70 shadow-sm backdrop-blur dark:border-white/10 dark:bg-white/5">
+              <div className="px-6 py-5">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <h6 className="text-sm font-semibold">Leave History</h6>
+                    <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">
+                      Your past leave requests
+                    </p>
+                  </div>
+                </div>
+
+                {leaveData.history.length > 0 ? (
+                  <>
+                    <div className="mt-4 overflow-x-auto rounded-xl border border-slate-200/60 dark:border-white/10">
+                      <div className="leave-requests-table">
+                        <table className="table table-bordered mb-0">
+                          <thead>
+                            <tr>
+                              <th>TYPE</th>
+                              <th>START DATE</th>
+                              <th>END DATE</th>
+                              <th>DAYS</th>
+                              <th>STATUS</th>
+                              <th>APPROVED BY</th>
+                              <th>APPROVED ON</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {leaveData.history
+                              .slice(
+                                (historyPage - 1) * rowsPerPage,
+                                historyPage * rowsPerPage
+                              )
+                              .map((request) => (
+                                <tr key={request.id}>
+                                  <td>
+                                    <span className="badge badge-dim badge-outline-primary">
+                                      {request.type}
+                                    </span>
+                                  </td>
+                                  <td>{request.startDate}</td>
+                                  <td>{request.endDate}</td>
+                                  <td>{request.days}</td>
+                                  <td>
+                                    <span
+                                      className={`badge ${
+                                        request.status === "Approved"
+                                          ? "badge-success"
+                                          : "badge-danger"
+                                      }`}
+                                    >
+                                      {request.status}
+                                    </span>
+                                  </td>
+                                  <td>{request.approvedBy}</td>
+                                  <td>{request.approvedOn}</td>
+                                </tr>
+                              ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+
+                    {/* Pagination Controls */}
+                    {leaveData.history.length > rowsPerPage && (
+                      <div className="pagination-wrapper mt-4">
+                        <div className="pagination-info">
+                          Showing{" "}
+                          {(historyPage - 1) * rowsPerPage + 1} to{" "}
+                          {Math.min(
+                            historyPage * rowsPerPage,
+                            leaveData.history.length
+                          )}{" "}
+                          of {leaveData.history.length} entries
+                        </div>
+                        <div className="pagination-controls">
+                          <button
+                            className="pagination-btn"
+                            onClick={() =>
+                              setHistoryPage((prev) =>
+                                Math.max(1, prev - 1)
+                              )
+                            }
+                            disabled={historyPage === 1}
+                            title="Previous Page"
+                          >
+                            <i className="fas fa-chevron-left"></i>
+                          </button>
+                          <div className="pagination-pages">
+                            <span className="current-page">
+                              {historyPage}
+                            </span>
+                            <span className="page-separator">/</span>
+                            <span className="total-pages">
+                              {Math.ceil(
+                                leaveData.history.length / rowsPerPage
+                              )}
+                            </span>
+                          </div>
+                          <button
+                            className="pagination-btn"
+                            onClick={() =>
+                              setHistoryPage((prev) =>
+                                Math.min(
+                                  Math.ceil(
+                                    leaveData.history.length /
+                                      rowsPerPage
+                                  ),
+                                  prev + 1
+                                )
+                              )
+                            }
+                            disabled={
+                              historyPage >=
+                              Math.ceil(
+                                leaveData.history.length / rowsPerPage
+                              )
+                            }
+                            title="Next Page"
+                          >
+                            <i className="fas fa-chevron-right"></i>
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="mt-4 rounded-xl border border-slate-200/60 bg-white/40 px-5 py-10 text-center dark:border-white/10 dark:bg-white/5">
+                    <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-slate-600 dark:bg-white/10 dark:text-slate-200">
+                      <i className="fas fa-clipboard-list"></i>
+                    </div>
+                    <p className="text-sm text-slate-600 dark:text-slate-300">No leave history</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

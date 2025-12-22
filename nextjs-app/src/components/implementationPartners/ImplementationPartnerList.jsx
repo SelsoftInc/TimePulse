@@ -197,10 +197,13 @@ const ImplementationPartnerList = () => {
   // Close menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (
-        !event.target.closest(".dropdown-menu") &&
-        !event.target.closest(".btn-trigger")
-      ) {
+      // Check if click is outside dropdown menu and action button
+      const isDropdownClick = event.target.closest('[role="menu"]') || 
+                             event.target.closest('.dropdown-menu');
+      const isButtonClick = event.target.closest('button[aria-haspopup="true"]') ||
+                           event.target.closest('.action-menu-button');
+      
+      if (!isDropdownClick && !isButtonClick) {
         setOpenMenuId(null);
       }
     };
@@ -373,132 +376,143 @@ const ImplementationPartnerList = () => {
               </PermissionGuard>
             </div>
           ) : (
-            <div className="card rounded-2xl shadow-sm ring-1 ring-slate-200 overflow-hidden">
-              <div className="card-inner table-responsive">
-                <table className="table table-implementation-partners">
-                  <thead>
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+              <div className="overflow-x-auto">
+                <table className="w-full relative">
+                  <thead className="bg-gray-50 border-b border-gray-200">
                     <tr>
-                      <th>Implementation Partner Name</th>
-                      <th>Contact Person</th>
-                      <th>Email</th>
-                      <th>Phone</th>
-                      <th>Status</th>
-                      <th>Specialization</th>
-                      <th className="text-right">Actions</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                        Implementation Partner Name
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                        Contact Person
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                        Email
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                        Phone
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                        Status
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                        Specialization
+                      </th>
+                      <th className="px-6 py-3 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                        Actions
+                      </th>
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody className="bg-white divide-y divide-gray-200">
                     {currentImplementationPartners.map((partner) => (
-                      <tr key={partner.id}>
-                        <td>
-                          <Link href={`/${subdomain}/implementation-partners/${partner.id}`}
-                            className="implementation-partner-name"
+                      <tr key={partner.id} className="hover:bg-gray-50 transition-colors relative">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <Link 
+                            href={`/${subdomain}/implementation-partners/${partner.id}`}
+                            className="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline"
                           >
                             {partner.name}
                           </Link>
                         </td>
-                        <td>{partner.contactPerson || "-"}</td>
-                        <td>{partner.email || "-"}</td>
-                        <td>{partner.phone || "-"}</td>
-                        <td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {partner.contactPerson || "-"}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {partner.email || "-"}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {partner.phone || "-"}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
                           <span
-                            className={`badge badge-${
+                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                               partner.status === "active"
-                                ? "success"
-                                : "warning"
+                                ? "bg-green-100 text-green-800"
+                                : "bg-yellow-100 text-yellow-800"
                             }`}
                           >
-                            {partner.status === "active"
-                              ? "Active"
-                              : "Inactive"}
+                            {partner.status === "active" ? "Active" : "Inactive"}
                           </span>
                         </td>
-                        <td>{partner.specialization || "-"}</td>
-                        <td className="text-right">
-                          <div
-                            className="btn-group"
-                            style={{ position: "relative" }}
-                          >
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {partner.specialization || "-"}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium overflow-visible">
+                          <div className="relative inline-block z-10">
                             <button
                               type="button"
-                              className="btn btn-sm btn-icon btn-trigger"
+                              className="action-menu-button inline-flex items-center justify-center w-8 h-8 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-colors"
                               onClick={(e) => {
                                 e.stopPropagation();
+                                console.log('Button clicked, partner ID:', partner.id);
                                 toggleMenu(partner.id);
                               }}
                               aria-haspopup="true"
                               aria-expanded={openMenuId === partner.id}
-                              style={{ cursor: "pointer" }}
                             >
                               <i className="fas fa-ellipsis-h"></i>
                             </button>
                             {openMenuId === partner.id && (
                               <div
-                                className="dropdown-menu dropdown-menu-right show"
-                                style={{
-                                  position: "absolute",
-                                  right: 0,
-                                  top: "100%",
-                                  zIndex: 1000,
-                                  minWidth: "160px"}}
+                                role="menu"
+                                className="dropdown-menu absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50"
+                                style={{ top: "100%" }}
                               >
-                                <Link href={`/${subdomain}/implementation-partners/${partner.id}`}
-                                  className="dropdown-item"
+                                <Link 
+                                  href={`/${subdomain}/implementation-partners/${partner.id}`}
+                                  className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
                                   onClick={() => setOpenMenuId(null)}
                                 >
-                                  <i className="fas fa-eye me-2"></i>
+                                  <i className="fas fa-eye w-4 mr-3 text-gray-500"></i>
                                   View
                                 </Link>
                                 <PermissionGuard
-                                  requiredPermission={
-                                    PERMISSIONS.UPDATE_IMPLEMENTATION_PARTNER
-                                  }
+                                  requiredPermission={PERMISSIONS.UPDATE_IMPLEMENTATION_PARTNER}
                                 >
                                   <Link
-                                    className="dropdown-item"
-                                    to={`/${subdomain}/implementation-partners/${partner.id}/edit`}
+                                    href={`/${subdomain}/implementation-partners/${partner.id}/edit`}
+                                    className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
                                     onClick={() => setOpenMenuId(null)}
                                   >
-                                    <i className="fas fa-edit me-2"></i>
+                                    <i className="fas fa-edit w-4 mr-3 text-gray-500"></i>
                                     Edit
                                   </Link>
                                 </PermissionGuard>
                                 <PermissionGuard
-                                  requiredPermission={
-                                    PERMISSIONS.DELETE_IMPLEMENTATION_PARTNER
-                                  }
+                                  requiredPermission={PERMISSIONS.DELETE_IMPLEMENTATION_PARTNER}
                                 >
                                   {partner.status === "active" ? (
                                     <button
-                                      className="dropdown-item text-warning"
+                                      className="flex items-center w-full px-4 py-2 text-sm text-yellow-700 hover:bg-yellow-50 transition-colors"
                                       onClick={() => {
                                         handleSoftDelete(partner.id);
                                         setOpenMenuId(null);
                                       }}
                                     >
-                                      <i className="fas fa-pause me-2"></i>
+                                      <i className="fas fa-pause w-4 mr-3 text-yellow-600"></i>
                                       Deactivate
                                     </button>
                                   ) : (
                                     <button
-                                      className="dropdown-item text-success"
+                                      className="flex items-center w-full px-4 py-2 text-sm text-green-700 hover:bg-green-50 transition-colors"
                                       onClick={() => {
                                         handleRestore(partner.id);
                                         setOpenMenuId(null);
                                       }}
                                     >
-                                      <i className="fas fa-play me-2"></i>
+                                      <i className="fas fa-play w-4 mr-3 text-green-600"></i>
                                       Activate
                                     </button>
                                   )}
                                   <button
-                                    className="dropdown-item text-danger"
+                                    className="flex items-center w-full px-4 py-2 text-sm text-red-700 hover:bg-red-50 transition-colors"
                                     onClick={() => {
                                       confirmDelete(partner.id);
                                       setOpenMenuId(null);
                                     }}
                                   >
-                                    <i className="fas fa-trash me-2"></i>
+                                    <i className="fas fa-trash w-4 mr-3 text-red-600"></i>
                                     Delete
                                   </button>
                                 </PermissionGuard>

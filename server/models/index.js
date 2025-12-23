@@ -432,6 +432,34 @@ models.Employee = sequelize.define(
       type: DataTypes.ENUM("active", "inactive", "terminated"),
       defaultValue: "active",
     },
+    overtimeRate: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: true,
+      field: "overtime_rate",
+    },
+    enableOvertime: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+      field: "enable_overtime",
+    },
+    overtimeMultiplier: {
+      type: DataTypes.DECIMAL(3, 2),
+      defaultValue: 1.5,
+      field: "overtime_multiplier",
+    },
+    approver: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      field: "approver",
+      references: {
+        model: "users",
+        key: "id",
+      },
+    },
+    notes: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
   },
   {
     tableName: "employees",

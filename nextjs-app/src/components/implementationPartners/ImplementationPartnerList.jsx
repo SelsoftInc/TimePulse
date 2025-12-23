@@ -196,6 +196,8 @@ const ImplementationPartnerList = () => {
 
   // Close menu when clicking outside
   useEffect(() => {
+    if (!openMenuId) return; // Only add listener when menu is open
+
     const handleClickOutside = (event) => {
       // Check if click is outside dropdown menu and action button
       const isDropdownClick = event.target.closest('[role="menu"]') || 
@@ -208,11 +210,16 @@ const ImplementationPartnerList = () => {
       }
     };
 
-    document.addEventListener("click", handleClickOutside);
+    // Use setTimeout to ensure the click event that opened the menu completes first
+    const timeoutId = setTimeout(() => {
+      document.addEventListener("click", handleClickOutside, true);
+    }, 0);
+
     return () => {
-      document.removeEventListener("click", handleClickOutside);
+      clearTimeout(timeoutId);
+      document.removeEventListener("click", handleClickOutside, true);
     };
-  }, []);
+  }, [openMenuId]);
 
   // Pagination calculations
   const totalPages = Math.ceil(implementationPartners.length / itemsPerPage);
@@ -377,8 +384,8 @@ const ImplementationPartnerList = () => {
             </div>
           ) : (
             <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-              <div className="overflow-x-auto">
-                <table className="w-full relative">
+              <div className="overflow-x-auto" style={{ overflow: 'visible' }}>
+                <table className="w-full relative" style={{ overflow: 'visible' }}>
                   <thead className="bg-gray-50 border-b border-gray-200">
                     <tr>
                       <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
@@ -399,14 +406,14 @@ const ImplementationPartnerList = () => {
                       <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                         Specialization
                       </th>
-                      <th className="px-6 py-3 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider" style={{ overflow: 'visible' }}>
                         Actions
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                  <tbody className="bg-white divide-y divide-gray-200" style={{ overflow: 'visible' }}>
                     {currentImplementationPartners.map((partner) => (
-                      <tr key={partner.id} className="hover:bg-gray-50 transition-colors relative">
+                      <tr key={partner.id} className="hover:bg-gray-50 transition-colors relative" style={{ overflow: 'visible' }}>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <Link 
                             href={`/${subdomain}/implementation-partners/${partner.id}`}
@@ -438,8 +445,8 @@ const ImplementationPartnerList = () => {
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                           {partner.specialization || "-"}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium overflow-visible">
-                          <div className="relative inline-block z-10">
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium" style={{ overflow: 'visible', position: 'relative' }}>
+                          <div className="relative inline-block" style={{ zIndex: openMenuId === partner.id ? 9999 : 10 }}>
                             <button
                               type="button"
                               className="action-menu-button inline-flex items-center justify-center w-8 h-8 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-colors"
@@ -456,36 +463,43 @@ const ImplementationPartnerList = () => {
                             {openMenuId === partner.id && (
                               <div
                                 role="menu"
-                                className="dropdown-menu absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50"
-                                style={{ top: "100%" }}
+                                className="dropdown-menu absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1"
+                                style={{ top: "100%", zIndex: 99999, pointerEvents: 'auto' }}
+                                onClick={(e) => e.stopPropagation()}
                               >
                                 <Link 
                                   href={`/${subdomain}/implementation-partners/${partner.id}`}
-                                  className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                                  onClick={() => setOpenMenuId(null)}
+                                  className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors cursor-pointer"
+                                  onClick={(e) => {
+                                    console.log('👁️ View clicked for partner:', partner.id);
+                                    setOpenMenuId(null);
+                                  }}
                                 >
                                   <i className="fas fa-eye w-4 mr-3 text-gray-500"></i>
                                   View
                                 </Link>
-                                <PermissionGuard
-                                  requiredPermission={PERMISSIONS.UPDATE_IMPLEMENTATION_PARTNER}
+                                <Link
+                                  href={`/${subdomain}/implementation-partners/${partner.id}/edit`}
+                                  className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors cursor-pointer"
+                                  onClick={(e) => {
+                                    console.log('✏️ Edit clicked for partner:', partner.id);
+                                    setOpenMenuId(null);
+                                  }}
                                 >
-                                  <Link
-                                    href={`/${subdomain}/implementation-partners/${partner.id}/edit`}
-                                    className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                                    onClick={() => setOpenMenuId(null)}
-                                  >
-                                    <i className="fas fa-edit w-4 mr-3 text-gray-500"></i>
-                                    Edit
-                                  </Link>
-                                </PermissionGuard>
+                                  <i className="fas fa-edit w-4 mr-3 text-gray-500"></i>
+                                  Edit
+                                </Link>
                                 <PermissionGuard
                                   requiredPermission={PERMISSIONS.DELETE_IMPLEMENTATION_PARTNER}
                                 >
                                   {partner.status === "active" ? (
                                     <button
-                                      className="flex items-center w-full px-4 py-2 text-sm text-yellow-700 hover:bg-yellow-50 transition-colors"
-                                      onClick={() => {
+                                      type="button"
+                                      className="flex items-center w-full px-4 py-2 text-sm text-yellow-700 hover:bg-yellow-50 transition-colors cursor-pointer"
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        console.log('⏸️ Deactivate clicked for partner:', partner.id);
                                         handleSoftDelete(partner.id);
                                         setOpenMenuId(null);
                                       }}
@@ -495,8 +509,12 @@ const ImplementationPartnerList = () => {
                                     </button>
                                   ) : (
                                     <button
-                                      className="flex items-center w-full px-4 py-2 text-sm text-green-700 hover:bg-green-50 transition-colors"
-                                      onClick={() => {
+                                      type="button"
+                                      className="flex items-center w-full px-4 py-2 text-sm text-green-700 hover:bg-green-50 transition-colors cursor-pointer"
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        console.log('▶️ Activate clicked for partner:', partner.id);
                                         handleRestore(partner.id);
                                         setOpenMenuId(null);
                                       }}
@@ -506,8 +524,12 @@ const ImplementationPartnerList = () => {
                                     </button>
                                   )}
                                   <button
-                                    className="flex items-center w-full px-4 py-2 text-sm text-red-700 hover:bg-red-50 transition-colors"
-                                    onClick={() => {
+                                    type="button"
+                                    className="flex items-center w-full px-4 py-2 text-sm text-red-700 hover:bg-red-50 transition-colors cursor-pointer"
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      console.log('🗑️ Delete clicked for partner:', partner.id);
                                       confirmDelete(partner.id);
                                       setOpenMenuId(null);
                                     }}

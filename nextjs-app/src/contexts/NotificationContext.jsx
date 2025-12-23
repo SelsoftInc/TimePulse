@@ -24,9 +24,13 @@ export const NotificationProvider = ({ children }) => {
    * Fetch notifications from the server
    */
   const fetchNotifications = useCallback(async (options = {}) => {
-    if (!user?.id || !user?.tenantId) return;
+    if (!user?.id || !user?.tenantId) {
+      console.log('⚠️ NotificationContext: Missing user data', { userId: user?.id, tenantId: user?.tenantId });
+      return;
+    }
 
     try {
+      console.log('🔔 NotificationContext: Fetching notifications for user:', user.id);
       setLoading(true);
       const data = await notificationService.getNotifications(
         user.id,
@@ -34,12 +38,16 @@ export const NotificationProvider = ({ children }) => {
         options
       );
 
+      console.log('📬 NotificationContext: Received data:', data);
+
       if (data.success) {
         setNotifications(data.notifications || []);
-        setUnreadCount(data.unreadCount || 0);
+        const count = data.unreadCount || data.notifications?.filter(n => !n.readAt).length || 0;
+        setUnreadCount(count);
+        console.log('✅ NotificationContext: Set notifications:', data.notifications?.length, 'Unread:', count);
       }
     } catch (error) {
-      console.error('Error fetching notifications:', error);
+      console.error('❌ NotificationContext: Error fetching notifications:', error);
     } finally {
       setLoading(false);
     }
@@ -49,13 +57,18 @@ export const NotificationProvider = ({ children }) => {
    * Fetch unread count only
    */
   const fetchUnreadCount = useCallback(async () => {
-    if (!user?.id || !user?.tenantId) return;
+    if (!user?.id || !user?.tenantId) {
+      console.log('⚠️ NotificationContext: Missing user data for unread count');
+      return;
+    }
 
     try {
+      console.log('🔔 NotificationContext: Fetching unread count for user:', user.id);
       const count = await notificationService.getUnreadCount(user.id, user.tenantId);
+      console.log('📬 NotificationContext: Unread count received:', count);
       setUnreadCount(count);
     } catch (error) {
-      console.error('Error fetching unread count:', error);
+      console.error('❌ NotificationContext: Error fetching unread count:', error);
     }
   }, [user?.id, user?.tenantId]);
 

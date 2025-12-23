@@ -200,7 +200,7 @@
   }
   
   .auth-header p {
-    font-size: 14px;
+    font-size: 140px;
   }
 }
 
@@ -277,15 +277,68 @@ transform: translateX(15px);
 .auth-header h2 {
   font-size: 24px;
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.96);
+  color: #ffffff !important;
   letter-spacing: -0.02em;
   margin-bottom: 10px;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 .auth-header p {
-  color: rgba(255, 255, 255, 0.72);
+  color: #ffffff !important;
+  opacity: 1 !important;
   font-size: 16px;
   line-height: 1.5;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  font-weight: 400;
+}
+
+/* Force white color across all theme variations */
+.auth-container .auth-header p,
+.auth-container.default .auth-header p,
+.auth-container.corporate-1 .auth-header p,
+.auth-container.corporate-2 .auth-header p,
+.auth-container.corporate-3 .auth-header p,
+.auth-container.corporate-4 .auth-header p,
+.auth-container.corporate-5 .auth-header p,
+.auth-container.corporate-6 .auth-header p {
+  color: #ffffff !important;
+  opacity: 1 !important;
+}
+
+/* Override any card-specific styles */
+.auth-card .auth-header p {
+  color: #ffffff !important;
+  opacity: 1 !important;
+}
+
+/* Override globals.css paragraph styles with maximum specificity */
+.auth-container .auth-card .auth-header p,
+div.auth-container div.auth-card div.auth-header p {
+  color: #ffffff !important;
+  opacity: 1 !important;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Info message styling for dark background */
+.info-message {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  color: #ffffff !important;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.info-message i {
+  color: #ffffff !important;
+}
+
+/* Footer text styling */
+.auth-card > div:last-child p {
+  color: #ffffff !important;
+  opacity: 0.7;
 }
 
 /* Form Styles */
@@ -301,8 +354,18 @@ transform: translateX(15px);
   display: block;
   font-weight: 500;
   font-size: 14px;
-  color: rgba(255, 255, 255, 0.72);
+  color: #ffffff !important;
+  opacity: 0.9;
   margin-bottom: 8px;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+/* Override global label styles with maximum specificity */
+.auth-container .auth-card .auth-form .form-group label,
+.auth-container .auth-card form .form-group label,
+div.auth-container div.auth-card form div.form-group label {
+  color: #ffffff !important;
+  opacity: 0.9 !important;
 }
 
 .form-control {
@@ -313,7 +376,7 @@ transform: translateX(15px);
   border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.12);
   background-color: rgba(5, 14, 26, 0.45);
-  color: rgba(255, 255, 255, 0.92);
+  color: #ffffff !important;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.04),
     inset 0 -10px 20px rgba(0, 0, 0, 0.18);
@@ -325,7 +388,7 @@ transform: translateX(15px);
 }
 
 .form-control::placeholder {
-  color: rgba(255, 255, 255, 0.42);
+  color: rgba(255, 255, 255, 0.55) !important;
   transition: opacity 0.25s ease;
 }
 
@@ -340,6 +403,31 @@ transform: translateX(15px);
     0 0 34px rgba(54, 189, 255, 0.14);
   background-color: rgba(5, 14, 26, 0.55);
   outline: none;
+}
+
+/* Disabled input fields */
+.form-control:disabled {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  color: #ffffff !important;
+  opacity: 0.7;
+  cursor: not-allowed;
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+/* Select Dropdown Styling */
+select.form-control {
+  color: #ffffff !important;
+  cursor: pointer;
+}
+
+select.form-control option {
+  background-color: #1a2332;
+  color: #ffffff;
+  padding: 10px;
+}
+
+select.form-control option:hover {
+  background-color: #2a3342;
 }
 
 /* Password Input Container */
@@ -402,7 +490,8 @@ transform: translateX(15px);
 
 .remember-me label {
   font-size: 14px;
-  color: rgba(255, 255, 255, 0.72);
+  color: #ffffff !important;
+  opacity: 0.9;
 }
 
 .forgot-link {
@@ -552,14 +641,16 @@ transform: translateX(15px);
 
 /* Error Message */
 .auth-error {
-  background-color: rgba(230, 55, 87, 0.12);
-  color: rgba(255, 255, 255, 0.88);
-  padding: 12px;
+  background-color: rgba(230, 55, 87, 0.18);
+  color: #ffffff !important;
+  padding: 14px 16px;
   border-radius: 12px;
   margin-bottom: 20px;
   font-size: 14px;
-  border-left: 3px solid rgba(230, 55, 87, 0.85);
+  font-weight: 500;
+  border-left: 4px solid rgba(230, 55, 87, 0.95);
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(230, 55, 87, 0.30);
 }
 
 /* Success Message */
@@ -1155,6 +1246,8 @@ transform: translateX(15px);
   padding: 0 16px;
   font-weight: 500;
   white-space: nowrap;
+  color: #ffffff !important;
+  opacity: 0.9;
 }
 
 @media (prefers-reduced-motion: reduce) {

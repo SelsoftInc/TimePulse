@@ -1551,6 +1551,14 @@ const InvoicePDFPreviewModal = ({ invoice, onClose, onUpdate, show }) => {
               <i className="fas fa-times"></i>
               Cancel
             </button>
+            <button className="btn-preview" onClick={handlePreview}>
+              <i className="fas fa-eye"></i>
+              Preview Invoice PDF
+            </button>
+            <button className="btn-secondary" onClick={handleDownload}>
+              <i className="fas fa-download"></i>
+              Download Invoice PDF
+            </button>
             {onUpdate && (
               <button className="btn-primary" onClick={() => {
                 // Prepare updated invoice data
@@ -1568,18 +1576,6 @@ const InvoicePDFPreviewModal = ({ invoice, onClose, onUpdate, show }) => {
                 <i className="fas fa-save"></i>
                 Save Changes
               </button>
-            )}
-            {!onUpdate && (
-              <>
-                <button className="btn-preview" onClick={handlePreview}>
-                  <i className="fas fa-eye"></i>
-                  Preview PDF
-                </button>
-                <button className="btn-primary" onClick={handleDownload}>
-                  <i className="fas fa-download"></i>
-                  Download PDF
-                </button>
-              </>
             )}
           </div>
         </div>

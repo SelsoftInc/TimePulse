@@ -382,8 +382,8 @@ const Login = () => {
       <div className="auth-card">
         <div className="auth-header">
           <img src="/assets/images/jsTree/TimePulse4.png" alt="TimePulse Logo" className="auth-logo" />
-          <h2 className='!text-white'>Welcome to TimePulse</h2>
-          <p className='!text-white'>Sign in to your account</p>
+          <h2 style={{ color: '#ffffff' }}>Welcome to TimePulse</h2>
+          <p style={{ color: '#ffffff', opacity: 1 }}>Sign in to your account</p>
         </div>
 
         {error && <div className="auth-error !text-white">{error}</div>}

@@ -44,15 +44,21 @@ export function decryptAuthResponse(response) {
   try {
     // Check if response is encrypted
     if (response.encrypted && response.data) {
+      console.log('[Decryption] Attempting to decrypt encrypted response...');
       const decryptedData = decryptData(response.data);
+      console.log('[Decryption] Successfully decrypted response');
       return decryptedData;
     }
     
     // If not encrypted, return as is (for backward compatibility)
+    console.log('[Decryption] Response is not encrypted, returning as-is');
     return response;
   } catch (error) {
-    console.error('Auth response decryption error:', error);
-    throw new Error('Failed to decrypt authentication response');
+    console.error('[Decryption] Auth response decryption error:', error);
+    console.error('[Decryption] Error details:', error.message);
+    // Return original response instead of throwing error (backward compatibility)
+    console.log('[Decryption] Returning original response as fallback');
+    return response;
   }
 }
 

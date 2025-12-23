@@ -229,40 +229,71 @@ class DataEncryptionService {
     const encrypted = { ...employeeData };
 
     try {
-      // Encrypt text fields
-      if (encrypted.firstName) {
+      // Encrypt text fields - only if they exist and are non-empty strings
+      if (encrypted.firstName && typeof encrypted.firstName === 'string' && encrypted.firstName.trim()) {
         encrypted.firstName = encryptionService.encrypt(encrypted.firstName);
       }
       
-      if (encrypted.lastName) {
+      if (encrypted.lastName && typeof encrypted.lastName === 'string' && encrypted.lastName.trim()) {
         encrypted.lastName = encryptionService.encrypt(encrypted.lastName);
       }
       
-      if (encrypted.email) {
+      if (encrypted.email && typeof encrypted.email === 'string' && encrypted.email.trim()) {
         encrypted.email = encryptionService.encrypt(encrypted.email);
       }
       
-      if (encrypted.phone) {
+      if (encrypted.phone && typeof encrypted.phone === 'string' && encrypted.phone.trim()) {
         encrypted.phone = encryptionService.encrypt(encrypted.phone);
       }
       
+      // Handle contactInfo - can be object or string
       if (encrypted.contactInfo) {
-        encrypted.contactInfo = encryptionService.encrypt(encrypted.contactInfo);
-      }
-
-      // Encrypt numeric fields
-      if (encrypted.hourlyRate !== null && encrypted.hourlyRate !== undefined) {
-        encrypted.hourlyRate = encryptionService.encryptNumber(encrypted.hourlyRate);
+        if (typeof encrypted.contactInfo === 'object') {
+          // If it's an object, stringify it first then encrypt
+          const contactInfoStr = JSON.stringify(encrypted.contactInfo);
+          if (contactInfoStr !== '{}') {
+            encrypted.contactInfo = encryptionService.encrypt(contactInfoStr);
+          }
+        } else if (typeof encrypted.contactInfo === 'string' && encrypted.contactInfo.trim()) {
+          // If it's already a string, encrypt it as-is
+          encrypted.contactInfo = encryptionService.encrypt(encrypted.contactInfo);
+        }
       }
       
-      if (encrypted.salaryAmount !== null && encrypted.salaryAmount !== undefined) {
-        encrypted.salaryAmount = encryptionService.encryptNumber(encrypted.salaryAmount);
+      // Encrypt notes if present
+      if (encrypted.notes && typeof encrypted.notes === 'string' && encrypted.notes.trim()) {
+        encrypted.notes = encryptionService.encrypt(encrypted.notes);
+      }
+
+      // Encrypt numeric fields - only if they are valid numbers
+      if (encrypted.hourlyRate !== null && encrypted.hourlyRate !== undefined && encrypted.hourlyRate !== '') {
+        const rate = parseFloat(encrypted.hourlyRate);
+        if (!isNaN(rate)) {
+          encrypted.hourlyRate = encryptionService.encryptNumber(rate);
+        }
+      }
+      
+      if (encrypted.salaryAmount !== null && encrypted.salaryAmount !== undefined && encrypted.salaryAmount !== '') {
+        const amount = parseFloat(encrypted.salaryAmount);
+        if (!isNaN(amount)) {
+          encrypted.salaryAmount = encryptionService.encryptNumber(amount);
+        }
+      }
+      
+      if (encrypted.overtimeRate !== null && encrypted.overtimeRate !== undefined && encrypted.overtimeRate !== '') {
+        const rate = parseFloat(encrypted.overtimeRate);
+        if (!isNaN(rate)) {
+          encrypted.overtimeRate = encryptionService.encryptNumber(rate);
+        }
       }
 
       console.log('🔒 Employee data encrypted');
       return encrypted;
     } catch (error) {
       console.error('❌ Error encrypting employee data:', error);
+      console.error('Error details:', error.message);
+      console.error('Error stack:', error.stack);
+      // Return original data if encryption fails to prevent data loss
       return employeeData;
     }
   }
@@ -295,17 +326,37 @@ class DataEncryptionService {
         decrypted.phone = encryptionService.decrypt(decrypted.phone);
       }
       
+      // Decrypt contactInfo and parse if it's a JSON string
       if (decrypted.contactInfo && typeof decrypted.contactInfo === 'string') {
-        decrypted.contactInfo = encryptionService.decrypt(decrypted.contactInfo);
+        const decryptedContactInfo = encryptionService.decrypt(decrypted.contactInfo);
+        // Try to parse as JSON if it looks like JSON
+        if (decryptedContactInfo && (decryptedContactInfo.startsWith('{') || decryptedContactInfo.startsWith('['))) {
+          try {
+            decrypted.contactInfo = JSON.parse(decryptedContactInfo);
+          } catch (e) {
+            // If parsing fails, keep as string
+            decrypted.contactInfo = decryptedContactInfo;
+          }
+        } else {
+          decrypted.contactInfo = decryptedContactInfo;
+        }
+      }
+      
+      if (decrypted.notes && typeof decrypted.notes === 'string') {
+        decrypted.notes = encryptionService.decrypt(decrypted.notes);
       }
 
       // Decrypt numeric fields
-      if (decrypted.hourlyRate !== null && decrypted.hourlyRate !== undefined) {
+      if (decrypted.hourlyRate !== null && decrypted.hourlyRate !== undefined && typeof decrypted.hourlyRate === 'string') {
         decrypted.hourlyRate = encryptionService.decryptNumber(decrypted.hourlyRate);
       }
       
-      if (decrypted.salaryAmount !== null && decrypted.salaryAmount !== undefined) {
+      if (decrypted.salaryAmount !== null && decrypted.salaryAmount !== undefined && typeof decrypted.salaryAmount === 'string') {
         decrypted.salaryAmount = encryptionService.decryptNumber(decrypted.salaryAmount);
+      }
+      
+      if (decrypted.overtimeRate !== null && decrypted.overtimeRate !== undefined && typeof decrypted.overtimeRate === 'string') {
+        decrypted.overtimeRate = encryptionService.decryptNumber(decrypted.overtimeRate);
       }
 
       console.log('🔓 Employee data decrypted');

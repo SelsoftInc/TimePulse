@@ -242,14 +242,13 @@ const ImplementationPartnerDetail = () => {
               <h2 className="mb-0">{implementationPartner.name}</h2>
             </div>
             <div className="d-flex gap-2">
-              <PermissionGuard requiredPermission={PERMISSIONS.EDIT_IMPLEMENTATION_PARTNER}>
-                <Link href={`/${subdomain}/implementation-partners/${id}/edit`}
-                  className="btn btn-outline-primary"
-                >
-                  <i className="fas fa-edit me-2"></i>
-                  Edit
-                </Link>
-              </PermissionGuard>
+              <button
+                onClick={() => router.push(`/${subdomain}/implementation-partners`)}
+                className="btn btn-outline-secondary"
+              >
+                <i className="fas fa-arrow-left me-2"></i>
+                Back
+              </button>
               <PermissionGuard requiredPermission={PERMISSIONS.DELETE_IMPLEMENTATION_PARTNER}>
                 {implementationPartner.status === 'active' ? (
                   <button

@@ -18,6 +18,8 @@ router.get("/", async (req, res) => {
       includeRead = false,
     } = req.query;
 
+    console.log(`📬 Fetching notifications for userId: ${userId}, tenantId: ${tenantId}`);
+
     if (!tenantId || !userId) {
       return res
         .status(400)
@@ -39,14 +41,17 @@ router.get("/", async (req, res) => {
       options
     );
 
+    console.log(`📬 Found ${result.count} notifications (returning ${result.rows.length})`);
+
     res.json({
       success: true,
       notifications: result.rows,
       total: result.count,
       hasMore: result.count > parseInt(offset) + parseInt(limit),
+      unreadCount: result.rows.filter(n => !n.readAt).length,
     });
   } catch (error) {
-    console.error("Error fetching notifications:", error);
+    console.error("❌ Error fetching notifications:", error);
     res.status(500).json({ error: "Failed to fetch notifications" });
   }
 });
@@ -56,6 +61,8 @@ router.get("/unread-count", async (req, res) => {
   try {
     const { tenantId, userId } = req.query;
 
+    console.log(`🔔 Fetching unread count for userId: ${userId}, tenantId: ${tenantId}`);
+
     if (!tenantId || !userId) {
       return res
         .status(400)
@@ -64,12 +71,14 @@ router.get("/unread-count", async (req, res) => {
 
     const count = await Notification.getUnreadCount(userId, tenantId);
 
+    console.log(`🔔 Unread count: ${count}`);
+
     res.json({
       success: true,
-      unreadCount: count,
+      count: count,
     });
   } catch (error) {
-    console.error("Error fetching unread count:", error);
+    console.error("❌ Error fetching unread count:", error);
     res.status(500).json({ error: "Failed to fetch unread count" });
   }
 });

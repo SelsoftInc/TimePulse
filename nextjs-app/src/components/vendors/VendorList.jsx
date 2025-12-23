@@ -38,6 +38,8 @@ const VendorList = () => {
   const [isServerAvailable, setIsServerAvailable] = useState(false);
   const [openMenuId, setOpenMenuId] = useState(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, openUpward: false });
+  const buttonRefs = React.useRef({});
 
   // Hydration fix: Set mounted state on client
   useEffect(() => {
@@ -113,11 +115,15 @@ const VendorList = () => {
     const handler = (e) => {
       // Close dropdown when clicking outside
       if (openMenuId !== null) {
-        const dropdownEl = document.querySelector(
+        const dropdownButton = document.querySelector(
           `[data-dropdown-id="${openMenuId}"]`
         );
-        const isClickInside = dropdownEl?.contains(e.target);
-        if (!isClickInside) {
+        const dropdownMenu = document.querySelector('.fixed.z-\\[99999\\]');
+        
+        const isClickInsideButton = dropdownButton?.contains(e.target);
+        const isClickInsideMenu = dropdownMenu?.contains(e.target);
+        
+        if (!isClickInsideButton && !isClickInsideMenu) {
           setOpenMenuId(null);
         }
       }
@@ -126,7 +132,29 @@ const VendorList = () => {
     return () => document.removeEventListener("mousedown", handler);
   }, [openMenuId]);
 
-  const toggleMenu = (id) => setOpenMenuId((prev) => (prev === id ? null : id));
+  const toggleMenu = (id, event) => {
+    if (openMenuId === id) {
+      setOpenMenuId(null);
+      return;
+    }
+
+    // Calculate dropdown position
+    const button = event.currentTarget;
+    const rect = button.getBoundingClientRect();
+    const dropdownHeight = 200; // Approximate dropdown height
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const spaceAbove = rect.top;
+    const openUpward = spaceBelow < dropdownHeight && spaceAbove > spaceBelow;
+
+    const position = {
+      top: openUpward ? rect.top - dropdownHeight : rect.bottom + 4,
+      left: rect.right - 176, // 176px is dropdown width
+      openUpward
+    };
+
+    setDropdownPosition(position);
+    setOpenMenuId(id);
+  };
 
   // Pagination calculations
   const totalPages = Math.ceil(vendors.length / itemsPerPage);
@@ -345,67 +373,19 @@ const VendorList = () => {
                         <td className="px-4 py-3 text-right">
                           <div className="relative inline-block" data-dropdown-id={vendor.id}>
                             <button
+                              ref={(el) => {
+                                if (el) buttonRefs.current[vendor.id] = el;
+                              }}
                               type="button"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 console.log('🔘 Actions button clicked for vendor:', vendor.id);
-                                toggleMenu(vendor.id);
+                                toggleMenu(vendor.id, e);
                               }}
                               className="rounded-md border border-slate-300 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-100"
                             >
                               Actions
                             </button>
-
-                            {openMenuId === vendor.id && (
-                              <div className="absolute right-0 z-[9999] mt-2 w-44 rounded-lg border border-slate-200 bg-white shadow-lg">
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    console.log('👁️ View Details clicked for vendor:', vendor.id);
-                                    console.log('📍 Navigating to:', `/${subdomain}/vendors/${vendor.id}`);
-                                    setOpenMenuId(null);
-                                    router.push(`/${subdomain}/vendors/${vendor.id}`);
-                                  }}
-                                  className="block w-full px-4 py-2 text-left text-sm hover:bg-slate-50"
-                                >
-                                  View Details
-                                </button>
-
-                                <PermissionGuard requiredPermission={PERMISSIONS.EDIT_VENDOR}>
-                                  <button
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.preventDefault();
-                                      e.stopPropagation();
-                                      console.log('✏️ Edit clicked for vendor:', vendor.id);
-                                      handleEdit(vendor.id);
-                                    }}
-                                    className="block w-full px-4 py-2 text-left text-sm hover:bg-slate-50"
-                                  >
-                                    Edit
-                                  </button>
-                                </PermissionGuard>
-
-                                <PermissionGuard requiredPermission={PERMISSIONS.DELETE_VENDOR}>
-                                  <button
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.preventDefault();
-                                      e.stopPropagation();
-                                      console.log('🗑️ Delete clicked for vendor:', vendor.id);
-                                      setOpenMenuId(null);
-                                      setPendingDeleteId(vendor.id);
-                                      setConfirmOpen(true);
-                                    }}
-                                    className="block w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50"
-                                  >
-                                    Delete
-                                  </button>
-                                </PermissionGuard>
-                              </div>
-                            )}
                           </div>
                         </td>
                       </tr>
@@ -473,6 +453,73 @@ const VendorList = () => {
           }}
         />
       </div>
+
+      {/* Fixed Position Dropdown Menu */}
+      {openMenuId && (() => {
+        const vendor = paginatedVendors.find(v => v.id === openMenuId);
+        if (!vendor) return null;
+
+        return (
+          <div
+            className="fixed z-[99999] w-44 rounded-lg border border-slate-200 bg-white shadow-lg"
+            style={{
+              top: `${dropdownPosition.top}px`,
+              left: `${dropdownPosition.left}px`,
+              pointerEvents: 'auto'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('👁️ View Details clicked for vendor:', vendor.id);
+                setOpenMenuId(null);
+                router.push(`/${subdomain}/vendors/${vendor.id}`);
+              }}
+              className="block w-full px-4 py-2 text-left text-sm hover:bg-slate-50 cursor-pointer"
+            >
+              <i className="fas fa-eye mr-2"></i>
+              View Details
+            </button>
+
+            <PermissionGuard requiredPermission={PERMISSIONS.EDIT_VENDOR}>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  console.log('✏️ Edit clicked for vendor:', vendor.id);
+                  handleEdit(vendor.id);
+                }}
+                className="block w-full px-4 py-2 text-left text-sm hover:bg-slate-50 cursor-pointer"
+              >
+                <i className="fas fa-edit mr-2"></i>
+                Edit
+              </button>
+            </PermissionGuard>
+
+            <PermissionGuard requiredPermission={PERMISSIONS.DELETE_VENDOR}>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  console.log('🗑️ Delete clicked for vendor:', vendor.id);
+                  setOpenMenuId(null);
+                  setPendingDeleteId(vendor.id);
+                  setConfirmOpen(true);
+                }}
+                className="block w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 cursor-pointer"
+              >
+                <i className="fas fa-trash mr-2"></i>
+                Delete
+              </button>
+            </PermissionGuard>
+          </div>
+        );
+      })()}
     </div>
   );
 };

@@ -21,8 +21,12 @@ const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '24h';
 router.post('/check-user', async (req, res) => {
   try {
     const { email, googleId } = req.body;
+    
+    console.log('[OAuth Check-User] Received request for email:', email);
+    console.log('[OAuth Check-User] Google ID:', googleId);
 
     if (!email) {
+      console.log('[OAuth Check-User] ERROR: Email is missing');
       return res.status(400).json({
         success: false,
         message: 'Email is required'
@@ -30,6 +34,7 @@ router.post('/check-user', async (req, res) => {
     }
 
     // Check if user exists
+    console.log('[OAuth Check-User] Searching for user with email:', email.toLowerCase());
     const user = await models.User.findOne({
       where: { email: email.toLowerCase() },
       include: [{
@@ -40,6 +45,7 @@ router.post('/check-user', async (req, res) => {
 
     if (!user) {
       // User doesn't exist - needs onboarding
+      console.log('[OAuth Check-User] User NOT found - needs onboarding');
       return res.json({
         success: true,
         exists: false,
@@ -47,6 +53,14 @@ router.post('/check-user', async (req, res) => {
         email: email
       });
     }
+    
+    console.log('[OAuth Check-User] User FOUND:', {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      status: user.status,
+      approvalStatus: user.approval_status || user.approvalStatus
+    });
 
     // User exists - check approval status (if column exists)
     const approvalStatus = user.approval_status || user.approvalStatus;
@@ -83,64 +97,111 @@ router.post('/check-user', async (req, res) => {
 
     // User exists - check if active
     if (user.status !== 'active') {
+      console.log('[OAuth Check-User] User is not active, status:', user.status);
       return res.status(401).json({
         success: false,
         message: 'Account is not active'
       });
     }
 
+    // Get tenant ID
+    const tenantId = user.tenant_id || user.tenantId;
+    console.log('[OAuth Check-User] User tenant ID:', tenantId);
+    
+    if (!tenantId) {
+      console.log('[OAuth Check-User] ERROR: User has no tenant ID');
+      return res.status(500).json({
+        success: false,
+        message: 'User account is not properly configured (missing tenant)'
+      });
+    }
+
     // Find or create employee record for all users (admin, employee, approver)
     let employeeId = null;
-    let employee = await models.Employee.findOne({
-      where: {
-        email: user.email,
-        tenantId: user.tenant_id || user.tenantId
-      }
-    });
+    console.log('[OAuth Check-User] Looking for employee record...');
+    let employee;
+    try {
+      employee = await models.Employee.findOne({
+        where: {
+          email: user.email,
+          tenantId: tenantId
+        },
+        attributes: ['id', 'email', 'firstName', 'lastName', 'tenantId', 'status']
+      });
+    } catch (empFindError) {
+      console.error('[OAuth Check-User] Error finding employee:', empFindError.message);
+      // Continue without employee record
+      employee = null;
+    }
     
     // If employee record doesn't exist, create one
     if (!employee) {
-      console.log('[OAuth Check] Employee record not found, creating one for user:', user.email);
+      console.log('[OAuth Check-User] Employee record not found, creating one for user:', user.email);
       
-      // Determine title based on role
-      let title = 'Employee';
-      if (user.role === 'admin') {
-        title = 'Administrator';
-      } else if (user.role === 'approver') {
-        title = 'Manager';
+      try {
+        // Determine title based on role
+        let title = 'Employee';
+        if (user.role === 'admin') {
+          title = 'Administrator';
+        } else if (user.role === 'approver') {
+          title = 'Manager';
+        }
+        
+        // Create employee with only essential fields
+        employee = await models.Employee.create({
+          tenantId: tenantId,
+          firstName: user.firstName || user.first_name,
+          lastName: user.lastName || user.last_name,
+          email: user.email,
+          department: 'General',
+          title: title,
+          status: 'active',
+          userId: user.id
+        });
+        console.log('[OAuth Check-User] Employee record created:', employee.id);
+      } catch (empError) {
+        console.error('[OAuth Check-User] Error creating employee:', empError.message);
+        console.error('[OAuth Check-User] Employee creation error details:', empError);
+        // Continue without employee record - not critical for OAuth login
+        employeeId = null;
       }
-      
-      employee = await models.Employee.create({
-        tenantId: user.tenant_id || user.tenantId,
-        firstName: user.firstName || user.first_name,
-        lastName: user.lastName || user.last_name,
-        email: user.email,
-        phone: null,
-        department: 'General',
-        title: title,
-        status: 'active',
-        startDate: new Date(),
-        userId: user.id
-      });
-      console.log('[OAuth Check] Employee record created:', employee.id);
     }
     
-    employeeId = employee.id;
+    if (employee) {
+      employeeId = employee.id;
+      console.log('[OAuth Check-User] Employee ID:', employeeId);
+    } else {
+      console.log('[OAuth Check-User] No employee record available');
+    }
 
     // Generate JWT token
-    const token = jwt.sign(
-      {
-        userId: user.id,
-        email: user.email,
-        role: user.role,
-        tenantId: user.tenant_id
-      },
-      JWT_SECRET,
-      { expiresIn: JWT_EXPIRES_IN }
-    );
+    console.log('[OAuth Check-User] Generating JWT token...');
+    let token;
+    try {
+      token = jwt.sign(
+        {
+          userId: user.id,
+          email: user.email,
+          role: user.role,
+          tenantId: tenantId
+        },
+        JWT_SECRET,
+        { expiresIn: JWT_EXPIRES_IN }
+      );
+      console.log('[OAuth Check-User] JWT token generated successfully');
+    } catch (jwtError) {
+      console.error('[OAuth Check-User] Error generating JWT:', jwtError.message);
+      throw new Error('Failed to generate authentication token');
+    }
 
     // Update last login
-    await user.update({ lastLogin: new Date() });
+    try {
+      await user.update({ lastLogin: new Date() });
+      console.log('[OAuth Check-User] Last login updated');
+    } catch (updateError) {
+      console.error('[OAuth Check-User] Error updating last login:', updateError.message);
+      // Non-critical, continue
+    }
 
     // Prepare response data
     const responseData = {
@@ -166,15 +227,39 @@ router.post('/check-user', async (req, res) => {
       } : null
     };
 
-    // Encrypt and return response
-    const encryptedResponse = encryptAuthResponse(responseData);
-    res.json(encryptedResponse);
+    console.log('[OAuth Check-User] ✅ Returning success response for existing user');
+    console.log('[OAuth Check-User] Response data:', {
+      exists: responseData.exists,
+      needsOnboarding: responseData.needsOnboarding,
+      hasToken: !!responseData.token,
+      hasUser: !!responseData.user,
+      hasTenant: !!responseData.tenant,
+      userRole: responseData.user.role,
+      tenantSubdomain: responseData.tenant?.subdomain
+    });
+
+    // Return response (encryption is optional)
+    // Try to encrypt, but if it fails, send unencrypted for backward compatibility
+    try {
+      const encryptedResponse = encryptAuthResponse(responseData);
+      console.log('[OAuth Check-User] Response encrypted and ready to send');
+      return res.json(encryptedResponse);
+    } catch (encryptError) {
+      console.error('[OAuth Check-User] Error encrypting response:', encryptError.message);
+      // Send unencrypted response as fallback
+      console.log('[OAuth Check-User] Sending unencrypted response as fallback');
+      return res.json(responseData);
+    }
 
   } catch (error) {
-    console.error('Check user error:', error);
-    res.status(500).json({
+    console.error('[OAuth Check-User] ❌ ERROR:', error.message);
+    console.error('[OAuth Check-User] Error stack:', error.stack);
+    console.error('[OAuth Check-User] Full error:', error);
+    return res.status(500).json({
       success: false,
-      message: 'Server error checking user'
+      message: 'Server error checking user',
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error',
+      needsOnboarding: false // Don't redirect to onboarding on server error
     });
   }
 });
@@ -229,14 +314,44 @@ router.post('/register', async (req, res) => {
 
     // Check if user already exists
     const existingUser = await models.User.findOne({
-      where: { email: email.toLowerCase() }
+      where: { email: email.toLowerCase() },
+      include: [{
+        model: models.Tenant,
+        as: 'tenant'
+      }]
     });
 
     if (existingUser) {
-      return res.status(400).json({
-        success: false,
-        message: 'User already exists'
-      });
+      console.log('[OAuth Register] User already exists:', email);
+      
+      // Check if user is active
+      if (existingUser.status === 'active') {
+        // User exists and is active - they should login instead
+        return res.status(409).json({
+          success: false,
+          userExists: true,
+          shouldLogin: true,
+          message: 'An account with this email already exists. Please use the login page to sign in.',
+          email: email
+        });
+      } else if (existingUser.approvalStatus === 'pending') {
+        // User exists but pending approval
+        return res.status(409).json({
+          success: false,
+          userExists: true,
+          isPending: true,
+          message: 'Your registration is already pending admin approval.',
+          email: email
+        });
+      } else {
+        // User exists but inactive or rejected
+        return res.status(409).json({
+          success: false,
+          userExists: true,
+          message: 'An account with this email already exists but is not active. Please contact support.',
+          email: email
+        });
+      }
     }
 
     // Find existing tenant by email domain
@@ -427,8 +542,15 @@ router.post('/register', async (req, res) => {
     };
 
     // Encrypt and return response
-    const encryptedResponse = encryptAuthResponse(responseData);
-    res.status(201).json(encryptedResponse);
+    try {
+      const encryptedResponse = encryptAuthResponse(responseData);
+      return res.status(201).json(encryptedResponse);
+    } catch (encryptError) {
+      console.error('[OAuth Register] Error encrypting response:', encryptError.message);
+      // Send unencrypted response as fallback
+      console.log('[OAuth Register] Sending unencrypted response as fallback');
+      return res.status(201).json(responseData);
+    }
 
   } catch (error) {
     console.error('OAuth registration error:', error);

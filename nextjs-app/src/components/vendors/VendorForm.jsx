@@ -218,7 +218,25 @@ const VendorForm = ({
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
-      toast.error("Please fix the validation errors before submitting");
+      const errorFields = Object.keys(newErrors).map(field => {
+        const fieldNames = {
+          name: 'Vendor Name',
+          contactPerson: 'Contact Person',
+          email: 'Email',
+          phone: 'Phone',
+          zip: 'Postal Code'
+        };
+        return fieldNames[field] || field;
+      }).join(', ');
+      toast.error(`Please fix errors in: ${errorFields}`);
+      
+      // Scroll to first error field
+      const firstErrorField = Object.keys(newErrors)[0];
+      const element = document.querySelector(`[name="${firstErrorField}"]`);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        element.focus();
+      }
       return;
     }
 
@@ -370,7 +388,9 @@ const VendorForm = ({
               value={formData.name}
               onChange={handleChange}
               onBlur={handleBlur}
-              className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm shadow-sm focus:border-sky-500 focus:ring-2 focus:ring-sky-200"
+              className={`w-full rounded-xl border px-4 py-2.5 text-sm shadow-sm focus:border-sky-500 focus:ring-2 focus:ring-sky-200 ${
+                errors.name ? 'border-red-500 bg-red-50' : 'border-slate-200'
+              }`}
             />
             {errors.name && (
               <p className="mt-1 text-xs text-red-600">{errors.name}</p>
@@ -387,8 +407,13 @@ const VendorForm = ({
               value={formData.contactPerson}
               onChange={handleChange}
               onBlur={handleBlur}
-              className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm shadow-sm"
+              className={`w-full rounded-xl border px-4 py-2.5 text-sm shadow-sm ${
+                errors.contactPerson ? 'border-red-500 bg-red-50' : 'border-slate-200'
+              }`}
             />
+            {errors.contactPerson && (
+              <p className="mt-1 text-xs text-red-600">{errors.contactPerson}</p>
+            )}
           </div>
 
           {/* email */}
@@ -402,8 +427,13 @@ const VendorForm = ({
               value={formData.email}
               onChange={handleChange}
               onBlur={handleBlur}
-              className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm shadow-sm"
+              className={`w-full rounded-xl border px-4 py-2.5 text-sm shadow-sm ${
+                errors.email ? 'border-red-500 bg-red-50' : 'border-slate-200'
+              }`}
             />
+            {errors.email && (
+              <p className="mt-1 text-xs text-red-600">{errors.email}</p>
+            )}
           </div>
 
           {/* phone */}
@@ -417,9 +447,14 @@ const VendorForm = ({
               value={formData.phone}
               onChange={handleChange}
               onBlur={handleBlur}
-              maxLength="14"
-              className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm shadow-sm"
+              maxLength="16"
+              className={`w-full rounded-xl border px-4 py-2.5 text-sm shadow-sm ${
+                errors.phone ? 'border-red-500 bg-red-50' : 'border-slate-200'
+              }`}
             />
+            {errors.phone && (
+              <p className="mt-1 text-xs text-red-600">{errors.phone}</p>
+            )}
           </div>
 
           {/* vendor type */}
@@ -503,17 +538,49 @@ const VendorForm = ({
             />
           </div>
 
-          <div>
+          {formData.country !== "United Arab Emirates" && (
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-slate-600">
+                {getPostalLabel(formData.country)}
+              </label>
+              <input
+                type="text"
+                name="zip"
+                value={formData.zip}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                placeholder={getPostalPlaceholder(formData.country)}
+                className={`w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm shadow-sm ${
+                  errors.zip ? 'border-red-500' : ''
+                }`}
+              />
+              {errors.zip && (
+                <p className="mt-1 text-xs text-red-600">{errors.zip}</p>
+              )}
+            </div>
+          )}
+
+          <div className="md:col-span-3">
             <label className="mb-1 block text-xs font-semibold text-slate-600">
-              Postal Code
+              Country *
             </label>
-            <input
-              name="zip"
-              value={formData.zip}
+            <select
+              name="country"
+              value={formData.country}
               onChange={handleChange}
-              onBlur={handleBlur}
-              className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm shadow-sm"
-            />
+              required
+              className="form-control w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm shadow-sm focus:border-sky-500 focus:ring-2 focus:ring-sky-200"
+              style={{ color: '#000000', backgroundColor: '#ffffff' }}
+            >
+              {COUNTRY_OPTIONS.map((country) => (
+                <option key={country} value={country} style={{ color: '#000000', backgroundColor: '#ffffff' }}>
+                  {country}
+                </option>
+              ))}
+            </select>
+            <p className="mt-1 text-xs text-slate-500">
+              Changing country will update the phone number country code
+            </p>
           </div>
         </div>
       </div>

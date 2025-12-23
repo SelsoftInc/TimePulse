@@ -62,13 +62,32 @@ const ModernDashboard = () => {
         Authorization: `Bearer ${localStorage.getItem("token")}`};
 
       // Fetch all dashboard data in parallel
+      console.log('🔄 Fetching dashboard data for tenantId:', tenantId);
+      
+      const recentActivityUrl = `${API_BASE}/api/dashboard-extended/recent-activity?tenantId=${tenantId}&limit=10`;
+      console.log('📡 Recent Activity URL:', recentActivityUrl);
+      
       const [mainData, recentActivity, topPerformers, revenueByClient, monthlyTrend] = await Promise.all([
         fetch(`${API_BASE}/api/dashboard?${queryParams}`, { headers }).then(r => r.json()),
-        fetch(`${API_BASE}/api/dashboard-extended/recent-activity?tenantId=${tenantId}&limit=10`, { headers }).then(r => r.json()),
+        fetch(recentActivityUrl, { headers }).then(async r => {
+          const text = await r.text();
+          console.log('📡 Recent Activity Response Status:', r.status);
+          console.log('📡 Recent Activity Response Text:', text);
+          try {
+            return JSON.parse(text);
+          } catch (e) {
+            console.error('❌ Failed to parse Recent Activity response:', e);
+            return { activities: [] };
+          }
+        }),
         fetch(`${API_BASE}/api/dashboard-extended/top-performers?${queryParams}&limit=5`, { headers }).then(r => r.json()),
         fetch(`${API_BASE}/api/dashboard-extended/revenue-by-client?${queryParams}&limit=5`, { headers }).then(r => r.json()),
-        fetch(`${API_BASE}/api/dashboard-extended/monthly-revenue-trend?tenantId=${tenantId}`, { headers }).then(r => r.json())
+        fetch(`${API_BASE}/api/dashboard-extended/monthly-revenue-trend?tenantId=${tenantId}&scope=${scope}${scope === 'employee' && selectedEmployeeId ? `&employeeId=${selectedEmployeeId}` : ''}`, { headers }).then(r => r.json())
       ]);
+
+      console.log('📥 Recent Activity API Response:', recentActivity);
+      console.log('📊 Recent Activity Data:', recentActivity.activities);
+      console.log('📊 Activity Count:', recentActivity.activities?.length || 0);
 
       setDashboardData({
         kpis: mainData.kpis || {},
@@ -86,7 +105,13 @@ const ModernDashboard = () => {
       
       setLastRefresh(new Date());
       console.log('✅ Dashboard data refreshed successfully');
-      console.log('📊 Dashboard Data:', { scope, selectedEmployeeId, kpis: mainData.kpis, revenueByClient: revenueByClient.clients });
+      console.log('📊 Dashboard Data:', { 
+        scope, 
+        selectedEmployeeId, 
+        kpis: mainData.kpis, 
+        revenueByClient: revenueByClient.clients,
+        recentActivityCount: recentActivity.activities?.length || 0
+      });
     } catch (error) {
       console.error("Error fetching dashboard data:", error);
     } finally {
@@ -264,6 +289,11 @@ const ModernDashboard = () => {
   const revenueByClient = dashboardData.revenueByClient || [];
   const recentActivity = dashboardData.recentActivity || [];
 
+  console.log('🎨 Rendering Recent Activity:', { 
+    count: recentActivity.length, 
+    data: recentActivity 
+  });
+
   return (
     <div className="modern-dashboard">
       {/* Header Card */}
@@ -384,7 +414,8 @@ const ModernDashboard = () => {
         </div>
       </div>
 
-        {/* 5️⃣ Active Employees */}
+        {/* 5️⃣ Active Employees - Only show in Company view */}
+        {scope === "company" && (
         <div className="bg-blue-200 dark:bg-[#1a202c] rounded-2xl shadow-sm p-4 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all duration-200 flex flex-col justify-between min-h-[170px]">
     <div className="flex items-center justify-between">
       <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-100">Active Employees</h3>
@@ -409,8 +440,9 @@ const ModernDashboard = () => {
       </div>
         </div>
       </div>
+        )}
 
-        {/* 2️⃣ Total Revenue */}
+        {/* 2️⃣ Total Revenue - Show in both Company and Employee views */}
         {user?.role === "admin" && (
           <div className="bg-cyan-100 dark:bg-[#1a202c] rounded-2xl shadow-sm p-4 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all duration-200 flex flex-col justify-between min-h-[170px]">
       <div className="flex items-center justify-between">
@@ -440,11 +472,13 @@ const ModernDashboard = () => {
         </div>
         )}
 
-        {/* 4️⃣ Revenue by Client */}
+        {/* 4️⃣ Revenue by Client - Show in both views but filtered by employee in Employee view */}
         {user?.role === "admin" && (
           <div className="bg-cyan-50 dark:bg-[#1a202c] rounded-2xl shadow-sm p-5 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all duration-200 flex flex-col gap-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-base font-semibold text-gray-800 dark:text-gray-100">Revenue by Client</h3>
+        <h3 className="text-base font-semibold text-gray-800 dark:text-gray-100">
+          {scope === "employee" ? "My Clients" : "Revenue by Client"}
+        </h3>
         <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-cyan-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-300">
           <i className="fas fa-building"></i>
         </div>
@@ -458,7 +492,7 @@ const ModernDashboard = () => {
               // Used a slightly lighter dark shade for inner list items
               className="flex items-center justify-between bg-gray-50 dark:bg-[#2d3748] p-3 rounded-xl" 
             >
-              <div className="text-sm font-semibold text-gray-700 dark:text-gray-300">#{index + 1}</div>
+              {/* <div className="text-sm font-semibold text-gray-700 dark:text-gray-300">#{index + 1}</div> */}
               <div className="flex flex-col">
                 <div className="font-medium dark:text-gray-100">{client.client_name}</div>
                 <div className="text-xs text-gray-500 dark:text-gray-400">{client.email}</div>
@@ -477,11 +511,13 @@ const ModernDashboard = () => {
         </div>
         )}
 
-        {/* 3️⃣ Monthly Revenue Chart (spans 2 columns on md, 1 on small) */}
+        {/* 3️⃣ Monthly Revenue Chart - Show in both views but filtered by employee in Employee view */}
         {user?.role === "admin" && (
           <div className="bg-slate-50 dark:bg-[#1a202c] rounded-2xl shadow-sm p-4 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all duration-200 col-span-1 md:col-span-2 flex flex-col min-h-[170px]">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-100">Monthly Revenue Trend</h3>
+        <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-100">
+          {scope === "employee" ? "My Revenue Trend" : "Monthly Revenue Trend"}
+        </h3>
         <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-300">
           <i className="fas fa-chart-line" aria-hidden />
         </div>
@@ -500,7 +536,7 @@ const ModernDashboard = () => {
         </div>
         )}
 
-        {/* 8️⃣ Recent Activity */}
+        {/* 8️⃣ Recent Activity - Show in both Company and Employee views */}
         <div className="bg-slate-100 dark:bg-[#1a202c] rounded-2xl shadow-sm p-5 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all duration-200 col-span-1 md:col-span-2 flex flex-col h-full">
 
     {/* Header */}
@@ -518,23 +554,34 @@ const ModernDashboard = () => {
       style={{ maxHeight: "155px" }}>
 
       {recentActivity.length > 0 ? (
-        recentActivity.slice(0, 5).map((activity) => (
+        recentActivity.slice(0, 5).map((activity, index) => (
           <div
-            key={activity.id}
+            key={`${activity.activity_type}-${activity.id}-${index}`}
             // Used a slightly lighter dark shade for inner list items
             className="flex items-center justify-between bg-gray-200 dark:bg-[#2d3748] 
                    p-2.5 rounded-lg"
           >
             <div className="flex items-center gap-2">
-              <div className="w-7 h-7 flex items-center justify-center rounded-full 
-                          bg-blue-100 dark:bg-blue-900/30 
-                          text-blue-600 dark:text-blue-300 text-xs">
-                <i className={`fas ${activity.activity_type === 'timesheet' ? 'fa-clock' : 'fa-calendar-times'}`}></i>
+              <div className={`w-7 h-7 flex items-center justify-center rounded-full text-xs ${
+                activity.activity_type === 'login' 
+                  ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-300'
+                  : activity.activity_type === 'timesheet'
+                    ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300'
+                    : 'bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-300'
+              }`}>
+                <i className={`fas ${
+                  activity.activity_type === 'login' ? 'fa-sign-in-alt' :
+                  activity.activity_type === 'timesheet' ? 'fa-clock' : 
+                  'fa-calendar-times'
+                }`}></i>
               </div>
 
               <div>
                 <div className="font-medium text-sm dark:text-gray-100">
-                  {activity.activity_type === 'timesheet' ? 'Timesheet' : 'Leave'} by {activity.employee_name}
+                  {activity.activity_type === 'login' 
+                    ? `${activity.employee_name} logged in`
+                    : `${activity.activity_type === 'timesheet' ? 'Timesheet' : 'Leave'} by ${activity.employee_name}`
+                  }
                 </div>
                 <div className="text-[10px] text-gray-500 dark:text-gray-400">
                   {formatRelativeTime(activity.created_at)}
@@ -544,11 +591,13 @@ const ModernDashboard = () => {
 
             <span
               className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
-                activity.status === "approved"
-                  ? "bg-green-200 dark:bg-green-900 text-green-700 dark:text-green-300"
-                  : activity.status === "submitted" || activity.status === "pending"
-                    ? "bg-yellow-200 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300"
-                    : "bg-red-200 dark:bg-red-900 text-red-700 dark:text-red-300"
+                activity.activity_type === 'login'
+                  ? "bg-purple-200 dark:bg-purple-900 text-purple-700 dark:text-purple-300"
+                  : activity.status === "approved"
+                    ? "bg-green-200 dark:bg-green-900 text-green-700 dark:text-green-300"
+                    : activity.status === "submitted" || activity.status === "pending"
+                      ? "bg-yellow-200 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300"
+                      : "bg-red-200 dark:bg-red-900 text-red-700 dark:text-red-300"
               }`}
             >
               {activity.status}
@@ -563,7 +612,8 @@ const ModernDashboard = () => {
         </div>
       </div>
 
-        {/* 7️⃣ Top Performers */}
+        {/* 7️⃣ Top Performers - Only show in Company view */}
+        {scope === "company" && (
         <div className="bg-indigo-50 dark:bg-[#1a202c] rounded-2xl shadow-sm p-4 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all duration-200 flex flex-col gap-3 min-h-[170px]">
     <div className="flex items-center justify-between">
       <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-100">Top Performers</h3>
@@ -595,6 +645,7 @@ const ModernDashboard = () => {
       )}
         </div>
         </div>
+        )}
       </div>
     </div>
   );

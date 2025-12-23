@@ -357,6 +357,8 @@ router.post("/", async (req, res) => {
   try {
     let employeeData = req.body;
     
+    console.log('📥 Received employee data:', JSON.stringify(employeeData, null, 2));
+    
     // Encrypt employee data before saving to database
     employeeData = DataEncryptionService.encryptEmployeeData(employeeData);
 
@@ -457,10 +459,15 @@ router.post("/", async (req, res) => {
     };
     res.status(201).json(encryptAuthResponse(responseData));
   } catch (error) {
-    console.error("Error creating employee:", error);
+    console.error("❌ Error creating employee:", error);
+    console.error("Error stack:", error.stack);
+    console.error("Error name:", error.name);
+    console.error("Error details:", JSON.stringify(error, null, 2));
     res.status(500).json(encryptAuthResponse({
       error: "Failed to create employee",
       details: error.message,
+      errorName: error.name,
+      errorStack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     }));
   }
 });

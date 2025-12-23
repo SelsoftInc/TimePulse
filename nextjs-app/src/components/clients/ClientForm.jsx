@@ -199,16 +199,42 @@ const ClientForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    let updates = { [name]: type === 'checkbox' ? checked : value };
+    let processedValue = value;
+    let updates = { [name]: type === 'checkbox' ? checked : processedValue };
     
     // Auto-prefill country code when country changes
     if (name === 'country') {
       const countryCode = getCountryCode(value);
+      setPhoneCountryCode(countryCode);
+      // Only prefill if phone is empty or just has a country code
       if (!formData.phone || /^\+\d{0,3}$/.test(formData.phone)) {
         updates.phone = countryCode;
       }
       // Reset state when country changes to avoid stale values
       updates.state = '';
+    }
+    
+    // Format phone number as user types - E.164 only
+    if (name === 'phone') {
+      const trimmed = String(value || '');
+      // Only allow + followed by digits (E.164 format)
+      if (trimmed.startsWith('+') || trimmed === '') {
+        const digits = trimmed.replace(/\D/g, '').slice(0, 15);
+        processedValue = digits ? `+${digits}` : (trimmed === '+' ? '+' : '');
+      } else if (/^\d/.test(trimmed)) {
+        // If user starts typing digits without +, prepend it
+        const digits = trimmed.replace(/\D/g, '').slice(0, 15);
+        processedValue = digits ? `+${digits}` : '';
+      } else {
+        processedValue = trimmed.startsWith('+') ? trimmed : '';
+      }
+      updates.phone = processedValue;
+    }
+    
+    // Format zip code - only allow digits and limit to country-specific length
+    if (name === 'zip') {
+      processedValue = formatPostalInput(value, formData.country);
+      updates.zip = processedValue;
     }
     
     setFormData({
@@ -217,11 +243,8 @@ const ClientForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
     });
 
     // Clear field-specific error on change
-    if (name === 'phone' && errors.phone) {
-      setErrors(prev => ({ ...prev, phone: '' }));
-    }
-    if (name === 'taxId' && errors.taxId) {
-      setErrors(prev => ({ ...prev, taxId: '' }));
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: '' }));
     }
   };
 
@@ -271,6 +294,25 @@ const ClientForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
       
       if (Object.keys(newErrors).length > 0) {
         setErrors(newErrors);
+        const errorFields = Object.keys(newErrors).map(field => {
+          const fieldNames = {
+            name: 'Client Name',
+            contactPerson: 'Contact Person',
+            email: 'Email',
+            phone: 'Phone',
+            zip: 'ZIP/Postal Code'
+          };
+          return fieldNames[field] || field;
+        }).join(', ');
+        toast.error(`Please fix errors in: ${errorFields}`);
+        
+        // Scroll to first error field
+        const firstErrorField = Object.keys(newErrors)[0];
+        const element = document.querySelector(`[name="${firstErrorField}"]`);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          element.focus();
+        }
         setLoading(false);
         return;
       }
@@ -404,11 +446,17 @@ const ClientForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
             name="name"
             value={formData.name}
             onChange={handleChange}
+            onBlur={handleBlur}
             required
             placeholder="e.g. Acme Corporation"
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm
-                       focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+            className={`w-full rounded-lg border px-3 py-2 text-sm
+                       focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 ${
+                         errors.name ? 'border-red-500 bg-red-50' : 'border-slate-300'
+                       }`}
           />
+          {errors.name && (
+            <p className="mt-1 text-xs text-red-500">{errors.name}</p>
+          )}
         </div>
 
         {/* Contact Person */}
@@ -421,11 +469,17 @@ const ClientForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
             name="contactPerson"
             value={formData.contactPerson}
             onChange={handleChange}
+            onBlur={handleBlur}
             required
             placeholder="John Doe"
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm
-                       focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+            className={`w-full rounded-lg border px-3 py-2 text-sm
+                       focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 ${
+                         errors.contactPerson ? 'border-red-500 bg-red-50' : 'border-slate-300'
+                       }`}
           />
+          {errors.contactPerson && (
+            <p className="mt-1 text-xs text-red-500">{errors.contactPerson}</p>
+          )}
         </div>
 
         {/* Email */}
@@ -438,11 +492,17 @@ const ClientForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
             name="email"
             value={formData.email}
             onChange={handleChange}
+            onBlur={handleBlur}
             required
             placeholder="email@example.com"
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm
-                       focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+            className={`w-full rounded-lg border px-3 py-2 text-sm
+                       focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 ${
+                         errors.email ? 'border-red-500 bg-red-50' : 'border-slate-300'
+                       }`}
           />
+          {errors.email && (
+            <p className="mt-1 text-xs text-red-500">{errors.email}</p>
+          )}
         </div>
 
         {/* Phone */}
@@ -452,15 +512,16 @@ const ClientForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
           </label>
           <input
             type="tel"
+            name="phone"
             value={formData.phone}
-            onChange={(e) => {
-              const formatted = formatPhoneInput(e.target.value);
-              setFormData((p) => ({ ...p, phone: formatted }));
-            }}
-            required
-            placeholder="+1 555 123 4567"
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm
-                       focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+            onChange={handleChange}
+            onBlur={handleBlur}
+            maxLength={16}
+            placeholder="+1 555-123-4567"
+            className={`w-full rounded-lg border border-slate-300 px-3 py-2 text-sm
+                       focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 ${
+                         errors.phone ? 'border-red-500' : ''
+                       }`}
           />
           {errors.phone && (
             <p className="mt-1 text-xs text-red-500">{errors.phone}</p>
@@ -555,27 +616,70 @@ const ClientForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
         />
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <input
-            name="city"
-            value={formData.city}
+          <div>
+            <input
+              name="city"
+              value={formData.city}
+              onChange={handleChange}
+              placeholder="City"
+              className="rounded-lg border border-slate-300 px-3 py-2 text-sm
+                         focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+            />
+          </div>
+          <div>
+            <input
+              name="state"
+              value={formData.state}
+              onChange={handleChange}
+              placeholder="State"
+              className="rounded-lg border border-slate-300 px-3 py-2 text-sm
+                         focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+            />
+          </div>
+          {formData.country !== "United Arab Emirates" && (
+            <div>
+              <input
+                type="text"
+                name="zip"
+                value={formData.zip}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                placeholder={getPostalPlaceholder(formData.country)}
+                className={`rounded-lg border border-slate-300 px-3 py-2 text-sm
+                           focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 ${
+                             errors.zip ? 'border-red-500' : ''
+                           }`}
+              />
+              {errors.zip && (
+                <p className="mt-1 text-xs text-red-500">{errors.zip}</p>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Country Dropdown */}
+        <div>
+          <label className="mb-1 block text-sm font-medium text-slate-700">
+            Country <span className="text-red-500">*</span>
+          </label>
+          <select
+            name="country"
+            value={formData.country}
             onChange={handleChange}
-            placeholder="City"
-            className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
-          />
-          <input
-            name="state"
-            value={formData.state}
-            onChange={handleChange}
-            placeholder="State"
-            className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
-          />
-          <input
-            name="zip"
-            value={formData.zip}
-            onChange={handleChange}
-            placeholder="ZIP / Postal"
-            className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
-          />
+            required
+            className="form-control w-full rounded-lg border border-slate-300 px-3 py-2 text-sm
+                       focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+            style={{ color: '#000000', backgroundColor: '#ffffff' }}
+          >
+            {COUNTRY_OPTIONS.map((country) => (
+              <option key={country} value={country} style={{ color: '#000000', backgroundColor: '#ffffff' }}>
+                {country}
+              </option>
+            ))}
+          </select>
+          <p className="mt-1 text-xs text-slate-500">
+            Changing country will update the phone number country code
+          </p>
         </div>
       </div>
     </section>

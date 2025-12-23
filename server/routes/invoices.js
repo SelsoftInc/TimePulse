@@ -130,7 +130,29 @@ router.get("/", async (req, res) => {
     // Decrypt invoice data
     const decryptedInvoices = DataEncryptionService.decryptInstances(invoices, 'invoice');
 
-    const formattedInvoices = decryptedInvoices.map((inv) => ({
+    // Decrypt vendor and client data for each invoice
+    const fullyDecryptedInvoices = decryptedInvoices.map(inv => {
+      const decryptedInv = { ...inv };
+      
+      // Decrypt vendor if present
+      if (decryptedInv.vendor) {
+        decryptedInv.vendor = DataEncryptionService.decryptVendorData(decryptedInv.vendor);
+      }
+      
+      // Decrypt nested vendor in timesheet.employee.vendor
+      if (decryptedInv.timesheet?.employee?.vendor) {
+        decryptedInv.timesheet.employee.vendor = DataEncryptionService.decryptVendorData(decryptedInv.timesheet.employee.vendor);
+      }
+      
+      // Decrypt client if present
+      if (decryptedInv.client) {
+        decryptedInv.client = DataEncryptionService.decryptClientData(decryptedInv.client);
+      }
+      
+      return decryptedInv;
+    });
+
+    const formattedInvoices = fullyDecryptedInvoices.map((inv) => ({
       id: inv.id,
       invoiceNumber: inv.invoiceNumber,
       vendor: inv.vendor?.name || inv.timesheet?.employee?.vendor?.name || "N/A",
@@ -170,7 +192,7 @@ router.get("/", async (req, res) => {
     }));
 
     // Transform data for frontend dashboard
-    const transformedInvoices = decryptedInvoices.map((inv) => ({
+    const transformedInvoices = fullyDecryptedInvoices.map((inv) => ({
       id: inv.id,
       invoiceNumber: inv.invoiceNumber,
       vendor: inv.vendor?.name || inv.timesheet?.employee?.vendor?.name || "N/A",
@@ -434,11 +456,17 @@ router.get("/:id/pdf-data", async (req, res) => {
     // Fetch vendor if vendorId exists
     if (invoice.vendorId) {
       try {
-        vendor = await models.Vendor.findOne({
+        const vendorRaw = await models.Vendor.findOne({
           where: { id: invoice.vendorId },
           attributes: ["id", "name", "email", "phone", "address", "city", "state", "zipCode"]
         });
-        console.log('✅ Vendor found:', vendor?.name);
+        
+        if (vendorRaw) {
+          // Decrypt vendor data
+          const vendorPlain = vendorRaw.toJSON ? vendorRaw.toJSON() : vendorRaw;
+          vendor = DataEncryptionService.decryptVendorData(vendorPlain);
+          console.log('✅ Vendor found and decrypted for PDF:', vendor?.name);
+        }
       } catch (err) {
         console.log('⚠️ Vendor fetch error:', err.message);
       }
@@ -488,11 +516,16 @@ router.get("/:id/pdf-data", async (req, res) => {
 
         // If employee has vendor and we don't have vendor yet, fetch it
         if (employee?.vendorId && !vendor) {
-          vendor = await models.Vendor.findOne({
+          const vendorRaw = await models.Vendor.findOne({
             where: { id: employee.vendorId },
             attributes: ["id", "name", "email", "phone", "address", "city", "state", "zipCode"]
           });
-          console.log('✅ Vendor found via employee:', vendor?.name);
+          
+          if (vendorRaw) {
+            const vendorPlain = vendorRaw.toJSON ? vendorRaw.toJSON() : vendorRaw;
+            vendor = DataEncryptionService.decryptVendorData(vendorPlain);
+            console.log('✅ Vendor found and decrypted via employee:', vendor?.name);
+          }
         }
       } catch (err) {
         console.log('⚠️ Employee fetch error:', err.message);
@@ -643,11 +676,17 @@ router.get("/:id", async (req, res) => {
     // Fetch vendor
     if (invoice.vendorId) {
       try {
-        vendor = await models.Vendor.findOne({
+        const vendorRaw = await models.Vendor.findOne({
           where: { id: invoice.vendorId },
           attributes: ["id", "name", "email", "phone", "address", "city", "state", "zipCode"]
         });
-        console.log('✅ Vendor found via invoice.vendorId:', vendor?.name, 'Email:', vendor?.email);
+        
+        if (vendorRaw) {
+          // Decrypt vendor data
+          const vendorPlain = vendorRaw.toJSON ? vendorRaw.toJSON() : vendorRaw;
+          vendor = DataEncryptionService.decryptVendorData(vendorPlain);
+          console.log('✅ Vendor found and decrypted via invoice.vendorId:', vendor?.name, 'Email:', vendor?.email);
+        }
       } catch (err) {
         console.log('⚠️ Vendor fetch error:', err.message);
       }
@@ -706,15 +745,21 @@ router.get("/:id", async (req, res) => {
 
         // If employee has vendor and we don't have vendor yet, use employee's vendor
         if (employee?.vendor && !vendor) {
-          vendor = employee.vendor;
-          console.log('✅ Using vendor from employee association:', vendor?.name, 'Email:', vendor?.email);
+          const vendorPlain = employee.vendor.toJSON ? employee.vendor.toJSON() : employee.vendor;
+          vendor = DataEncryptionService.decryptVendorData(vendorPlain);
+          console.log('✅ Using vendor from employee association (decrypted):', vendor?.name, 'Email:', vendor?.email);
         } else if (employee?.vendorId && !vendor) {
           // Fallback: Fetch vendor separately if association didn't work
-          vendor = await models.Vendor.findOne({
+          const vendorRaw = await models.Vendor.findOne({
             where: { id: employee.vendorId },
             attributes: ["id", "name", "email", "phone", "address", "city", "state", "zipCode"]
           });
-          console.log('✅ Vendor found via separate query:', vendor?.name, 'Email:', vendor?.email);
+          
+          if (vendorRaw) {
+            const vendorPlain = vendorRaw.toJSON ? vendorRaw.toJSON() : vendorRaw;
+            vendor = DataEncryptionService.decryptVendorData(vendorPlain);
+            console.log('✅ Vendor found via separate query (decrypted):', vendor?.name, 'Email:', vendor?.email);
+          }
         } else if (!vendor) {
           console.log('⚠️ No vendor found - employee.vendorId:', employee?.vendorId);
         }

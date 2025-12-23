@@ -402,12 +402,12 @@ const InvoiceDetailsModal = ({ invoice, onClose }) => {
             <button className="btn btn-secondary" onClick={onClose}>
               Close
             </button>
-            <button 
+            {/* <button 
               className="btn btn-primary" 
               onClick={handleDownloadPDF}
             >
               <i className="fas fa-download mr-1"></i> Download PDF
-            </button>
+            </button> */}
           </div>
         </div>
       </div>

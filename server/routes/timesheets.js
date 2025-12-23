@@ -123,13 +123,17 @@ router.get("/", async (req, res, next) => {
 
     // Transform data for frontend
     const transformedTimesheets = await Promise.all(decryptedTimesheets.map(async (ts) => {
-      // Get employee name - use stored employeeName first, then fallback to Employee/User
+      // Get employee name - decrypt employee data if present
       let employeeName = ts.employeeName || "Unknown";
       
       // If no stored name, try to get from Employee or User
       if (!employeeName || employeeName === "Unknown") {
         if (ts.employee) {
-          employeeName = `${ts.employee.firstName} ${ts.employee.lastName}`;
+          // Decrypt employee data
+          const employeeObj = ts.employee.get ? ts.employee.get({ plain: true }) : ts.employee;
+          const decryptedEmployee = DataEncryptionService.decryptEmployeeData(employeeObj);
+          employeeName = `${decryptedEmployee.firstName} ${decryptedEmployee.lastName}`;
+          console.log('👤 Decrypted employee name:', employeeName);
         } else {
           // Try to get user directly if employee record doesn't exist
           const user = await models.User.findByPk(ts.employeeId);
@@ -941,6 +945,8 @@ router.post("/submit", async (req, res, next) => {
         }
       }
 
+      console.log(`🔔 Creating timesheet notifications for employee: ${employeeName}, tenant: ${tenantId}`);
+      
       // Create timesheet notification
       await NotificationService.createTimesheetNotification(
         tenantId,
@@ -953,6 +959,7 @@ router.post("/submit", async (req, res, next) => {
         }
       );
 
+      console.log(`🔔 Creating approval notification for managers/admins`);
       // Create approval notification for managers/admins
       await NotificationService.createApprovalNotification(
         tenantId,
@@ -963,6 +970,8 @@ router.post("/submit", async (req, res, next) => {
           weekEndDate: weekEnd,
         }
       );
+      
+      console.log(`✅ Timesheet notifications created successfully`);
 
       // Send real-time notification via WebSocket
       if (global.wsService) {

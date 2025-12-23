@@ -7,7 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { API_BASE } from '@/config/api';
 import { useTheme } from '@/contexts/ThemeContext';
 // import PermissionGuard from '../common/PermissionGuard';
-import NotificationBell from '../notifications/NotificationBell';
+import NotificationBell from '../common/NotificationBell';
 import TimesheetAlerts from '../notifications/TimesheetAlerts';
 import AskAIButton from '../ai/AskAIButton';
 import GlobalSearch from '../common/GlobalSearch';

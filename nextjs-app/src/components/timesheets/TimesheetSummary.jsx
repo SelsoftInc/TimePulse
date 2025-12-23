@@ -1445,18 +1445,21 @@ const TimesheetSummary = () => {
                       <i className="fas fa-edit" />
                     </button>
 
-                    <button
-                      onClick={() => handleInvoiceButtonClick(timesheet)}
-                      className="
-                        p-2 rounded-lg
-                        border border-slate-200 dark:border-white/10
-                        text-emerald-600 dark:text-emerald-400
-                        hover:bg-emerald-50 dark:hover:bg-emerald-500/10
-                        transition
-                      "
-                    >
-                      <i className="fas fa-file-invoice" />
-                    </button>
+                    {/* Invoice button - Only visible for admin/manager roles */}
+                    {(user?.role === 'admin' || user?.role === 'manager') && (
+                      <button
+                        onClick={() => handleInvoiceButtonClick(timesheet)}
+                        className="
+                          p-2 rounded-lg
+                          border border-slate-200 dark:border-white/10
+                          text-emerald-600 dark:text-emerald-400
+                          hover:bg-emerald-50 dark:hover:bg-emerald-500/10
+                          transition
+                        "
+                      >
+                        <i className="fas fa-file-invoice" />
+                      </button>
+                    )}
 
                     <button
                       onClick={() =>

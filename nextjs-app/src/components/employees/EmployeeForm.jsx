@@ -443,7 +443,8 @@ const EmployeeForm = () => {
         approver: formData.approver,
         notes: formData.notes,
         clientId: formData.clientId,
-        client: formData.client};
+        role: 'employee' // Add default role
+      };
 
       // Make API call to create employee
       const response = await apiFetch(

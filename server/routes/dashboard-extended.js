@@ -74,10 +74,27 @@ router.get("/recent-activity", async (req, res) => {
         ORDER BY lr.created_at DESC
         LIMIT ${limit}
       ),
+      login_activity AS (
+        SELECT 
+          u.id,
+          'login' AS activity_type,
+          COALESCE(u.first_name || ' ' || u.last_name, u.email) AS employee_name,
+          'logged in' AS status,
+          u.last_login AS created_at,
+          NULL::numeric AS total_hours,
+          NULL AS client_name
+        FROM users u
+        WHERE u.tenant_id = '${tenantId}'
+          AND u.last_login IS NOT NULL
+        ORDER BY u.last_login DESC
+        LIMIT ${limit}
+      ),
       combined AS (
         SELECT * FROM timesheet_activity
         UNION ALL
         SELECT * FROM leave_activity
+        UNION ALL
+        SELECT * FROM login_activity
       )
       SELECT * FROM combined
       ORDER BY created_at DESC
@@ -88,7 +105,26 @@ router.get("/recent-activity", async (req, res) => {
       type: sequelize.QueryTypes.SELECT,
     });
 
-    res.json({ activities: convertToNumber(activities) });
+    // Decrypt employee names
+    const decryptedActivities = activities.map(activity => {
+      if (activity.employee_name && activity.employee_name !== 'Unknown') {
+        try {
+          // Try to decrypt the name parts
+          const nameParts = activity.employee_name.split(' ');
+          if (nameParts.length >= 2) {
+            const decryptedFirstName = DataEncryptionService.decryptEmployeeData({ firstName: nameParts[0] }).firstName || nameParts[0];
+            const decryptedLastName = DataEncryptionService.decryptEmployeeData({ lastName: nameParts.slice(1).join(' ') }).lastName || nameParts.slice(1).join(' ');
+            activity.employee_name = `${decryptedFirstName} ${decryptedLastName}`.trim();
+          }
+        } catch (err) {
+          // If decryption fails, keep original name
+          console.log('Decryption skipped for:', activity.employee_name);
+        }
+      }
+      return activity;
+    });
+
+    res.json({ activities: convertToNumber(decryptedActivities) });
   } catch (error) {
     console.error("Recent Activity API Error:", error);
     res.status(500).json({
@@ -158,7 +194,7 @@ router.get("/top-performers", async (req, res) => {
 // GET /api/dashboard-extended/revenue-by-client
 router.get("/revenue-by-client", async (req, res) => {
   try {
-    const { tenantId, from, to, limit = 5 } = req.query;
+    const { tenantId, from, to, limit = 5, employeeId, scope } = req.query;
 
     if (!tenantId) {
       return res.status(400).json({ error: "Tenant ID is required" });
@@ -177,6 +213,18 @@ router.get("/revenue-by-client", async (req, res) => {
       dateFilter += ` AND i.invoice_date <= '${toDate.toISOString().split("T")[0]}'`;
     }
 
+    // Add employee filter for employee scope
+    let employeeFilter = "";
+    if (scope === 'employee' && employeeId) {
+      employeeFilter = `
+        AND EXISTS (
+          SELECT 1 FROM timesheets t 
+          WHERE t.client_id = c.id 
+          AND t.employee_id = '${employeeId}'
+          AND t.tenant_id = '${tenantId}'
+        )`;
+    }
+
     const query = `
       SELECT
         c.id,
@@ -190,6 +238,7 @@ router.get("/revenue-by-client", async (req, res) => {
       WHERE i.tenant_id = '${tenantId}'
         AND i.payment_status IN ('pending', 'paid', 'overdue')
         ${dateFilter}
+        ${employeeFilter}
       GROUP BY c.id, c.client_name, c.email, c.legal_name
       ORDER BY total_revenue DESC
       LIMIT ${limit}
@@ -227,7 +276,7 @@ router.get("/revenue-by-client", async (req, res) => {
 // GET /api/dashboard-extended/monthly-revenue-trend
 router.get("/monthly-revenue-trend", async (req, res) => {
   try {
-    const { tenantId } = req.query;
+    const { tenantId, employeeId, scope } = req.query;
 
     if (!tenantId) {
       return res.status(400).json({ error: "Tenant ID is required" });
@@ -235,29 +284,60 @@ router.get("/monthly-revenue-trend", async (req, res) => {
 
     await sequelize.query(`SET app.current_tenant_id = '${tenantId}'`);
 
-    const query = `
-      WITH months AS (
+    // For employee scope, calculate revenue based on employee's timesheets
+    let query;
+    if (scope === 'employee' && employeeId) {
+      query = `
+        WITH months AS (
+          SELECT 
+            DATE_TRUNC('month', CURRENT_DATE - INTERVAL '11 months' + (n || ' months')::INTERVAL)::date AS month_start
+          FROM generate_series(0, 11) AS n
+        ),
+        monthly_revenue AS (
+          SELECT 
+            DATE_TRUNC('month', t.week_end)::date AS month_start,
+            SUM(t.total_hours * COALESCE(c.hourly_rate, 0)) AS revenue
+          FROM timesheets t
+          LEFT JOIN clients c ON c.id = t.client_id
+          WHERE t.tenant_id = '${tenantId}'
+            AND t.employee_id = '${employeeId}'
+            AND t.status = 'approved'
+            AND t.week_end >= CURRENT_DATE - INTERVAL '11 months'
+          GROUP BY DATE_TRUNC('month', t.week_end)
+        )
         SELECT 
-          DATE_TRUNC('month', CURRENT_DATE - INTERVAL '11 months' + (n || ' months')::INTERVAL)::date AS month_start
-        FROM generate_series(0, 11) AS n
-      ),
-      monthly_revenue AS (
+          TO_CHAR(m.month_start, 'Mon') AS month_label,
+          COALESCE(mr.revenue, 0) AS revenue
+        FROM months m
+        LEFT JOIN monthly_revenue mr ON m.month_start = mr.month_start
+        ORDER BY m.month_start ASC
+      `;
+    } else {
+      // Company scope - show all revenue
+      query = `
+        WITH months AS (
+          SELECT 
+            DATE_TRUNC('month', CURRENT_DATE - INTERVAL '11 months' + (n || ' months')::INTERVAL)::date AS month_start
+          FROM generate_series(0, 11) AS n
+        ),
+        monthly_revenue AS (
+          SELECT 
+            DATE_TRUNC('month', i.invoice_date)::date AS month_start,
+            SUM(i.total_amount) AS revenue
+          FROM invoices i
+          WHERE i.tenant_id = '${tenantId}'
+            AND i.payment_status IN ('pending', 'paid', 'overdue')
+            AND i.invoice_date >= CURRENT_DATE - INTERVAL '11 months'
+          GROUP BY DATE_TRUNC('month', i.invoice_date)
+        )
         SELECT 
-          DATE_TRUNC('month', i.invoice_date)::date AS month_start,
-          SUM(i.total_amount) AS revenue
-        FROM invoices i
-        WHERE i.tenant_id = '${tenantId}'
-          AND i.payment_status IN ('pending', 'paid', 'overdue')
-          AND i.invoice_date >= CURRENT_DATE - INTERVAL '11 months'
-        GROUP BY DATE_TRUNC('month', i.invoice_date)
-      )
-      SELECT 
-        TO_CHAR(m.month_start, 'Mon') AS month_label,
-        COALESCE(mr.revenue, 0) AS revenue
-      FROM months m
-      LEFT JOIN monthly_revenue mr ON m.month_start = mr.month_start
-      ORDER BY m.month_start ASC
-    `;
+          TO_CHAR(m.month_start, 'Mon') AS month_label,
+          COALESCE(mr.revenue, 0) AS revenue
+        FROM months m
+        LEFT JOIN monthly_revenue mr ON m.month_start = mr.month_start
+        ORDER BY m.month_start ASC
+      `;
+    }
 
     const trend = await sequelize.query(query, {
       type: sequelize.QueryTypes.SELECT,

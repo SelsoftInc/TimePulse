@@ -41,6 +41,7 @@ const billingRoutes = require("./routes/billing");
 const dashboardRoutes = require("./routes/dashboard");
 const passwordResetRoutes = require("./routes/passwordReset");
 const dashboardExtendedRoutes = require("./routes/dashboard-extended");
+const settingsRoutes = require("./routes/settings");
 
 // Middleware
 // Configure CORS - allow specific origins from environment variable or default to open
@@ -167,6 +168,10 @@ console.log('📍 Loading user-approvals routes...');
 app.use("/api/user-approvals", require("./routes/userApprovals"));
 console.log('📍 Loading password-reset routes...');
 app.use("/api/password-reset", passwordResetRoutes);
+console.log('📍 Loading settings routes...');
+app.use("/api/settings", settingsRoutes);
+console.log('📍 Loading search routes...');
+app.use("/api/search", require("./routes/search"));
 console.log('✅ All routes loaded successfully');
 
 // Error handling middleware

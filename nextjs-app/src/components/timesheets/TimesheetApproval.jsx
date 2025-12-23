@@ -91,9 +91,25 @@ const TimesheetApproval = () => {
             }
           }
 
+          // Parse overtimeDays if it's a string
+          let overtimeDays = [];
+          if (ts.overtimeDays) {
+            if (typeof ts.overtimeDays === 'string') {
+              try {
+                overtimeDays = JSON.parse(ts.overtimeDays);
+              } catch (e) {
+                console.error('Error parsing overtimeDays:', e);
+                overtimeDays = [];
+              }
+            } else if (Array.isArray(ts.overtimeDays)) {
+              overtimeDays = ts.overtimeDays;
+            }
+          }
+
           return {
             ...ts,
             attachments: attachments,
+            overtimeDays: overtimeDays,
             status: ts.status === 'submitted' ? 'Submitted for Approval' : ts.status
           };
         });

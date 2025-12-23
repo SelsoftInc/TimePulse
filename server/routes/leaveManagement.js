@@ -190,22 +190,41 @@ router.post("/request", async (req, res) => {
       });
     }
 
-    // Create notification for approver about new leave request
+    // Create notification for employee about submission
     try {
+      const finalEmployeeName = employeeName || `${employee.firstName} ${employee.lastName}`;
+      console.log(`🔔 Creating leave notifications for employee: ${finalEmployeeName}, tenant: ${tenantId}`);
+      
       await NotificationService.createLeaveNotification(
         tenantId,
-        approverId,
-        "submitted",
+        employeeId,
+        "requested",
         {
           id: leaveRequest.id,
           employeeId: employeeId,
-          employeeName: employeeName || `${employee.firstName} ${employee.lastName}`,
+          employeeName: finalEmployeeName,
           startDate: leaveRequest.startDate,
           endDate: leaveRequest.endDate,
           leaveType: leaveRequest.leaveType,
           totalDays: leaveRequest.totalDays,
         }
       );
+
+      console.log(`🔔 Creating approval notification for managers/admins`);
+      // Create approval notification for approver (admin/manager)
+      await NotificationService.createApprovalNotification(
+        tenantId,
+        "leave",
+        {
+          employeeName: finalEmployeeName,
+          startDate: leaveRequest.startDate,
+          endDate: leaveRequest.endDate,
+          leaveType: leaveRequest.leaveType,
+          totalDays: leaveRequest.totalDays,
+        }
+      );
+      
+      console.log(`✅ Leave notifications created successfully`);
 
       // Send email notification to approver
       const approver = await User.findByPk(approverId);

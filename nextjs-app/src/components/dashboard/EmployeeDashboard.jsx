@@ -55,14 +55,14 @@ const TimeCard = ({ week, status, hours, dueDate, subdomain }) => {
   const isActionable = status === "Missing" || status === "Draft";
 
   return (
-    <div className="modern-timecard">
+    <div className="modern-timecard group relative overflow-hidden rounded-2xl border border-slate-200/70 bg-white/80 p-4 shadow-sm backdrop-blur transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
       <div className="timecard-header">
         <div className="timecard-week">
-          <h4>Week of {week}</h4>
+          <h4 className="text-[15px] font-semibold text-slate-900">Week of {week}</h4>
           <p className="timecard-due">Due: {dueDate}</p>
         </div>
         <div
-          className="timecard-status"
+          className="timecard-status inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold"
           style={{
             backgroundColor: statusConfig.bgColor,
             color: statusConfig.color}}
@@ -74,7 +74,7 @@ const TimeCard = ({ week, status, hours, dueDate, subdomain }) => {
 
       <div className="timecard-hours">
         <div className="hours-display">
-          <span className="hours-number">{hours}</span>
+          <span className="hours-number text-2xl font-bold tracking-tight text-slate-900">{hours}</span>
           <span className="hours-label">hours</span>
         </div>
 
@@ -91,7 +91,7 @@ const TimeCard = ({ week, status, hours, dueDate, subdomain }) => {
       {isActionable && subdomain && (
         <div className="timecard-action">
           <Link href={`/${subdomain}/timesheets/submit`}
-            className="btn-modern btn-primary"
+            className="btn-modern btn-primary inline-flex w-full items-center justify-center rounded-xl"
           >
             {status === "Draft" ? "Continue Editing" : "Submit Timesheet"}
           </Link>
@@ -104,10 +104,10 @@ const TimeCard = ({ week, status, hours, dueDate, subdomain }) => {
 // Modern Statistics Cards
 const StatsCard = ({ title, value, subtitle, icon, color, trend }) => {
   return (
-    <div className="stats-card">
+    <div className="stats-card flex h-full flex-col justify-between rounded-2xl border border-slate-200/70 bg-white/80 p-5 shadow-sm backdrop-blur transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
       <div className="stats-header">
         <div
-          className="stats-icon"
+          className="stats-icon inline-flex h-11 w-11 items-center justify-center rounded-xl text-lg"
           style={{ backgroundColor: `${color}20`, color: color }}
         >
           {icon}
@@ -122,9 +122,9 @@ const StatsCard = ({ title, value, subtitle, icon, color, trend }) => {
         )}
       </div>
       <div className="stats-content">
-        <h3 className="stats-value">{value}</h3>
-        <p className="stats-title">{title}</p>
-        {subtitle && <p className="stats-subtitle">{subtitle}</p>}
+        <h3 className="stats-value text-3xl font-bold tracking-tight text-slate-900">{value}</h3>
+        <p className="stats-title mt-1 text-sm font-semibold text-slate-700">{title}</p>
+        {subtitle && <p className="stats-subtitle mt-1 text-xs text-slate-500">{subtitle}</p>}
       </div>
     </div>
   );
@@ -145,15 +145,15 @@ const HoursChart = ({ regularHours, overtimeHours, leaveHours }) => {
   ];
 
   return (
-    <div className="modern-chart-card">
+    <div className="modern-chart-card rounded-2xl border border-slate-200/70 bg-white/80 p-5 shadow-sm backdrop-blur">
       <div className="chart-header">
-        <h3>Hours Breakdown</h3>
-        <p>Current Month • {totalHours} total hours</p>
+        <h3 className="text-base font-semibold text-slate-900">Hours Breakdown</h3>
+        <p className="mt-1 text-xs text-slate-500">Current Month • {totalHours} total hours</p>
       </div>
 
       <div className="chart-content">
         <div className="chart-visual">
-          <div className="donut-chart">
+          <div className="donut-chart mx-auto">
             <div className="donut-center">
               <span className="donut-total">{totalHours}</span>
               <span className="donut-label">Hours</span>
@@ -207,18 +207,18 @@ const NotificationList = ({ notifications }) => {
   };
 
   return (
-    <div className="modern-notifications-card">
+    <div className="modern-notifications-card rounded-2xl border border-slate-200/70 bg-white/80 p-5 shadow-sm backdrop-blur">
       <div className="notifications-header">
-        <h3>Recent Activity</h3>
+        <h3 className="text-base font-semibold text-slate-900">Recent Activity</h3>
         <span className="notifications-count">{notifications.length}</span>
       </div>
 
-      <div className="notifications-conten">
+      <div className="notifications-conten mt-4">
         {notifications.length > 0 ? (
-          <div className="notifications-list">
+          <div className="notifications-list space-y-3">
             {notifications.map((notification, index) => (
-              <div key={index} className="notification-item">
-                <div className="notification-icon">
+              <div key={index} className="notification-item rounded-xl border border-slate-200/60 bg-white/60 p-3 transition-colors hover:bg-white/80">
+                <div className="notification-icon flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-lg">
                   {getNotificationIcon(notification.priority)}
                 </div>
                 <div className="notification-content">
@@ -239,7 +239,7 @@ const NotificationList = ({ notifications }) => {
             ))}
           </div>
         ) : (
-          <div className="notifications-empty">
+          <div className="notifications-empty rounded-xl border border-dashed border-slate-200 bg-white/50 p-6 text-center">
             <div className="empty-icon">🎉</div>
             <h4>All caught up!</h4>
             <p>No new notifications</p>
@@ -260,7 +260,7 @@ const UpcomingLeave = ({
     switch (type.toLowerCase()) {
       case "vacation":
         return "🏖️";
-      case "sick leave":
+      case "sick":
         return "🏥";
       case "personal":
         return "👤";
@@ -285,9 +285,9 @@ const UpcomingLeave = ({
   };
 
   return (
-    <div className="modern-leave-car">
+    <div className="modern-leave-car rounded-2xl border border-slate-200/70 bg-white/80 p-5 shadow-sm backdrop-blur">
       <div className="leave-header">
-        <h3>Upcoming Leave</h3>
+        <h3 className="text-base font-semibold text-slate-900">Upcoming Leave</h3>
         {/* Only show Request Leave button for employees, not admins */}
         {!(
           checkPermission("admin") ||
@@ -297,13 +297,13 @@ const UpcomingLeave = ({
           user?.role === "approver" ||
           currentEmployer?.role === "approver"
         ) && (
-          <Link href="/leave-management" className="btn-modern btn-outline">
+          <Link href="/leave-management" className="btn-modern btn-outline inline-flex items-center justify-center rounded-xl">
             + Request Leave
           </Link>
         )}
       </div>
 
-      <div className="leave-content">
+      <div className="leave-content mt-4">
         {leaveRequests.length > 0 ? (
           <div className="leave-list">
             {leaveRequests.map((leave, index) => (
@@ -317,7 +317,7 @@ const UpcomingLeave = ({
                   <div className="leave-meta">
                     <span className="leave-days">{leave.days} days</span>
                     <span
-                      className="leave-status"
+                      className="leave-status inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold"
                       style={{
                         color: getStatusColor(leave.status),
                         backgroundColor: `${getStatusColor(leave.status)}20`}}
@@ -330,7 +330,7 @@ const UpcomingLeave = ({
             ))}
           </div>
         ) : (
-          <div className="leave-empty">
+          <div className="leave-empty rounded-xl border border-dashed border-slate-200 bg-white/50 p-6 text-center">
             <div className="empty-icon">🌴</div>
             <h4>No upcoming leave</h4>
             <p>Plan your time off</p>
@@ -553,15 +553,25 @@ const EmployeeDashboard = () => {
   };
 
   return (
-    <div className="modern-employee-dashboard">
+    <div
+      style={{
+        minHeight: '100vh',
+        background: 'var(--dashboard-bg)',
+        padding: '24px',
+        color: 'var(--dashboard-text-color)',
+        fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+        transition: 'background-color 0.3s ease, color 0.3s ease',
+      }}
+    >
+      <div className="modern-employee-dashboard mx-auto w-full max-w-8xl space-y-4">
       {/* Header Section */}
-      <div className="dashboard-heade">
-        <div className="header-content">
+      <div className="dashboard-heade rounded-2xl border border-slate-200/70 bg-[#7cbdf2] p-6 shadow-sm backdrop-blur">
+        <div className="header-content flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="header-info">
-            <h1 className="dashboard-title">
+            <h1 className="dashboard-title text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
               Welcome back, {user?.name || "Employee"}! 👋
             </h1>
-            <p className="dashboard-subtitle">
+            <p className="dashboard-subtitle mt-1 text-sm text-slate-600">
               Here's what's happening with your work today
             </p>
           </div>
@@ -576,9 +586,20 @@ const EmployeeDashboard = () => {
               currentEmployer?.role === "approver"
             ) && (
               <Link href={`/${subdomain}/timesheets/submit`}
-                className="btn-modern btn-primary"
-              >
-                <span className="btn-icon">⏰</span>
+                className="flex items-center gap-2.5
+                rounded-full
+                bg-slate-900 px-6 py-3
+                text-sm font-semibold !text-white
+                shadow-md
+                transition-all
+                cursor-pointer
+                hover:bg-slate-800 hover:scale-[1.04]
+                active:scale-[0.97]
+                dark:bg-indigo-600 dark:hover:bg-indigo-500
+                dark:shadow-[0_6px_18px_rgba(79,70,229,0.45)]
+              "
+            >
+              <i className="fas fa-plus-circle text-base" />
                 Submit Timesheet
               </Link>
             )}
@@ -587,7 +608,7 @@ const EmployeeDashboard = () => {
       </div>
 
       {/* Statistics Cards */}
-      <div className="stats-grid">
+      <div className="stats-grid grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatsCard
           title="This Week"
           value={`${
@@ -623,68 +644,138 @@ const EmployeeDashboard = () => {
       </div>
 
       {/* Main Content Grid */}
-      <div className="dashboard-grid">
-        {/* Timesheet Status Section */}
-        <div className="dashboard-section timesheet-section">
-          <div className="section-header">
-            <h2>Recent Timesheets</h2>
-            <Link href={`/${subdomain}/timesheets`} className="section-link">
-              View All →
-            </Link>
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 auto-rows-fr">
+  {/* Notifications */}
+  <div className="flex">
+    <div className="flex w-full flex-col rounded-2xl border border-slate-200/70 bg-white/80 p-5 shadow-sm backdrop-blur">
+      <NotificationList notifications={notifications} />
+    </div>
+  </div>
+
+  {/* Hours Chart */}
+  <div className="flex">
+    <div className="flex w-full flex-col rounded-2xl border border-slate-200/70 bg-white/80 p-5 shadow-sm backdrop-blur">
+      <HoursChart
+        regularHours={hoursData.regular}
+        overtimeHours={hoursData.overtime}
+        leaveHours={hoursData.leave}
+      />
+    </div>
+  </div>
+
+  {/* Quick Actions */}
+ <div className="flex">
+  <div className="flex w-full flex-col rounded-2xl border border-slate-200/70 bg-white/80 p-4 shadow-sm backdrop-blur">
+    {/* Header */}
+    <div className="mb-3">
+      <h3 className="text-sm font-semibold text-slate-900">
+        Quick Actions
+      </h3>
+      <p className="mt-0.5 text-xs text-slate-500">
+        Frequently used features
+      </p>
+    </div>
+
+    {/* Actions */}
+    <div className="grid flex-1 grid-cols-2 gap-3">
+      {getQuickActions().map((action, index) => (
+        <Link
+          key={index}
+          href={action.to}
+          className="
+            group flex items-start gap-3
+            rounded-xl
+            border border-slate-200/60
+            bg-white/70
+            p-3
+            transition-all
+            hover:-translate-y-0.5
+            hover:bg-white
+            hover:shadow-sm
+          "
+        >
+          {/* Icon */}
+          <div
+            className="
+              flex h-9 w-9 shrink-0 items-center justify-center
+              rounded-lg
+              bg-slate-100
+              text-sm
+              transition-colors
+              group-hover:bg-slate-200
+            "
+          >
+            {action.icon}
           </div>
-          <div className="timesheets-grid">
-            {timesheets.map((timesheet, index) => (
-              <TimeCard key={index} {...timesheet} subdomain={subdomain} />
-            ))}
+
+          {/* Text */}
+          <div className="min-w-0">
+            <h4 className="truncate text-xs font-semibold text-slate-900">
+              {action.title}
+            </h4>
+            <p className="mt-0.5 line-clamp-2 text-[11px] text-slate-500">
+              {action.description}
+            </p>
           </div>
+        </Link>
+      ))}
+    </div>
+  </div>
+</div>
+
+</div>
+
+<div className="my-10" />
+
+<div className="grid grid-cols-1 gap-6 lg:grid-cols-12 auto-rows-fr">
+  {/* Recent Timesheets */}
+  <div className="lg:col-span-8 flex">
+    <div className="flex w-full flex-col rounded-2xl border border-slate-200/70 bg-white/80 p-5 shadow-sm backdrop-blur">
+      <div className="mb-4 flex items-end justify-between">
+        <div>
+          <h2 className="text-lg font-semibold text-slate-900">
+            Recent Timesheets
+          </h2>
+          <p className="mt-1 text-xs text-slate-500">
+            Track progress and quickly take action
+          </p>
         </div>
 
-        {/* Right Sidebar */}
-        <div className="dashboard-sidebar">
-          {/* Hours Chart */}
-          <HoursChart
-            regularHours={hoursData.regular}
-            overtimeHours={hoursData.overtime}
-            leaveHours={hoursData.leave}
+        <Link
+          href={`/${subdomain}/timesheets`}
+          className="text-sm font-semibold text-blue-600 hover:text-blue-700"
+        >
+          View All →
+        </Link>
+      </div>
+
+      <div className="grid flex-1 grid-cols-1 gap-4 md:grid-cols-2">
+        {timesheets.map((timesheet, index) => (
+          <TimeCard
+            key={index}
+            {...timesheet}
+            subdomain={subdomain}
           />
+        ))}
+      </div>
+    </div>
+  </div>
 
-          {/* Notifications */}
-          <NotificationList notifications={notifications} />
-        </div>
+  {/* Upcoming Leave */}
+  <div className="lg:col-span-4 flex">
+    <div className="flex w-full flex-col rounded-2xl border border-slate-200/70 bg-white/80 p-5 shadow-sm backdrop-blur">
+      <UpcomingLeave
+        leaveRequests={leaveRequests}
+        user={user}
+        checkPermission={checkPermission}
+        currentEmployer={currentEmployer}
+      />
+    </div>
+  </div>
+</div>
 
-        {/* Bottom Section */}
-        <div className="dashboard-bottom">
-          {/* Upcoming Leave */}
-          <div className="bottom-card">
-            <UpcomingLeave
-              leaveRequests={leaveRequests}
-              user={user}
-              checkPermission={checkPermission}
-              currentEmployer={currentEmployer}
-            />
-          </div>
 
-          {/* Quick Actions */}
-          <div className="bottom-card">
-            <div className="quick-actions-card">
-              <div className="actions-header">
-                <h3>Quick Actions</h3>
-                <p>Frequently used features</p>
-              </div>
-              <div className="actions-grid">
-                {getQuickActions().map((action, index) => (
-                  <Link key={index} href={action.to} className="action-item">
-                    <div className="action-icon">{action.icon}</div>
-                    <div className="action-content">
-                      <h4>{action.title}</h4>
-                      <p>{action.description}</p>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
+
       </div>
     </div>
   );

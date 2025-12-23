@@ -158,6 +158,31 @@ export default function OnboardingPage() {
         window.location.href = dashboardPath;
       } else {
         console.error('[Onboarding] Registration failed:', data);
+        
+        // Check if user already exists and should login
+        if (data.userExists && data.shouldLogin) {
+          console.log('[Onboarding] User already exists, redirecting to login');
+          setError(data.message || 'An account with this email already exists. Redirecting to login...');
+          
+          // Redirect to login after 2 seconds
+          setTimeout(() => {
+            router.push('/login');
+          }, 2000);
+          return;
+        }
+        
+        // Check if user is pending approval
+        if (data.userExists && data.isPending) {
+          console.log('[Onboarding] User already pending approval');
+          setError(data.message || 'Your registration is already pending admin approval.');
+          
+          // Redirect to pending approval page after 2 seconds
+          setTimeout(() => {
+            router.push('/pending-approval');
+          }, 2000);
+          return;
+        }
+        
         const errorMsg = data.error || data.message || 'Registration failed. Please try again.';
         setError(errorMsg);
       }
@@ -183,7 +208,7 @@ export default function OnboardingPage() {
             className="auth-logo" 
           />
           <h2>Complete Your Profile</h2>
-          <p>Welcome! Please provide your information to get started</p>
+          {/* <p style={{ color: '#ffffff', opacity: 1 }}>Welcome! Please provide your information to get started</p> */}
         </div>
 
         {error && <div className="auth-error">{error}</div>}
@@ -227,7 +252,7 @@ export default function OnboardingPage() {
               value={email}
               disabled
               className="form-control"
-              style={{ backgroundColor: '#f5f5f5', cursor: 'not-allowed' }}
+              style={{ backgroundColor: 'rgba(255, 255, 255, 0.1)', cursor: 'not-allowed', color: '#ffffff' }}
             />
           </div>
 
@@ -254,18 +279,18 @@ export default function OnboardingPage() {
             </select>
           </div>
 
-          <div className="info-message" style={{
+          {/* <div className="info-message" style={{
             padding: '12px 16px',
-            backgroundColor: '#e3f2fd',
-            border: '1px solid #90caf9',
+            backgroundColor: 'rgba(255, 255, 255, 0.1)',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
             borderRadius: '8px',
             marginBottom: '20px',
             fontSize: '14px',
-            color: '#1976d2'
+            color: '#ffffff'
           }}>
-            <i className="fas fa-info-circle" style={{ marginRight: '8px' }}></i>
+            <i className="fas fa-info-circle" style={{ marginRight: '8px', color: '#ffffff' }}></i>
             You will be added to your company's existing workspace based on your email domain.
-          </div>
+          </div> */}
 
           <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
             <div className="form-group">
@@ -305,8 +330,8 @@ export default function OnboardingPage() {
           </button>
         </form>
 
-        <div style={{ marginTop: '20px', textAlign: 'center', fontSize: '12px', color: '#6b7280' }}>
-          <p>By completing registration, you agree to our Terms of Service and Privacy Policy</p>
+        <div style={{ marginTop: '20px', textAlign: 'center', fontSize: '12px', color: '#ffffff', opacity: 0.7 }}>
+          <p style={{ color: '#ffffff' }}>By completing registration, you agree to our Terms of Service and Privacy Policy</p>
         </div>
       </div>
     </div>

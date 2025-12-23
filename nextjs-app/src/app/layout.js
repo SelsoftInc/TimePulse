@@ -13,6 +13,7 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { WebSocketProvider } from '@/contexts/WebSocketContext';
 import { ToastProvider, ToastContainer } from '@/contexts/ToastContext';
+import { NotificationProvider } from '@/contexts/NotificationContext';
 import { SessionProvider } from 'next-auth/react';
 import DemoControls from '@/components/demo/DemoControls';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -33,24 +34,29 @@ export default function RootLayout({ children }) {
   }));
 
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <link
           rel="stylesheet"
           href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
         />
+        {/* Preconnect to API server for faster requests */}
+        <link rel="preconnect" href="http://localhost:5001" />
+        <link rel="dns-prefetch" href="http://localhost:5001" />
       </head>
-      <body className={inter.className}>
+      <body className={inter.className} suppressHydrationWarning>
         <SessionProvider>
           <QueryClientProvider client={queryClient}>
             <ThemeProvider>
               <ToastProvider>
                 <AuthProvider>
-                  <WebSocketProvider>
-                    {children}
-                    <ToastContainer />
-                    <DemoControls />
-                  </WebSocketProvider>
+                  <NotificationProvider>
+                    <WebSocketProvider>
+                      {children}
+                      <ToastContainer />
+                      <DemoControls />
+                    </WebSocketProvider>
+                  </NotificationProvider>
                 </AuthProvider>
               </ToastProvider>
             </ThemeProvider>

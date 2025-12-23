@@ -1,5 +1,15 @@
 const { models } = require("../models");
-const { Notification, User, Employee } = models;
+const { Op } = require("sequelize");
+let Notification, User, Employee;
+
+// Safely initialize models with error handling
+try {
+  Notification = models.Notification;
+  User = models.User;
+  Employee = models.Employee;
+} catch (error) {
+  console.error("⚠️ Error initializing NotificationService models:", error.message);
+}
 
 class NotificationService {
   /**
@@ -19,10 +29,18 @@ class NotificationService {
    */
   static async createNotification(notificationData) {
     try {
+      console.log(`📝 Creating notification:`, {
+        userId: notificationData.userId,
+        title: notificationData.title,
+        category: notificationData.category,
+        type: notificationData.type
+      });
+      
       const notification = await Notification.create(notificationData);
+      console.log(`✅ Notification created successfully with ID: ${notification.id}`);
       return notification;
     } catch (error) {
-      console.error("Error creating notification:", error);
+      console.error("❌ Error creating notification:", error);
       throw error;
     }
   }
@@ -90,7 +108,7 @@ class NotificationService {
       const employees = await Employee.findAll({
         where: {
           tenantId,
-          userId: { [models.Sequelize.Op.ne]: null },
+          userId: { [Op.ne]: null },
         },
         include: [
           {
@@ -125,22 +143,34 @@ class NotificationService {
    */
   static async createRoleNotification(tenantId, roles, notificationData) {
     try {
+      console.log(`🔔 Creating role notification for tenant: ${tenantId}, roles:`, roles);
+      
       const users = await User.findAll({
         where: {
           tenantId,
-          role: { [models.Sequelize.Op.in]: roles },
+          role: { [Op.in]: roles },
         },
-        attributes: ["id"],
+        attributes: ["id", "email", "role"],
       });
 
+      console.log(`📧 Found ${users.length} users with roles ${roles.join(', ')}:`, users.map(u => ({ id: u.id, email: u.email, role: u.role })));
+
+      if (users.length === 0) {
+        console.warn(`⚠️ No users found with roles ${roles.join(', ')} for tenant ${tenantId}`);
+        return [];
+      }
+
       const userIds = users.map((user) => user.id);
-      return await this.createBulkNotifications(
+      const notifications = await this.createBulkNotifications(
         tenantId,
         userIds,
         notificationData
       );
+      
+      console.log(`✅ Created ${notifications.length} notifications for approvers`);
+      return notifications;
     } catch (error) {
-      console.error("Error creating role notification:", error);
+      console.error("❌ Error creating role notification:", error);
       throw error;
     }
   }
@@ -360,7 +390,7 @@ class NotificationService {
   static async cleanupExpiredNotifications(tenantId = null) {
     try {
       const whereClause = {
-        expiresAt: { [models.Sequelize.Op.lt]: new Date() },
+        expiresAt: { [Op.lt]: new Date() },
       };
 
       if (tenantId) {

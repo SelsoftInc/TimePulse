@@ -10,6 +10,7 @@ const InvoiceDetailsModal = ({ invoice, onClose }) => {
   const [loading, setLoading] = useState(true);
   const [fullInvoiceData, setFullInvoiceData] = useState(null);
   const [showPDFModal, setShowPDFModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [error, setError] = useState(null);
 
   const fetchCompleteInvoiceData = useCallback(async () => {
@@ -36,9 +37,30 @@ const InvoiceDetailsModal = ({ invoice, onClose }) => {
       if (response.ok) {
         const data = await response.json();
         console.log('✅ Complete invoice data received:', data);
+        console.log('📋 LineItems in response:', data.invoice?.lineItems);
+        console.log('📋 LineItems type:', typeof data.invoice?.lineItems);
+        console.log('📋 LineItems array check:', Array.isArray(data.invoice?.lineItems));
 
         if (data.success && data.invoice) {
-          setFullInvoiceData(data.invoice);
+          // Parse lineItems if it's a string
+          let invoiceData = { ...data.invoice };
+          if (typeof invoiceData.lineItems === 'string') {
+            try {
+              invoiceData.lineItems = JSON.parse(invoiceData.lineItems);
+              console.log('✅ Parsed lineItems from string:', invoiceData.lineItems);
+            } catch (err) {
+              console.error('❌ Failed to parse lineItems:', err);
+              invoiceData.lineItems = [];
+            }
+          }
+          
+          // Log final lineItems
+          console.log('📋 Final lineItems to display:', invoiceData.lineItems);
+          if (invoiceData.lineItems && invoiceData.lineItems.length > 0) {
+            console.log('📋 First line item:', invoiceData.lineItems[0]);
+          }
+          
+          setFullInvoiceData(invoiceData);
         } else {
           setError('Failed to load invoice details');
         }
@@ -57,10 +79,52 @@ const InvoiceDetailsModal = ({ invoice, onClose }) => {
     fetchCompleteInvoiceData();
   }, [fetchCompleteInvoiceData]);
 
-  const handleDownloadPDF = () => {
+  const handleDownloadPDF = async () => {
     if (fullInvoiceData) {
-      setShowPDFModal(true);
+      try {
+        console.log('📥 Downloading PDF for invoice:', fullInvoiceData.invoiceNumber);
+        
+        const tenantId = JSON.parse(localStorage.getItem("user"))?.tenantId;
+        const token = localStorage.getItem("token");
+        
+        // Download PDF directly
+        const downloadUrl = `${API_BASE}/api/invoices/${fullInvoiceData.id}/download-pdf?tenantId=${tenantId}`;
+        
+        const response = await fetch(downloadUrl, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (response.ok) {
+          const blob = await response.blob();
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `${fullInvoiceData.invoiceNumber || 'invoice'}.pdf`;
+          document.body.appendChild(a);
+          a.click();
+          window.URL.revokeObjectURL(url);
+          document.body.removeChild(a);
+          console.log('✅ PDF downloaded successfully');
+        } else {
+          console.error('❌ Failed to download PDF');
+          // Fallback: Open edit modal if download fails
+          setShowEditModal(true);
+        }
+      } catch (error) {
+        console.error('❌ Error downloading PDF:', error);
+        // Fallback: Open edit modal if error occurs
+        setShowEditModal(true);
+      }
     }
+  };
+
+  const handleUpdateInvoice = (updatedInvoice) => {
+    console.log('✅ Invoice updated:', updatedInvoice);
+    setShowEditModal(false);
+    // Refresh invoice data after update
+    fetchCompleteInvoiceData();
   };
 
   if (loading) {
@@ -338,21 +402,26 @@ const InvoiceDetailsModal = ({ invoice, onClose }) => {
             <button className="btn btn-secondary" onClick={onClose}>
               Close
             </button>
-            <button 
+            {/* <button 
               className="btn btn-primary" 
               onClick={handleDownloadPDF}
             >
               <i className="fas fa-download mr-1"></i> Download PDF
-            </button>
+            </button> */}
           </div>
         </div>
       </div>
 
-      {/* PDF Preview Modal */}
-      {showPDFModal && fullInvoiceData && (
+      {/* Edit Invoice Modal - Opens when Download PDF is clicked */}
+      {showEditModal && fullInvoiceData && (
         <InvoicePDFPreviewModal
+          show={true}
           invoice={fullInvoiceData}
-          onClose={() => setShowPDFModal(false)}
+          onClose={() => {
+            setShowEditModal(false);
+            console.log('📋 Edit modal closed');
+          }}
+          onUpdate={handleUpdateInvoice}
         />
       )}
     </>

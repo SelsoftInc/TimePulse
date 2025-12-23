@@ -19,25 +19,23 @@ module.exports = (sequelize) => {
         },
       },
       name: {
-        type: DataTypes.STRING(255),
+        type: DataTypes.STRING(500),
         allowNull: false,
       },
       legalName: {
-        type: DataTypes.STRING(255),
+        type: DataTypes.STRING(500),
         field: "legal_name",
       },
       contactPerson: {
-        type: DataTypes.STRING(255),
+        type: DataTypes.STRING(500),
         field: "contact_person",
       },
       email: {
-        type: DataTypes.STRING(255),
-        validate: {
-          isEmail: true,
-        },
+        type: DataTypes.STRING(500),
+        // Note: isEmail validation removed because email is encrypted before saving
       },
       phone: {
-        type: DataTypes.STRING(20),
+        type: DataTypes.STRING(100),
       },
       address: {
         type: DataTypes.JSONB,
@@ -48,7 +46,7 @@ module.exports = (sequelize) => {
         defaultValue: "implementation_partner",
       },
       specialization: {
-        type: DataTypes.STRING(255),
+        type: DataTypes.STRING(500),
         allowNull: true,
       },
       status: {

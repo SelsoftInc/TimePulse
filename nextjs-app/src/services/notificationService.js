@@ -26,7 +26,10 @@ class NotificationService {
         ...(unreadOnly && { unreadOnly: 'true' })
       });
 
-      const response = await fetch(`${API_BASE}/api/notifications?${queryParams}`, {
+      const url = `${API_BASE}/api/notifications?${queryParams}`;
+      console.log('🌐 NotificationService: Fetching notifications from:', url);
+
+      const response = await fetch(url, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -34,13 +37,19 @@ class NotificationService {
         }
       });
 
+      console.log('📡 NotificationService: Response status:', response.status);
+
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ NotificationService: API error:', errorText);
         throw new Error('Failed to fetch notifications');
       }
 
-      return await response.json();
+      const data = await response.json();
+      console.log('📬 NotificationService: Received data:', data);
+      return data;
     } catch (error) {
-      console.error('Error fetching notifications:', error);
+      console.error('❌ NotificationService: Error fetching notifications:', error);
       throw error;
     }
   }
@@ -53,7 +62,10 @@ class NotificationService {
    */
   async getUnreadCount(userId, tenantId) {
     try {
-      const response = await fetch(`${API_BASE}/api/notifications/unread-count?userId=${userId}&tenantId=${tenantId}`, {
+      const url = `${API_BASE}/api/notifications/unread-count?userId=${userId}&tenantId=${tenantId}`;
+      console.log('🌐 NotificationService: Fetching unread count from:', url);
+
+      const response = await fetch(url, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -61,14 +73,19 @@ class NotificationService {
         }
       });
 
+      console.log('📡 NotificationService: Unread count response status:', response.status);
+
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ NotificationService: Unread count API error:', errorText);
         throw new Error('Failed to fetch unread count');
       }
 
       const data = await response.json();
+      console.log('📬 NotificationService: Unread count data:', data);
       return data.count || 0;
     } catch (error) {
-      console.error('Error fetching unread count:', error);
+      console.error('❌ NotificationService: Error fetching unread count:', error);
       return 0;
     }
   }
@@ -81,12 +98,13 @@ class NotificationService {
    */
   async markAsRead(notificationId, tenantId) {
     try {
-      const response = await fetch(`${API_BASE}/api/notifications/${notificationId}/read?tenantId=${tenantId}`, {
-        method: 'PUT',
+      const response = await fetch(`${API_BASE}/api/notifications/${notificationId}/read`, {
+        method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
+        },
+        body: JSON.stringify({ tenantId, userId: JSON.parse(localStorage.getItem('userInfo') || '{}').id })
       });
 
       if (!response.ok) {
@@ -109,7 +127,7 @@ class NotificationService {
   async markAllAsRead(userId, tenantId) {
     try {
       const response = await fetch(`${API_BASE}/api/notifications/mark-all-read`, {
-        method: 'PUT',
+        method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('token')}`

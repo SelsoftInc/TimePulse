@@ -102,7 +102,12 @@ const InvoiceList = () => {
         
         // Format invoices for display
         const formattedInvoices = data.data.map((inv, index) => {
-          console.log(`🔄 Formatting invoice ${index + 1}:`, inv.invoiceNumber);
+          console.log(`🔄 Formatting invoice ${index + 1}:`, {
+            invoiceNumber: inv.invoiceNumber,
+            vendorName: inv.vendorName,
+            clientName: inv.clientName,
+            rawInvoice: inv
+          });
           
           // Calculate week from invoice date
           const invoiceDate = new Date(inv.issueDate || inv.createdAt);
@@ -113,10 +118,15 @@ const InvoiceList = () => {
           
           const week = `${weekStart.toLocaleDateString('en-US', { month: 'short', day: '2-digit' })} - ${weekEnd.toLocaleDateString('en-US', { month: 'short', day: '2-digit' })}`;
           
+          // Use vendorName if available, otherwise fallback to clientName
+          const vendorDisplay = inv.vendorName || inv.clientName || 'N/A';
+          
+          console.log(`✅ Vendor display for ${inv.invoiceNumber}: "${vendorDisplay}"`);
+          
           return {
             id: inv.id,
             invoiceNumber: inv.invoiceNumber,
-            vendor: inv.clientName || 'N/A',
+            vendor: vendorDisplay,
             week: week,
             issueDate: inv.issueDate || inv.createdAt,
             total: parseFloat(inv.amount) || 0,
@@ -157,208 +167,170 @@ const InvoiceList = () => {
   console.log('📊 Filtered invoices count:', filteredInvoices.length);
 
   return (
-    <div className="nk-content">
-      <div className="container-fluid">
-        <div className="nk-content-inner">
-          <div className="nk-content-body">
-            {/* Header */}
-            <div className="nk-block-head nk-block-head-sm">
-              <div className="nk-block-between">
-                <div className="nk-block-head-content">
-                  <h3 className="nk-block-title page-title">
-                    Invoice Management
-                  </h3>
-                  <div className="nk-block-des text-soft">
-                    <p>Manage and track all vendor invoices</p>
-                  </div>
-                </div>
+    <div className="invoicelist-dashboard">
+    <div className="min-h-screen bg-slate-50 px-4 py-6 sm:px-6 lg:px-8">
+  <div className="mx-auto max-w-7xl space-y-6">
 
-                <div className="nk-block-head-content">
-                  <div className="toggle-wrap nk-block-tools-toggle">
-                    <ul className="nk-block-tools g-3">
-                      <li>
-                        <button className="btn btn-primary">
-                          <em className="icon ni ni-plus"></em>
-                          <span>Create Invoice</span>
-                        </button>
-                      </li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            </div>
+    {/* ================= HEADER ================= */}
+    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <h1 className="text-2xl font-bold text-slate-900">
+          Invoice Management
+        </h1>
+        <p className="mt-1 text-sm text-slate-600">
+          Manage and track all vendor invoices
+        </p>
+      </div>
 
-            {/* Main Content */}
-            <div className="nk-block">
-              <div className="card card-bordered card-stretch">
-                <div className="card-inner-group">
-                  {/* Filters */}
-                  <div className="card-inner position-relative">
-                    <div className="card-title-group">
-                      <div className="card-tools">
-                        <ul className="nav nav-tabs">
-                          <li className="nav-item">
-                            <button className="nav-link active">
-                              Invoices
-                            </button>
-                          </li>
-                        </ul>
-                      </div>
+      <button
+        className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow hover:bg-indigo-700 transition"
+      >
+        <span className="text-lg leading-none">+</span>
+        Create Invoice
+      </button>
+    </div>
 
-                      <div className="card-tools mr-n1">
-                        <ul className="btn-toolbar gx-1">
-                          <li>
-                            <div className="form-group">
-                              <div className="form-control-wrap">
-                                <input
-                                  type="text"
-                                  className="form-control form-control-sm"
-                                  placeholder="Search..."
-                                  value={searchTerm}
-                                  onChange={(e) => setSearchTerm(e.target.value)}
-                                />
-                              </div>
-                            </div>
-                          </li>
-                          <li>
-                            <div className="form-group">
-                              <select
-                                className="form-select form-select-sm"
-                                value={filterStatus}
-                                onChange={(e) => setFilterStatus(e.target.value)}
-                              >
-                                <option value="all">All Status</option>
-                                <option value="draft">Draft</option>
-                                <option value="pending">Pending</option>
-                                <option value="active">Active</option>
-                                <option value="approved">Approved</option>
-                                <option value="rejected">Rejected</option>
-                                <option value="sent">Sent</option>
-                                <option value="paid">Paid</option>
-                              </select>
-                            </div>
-                          </li>
-                        </ul>
-                      </div>
-                    </div>
-                  </div>
+    {/* ================= FILTERS ================= */}
+    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-semibold text-slate-700">
+            Invoices
+          </span>
+        </div>
 
-                  {/* Table */}
-                  <div className="card-inner p-0">
-                    {loading ? (
-                      <div className="text-center p-4">
-                        <div className="spinner-border text-primary" role="status">
-                          <span className="sr-only">Loading...</span>
-                        </div>
-                        <p className="mt-2">Loading invoices...</p>
-                      </div>
-                    ) : error ? (
-                      <div className="alert alert-danger m-3">
-                        <strong>Error:</strong> {error}
-                      </div>
-                    ) : (
-                      <div className="nk-tb-list nk-tb-ulist">
-                        {/* Table Header */}
-                        <div className="nk-tb-item nk-tb-head">
-                          <div className="nk-tb-col">
-                            <span className="sub-text">Invoice #</span>
-                          </div>
-                          <div className="nk-tb-col">
-                            <span className="sub-text">Vendor</span>
-                          </div>
-                          <div className="nk-tb-col">
-                            <span className="sub-text">Week</span>
-                          </div>
-                          <div className="nk-tb-col">
-                            <span className="sub-text">Issue Date</span>
-                          </div>
-                          <div className="nk-tb-col">
-                            <span className="sub-text">Total</span>
-                          </div>
-                          <div className="nk-tb-col">
-                            <span className="sub-text">Status</span>
-                          </div>
-                          <div className="nk-tb-col nk-tb-col-tools text-right">
-                            <span className="sub-text">Actions</span>
-                          </div>
-                        </div>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <input
+            type="text"
+            placeholder="Search invoices..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 sm:w-56"
+          />
 
-                        {/* Table Body */}
-                        {filteredInvoices.length > 0 ? (
-                          filteredInvoices.map((invoice) => {
-                            const statusInfo = getStatusDisplay(invoice.status);
-                            return (
-                              <div key={invoice.id} className="nk-tb-item">
-                                <div className="nk-tb-col">
-                                  <span className="tb-lead">
-                                    {invoice.invoiceNumber}
-                                  </span>
-                                </div>
-                                <div className="nk-tb-col">
-                                  <span className="tb-sub">{invoice.vendor}</span>
-                                </div>
-                                <div className="nk-tb-col">
-                                  <span className="tb-sub">{invoice.week}</span>
-                                </div>
-                                <div className="nk-tb-col">
-                                  <span className="tb-sub">
-                                    {new Date(invoice.issueDate).toLocaleDateString('en-US', {
-                                      month: 'short',
-                                      day: '2-digit',
-                                      year: 'numeric'
-                                    })}
-                                  </span>
-                                </div>
-                                <div className="nk-tb-col">
-                                  <span className="tb-lead">
-                                    ${invoice.total.toFixed(2)}
-                                  </span>
-                                </div>
-                                <div className="nk-tb-col">
-                                  <span
-                                    className={`badge badge-${statusInfo.class} d-inline-flex align-items-center`}
-                                  >
-                                    <i
-                                      className={`${statusInfo.icon} me-1`}
-                                      style={{ fontSize: "12px" }}
-                                    ></i>
-                                    {statusInfo.text}
-                                  </span>
-                                </div>
-                                <div className="nk-tb-col nk-tb-col-tools">
-                                  <ul className="nk-tb-actions gx-1">
-                                    <li>
-                                      <button
-                                        className="btn btn-sm btn-icon btn-trigger"
-                                        onClick={() => console.log('View invoice:', invoice.id)}
-                                      >
-                                        <em className="icon ni ni-eye"></em>
-                                      </button>
-                                    </li>
-                                  </ul>
-                                </div>
-                              </div>
-                            );
-                          })
-                        ) : (
-                          <div className="nk-tb-item">
-                            <div className="text-center p-4">
-                              <p className="text-muted">
-                                No invoices found matching your criteria.
-                              </p>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+          <select
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
+            className="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+          >
+            <option value="all">All Status</option>
+            <option value="draft">Draft</option>
+            <option value="pending">Pending</option>
+            <option value="active">Active</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
+            <option value="sent">Sent</option>
+            <option value="paid">Paid</option>
+          </select>
         </div>
       </div>
     </div>
+
+    {/* ================= TABLE ================= */}
+    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+      {loading ? (
+        <div className="py-16 text-center text-slate-600">
+          Loading invoices…
+        </div>
+      ) : error ? (
+        <div className="py-16 text-center text-red-600">
+          {error}
+        </div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="min-w-full border-collapse">
+            <thead className="bg-slate-100 text-xs font-semibold uppercase text-slate-600">
+              <tr>
+                <th className="px-4 py-3 text-left">Invoice #</th>
+                <th className="px-4 py-3 text-left">Vendor</th>
+                <th className="px-4 py-3 text-left">Week</th>
+                <th className="px-4 py-3 text-left">Issue Date</th>
+                <th className="px-4 py-3 text-right">Total</th>
+                <th className="px-4 py-3 text-left">Status</th>
+                <th className="px-4 py-3 text-right">Actions</th>
+              </tr>
+            </thead>
+
+            <tbody className="divide-y divide-slate-200">
+              {filteredInvoices.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={7}
+                    className="py-12 text-center text-sm text-slate-500"
+                  >
+                    No invoices found matching your criteria.
+                  </td>
+                </tr>
+              ) : (
+                filteredInvoices.map((invoice) => {
+                  const statusInfo = getStatusDisplay(invoice.status);
+
+                  return (
+                    <tr
+                      key={invoice.id}
+                      className="hover:bg-slate-50 transition"
+                    >
+                      <td className="px-4 py-3 font-medium text-slate-900">
+                        {invoice.invoiceNumber}
+                      </td>
+
+                      <td className="px-4 py-3 text-slate-700">
+                        {invoice.vendor}
+                      </td>
+
+                      <td className="px-4 py-3 text-slate-700">
+                        {invoice.week}
+                      </td>
+
+                      <td className="px-4 py-3 text-slate-600">
+                        {new Date(invoice.issueDate).toLocaleDateString(
+                          "en-US",
+                          { month: "short", day: "2-digit", year: "numeric" }
+                        )}
+                      </td>
+
+                      <td className="px-4 py-3 text-right font-semibold text-slate-900">
+                        ${invoice.total.toFixed(2)}
+                      </td>
+
+                      <td className="px-4 py-3">
+                        <span
+                          className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${
+                            invoice.status === "paid"
+                              ? "bg-green-100 text-green-700"
+                              : invoice.status === "pending" ||
+                                invoice.status === "sent"
+                              ? "bg-amber-100 text-amber-700"
+                              : invoice.status === "rejected"
+                              ? "bg-red-100 text-red-700"
+                              : "bg-slate-100 text-slate-700"
+                          }`}
+                        >
+                          {statusInfo.text}
+                        </span>
+                      </td>
+
+                      <td className="px-4 py-3 text-right">
+                        <button
+                          onClick={() => console.log("View invoice:", invoice.id)}
+                          className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100"
+                        >
+                          View
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+</div>
+  </div>
+</div>
+
   );
 };
 

@@ -1,5 +1,7 @@
+'use client';
+
 import ReportsDashboard from '@/components/reports/ReportsDashboard';
 
 export default function Page() {
-  return <ReportsDashboard />;
+  return <ReportsDashboard key="reports-dashboard" />;
 }

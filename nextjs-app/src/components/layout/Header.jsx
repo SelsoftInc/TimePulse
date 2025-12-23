@@ -7,18 +7,20 @@ import { useAuth } from '@/contexts/AuthContext';
 import { API_BASE } from '@/config/api';
 import { useTheme } from '@/contexts/ThemeContext';
 // import PermissionGuard from '../common/PermissionGuard';
-import NotificationBell from '../notifications/NotificationBell';
+import NotificationBell from '../common/NotificationBell';
 import TimesheetAlerts from '../notifications/TimesheetAlerts';
 import AskAIButton from '../ai/AskAIButton';
+import GlobalSearch from '../common/GlobalSearch';
 import './Header.css';
 
 
 const Header = ({ toggleSidebar }) => {
   const router = useRouter();
   const { subdomain } = useParams();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const { isDarkMode, toggleTheme } = useTheme();
   const [tenantLogo, setTenantLogo] = useState(null);
+  const [showUserMenu, setShowUserMenu] = useState(false);
 
   // Theme is now managed by ThemeContext, so we don't need this useEffect
 
@@ -153,6 +155,37 @@ const Header = ({ toggleSidebar }) => {
     return "TP";
   };
 
+  // Handle logout
+  const handleLogout = () => {
+    // Clear all authentication data
+    logout();
+    
+    // Clear Remember Me data
+    localStorage.removeItem('rememberedEmail');
+    localStorage.removeItem('rememberedPassword');
+    
+    // Clear session storage
+    sessionStorage.clear();
+    
+    // Clear static mode flag
+    localStorage.removeItem('staticMode');
+    
+    // Redirect to login
+    router.push('/login');
+  };
+
+  // Close user menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showUserMenu && !event.target.closest('.user-menu-container')) {
+        setShowUserMenu(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showUserMenu]);
+
   return (
     <header className="w-full h-[60px] flex items-center 
   bg-[#05253D] shadow-md transition-colors duration-300">
@@ -160,10 +193,6 @@ const Header = ({ toggleSidebar }) => {
   <div className="w-full px-4 lg:px-6">
     <div className="flex items-center w-full">
 
-            {/* Notification Bell - All Notifications */}
-            <div className="header-action-item">
-              <NotificationBell />
-            </div>
       {/* Mobile Menu Toggle */}
       <button
         onClick={toggleSidebar}
@@ -187,6 +216,10 @@ const Header = ({ toggleSidebar }) => {
         />
       </div>
 
+<div className="hidden md:flex flex-1 max-w-xl mx-4">
+        <GlobalSearch />
+      </div>
+
       {/* Tools */}
       <div className="flex items-center gap-4 ml-auto">
 
@@ -195,19 +228,24 @@ const Header = ({ toggleSidebar }) => {
           <AskAIButton />
         </div>
 
-        {/* Notification Bell */}
+        {/* Notification Bell - All Notifications */}
         <div className="text-[#466D81]">
-          <TimesheetAlerts subdomain={subdomain} />
+          <NotificationBell />
         </div>
 
-        {/* Theme Toggle */}
+        {/* Timesheet Alerts - Specific to Timesheets */}
+        {/* <div className="text-[#466D81]">
+          <TimesheetAlerts subdomain={subdomain} />
+        </div> */}
+
+        {/* Theme Toggle
         <div
           className="p-2 rounded-lg hover:bg-white/10 cursor-pointer text-[#466D81]"
           onClick={toggleTheme}
           title={`Switch to ${isDarkMode ? "light" : "dark"} mode text-white`}
         >
           <i className={`fas ${isDarkMode ? "fa-sun" : "fa-moon"} text-xl text-white`}></i>
-        </div>
+        </div> */}
 
         {/* Settings */}
         {(user?.role === "admin" || user?.role === "approver") && (
@@ -224,13 +262,51 @@ const Header = ({ toggleSidebar }) => {
           </div>
         )}
 
-        {/* User Avatar */}
-        <div
-          onClick={goToProfileSettings}
-          className="w-8 h-8 rounded-full bg-gray-200 text-[#466D81] font-bold flex items-center justify-center cursor-pointer"
-          title="Edit Profile"
-        >
-          {getUserInitials()}
+        {/* User Avatar with Dropdown */}
+        <div className="user-menu-container relative">
+          <div
+            onClick={() => setShowUserMenu(!showUserMenu)}
+            className="w-8 h-8 rounded-full bg-gray-200 text-[#466D81] font-bold flex items-center justify-center cursor-pointer hover:bg-gray-300 transition-colors"
+            title="User Menu"
+          >
+            {getUserInitials()}
+          </div>
+
+          {/* Dropdown Menu */}
+          {showUserMenu && (
+            <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg py-2 z-50">
+              <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-700">
+                <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                  {user?.name || 'User'}
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  {user?.email || ''}
+                </p>
+              </div>
+              
+              <button
+                onClick={() => {
+                  setShowUserMenu(false);
+                  goToProfileSettings();
+                }}
+                className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+              >
+                <i className="fas fa-user"></i>
+                Profile Settings
+              </button>
+              
+              <button
+                onClick={() => {
+                  setShowUserMenu(false);
+                  handleLogout();
+                }}
+                className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+              >
+                <i className="fas fa-sign-out-alt"></i>
+                Logout
+              </button>
+            </div>
+          )}
         </div>
 
       </div>

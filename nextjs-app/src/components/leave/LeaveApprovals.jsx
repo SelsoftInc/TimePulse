@@ -8,6 +8,56 @@ import { decryptApiResponse } from '@/utils/encryption';
 import '../common/Pagination.css';
 
 const LeaveApprovals = () => {
+  // SAMPLE DATA — UI PREVIEW ONLY
+  const SAMPLE_PENDING_REQUESTS = [
+    {
+      id: 'sample-pending-1',
+      employeeName: 'John Doe',
+      employeeEmail: 'john.doe@company.com',
+      leaveType: 'Vacation',
+      startDate: '2024-10-10',
+      endDate: '2024-10-12',
+      days: 3,
+      submittedAt: '2024-10-01'
+    },
+    {
+      id: 'sample-pending-2',
+      employeeName: 'Jane Smith',
+      employeeEmail: 'jane.smith@company.com',
+      leaveType: 'Sick',
+      startDate: '2024-09-01',
+      endDate: '2024-09-01',
+      days: 1,
+      submittedAt: '2024-08-31'
+    }
+  ];
+
+  // SAMPLE DATA — UI PREVIEW ONLY
+  const SAMPLE_ALL_REQUESTS = [
+    {
+      id: 'sample-all-1',
+      employeeName: 'John Doe',
+      employeeEmail: 'john.doe@company.com',
+      leaveType: 'Vacation',
+      startDate: '2024-10-10',
+      endDate: '2024-10-12',
+      days: 3,
+      status: 'pending',
+      submittedAt: '2024-10-01'
+    },
+    {
+      id: 'sample-all-2',
+      employeeName: 'Jane Smith',
+      employeeEmail: 'jane.smith@company.com',
+      leaveType: 'Sick',
+      startDate: '2024-09-01',
+      endDate: '2024-09-01',
+      days: 1,
+      status: 'approved',
+      submittedAt: '2024-08-31'
+    }
+  ];
+
   const { user } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
@@ -17,6 +67,7 @@ const LeaveApprovals = () => {
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [rejectionReason, setRejectionReason] = useState('');
   const [showRejectModal, setShowRejectModal] = useState(false);
+  const [showApproveModal, setShowApproveModal] = useState(false);
   
   // Pagination states
   const [pendingPage, setPendingPage] = useState(1);
@@ -79,10 +130,12 @@ const LeaveApprovals = () => {
     }
   }, [isApprover, fetchLeaveRequests]);
 
-  const handleApprove = async (requestId) => {
+  const handleApprove = async () => {
+    if (!selectedRequest) return;
+
     try {
       const response = await fetch(
-        `${API_BASE}/api/leave-management/approve/${requestId}`,
+        `${API_BASE}/api/leave-management/approve/${selectedRequest.id}`,
         {
           method: 'POST',
           headers: {
@@ -97,7 +150,8 @@ const LeaveApprovals = () => {
       );
 
       if (response.ok) {
-        // Refresh the list
+        setShowApproveModal(false);
+        setSelectedRequest(null);
         await fetchLeaveRequests();
         toast.success('Leave request approved successfully!');
       } else {
@@ -150,6 +204,16 @@ const LeaveApprovals = () => {
     }
   };
 
+  const openApproveModal = (request) => {
+    setSelectedRequest(request);
+    setShowApproveModal(true);
+  };
+
+  const closeApproveModal = () => {
+    setShowApproveModal(false);
+    setSelectedRequest(null);
+  };
+
   const openRejectModal = (request) => {
     setSelectedRequest(request);
     setShowRejectModal(true);
@@ -184,84 +248,151 @@ const LeaveApprovals = () => {
 
   if (loading) {
     return (
-      <div className="card card-bordered">
-        <div className="card-inner text-center p-5">
-          <div className="spinner-border text-primary" role="status">
-            <span className="visually-hidden">Loading...</span>
+      <div className="leave-approvals-section px-4 py-6 sm:px-6 lg:px-8">
+        <div className="mx-auto w-full max-w-7xl">
+          <div className="card card-bordered overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <div className="card-inner text-center p-5">
+              <div className="spinner-border text-primary" role="status">
+                <span className="visually-hidden">Loading...</span>
+              </div>
+              <p className="mt-3">Loading leave requests...</p>
+            </div>
           </div>
-          <p className="mt-3">Loading leave requests...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="leave-approvals-section">
-      <div className="card card-bordered">
-        <div className="card-inne">
-          <div className="card-title-group align-start mb-3">
-            <div className="card-title">
-              <h6 className="title">
-                <i className="fas fa-clipboard-check mr-3"></i>
-                Leave Approvals
-              </h6>
-              <p className="text-soft">Review and approve leave requests from your team</p>
-            </div>
+<div className="leave-approval">
+  <div className="max-w-8xl mx-auto space-y-4">
+
+    {/* ================= LEAVE APPROVALS HEADER ================= */}
+    <div
+      className="
+        sticky top-4 z-30
+        rounded-3xl
+        bg-[#7cbdf2]
+        shadow-sm
+        backdrop-blur-md
+        border border-transparent
+      "
+    >
+      <div className="px-6 py-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-[1fr_auto] md:items-center">
+
+          {/* LEFT */}
+          <div className="relative pl-5">
+            <span className="absolute left-0 top-2 h-10 w-1 rounded-full bg-purple-900" />
+
+            <h1
+              className="
+                text-[2rem]
+                font-bold
+                text-white
+                leading-[1.15]
+                tracking-tight
+                drop-shadow-[0_2px_8px_rgba(0,0,0,0.18)]
+              "
+            >
+              Leave Approvals
+            </h1>
+
+            <p className="mt-0 text-sm text-white/80">
+              Review, approve, or reject employee leave requests
+            </p>
           </div>
+
+          {/* RIGHT */}
+          <div className="flex flex-wrap items-center gap-3 justify-start md:justify-end">
+            {isAdmin && (
+              <span
+                className="
+                  rounded-full
+                  bg-white/90 px-4 py-2
+                  text-sm font-semibold text-slate-900
+                  shadow-sm
+                "
+              >
+                Admin
+              </span>
+            )}
+
+            {!isAdmin && isApprover && (
+              <span
+                className="
+                  rounded-full
+                  bg-white/90 px-4 py-2
+                  text-sm font-semibold text-slate-900
+                  shadow-sm
+                "
+              >
+                Approver
+              </span>
+            )}
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+        <div className="card card-bordered overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div className="card-inne p-5">
 
           {/* Tabs */}
           {isAdmin && (
-            <ul className="nav nav-tabs mb-4">
-              <li className="nav-item">
+            <div className="mb-5">
+              <div className="inline-flex w-full flex-wrap gap-2 rounded-2xl bg-slate-100 p-1 sm:w-auto">
                 <button
-                  className={`nav-link ${activeTab === 'pending' ? 'active' : ''}`}
+                  className={`nav-link rounded-xl px-4 py-2 text-sm font-medium transition ${activeTab === 'pending' ? 'active bg-white text-slate-900 shadow-sm ring-1 ring-slate-200' : 'bg-transparent text-slate-600 hover:bg-white/60 hover:text-slate-900'}`}
                   onClick={() => setActiveTab('pending')}
                 >
                   Pending ({pendingRequests.length})
                 </button>
-              </li>
-              <li className="nav-item">
                 <button
-                  className={`nav-link ${activeTab === 'all' ? 'active' : ''}`}
+                  className={`nav-link rounded-xl px-4 py-2 text-sm font-medium transition ${activeTab === 'all' ? 'active bg-white text-slate-900 shadow-sm ring-1 ring-slate-200' : 'bg-transparent text-slate-600 hover:bg-white/60 hover:text-slate-900'}`}
                   onClick={() => setActiveTab('all')}
                 >
                   All Requests ({allRequests.length})
                 </button>
-              </li>
-            </ul>
+              </div>
+            </div>
           )}
 
           {/* Pending Requests */}
           {(activeTab === 'pending' || !isAdmin) && (
-            <div className="leave-requests-table">
-              {pendingRequests.length === 0 ? (
-                <div className="text-center p-4">
-                  <em className="icon ni ni-check-circle-fill" style={{ fontSize: '48px', color: '#10b981' }}></em>
-                  <h6 className="mt-3">No Pending Approvals</h6>
-                  <p className="text-soft">All leave requests have been processed</p>
+            <div className="leave-requests-table overflow-hidden rounded-2xl border border-slate-200 bg-white">
+              {(pendingRequests.length ? pendingRequests : SAMPLE_PENDING_REQUESTS).length === 0 ? (
+                <div className="text-center p-8 sm:p-10">
+                  <div className="mx-auto flex max-w-md flex-col items-center justify-center">
+                    <em className="icon ni ni-check-circle-fill" style={{ fontSize: '48px', color: '#10b981' }}></em>
+                    <h6 className="mt-4 text-base font-semibold text-slate-900">No Pending Approvals</h6>
+                    <p className="text-soft mt-1 text-sm text-slate-600">All leave requests have been processed</p>
+                  </div>
                 </div>
               ) : (
                 <>
-                  <table className="table table-bordered">
-                    <thead>
+                  <div className="mx-auto w-full overflow-x-auto">
+                    <table className="table table-bordered mb-0 w-full">
+                      <thead className="sticky top-0 z-10 bg-slate-50/70">
                       <tr>
-                        <th>Employee</th>
-                        <th>Employee Email</th>
-                        <th>Leave Type</th>
-                        <th>Dates</th>
-                        <th>Days</th>
-                        <th>Status</th>
-                        <th>Submitted</th>
-                        <th>Action</th>
+                        <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">Employee</th>
+                        <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">Employee Email</th>
+                        <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">Leave Type</th>
+                        <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">Dates</th>
+                        <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">Days</th>
+                        <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">Status</th>
+                        <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">Submitted</th>
+                        <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">Action</th>
                       </tr>
                     </thead>
-                    <tbody>
-                      {pendingRequests
+                    <tbody className="divide-y divide-slate-100">
+                      {(pendingRequests.length ? pendingRequests : SAMPLE_PENDING_REQUESTS)
                         .slice((pendingPage - 1) * rowsPerPage, pendingPage * rowsPerPage)
                         .map((request) => (
-                          <tr key={request.id}>
-                            <td>{request.employeeName}</td>
-                            <td>{request.employeeEmail}</td>
+                          <tr key={request.id} className="hover:bg-slate-50/60">
+                            <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-900">{request.employeeName}</td>
+                            <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-700">{request.employeeEmail}</td>
                             <td>
                               <span className="badge badge-dim badge-outline-primary">
                                 {request.leaveType}
@@ -270,18 +401,18 @@ const LeaveApprovals = () => {
                             <td>
                               {formatDate(request.startDate)} - {formatDate(request.endDate)}
                             </td>
-                            <td>{request.days}</td>
+                            <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-700">{request.days}</td>
                             <td>
                               <span className="badge badge-warning">
                                 Pending
                               </span>
                             </td>
-                            <td>{formatDate(request.submittedAt)}</td>
+                            <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-700">{formatDate(request.submittedAt)}</td>
                             <td>
-                              <div className="d-flex gap-2">
+                              <div className="d-flex gap-2 whitespace-nowrap px-4 py-3">
                                 <button
                                   className="btn btn-success btn-sm"
-                                  onClick={() => handleApprove(request.id)}
+                                  onClick={() => openApproveModal(request)}
                                   title="Approve Leave Request"
                                 >
                                   <i className="fas fa-check mr-1"></i>
@@ -301,31 +432,32 @@ const LeaveApprovals = () => {
                         ))}
                     </tbody>
                   </table>
+                  </div>
                   
                   {/* Pagination Controls */}
-                  {pendingRequests.length > rowsPerPage && (
-                    <div className="pagination-wrappe">
-                      <div className="pagination-info">
-                        Showing {((pendingPage - 1) * rowsPerPage) + 1} to {Math.min(pendingPage * rowsPerPage, pendingRequests.length)} of {pendingRequests.length} entries
+                  {(pendingRequests.length ? pendingRequests : SAMPLE_PENDING_REQUESTS).length > rowsPerPage && (
+                    <div className="pagination-wrappe flex flex-col gap-3 border-t border-slate-200 bg-white px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="pagination-info text-sm text-slate-600">
+                        Showing {((pendingPage - 1) * rowsPerPage) + 1} to {Math.min(pendingPage * rowsPerPage, (pendingRequests.length ? pendingRequests : SAMPLE_PENDING_REQUESTS).length)} of {(pendingRequests.length ? pendingRequests : SAMPLE_PENDING_REQUESTS).length} entries
                       </div>
-                      <div className="pagination-controls">
+                      <div className="pagination-controls flex items-center justify-end gap-3">
                         <button
-                          className="pagination-btn"
+                          className="pagination-btn inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:opacity-50"
                           onClick={() => setPendingPage(prev => Math.max(1, prev - 1))}
                           disabled={pendingPage === 1}
                           title="Previous Page"
                         >
                           <i className="fas fa-chevron-left"></i>
                         </button>
-                        <div className="pagination-pages">
-                          <span className="current-page">{pendingPage}</span>
-                          <span className="page-separator">/</span>
-                          <span className="total-pages">{Math.ceil(pendingRequests.length / rowsPerPage)}</span>
+                        <div className="pagination-pages flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm">
+                          <span className="current-page font-semibold text-slate-900">{pendingPage}</span>
+                          <span className="page-separator text-slate-400">/</span>
+                          <span className="total-pages text-slate-600">{Math.ceil((pendingRequests.length ? pendingRequests : SAMPLE_PENDING_REQUESTS).length / rowsPerPage)}</span>
                         </div>
                         <button
-                          className="pagination-btn"
-                          onClick={() => setPendingPage(prev => Math.min(Math.ceil(pendingRequests.length / rowsPerPage), prev + 1))}
-                          disabled={pendingPage >= Math.ceil(pendingRequests.length / rowsPerPage)}
+                          className="pagination-btn inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:opacity-50"
+                          onClick={() => setPendingPage(prev => Math.min(Math.ceil((pendingRequests.length ? pendingRequests : SAMPLE_PENDING_REQUESTS).length / rowsPerPage), prev + 1))}
+                          disabled={pendingPage >= Math.ceil((pendingRequests.length ? pendingRequests : SAMPLE_PENDING_REQUESTS).length / rowsPerPage)}
                           title="Next Page"
                         >
                           <i className="fas fa-chevron-right"></i>
@@ -340,26 +472,27 @@ const LeaveApprovals = () => {
 
           {/* All Requests (Admin only) */}
           {activeTab === 'all' && isAdmin && (
-            <div className="leave-requests-table">
-              <table className="table table-bordered">
-                <thead>
+            <div className="leave-requests-table overflow-hidden rounded-2xl border border-slate-200 bg-white">
+              <div className="mx-auto w-full overflow-x-auto">
+              <table className="table table-bordered mb-0 w-full">
+                <thead className="sticky top-0 z-10 bg-slate-50/70">
                   <tr>
-                    <th>Employee</th>
-                    <th>Employee Email</th>
-                    <th>Leave Type</th>
-                    <th>Dates</th>
-                    <th>Days</th>
-                    <th>Status</th>
-                    <th>Submitted</th>
+                    <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">Employee</th>
+                    <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">Employee Email</th>
+                    <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">Leave Type</th>
+                    <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">Dates</th>
+                    <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">Days</th>
+                    <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">Status</th>
+                    <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">Submitted</th>
                   </tr>
                 </thead>
-                <tbody>
-                  {allRequests
+                <tbody className="divide-y divide-slate-100">
+                  {(allRequests.length ? allRequests : SAMPLE_ALL_REQUESTS)
                     .slice((allRequestsPage - 1) * rowsPerPage, allRequestsPage * rowsPerPage)
                     .map((request) => (
-                      <tr key={request.id}>
-                        <td>{request.employeeName}</td>
-                        <td>{request.employeeEmail}</td>
+                      <tr key={request.id} className="hover:bg-slate-50/60">
+                        <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-900">{request.employeeName}</td>
+                        <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-700">{request.employeeEmail}</td>
                         <td>
                           <span className="badge badge-dim badge-outline-primary">
                             {request.leaveType}
@@ -368,42 +501,43 @@ const LeaveApprovals = () => {
                         <td>
                           {formatDate(request.startDate)} - {formatDate(request.endDate)}
                         </td>
-                        <td>{request.totalDays || request.days}</td>
+                        <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-700">{request.totalDays || request.days}</td>
                         <td>
                           <span className={`badge ${getStatusBadgeClass(request.status)}`}>
                             {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
                           </span>
                         </td>
-                        <td>{formatDate(request.submittedOn || request.submittedAt)}</td>
+                        <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-700">{formatDate(request.submittedOn || request.submittedAt)}</td>
                       </tr>
                     ))}
                 </tbody>
               </table>
+              </div>
               
               {/* Pagination Controls */}
-              {allRequests.length > rowsPerPage && (
-                <div className="pagination-wrapper">
-                  <div className="pagination-info">
-                    Showing {((allRequestsPage - 1) * rowsPerPage) + 1} to {Math.min(allRequestsPage * rowsPerPage, allRequests.length)} of {allRequests.length} entries
+              {(allRequests.length ? allRequests : SAMPLE_ALL_REQUESTS).length > rowsPerPage && (
+                <div className="pagination-wrapper flex flex-col gap-3 border-t border-slate-200 bg-white px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="pagination-info text-sm text-slate-600">
+                    Showing {((allRequestsPage - 1) * rowsPerPage) + 1} to {Math.min(allRequestsPage * rowsPerPage, (allRequests.length ? allRequests : SAMPLE_ALL_REQUESTS).length)} of {(allRequests.length ? allRequests : SAMPLE_ALL_REQUESTS).length} entries
                   </div>
-                  <div className="pagination-controls">
+                  <div className="pagination-controls flex items-center justify-end gap-3">
                     <button
-                      className="pagination-btn"
+                      className="pagination-btn inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:opacity-50"
                       onClick={() => setAllRequestsPage(prev => Math.max(1, prev - 1))}
                       disabled={allRequestsPage === 1}
                       title="Previous Page"
                     >
                       <i className="fas fa-chevron-left"></i>
                     </button>
-                    <div className="pagination-pages">
-                      <span className="current-page">{allRequestsPage}</span>
-                      <span className="page-separator">/</span>
-                      <span className="total-pages">{Math.ceil(allRequests.length / rowsPerPage)}</span>
+                    <div className="pagination-pages flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm">
+                      <span className="current-page font-semibold text-slate-900">{allRequestsPage}</span>
+                      <span className="page-separator text-slate-400">/</span>
+                      <span className="total-pages text-slate-600">{Math.ceil((allRequests.length ? allRequests : SAMPLE_ALL_REQUESTS).length / rowsPerPage)}</span>
                     </div>
                     <button
-                      className="pagination-btn"
-                      onClick={() => setAllRequestsPage(prev => Math.min(Math.ceil(allRequests.length / rowsPerPage), prev + 1))}
-                      disabled={allRequestsPage >= Math.ceil(allRequests.length / rowsPerPage)}
+                      className="pagination-btn inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:opacity-50"
+                      onClick={() => setAllRequestsPage(prev => Math.min(Math.ceil((allRequests.length ? allRequests : SAMPLE_ALL_REQUESTS).length / rowsPerPage), prev + 1))}
+                      disabled={allRequestsPage >= Math.ceil((allRequests.length ? allRequests : SAMPLE_ALL_REQUESTS).length / rowsPerPage)}
                       title="Next Page"
                     >
                       <i className="fas fa-chevron-right"></i>
@@ -413,48 +547,278 @@ const LeaveApprovals = () => {
               )}
             </div>
           )}
+          </div>
         </div>
-      </div>
 
-      {/* Reject Modal */}
-      {showRejectModal && (
-        <div className="modal fade show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-          <div className="modal-dialog">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">Reject Leave Request</h5>
-                <button type="button" className="close" onClick={closeRejectModal}>
-                  <span>&times;</span>
+        {/* Approval Confirmation Modal */}
+        {showApproveModal && selectedRequest && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4 py-4">
+            <div className="w-full max-w-xl rounded-xl bg-white shadow-2xl transform transition-all max-h-[90vh] overflow-y-auto">
+              
+              {/* Header */}
+              <div className="flex items-center justify-between border-b border-slate-200 bg-gradient-to-r from-green-50 to-emerald-50 px-5 py-3 rounded-t-xl">
+                <div className="flex items-center gap-2">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-green-100">
+                    <i className="fas fa-check-circle text-lg text-green-600"></i>
+                  </div>
+                  <div>
+                    <h5 className="text-base font-bold text-slate-900">Approve Leave Request</h5>
+                  </div>
+                </div>
+                <button
+                  onClick={closeApproveModal}
+                  className="flex h-7 w-7 items-center justify-center rounded-full text-slate-400 hover:bg-white hover:text-slate-600 transition-colors"
+                >
+                  <i className="fas fa-times"></i>
                 </button>
               </div>
-              <div className="modal-body">
-                <p>
-                  You are about to reject the leave request from <strong>{selectedRequest?.employeeName}</strong>.
-                </p>
-                <div className="form-group">
-                  <label className="form-label">Reason for Rejection*</label>
-                  <textarea
-                    className="form-control"
-                    rows="3"
-                    value={rejectionReason}
-                    onChange={(e) => setRejectionReason(e.target.value)}
-                    placeholder="Please provide a reason for rejection..."
-                    required
-                  ></textarea>
+
+              {/* Body */}
+              <div className="px-5 py-4 space-y-3">
+                {/* Employee Info Card */}
+                <div className="rounded-lg bg-gradient-to-br from-blue-50 to-indigo-50 p-3 border border-blue-100">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 text-blue-600 font-bold text-base">
+                      {selectedRequest.employeeName?.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h6 className="text-base font-semibold text-slate-900 truncate">{selectedRequest.employeeName}</h6>
+                      <p className="text-xs text-slate-600 flex items-center gap-1.5 truncate">
+                        <i className="fas fa-envelope text-blue-500 text-xs"></i>
+                        {selectedRequest.employeeEmail}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Leave Details Grid */}
+                <div className="grid grid-cols-2 gap-2">
+                  {/* Leave Type */}
+                  <div className="rounded-lg bg-slate-50 p-2.5 border border-slate-200">
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <i className="fas fa-tag text-purple-500 text-xs"></i>
+                      <span className="text-[10px] font-semibold text-slate-600 uppercase tracking-wide">Leave Type</span>
+                    </div>
+                    <p className="text-sm font-semibold text-slate-900">{selectedRequest.leaveType}</p>
+                  </div>
+
+                  {/* Duration */}
+                  <div className="rounded-lg bg-slate-50 p-2.5 border border-slate-200">
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <i className="fas fa-calendar-day text-orange-500 text-xs"></i>
+                      <span className="text-[10px] font-semibold text-slate-600 uppercase tracking-wide">Duration</span>
+                    </div>
+                    <p className="text-sm font-semibold text-slate-900">{selectedRequest.days} {selectedRequest.days === 1 ? 'Day' : 'Days'}</p>
+                  </div>
+
+                  {/* Start Date */}
+                  <div className="rounded-lg bg-slate-50 p-2.5 border border-slate-200">
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <i className="fas fa-calendar-check text-green-500 text-xs"></i>
+                      <span className="text-[10px] font-semibold text-slate-600 uppercase tracking-wide">Start Date</span>
+                    </div>
+                    <p className="text-sm font-semibold text-slate-900">{formatDate(selectedRequest.startDate)}</p>
+                  </div>
+
+                  {/* End Date */}
+                  <div className="rounded-lg bg-slate-50 p-2.5 border border-slate-200">
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <i className="fas fa-calendar-times text-red-500 text-xs"></i>
+                      <span className="text-[10px] font-semibold text-slate-600 uppercase tracking-wide">End Date</span>
+                    </div>
+                    <p className="text-sm font-semibold text-slate-900">{formatDate(selectedRequest.endDate)}</p>
+                  </div>
+                </div>
+
+                {/* Submitted Date */}
+                <div className="rounded-lg bg-amber-50 p-2.5 border border-amber-200">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                      <i className="fas fa-clock text-amber-600 text-xs"></i>
+                      <span className="text-xs font-medium text-slate-700">Submitted on</span>
+                    </div>
+                    <span className="text-xs font-semibold text-slate-900">{formatDate(selectedRequest.submittedAt)}</span>
+                  </div>
+                </div>
+
+                {/* Confirmation Message */}
+                <div className="rounded-lg bg-green-50 border border-green-200 p-2.5">
+                  <div className="flex gap-2">
+                    <i className="fas fa-info-circle text-green-600 text-xs mt-0.5"></i>
+                    <p className="text-xs text-slate-700">
+                      By clicking <strong className="text-green-700">"Approve"</strong>, you confirm this leave request. The employee will be notified.
+                    </p>
+                  </div>
                 </div>
               </div>
-              <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={closeRejectModal}>
+
+              {/* Footer */}
+              <div className="flex justify-end gap-2 border-t border-slate-200 bg-slate-50 px-5 py-3 rounded-b-xl">
+                <button
+                  onClick={closeApproveModal}
+                  className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors shadow-sm"
+                >
+                  <i className="fas fa-times mr-1.5"></i>
                   Cancel
                 </button>
-                <button type="button" className="btn btn-danger" onClick={handleReject}>
-                  Reject Request
+                <button
+                  onClick={handleApprove}
+                  className="rounded-lg bg-gradient-to-r from-green-600 to-emerald-600 px-5 py-2 text-sm font-semibold text-white hover:from-green-700 hover:to-emerald-700 transition-all shadow-md hover:shadow-lg"
+                >
+                  <i className="fas fa-check mr-1.5"></i>
+                  Approve
                 </button>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+
+        {/* Rejection Modal */}
+        {showRejectModal && selectedRequest && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4 py-4">
+            <div className="w-full max-w-xl rounded-xl bg-white shadow-2xl transform transition-all max-h-[90vh] overflow-y-auto">
+              
+              {/* Header */}
+              <div className="flex items-center justify-between border-b border-slate-200 bg-gradient-to-r from-red-50 to-rose-50 px-5 py-3 rounded-t-xl">
+                <div className="flex items-center gap-2">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-red-100">
+                    <i className="fas fa-times-circle text-lg text-red-600"></i>
+                  </div>
+                  <div>
+                    <h5 className="text-base font-bold text-slate-900">Reject Leave Request</h5>
+                  </div>
+                </div>
+                <button
+                  onClick={closeRejectModal}
+                  className="flex h-7 w-7 items-center justify-center rounded-full text-slate-400 hover:bg-white hover:text-slate-600 transition-colors"
+                >
+                  <i className="fas fa-times"></i>
+                </button>
+              </div>
+
+              {/* Body */}
+              <div className="px-5 py-4 space-y-3">
+                {/* Employee Info Card */}
+                <div className="rounded-lg bg-gradient-to-br from-blue-50 to-indigo-50 p-3 border border-blue-100">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 text-blue-600 font-bold text-base">
+                      {selectedRequest.employeeName?.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h6 className="text-base font-semibold text-slate-900 truncate">{selectedRequest.employeeName}</h6>
+                      <p className="text-xs text-slate-600 flex items-center gap-1.5 truncate">
+                        <i className="fas fa-envelope text-blue-500 text-xs"></i>
+                        {selectedRequest.employeeEmail}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Leave Details Grid */}
+                <div className="grid grid-cols-2 gap-2">
+                  {/* Leave Type */}
+                  <div className="rounded-lg bg-slate-50 p-2.5 border border-slate-200">
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <i className="fas fa-tag text-purple-500 text-xs"></i>
+                      <span className="text-[10px] font-semibold text-slate-600 uppercase tracking-wide">Leave Type</span>
+                    </div>
+                    <p className="text-sm font-semibold text-slate-900">{selectedRequest.leaveType}</p>
+                  </div>
+
+                  {/* Duration */}
+                  <div className="rounded-lg bg-slate-50 p-2.5 border border-slate-200">
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <i className="fas fa-calendar-day text-orange-500 text-xs"></i>
+                      <span className="text-[10px] font-semibold text-slate-600 uppercase tracking-wide">Duration</span>
+                    </div>
+                    <p className="text-sm font-semibold text-slate-900">{selectedRequest.days} {selectedRequest.days === 1 ? 'Day' : 'Days'}</p>
+                  </div>
+
+                  {/* Start Date */}
+                  <div className="rounded-lg bg-slate-50 p-2.5 border border-slate-200">
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <i className="fas fa-calendar-check text-green-500 text-xs"></i>
+                      <span className="text-[10px] font-semibold text-slate-600 uppercase tracking-wide">Start Date</span>
+                    </div>
+                    <p className="text-sm font-semibold text-slate-900">{formatDate(selectedRequest.startDate)}</p>
+                  </div>
+
+                  {/* End Date */}
+                  <div className="rounded-lg bg-slate-50 p-2.5 border border-slate-200">
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <i className="fas fa-calendar-times text-red-500 text-xs"></i>
+                      <span className="text-[10px] font-semibold text-slate-600 uppercase tracking-wide">End Date</span>
+                    </div>
+                    <p className="text-sm font-semibold text-slate-900">{formatDate(selectedRequest.endDate)}</p>
+                  </div>
+                </div>
+
+                {/* Submitted Date */}
+                <div className="rounded-lg bg-amber-50 p-2.5 border border-amber-200">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                      <i className="fas fa-clock text-amber-600 text-xs"></i>
+                      <span className="text-xs font-medium text-slate-700">Submitted on</span>
+                    </div>
+                    <span className="text-xs font-semibold text-slate-900">{formatDate(selectedRequest.submittedAt)}</span>
+                  </div>
+                </div>
+
+                {/* Rejection Reason */}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                    <i className="fas fa-comment-dots text-red-500 mr-1.5 text-xs"></i>
+                    Reason for Rejection <span className="text-red-500">*</span>
+                  </label>
+                  <textarea
+                    className="w-full rounded-lg border-2 border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-100 transition-all"
+                    rows={3}
+                    value={rejectionReason}
+                    onChange={(e) => setRejectionReason(e.target.value)}
+                    placeholder="Please provide a reason for rejecting this leave request..."
+                  />
+                  {!rejectionReason.trim() && (
+                    <p className="mt-1 text-[10px] text-slate-500 flex items-center gap-1">
+                      <i className="fas fa-info-circle text-[10px]"></i>
+                      A reason is required
+                    </p>
+                  )}
+                </div>
+
+                {/* Warning Message */}
+                <div className="rounded-lg bg-red-50 border border-red-200 p-2.5">
+                  <div className="flex gap-2">
+                    <i className="fas fa-exclamation-triangle text-red-600 text-xs mt-0.5"></i>
+                    <p className="text-xs text-slate-700">
+                      By clicking <strong className="text-red-700">"Reject"</strong>, this leave request will be declined. The employee will be notified.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="flex justify-end gap-2 border-t border-slate-200 bg-slate-50 px-5 py-3 rounded-b-xl">
+                <button
+                  onClick={closeRejectModal}
+                  className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors shadow-sm"
+                >
+                  <i className="fas fa-times mr-1.5"></i>
+                  Cancel
+                </button>
+                <button
+                  onClick={handleReject}
+                  disabled={!rejectionReason.trim()}
+                  className="rounded-lg bg-gradient-to-r from-red-600 to-rose-600 px-5 py-2 text-sm font-semibold text-white hover:from-red-700 hover:to-rose-700 transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:from-red-600 disabled:hover:to-rose-600"
+                >
+                  <i className="fas fa-ban mr-1.5"></i>
+                  Reject
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+      </div>
     </div>
   );
 };

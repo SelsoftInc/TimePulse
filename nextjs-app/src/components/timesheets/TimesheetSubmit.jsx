@@ -13,6 +13,7 @@ import {
   validateExtractedData} from '@/services/timesheetExtractor';
 import { API_BASE } from '@/config/api';
 import axios from 'axios';
+import { decryptApiResponse } from '@/utils/encryption';
 import OvertimeConfirmationModal from './OvertimeConfirmationModal';
 import "./Timesheet.css";
 
@@ -227,14 +228,18 @@ const TimesheetSubmit = () => {
             const employeesResponse = await axios.get(
               `${API_BASE}/api/employees?tenantId=${tenantId}`
             );
-            console.log("📥 Employees API response:", employeesResponse.data);
+            console.log("📥 Employees API raw response:", employeesResponse.data);
+            
+            // Decrypt the response if encrypted
+            const decryptedData = decryptApiResponse(employeesResponse.data);
+            console.log("🔓 Decrypted employees data:", decryptedData);
 
             if (
-              employeesResponse.data.success &&
-              employeesResponse.data.employees
+              decryptedData.success &&
+              decryptedData.employees
             ) {
               // Filter out admin users - they don't submit timesheets
-              const employees = employeesResponse.data.employees
+              const employees = decryptedData.employees
                 .filter((emp) => emp.role !== "admin")
                 .map((emp) => ({
                   id: emp.id,
@@ -1837,16 +1842,23 @@ const TimesheetSubmit = () => {
 
   if (loading) {
     return (
-      <div className="nk-content">
+      <div className="nk-content min-h-screen bg-slate-50">
         <div className="container-fluid">
           <div className="nk-content-inner">
             <div className="nk-content-body">
               <div className="nk-block">
-                <div className="text-center p-5">
-                  <div className="spinner-border text-primary" role="status">
-                    <span className="visually-hidden">Loading...</span>
+                <div className="mx-auto max-w-3xl rounded-xl border border-slate-200 bg-white p-8 text-center shadow-sm">
+                  <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-blue-50">
+                    <div className="spinner-border text-primary" role="status">
+                      <span className="visually-hidden">Loading...</span>
+                    </div>
                   </div>
-                  <p className="mt-3">Loading timesheet form...</p>
+                  <p className="mt-3 text-sm font-medium text-slate-700">
+                    Loading timesheet form...
+                  </p>
+                  <p className="mt-1 text-xs text-slate-500">
+                    Please wait while we fetch your week and client data.
+                  </p>
                 </div>
               </div>
             </div>
@@ -1857,144 +1869,195 @@ const TimesheetSubmit = () => {
   }
 
   return (
-    <div className="nk-conten">
-      <div className="container-flui">
-        <div className="nk-content-inne">
-          <div className="nk-content-body">
-            <div className="nk-block-head nk-block-head-sm">
-              <div className="nk-block-between">
-                <div className="nk-block-head-content">
-                  <h3 className="nk-block-title page-title">
-                    Submit Timesheet
-                  </h3>
-                  {/* <div className="nk-block-des text-soft">
-                    <p>Enter your hours for the week of {week}</p>
-                  </div> */}
-                </div>
-              </div>
-            </div>
-
-            <div className="nk-block">
-              <div className="card card-bordered">
-                <div className="card-inne">
-                  <form onSubmit={handleSubmit} noValidate>
-                    {!isEmployee() && (
-                      <div className="form-group mb-4">
-                        <label className="form-label">
-                          <em className="icon ni ni-user text-primary me-2"></em>
-                          Select Employee
-                        </label>
-                        <div className="form-control-wrap">
-                          <select
-                            className="form-select"
-                            value={selectedEmployee}
-                            onChange={(e) =>
-                              setSelectedEmployee(e.target.value)
-                            }
-                            disabled={isReadOnly}
-                            required
-                          >
-                            <option value="">Choose an employee...</option>
-                            {availableEmployees.map((employee) => (
-                              <option key={employee.id} value={employee.id}>
-                                {employee.name} - {employee.department} (
-                                {employee.email})
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                        <div className="form-note mt-2">
-                          <small className="text-soft">
-                            {isAdmin()
-                              ? "As an admin, you can manage timesheets for any employee."
-                              : "Select the employee whose timesheet you want to manage."}
-                          </small>
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="form-group mb-4">
-                      <label className="form-label">Select Week</label>
-                      <div className="form-control-wrap">
-                        <div className="input-group">
-                          {/* <button
-                            type="button"
-                            className="btn btn-outline-secondary"
-                            onClick={navigateToPreviousWeek}
-                            disabled={!selectedWeek || loading}
-                            title="Previous Week"
-                          >
-                            <em className="icon ni ni-chevron-left"></em>
-                          </button> */}
-                          <select
-                            className="form-select timesheet-dropdown"
-                            value={selectedWeek}
-                            onChange={(e) => handleWeekChange(e.target.value)}
-                            disabled={false}
-                          >
-                            <option value="">Select a week...</option>
-                            {availableWeeks
-                              .sort((a, b) => {
-                                // Sort by date descending (current week first)
-                                const dateA = new Date(a.value.split(" To ")[0]);
-                                const dateB = new Date(b.value.split(" To ")[0]);
-                                return dateB - dateA;
-                              })
-                            .map((week) => (
-                              <option key={week.value} value={week.value}>
-                                {week.label}
-                                {week.readonly
-                                  ? " (Read Only - Invoice Raised)"
-                                  : ""}
-                              </option>
-                            ))}
-                        </select>
-                          {/* <button
-                            type="button"
-                            className="btn btn-outline-secondary"
-                            onClick={navigateToNextWeek}
-                            disabled={!selectedWeek || loading}
-                            title="Next Week"
-                          >
-                            <em className="icon ni ni-chevron-right"></em>
-                          </button> */}
-                        </div>
-                      </div>
-                      <div className="d-flex justify-content-between align-items-center mt-2">
-                        <div className="form-note">
-                          <button
-                            type="button"
-                            className="btn btn-link btn-sm p-0"
-                            onClick={() => router.push(`/${subdomain}/timesheets/history`)}
-                          >
-                            <em className="icon ni ni-history me-1"></em>
-                            View History
-                          </button>
-                        </div>
-                        {isReadOnly && (
-                          <div className="form-note text-warning">
-                            <em className="icon ni ni-info"></em>
-                            This timesheet is read-only
+  <div className="nk-content min-h-screen bg-slate-50">
+  <div className="container-fluid">
+    {/* <div className="nk-content-inner"> */}
+      <div className="nk-content-body py-6">
+<div className="mb-6 rounded-xl border border-slate-200 bg-indigo-50 p-5 shadow-sm">
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                        <div>
+                          <h1 className="text-xl font-semibold text-slate-900">Submit Timesheet</h1>
+                          <div className="mt-1 text-sm text-slate-600">
+                            <span className="font-medium text-slate-700">Employee:</span>{" "}
+                            <span className="text-slate-600">
+                              {!isEmployee()
+                                ? (availableEmployees.find((emp) => emp.id === selectedEmployee)?.name || "—")
+                                : (user?.name || user?.email || "—")}
+                            </span>
+                            <span className="mx-2 text-slate-300">|</span>
+                            <span className="font-medium text-slate-700">Week:</span>{" "}
+                            <span className="text-slate-600">{selectedWeek || "—"}</span>
                           </div>
-                        )}
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          {isReadOnly && (
+                            <div className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-medium text-amber-800">
+                              <em className="icon ni ni-info"></em>
+                              Read-only
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
+        {/* DASHBOARD STYLE WRAPPER */}
+        <div className="nk-block nk-block-lg">
+          <div className="card card-bordered rounded-xl border-slate-200 shadow-sm">
 
-                    {/* External Client File Upload */}
-                    {clientType === "external" && (
-                      <div className="form-group mb-4">
-                        <div className="card card-bordered">
-                          <div className="card-inne">
-                            <h6 className="card-title mb-3">
-                              <em className="icon ni ni-upload text-primary me-2"></em>
-                              Upload Client Submitted Timesheet
-                            </h6>
-                            <div className="form-note mb-3">
-                              <small className="text-soft">
-                                Upload the timesheet file submitted by the
-                                external client (Image, PDF, or Word document)
-                              </small>
-                            </div>
+            {/* HEADER */}
+            {/* <div className="card-inner border-bottom border-slate-200 bg-white/60">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h3 className="nk-block-title page-title text-lg font-semibold text-slate-900">
+                    Submit Timesheet
+                  </h3>
+                  <p className="mt-1 text-xs text-slate-500">
+                    Fill in hours, attach proof if needed, and submit for approval.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2"></div>
+              </div>
+            </div> */}
+              <div className="card card-bordered rounded-xl border-slate-200 shadow-sm">
+                <div className="card-inner">
+                  <div className="mx-auto w-full max-w-6xl">
+                    
+
+                    <form onSubmit={handleSubmit} noValidate>
+                      <div className="grid grid-cols-1 gap-4">
+                        {/* 1) Employee & Week Selection */}
+                       <section className="mt-4 rounded-xl border border-slate-200 bg-white shadow-sm">
+  {/* Header */}
+  <div className="border-b border-slate-200 bg-slate-50 p-4">
+    <div className="text-sm font-semibold text-slate-900">
+      Employee & Week
+    </div>
+    <div className="mt-1 text-xs text-slate-500">
+      Select who the timesheet belongs to and choose a week.
+    </div>
+  </div>
+
+  {/* Body */}
+  <div className="p-4">
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+      {!isEmployee() && (
+        <div className="form-group">
+          <label className="form-label mb-1 flex items-center text-sm font-medium text-slate-800">
+            <em className="icon ni ni-user mr-2 text-indigo-500"></em>
+            Select Employee
+          </label>
+
+          <div className="form-control-wrap">
+            <select
+              className="
+                form-select w-full rounded-lg border border-slate-300
+                bg-white text-sm text-slate-800
+                focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200
+                placeholder:text-slate-400
+              "
+              value={selectedEmployee}
+              onChange={(e) => setSelectedEmployee(e.target.value)}
+              disabled={isReadOnly}
+              required
+            >
+              <option value="">Choose an employee...</option>
+              {availableEmployees.map((employee) => (
+                <option key={employee.id} value={employee.id}>
+                  {employee.name} - {employee.department} ({employee.email})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <p className="mt-1 text-xs text-slate-500">
+            {isAdmin()
+              ? "As an admin, you can manage timesheets for any employee."
+              : "Select the employee whose timesheet you want to manage."}
+          </p>
+        </div>
+      )}
+
+      <div className="form-group">
+        <label className="form-label mb-1 text-sm font-medium text-slate-800">
+          Select Week
+        </label>
+
+        <div className="form-control-wrap">
+          <select
+            className="
+              form-select timesheet-dropdown w-full rounded-lg
+              border border-slate-300 bg-white text-sm text-slate-800
+              focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200
+              placeholder:text-slate-400
+            "
+            value={selectedWeek}
+            onChange={(e) => handleWeekChange(e.target.value)}
+          >
+            <option value="">Select a week…</option>
+            {availableWeeks
+              .sort((a, b) => {
+                const dateA = new Date(a.value.split(" To ")[0])
+                const dateB = new Date(b.value.split(" To ")[0])
+                return dateB - dateA
+              })
+              .map((week) => (
+                <option key={week.value} value={week.value}>
+                  {week.label}
+                  {week.readonly ? " (Read Only - Invoice Raised)" : ""}
+                </option>
+              ))}
+          </select>
+        </div>
+
+        <p className="mt-1 text-xs text-slate-500">
+          Choose the week to create or edit a timesheet.
+        </p>
+      </div>
+    </div>
+
+    {/* Footer Actions */}
+    <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-4">
+      <div className="flex flex-wrap items-center gap-3">
+        <Link
+          href={`/${subdomain}/timesheets/history`}
+          className="
+            inline-flex items-center gap-1.5 rounded-lg
+            border border-slate-300 bg-white px-3 py-2
+            text-xs font-medium text-slate-700
+            hover:bg-slate-100 hover:text-slate-900
+            focus:ring-2 focus:ring-indigo-200
+            transition
+          "
+        >
+          <em className="icon ni ni-history"></em>
+          View History
+        </Link>
+
+        <button
+          type="button"
+          className="
+            inline-flex items-center rounded-lg
+            bg-indigo-50 px-3 py-2 text-xs font-medium
+            text-sky-900 hover:bg-indigo-100
+            focus:ring-2 focus:ring-indigo-200
+            transition
+          "
+        >
+          Find My Approvers
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+                      {/* External Client File Upload */}
+                      {clientType === "external" && (
+                        <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
+                          <div className="border-b border-slate-200 p-4">
+                            <div className="text-sm font-semibold text-slate-900">Timesheet Upload</div>
+                            <div className="mt-1 text-xs text-slate-500">Upload the timesheet submitted by the external client.</div>
+                          </div>
+                          <div className="p-4">
 
                             {!externalTimesheetFile ? (
                               <div
@@ -2021,14 +2084,14 @@ const TimesheetSubmit = () => {
                               </div>
                             ) : (
                               <div className="uploaded-file-preview">
-                                <div className="d-flex align-items-center justify-content-between p-3 border rounded">
+                                <div className="d-flex align-items-center justify-content-between rounded-lg border border-slate-200 bg-white p-3 shadow-sm">
                                   <div className="d-flex align-items-center">
                                     <em className="icon ni ni-file text-primary me-2"></em>
                                     <div>
-                                      <div className="fw-bold">
+                                      <div className="fw-bold text-slate-900">
                                         {externalTimesheetFile.name}
                                       </div>
-                                      <small className="text-muted">
+                                      <small className="text-muted text-xs">
                                         {(
                                           externalTimesheetFile.size /
                                           1024 /
@@ -2040,7 +2103,7 @@ const TimesheetSubmit = () => {
                                   </div>
                                   <button
                                     type="button"
-                                    className="btn btn-sm btn-outline-danger"
+                                    className="btn btn-sm btn-outline-danger inline-flex items-center justify-center rounded-lg"
                                     onClick={removeExternalTimesheetFile}
                                     disabled={isReadOnly}
                                   >
@@ -2059,959 +2122,882 @@ const TimesheetSubmit = () => {
                               disabled={isReadOnly}
                             />
                           </div>
-                        </div>
-                      </div>
-                    )}
+                        </section>
+                      )}
 
-                    {/* AI-Powered Timesheet Upload Section - Only for Internal Clients */}
-                    {clientType === "internal" && (
-                      <div className="card card-bordered mb-4">
-                        <div className="card-inne">
-                          <div className="ai-upload-section">
-                            <div className="ai-upload-header">
-                              <h6 className="ai-upload-title">
-                                <i className="fa fa-robot"></i>
-                                AI-Powered Timesheet Upload
-                              </h6>
-                              <div className="ai-upload-actions">
-                                <button
-                                  type="button"
-                                  className="ai-camera-btn"
-                                  onClick={openCamera}
-                                  disabled={isReadOnly || (!isEmployee() && !selectedEmployee)}
-                                  title="Capture with Camera"
-                                >
-                                  <i className="fas fa-camera"></i>
-                                  <span>Capture</span>
-                                </button>
-                                <button
-                                  type="button"
-                                  className="ai-upload-toggle-btn"
-                                  onClick={() => setShowAiUpload(!showAiUpload)}
-                                  disabled={isReadOnly}
-                                >
-                                  {showAiUpload ? "Hide" : "Upload & Extract"}
-                                </button>
-                              </div>
-                            </div>
+                      {/* 2) AI Timesheet Upload */}
+                      {clientType === "internal" && (
+                        <section className="rounded-2xl border border-blue-200 bg-gradient-to-br from-blue-50 via-white to-indigo-50 shadow-sm">
+  {/* Header */}
+  <div className="border-b border-blue-100 px-5 py-4">
+    <div className="flex items-start justify-between gap-4">
+      <div>
+        <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
+          <em className="icon ni ni-robot text-blue-600"></em>
+          AI Timesheet Upload
+        </div>
+        <div className="mt-1 px-1 text-xs text-slate-600">
+          Upload or capture a timesheet and let AI extract hours automatically.
+        </div>
+      </div>
+    </div>
+  </div>
 
-                            <p className="ai-upload-description">
-                              Upload{" "}
-                              {!isEmployee() && selectedEmployee
-                                ? `${
-                                    availableEmployees.find(
-                                      (emp) => emp.id === selectedEmployee
-                                    )?.name
-                                  }'s`
-                                : "your"}{" "}
-                              timesheet in any format (Image, Word, Excel, PDF,
-                              CSV) and let our AI engine automatically extract
-                              and populate the timesheet data.
-                            </p>
+  {/* Body */}
+  <div className="p-5">
+    <div className="ai-upload-section space-y-4">
+      {/* Actions */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2 text-sm font-medium text-slate-800">
+          <i className="fa fa-robot text-indigo-600"></i>
+          AI-Powered Extraction
+        </div>
 
-                            {!isEmployee() && !selectedEmployee && (
-                              <div className="alert alert-warning mb-3">
-                                <em className="icon ni ni-alert-circle me-2"></em>
-                                Please select an employee first before uploading
-                                their timesheet.
-                              </div>
-                            )}
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            className="
+              inline-flex items-center gap-2 rounded-lg
+              border border-slate-300 bg-white px-3 py-2
+              text-xs font-medium text-slate-700
+              hover:bg-slate-100 hover:text-slate-900
+              focus:ring-2 focus:ring-indigo-200
+              transition
+            "
+            onClick={openCamera}
+            disabled={isReadOnly || (!isEmployee() && !selectedEmployee)}
+          >
+            <i className="fas fa-camera text-sky-800"></i>
+            Capture
+          </button>
 
-                            {showAiUpload && !aiProcessing && !uploadedAiFile && (
-                              <>
-                                <div
-                                  className="ai-upload-dropzone"
-                                  onClick={() =>
-                                    document
-                                      .getElementById("aiFileUpload")
-                                      .click()
-                                  }
-                                  onDragOver={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                  }}
-                                  onDrop={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    const files = e.dataTransfer.files;
-                                    if (files && files[0]) {
-                                      const input =
-                                        document.getElementById("aiFileUpload");
-                                      input.files = files;
-                                      handleAiFileUpload({ target: input });
-                                    }
-                                  }}
-                                >
-                                  <div className="ai-upload-text">
-                                    Drag and drop files here or click to browse
-                                  </div>
-                                  <div className="ai-upload-or">or</div>
-                                  <div className="ai-upload-subtext">
-                                    <small className="text-muted">
-                                      <i className="fas fa-file-image"></i>{" "}
-                                      Images •
-                                      <i className="fas fa-file-word ms-1"></i>{" "}
-                                      Word •
-                                      <i className="fas fa-file-excel ms-1"></i>{" "}
-                                      Excel •
-                                      <i className="fas fa-file-pdf ms-1"></i>{" "}
-                                      PDF •
-                                      <i className="fas fa-file-csv ms-1"></i>{" "}
-                                      CSV
-                                    </small>
-                                  </div>
-                                </div>
+          <button
+            type="button"
+            className="
+              inline-flex items-center rounded-lg
+              bg-sky-800 px-3 py-2
+              text-xs font-medium text-white
+              hover:bg-sky-700
+              focus:ring-2 focus:ring-indigo-300
+              transition
+            "
+            onClick={() => setShowAiUpload(!showAiUpload)}
+            disabled={isReadOnly}
+          >
+            {showAiUpload ? "Hide Upload" : "Upload & Extract"}
+          </button>
+        </div>
+      </div>
 
-                                <input
-                                  type="file"
-                                  id="aiFileUpload"
-                                  style={{ display: "none" }}
-                                  accept=".jpg,.jpeg,.png,.heic,.webp,.bmp,.pdf,.xlsx,.xls,.csv,.doc,.docx"
-                                  onChange={handleAiFileUpload}
-                                  disabled={
-                                    aiProcessing ||
-                                    isReadOnly ||
-                                    (!isEmployee() && !selectedEmployee)
-                                  }
-                                />
-                              </>
-                            )}
+      {/* Description */}
+      <p className="text-xs text-slate-600">
+        Upload{" "}
+        {!isEmployee() && selectedEmployee
+          ? `${
+              availableEmployees.find((emp) => emp.id === selectedEmployee)
+                ?.name
+            }'s`
+          : "your"}{" "}
+        timesheet (Image, Word, Excel, PDF, CSV). AI will detect clients and
+        hours automatically.
+      </p>
 
-                            {/* Show uploaded file */}
-                            {uploadedAiFile && !aiProcessing && !aiProcessedData && (
-                              <div className="uploaded-file-preview mt-3">
-                                <div className="d-flex align-items-center justify-content-between p-3 border rounded bg-light">
-                                  <div className="d-flex align-items-center">
-                                    <em className="icon ni ni-file-docs text-primary me-3 fs-3"></em>
-                                    <div>
-                                      <div className="fw-bold text-dark">{uploadedAiFile.name}</div>
-                                      <small className="text-muted">
-                                        {(uploadedAiFile.size / 1024).toFixed(2)} KB
-                                      </small>
-                                    </div>
-                                  </div>
-                                  <button
-                                    type="button"
-                                    className="btn btn-sm btn-icon btn-outline-danger"
-                                    onClick={removeUploadedAiFile}
-                                    title="Remove file"
-                                  >
-                                    <em className="icon ni ni-trash"></em>
-                                  </button>
-                                </div>
-                              </div>
-                            )}
+      {/* Warning */}
+      {!isEmployee() && !selectedEmployee && (
+        <div className="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+          <em className="icon ni ni-alert-circle"></em>
+          Select an employee before uploading their timesheet.
+        </div>
+      )}
 
-                            <input
-                              type="file"
-                              id="aiFileUpload"
-                              style={{ display: "none" }}
-                              accept=".jpg,.jpeg,.png,.heic,.webp,.bmp,.pdf,.xlsx,.xls,.csv,.doc,.docx"
-                              onChange={handleAiFileUpload}
-                              disabled={
-                                aiProcessing ||
-                                isReadOnly ||
-                                (!isEmployee() && !selectedEmployee)
-                              }
-                            />
+      {/* Upload Dropzone */}
+      {showAiUpload && !aiProcessing && !uploadedAiFile && (
+        <>
+          <div
+            className="
+              cursor-pointer rounded-2xl border-2 border-dashed
+              border-indigo-300 bg-white p-8 text-center
+              transition hover:border-indigo-400 hover:bg-indigo-50/40
+            "
+            onClick={() =>
+              document.getElementById("aiFileUpload").click()
+            }
+            onDragOver={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+            }}
+            onDrop={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              const files = e.dataTransfer.files
+              if (files && files[0]) {
+                const input = document.getElementById("aiFileUpload")
+                input.files = files
+                handleAiFileUpload({ target: input })
+              }
+            }}
+          >
+            <div className="text-sm font-semibold text-slate-800">
+              Drag & drop files here
+            </div>
+            <div className="my-2 text-xs text-slate-500">or</div>
+            <div className="text-xs text-indigo-600 font-medium">
+              Click to browse files
+            </div>
 
+            <div className="mt-3 flex flex-wrap justify-center gap-2 text-xs text-slate-500">
+              <span>Images</span>•<span>Word</span>•<span>Excel</span>•
+              <span>PDF</span>•<span>CSV</span>
+            </div>
+          </div>
 
-                            {aiProcessing && (
-                              <div className="ai-processing-card mt-3">
-                                <div className="ai-processing-content">
-                                  <div className="ai-processing-header">
-                                    <div className="ai-processing-icon-wrapper">
-                                      <div className="ai-processing-icon-spin">
-                                        <em className="icon ni ni-loader"></em>
-                                      </div>
-                                    </div>
-                                    <div className="ai-processing-text">
-                                      <h6 className="ai-processing-title">
-                                        Processing with AI...
-                                      </h6>
-                                      <p className="ai-processing-subtitle">
-                                        Analyzing your timesheet and extracting
-                                        data
-                                      </p>
-                                    </div>
-                                  </div>
+          <input
+            type="file"
+            id="aiFileUpload"
+            className="hidden"
+            accept=".jpg,.jpeg,.png,.heic,.webp,.bmp,.pdf,.xlsx,.xls,.csv,.doc,.docx"
+            onChange={handleAiFileUpload}
+            disabled={
+              aiProcessing ||
+              isReadOnly ||
+              (!isEmployee() && !selectedEmployee)
+            }
+          />
+        </>
+      )}
 
-                                  <div className="ai-processing-progress">
-                                    <div className="progress-bar-wrapper">
-                                      <div className="progress-bar-animated"></div>
-                                    </div>
-                                    <div className="progress-label">
-                                      <span className="progress-text">
-                                        Extracting data...
-                                      </span>
-                                      <span className="progress-formats">
-                                        <em className="icon ni ni-file-img"></em>
-                                        <em className="icon ni ni-file-docs"></em>
-                                        <em className="icon ni ni-file-xls"></em>
-                                        <em className="icon ni ni-file-pdf"></em>
-                                      </span>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            )}
+      {/* Uploaded File */}
+      {uploadedAiFile && !aiProcessing && !aiProcessedData && (
+        <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <em className="icon ni ni-file-docs text-indigo-600 text-xl"></em>
+            <div>
+              <div className="text-sm font-medium text-slate-900">
+                {uploadedAiFile.name}
+              </div>
+              <div className="text-xs text-slate-500">
+                {(uploadedAiFile.size / 1024).toFixed(2)} KB
+              </div>
+            </div>
+          </div>
 
-                            {aiProcessedData && !aiProcessing && (
-                              <div className="ai-extraction-result-card-compact mt-3">
-                                <div className="ai-result-header">
-                                  <div className="ai-result-icon">
-                                    <em className="icon ni ni-check-circle"></em>
-                                  </div>
-                                  <div className="ai-result-info">
-                                    <h6 className="ai-result-title">
-                                      AI Extraction Complete!
-                                    </h6>
-                                    <p className="ai-result-subtitle">
-                                      Review the extracted data below
-                                    </p>
-                                  </div>
-                                </div>
+          <button
+            type="button"
+            className="
+              inline-flex items-center justify-center rounded-lg
+              border border-red-200 bg-red-50 p-2
+              text-red-600 hover:bg-red-100
+            "
+            onClick={removeUploadedAiFile}
+          >
+            <em className="icon ni ni-trash"></em>
+          </button>
+        </div>
+      )}
 
-                                <div className="ai-result-stats">
-                                  <div className="ai-stat-compact">
-                                    <em className="icon ni ni-activity"></em>
-                                    <div className="ai-stat-data">
-                                      <span className="stat-label">
-                                        Confidence
-                                      </span>
-                                      <span className="stat-value">
-                                        {Math.round(
-                                          aiProcessedData.confidence * 100
-                                        )}
-                                        %
-                                      </span>
-                                    </div>
-                                  </div>
+      {/* Processing */}
+      {aiProcessing && (
+        <div className="rounded-xl border border-indigo-200 bg-indigo-50 p-4">
+          <div className="flex items-center gap-3">
+            <div className="animate-spin text-indigo-600">
+              <em className="icon ni ni-loader"></em>
+            </div>
+            <div>
+              <div className="text-sm font-semibold text-indigo-900">
+                Processing with AI…
+              </div>
+              <div className="text-xs text-indigo-700">
+                Extracting hours and client data
+              </div>
+            </div>
+          </div>
 
-                                  <div className="ai-stat-compact">
-                                    <em className="icon ni ni-clock"></em>
-                                    <div className="ai-stat-data">
-                                      <span className="stat-label">
-                                        Total Hours
-                                      </span>
-                                      <span className="stat-value">
-                                        {aiProcessedData.clientHours.reduce(
-                                          (sum, client) =>
-                                            sum +
-                                            client.hours.reduce(
-                                              (clientSum, hours) =>
-                                                clientSum + hours,
-                                              0
-                                            ),
-                                          0
-                                        )}
-                                      </span>
-                                    </div>
-                                  </div>
+          <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-indigo-100">
+            <div className="h-full w-2/3 animate-pulse bg-indigo-500"></div>
+          </div>
+        </div>
+      )}
 
-                                  <div className="ai-stat-compact">
-                                    <em className="icon ni ni-users"></em>
-                                    <div className="ai-stat-data">
-                                      <span className="stat-label">
-                                        Clients
-                                      </span>
-                                      <span className="stat-value">
-                                        {
-                                          aiProcessedData.clientHours.filter(
-                                            (client) =>
-                                              client.hours.some((h) => h > 0)
-                                          ).length
-                                        }
-                                      </span>
-                                    </div>
-                                  </div>
-                                </div>
+      {/* Result */}
+      {aiProcessedData && !aiProcessing && (
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+          <div className="flex items-center gap-3">
+            <em className="icon ni ni-check-circle text-emerald-600 text-xl"></em>
+            <div>
+              <div className="text-sm font-semibold text-emerald-900">
+                AI Extraction Complete
+              </div>
+              <div className="text-xs text-emerald-700">
+                Review and apply extracted data
+              </div>
+            </div>
+          </div>
 
-                                <div className="ai-result-actions">
-                                  <button
-                                    type="button"
-                                    className="btn-apply-data"
-                                    onClick={applyAiProcessedData}
-                                  >
-                                    <em className="icon ni ni-check-circle-fill"></em>
-                                    <span>Apply Data</span>
-                                  </button>
-                                  <button
-                                    type="button"
-                                    className="btn-discard-data"
-                                    onClick={discardAiProcessedData}
-                                  >
-                                    <em className="icon ni ni-cross-circle"></em>
-                                    <span>Discard</span>
-                                  </button>
-                                </div>
-                              </div>
-                            )}
+          <div className="mt-4 grid grid-cols-3 gap-3 text-center">
+            <div className="rounded-lg bg-white p-2 text-xs">
+              <div className="text-slate-500">Confidence</div>
+              <div className="font-semibold text-slate-900">
+                {Math.round(aiProcessedData.confidence * 100)}%
+              </div>
+            </div>
+
+            <div className="rounded-lg bg-white p-2 text-xs">
+              <div className="text-slate-500">Total Hours</div>
+              <div className="font-semibold text-slate-900">
+                {aiProcessedData.clientHours.reduce(
+                  (sum, client) =>
+                    sum +
+                    client.hours.reduce(
+                      (clientSum, hours) => clientSum + hours,
+                      0
+                    ),
+                  0
+                )}
+              </div>
+            </div>
+
+            <div className="rounded-lg bg-white p-2 text-xs">
+              <div className="text-slate-500">Clients</div>
+              <div className="font-semibold text-slate-900">
+                {
+                  aiProcessedData.clientHours.filter((client) =>
+                    client.hours.some((h) => h > 0)
+                  ).length
+                }
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-4 flex gap-2">
+            <button
+              type="button"
+              className="
+                flex-1 rounded-lg bg-emerald-600 px-3 py-2
+                text-xs font-medium text-white
+                hover:bg-emerald-700
+              "
+              onClick={applyAiProcessedData}
+            >
+              Apply Data
+            </button>
+
+            <button
+              type="button"
+              className="
+                flex-1 rounded-lg border border-slate-300 bg-white
+                px-3 py-2 text-xs font-medium text-slate-700
+                hover:bg-slate-100
+              "
+              onClick={discardAiProcessedData}
+            >
+              Discard
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  </div>
+</section>
+
+                      )}
+
+                      {/* 3) Client / Project Details */}
+                      {clientType === "internal" && (
+                        <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
+                          <div className="border-b border-slate-200 p-4">
+                            <div className="text-sm font-semibold text-slate-900">Client / Project Details</div>
+                            <div className="mt-1 text-xs text-slate-500">Select the statement of work linked to this timesheet.</div>
                           </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* SOW and Timesheet Table - Only for Internal Clients */}
-                    {clientType === "internal" && (
-                      <>
-                        <div className="form-group mb-4">
-                          <label className="form-label">
-                            Select Statement of Work (SOW)
-                          </label>
-                          <div className="form-control-wrap">
-                            <select
-                              className="form-select timesheet-dropdown"
-                              disabled={isReadOnly}
-                            >
-                              <option>Select SOW</option>
-                              {clientHours.map((client) => (
-                                <option
-                                  key={client.id}
-                                  value={client.id}
-                                  selected
-                                >
-                                  ✓ {client.clientName} - {client.project}
-                                  {isAdmin()
-                                    ? ` ($${client.hourlyRate}/hr)`
-                                    : ""}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-                        </div>
-
-                        {/* Timesheet Table */}
-                        <div className="form-group mb-4">
-                          <div className="table-responsive">
-                            <table className="table table-bordered timesheet-table">
-                              <thead className="table-primary">
-                                <tr>
-                                  <th style={{ width: "80px" }}>Client ID</th>
-                                  <th style={{ width: "200px" }}>
-                                    Client Name
-                                  </th>
-                                  <th style={{ width: "60px" }}>SAT</th>
-                                  <th style={{ width: "60px" }}>SUN</th>
-                                  <th style={{ width: "60px" }}>MON</th>
-                                  <th style={{ width: "60px" }}>TUE</th>
-                                  <th style={{ width: "60px" }}>WED</th>
-                                  <th style={{ width: "60px" }}>THU</th>
-                                  <th style={{ width: "60px" }}>FRI</th>
-                                  <th style={{ width: "80px" }}>Total Hours</th>
-                                  <th style={{ width: "150px" }}>Comment</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {clientHours.map((client, clientIndex) => (
-                                  <tr key={client.id}>
-                                    <td className="text-center">{client.id}</td>
-                                    <td>{client.clientName}</td>
-                                    {client.hours.map((hour, dayIndex) => (
-                                      <td
-                                        key={dayIndex}
-                                        className="text-center"
-                                      >
-                                        <input
-                                          type="number"
-                                          className="form-control form-control-sm text-center"
-                                          style={{
-                                            width: "50px",
-                                            margin: "0 auto"}}
-                                          value={hour || 0}
-                                          onChange={(e) =>
-                                            handleClientHourChange(
-                                              clientIndex,
-                                              dayIndex,
-                                              e.target.value
-                                            )
-                                          }
-                                          min="0"
-                                          max="24"
-                                          step="0.5"
-                                          readOnly={isReadOnly}
-                                          disabled={isReadOnly}
-                                        />
-                                      </td>
+                          <div className="p-4">
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                              <div className="form-group">
+                                <label className="form-label text-sm font-medium text-slate-800">
+                                  Select Statement of Work (SOW)
+                                </label>
+                                <div className="form-control-wrap">
+                                  <select
+                                    className="form-select timesheet-dropdown w-full rounded-lg border-slate-300 bg-white text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                                    disabled={isReadOnly}
+                                  >
+                                    <option>Select SOW</option>
+                                    {clientHours.map((client) => (
+                                      <option key={client.id} value={client.id} selected>
+                                        ✓ {client.clientName} - {client.project}
+                                        {isAdmin() ? ` ($${client.hourlyRate}/hr)` : ""}
+                                      </option>
                                     ))}
-                                    <td className="text-center fw-bold">
-                                      {getTotalHoursForClient(
-                                        clientIndex
-                                      ).toFixed(1)}
-                                    </td>
-                                    <td>
-                                      <input
-                                        type="text"
-                                        className="form-control form-control-sm"
-                                        placeholder="Comment"
-                                      />
-                                    </td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                              <tfoot className="table-light">
-                                <tr>
-                                  <td colSpan="2" className="text-end fw-bold">
-                                    Total Client Related Hours:
-                                  </td>
-                                  {Array.from({ length: 7 }, (_, dayIndex) => (
-                                    <td
-                                      key={dayIndex}
-                                      className="text-center fw-bold"
-                                    >
-                                      {clientHours
-                                        .reduce(
-                                          (sum, client) =>
-                                            sum + (client.hours[dayIndex] || 0),
-                                          0
-                                        )
-                                        .toFixed(1)}
-                                    </td>
-                                  ))}
-                                  <td className="text-center fw-bold">
-                                    {clientHours
-                                      .reduce(
-                                        (sum, client) =>
-                                          sum +
-                                          client.hours.reduce(
-                                            (clientSum, hours) =>
-                                              clientSum + (hours || 0),
-                                            0
-                                          ),
-                                        0
-                                      )
-                                      .toFixed(1)}
-                                  </td>
-                                  <td></td>
-                                </tr>
-                              </tfoot>
-                            </table>
-                          </div>
-                        </div>
-
-                        {/* Holiday/Time off Section */}
-                        <div className="form-group mb-4">
-                          <h6 className="form-label">Holiday/Time off</h6>
-                          <div className="table-responsive">
-                            <table className="table table-bordered">
-                              <tbody>
-                                <tr>
-                                  <td style={{ width: "200px" }}>
-                                    Holiday (Public/National)
-                                  </td>
-                                  {holidayHours.holiday.map(
-                                    (hour, dayIndex) => (
-                                      <td
-                                        key={dayIndex}
-                                        className="text-center"
-                                        style={{ width: "60px" }}
-                                      >
-                                        <input
-                                          type="number"
-                                          className="form-control form-control-sm text-center"
-                                          style={{
-                                            width: "50px",
-                                            margin: "0 auto"}}
-                                          value={hour || 0}
-                                          onChange={(e) =>
-                                            handleHolidayHourChange(
-                                              "holiday",
-                                              dayIndex,
-                                              e.target.value
-                                            )
-                                          }
-                                          min="0"
-                                          max="24"
-                                          step="0.5"
-                                          readOnly={isReadOnly}
-                                          disabled={isReadOnly}
-                                        />
-                                      </td>
-                                    )
-                                  )}
-                                  <td
-                                    className="text-center fw-bold"
-                                    style={{ width: "80px" }}
-                                  >
-                                    {holidayHours.holiday
-                                      .reduce(
-                                        (sum, hour) => sum + (hour || 0),
-                                        0
-                                      )
-                                      .toFixed(1)}
-                                  </td>
-                                </tr>
-                                <tr>
-                                  <td>Time Off</td>
-                                  {holidayHours.timeOff.map(
-                                    (hour, dayIndex) => (
-                                      <td
-                                        key={dayIndex}
-                                        className="text-center"
-                                      >
-                                        <input
-                                          type="number"
-                                          className="form-control form-control-sm text-center"
-                                          style={{
-                                            width: "50px",
-                                            margin: "0 auto"}}
-                                          value={hour || 0}
-                                          onChange={(e) =>
-                                            handleHolidayHourChange(
-                                              "timeOff",
-                                              dayIndex,
-                                              e.target.value
-                                            )
-                                          }
-                                          min="0"
-                                          max="24"
-                                          step="0.5"
-                                          readOnly={isReadOnly}
-                                          disabled={isReadOnly}
-                                        />
-                                      </td>
-                                    )
-                                  )}
-                                  <td className="text-center fw-bold">
-                                    {holidayHours.timeOff
-                                      .reduce(
-                                        (sum, hour) => sum + (hour || 0),
-                                        0
-                                      )
-                                      .toFixed(1)}
-                                  </td>
-                                </tr>
-                              </tbody>
-                              <tfoot className="table-light">
-                                <tr>
-                                  <td className="text-end fw-bold">
-                                    Total Personal Hours:
-                                  </td>
-                                  {Array.from({ length: 7 }, (_, dayIndex) => (
-                                    <td
-                                      key={dayIndex}
-                                      className="text-center fw-bold"
-                                    >
-                                      {(
-                                        (holidayHours.holiday[dayIndex] || 0) +
-                                        (holidayHours.timeOff[dayIndex] || 0)
-                                      ).toFixed(1)}
-                                    </td>
-                                  ))}
-                                  <td className="text-center fw-bold">
-                                    {(
-                                      holidayHours.holiday.reduce(
-                                        (sum, hour) => sum + (hour || 0),
-                                        0
-                                      ) +
-                                      holidayHours.timeOff.reduce(
-                                        (sum, hour) => sum + (hour || 0),
-                                        0
-                                      )
-                                    ).toFixed(1)}
-                                  </td>
-                                </tr>
-                                <tr>
-                                  <td className="text-end fw-bold">
-                                    Grand Total:
-                                  </td>
-                                  {Array.from({ length: 7 }, (_, dayIndex) => (
-                                    <td
-                                      key={dayIndex}
-                                      className="text-center fw-bold"
-                                    >
-                                      {getTotalHoursForDay(dayIndex).toFixed(1)}
-                                    </td>
-                                  ))}
-                                  <td className="text-center fw-bold">
-                                    {getGrandTotal().toFixed(1)}
-                                  </td>
-                                </tr>
-                              </tfoot>
-                            </table>
-                          </div>
-                        </div>
-
-                        <div className="form-group mb-4">
-                          <label className="form-label">Notes</label>
-                          <div className="form-control-wrap">
-                            <textarea
-                              className="form-control"
-                              rows="3"
-                              value={notes}
-                              onChange={(e) => setNotes(e.target.value)}
-                              placeholder="Add any notes or comments about this timesheet"
-                              readOnly={isReadOnly}
-                              disabled={isReadOnly}
-                            ></textarea>
-                          </div>
-                        </div>
-
-                        <div className="form-group mb-4">
-                          <label className="form-label">Attachments</label>
-                          <p className="form-note text-soft mb-2">
-                            Upload approved timesheet proof, work samples, or
-                            supporting documents
-                          </p>
-                          <div
-                            className={`upload-zone ${
-                              isReadOnly ? "disabled" : ""
-                            }`}
-                            onDragOver={
-                              !isReadOnly ? handleDragOver : undefined
-                            }
-                            onDrop={!isReadOnly ? handleDrop : undefined}
-                            onClick={
-                              !isReadOnly
-                                ? () => fileInputRef.current?.click()
-                                : undefined
-                            }
-                            style={
-                              isReadOnly
-                                ? { pointerEvents: "none", opacity: 0.6 }
-                                : {}
-                            }
-                          >
-                            <div className="dz-message">
-                              <span className="dz-message-text">
-                                Drag and drop files here or click to browse
-                              </span>
-                              <span className="dz-message-or">or</span>
-                              <input
-                                ref={fileInputRef}
-                                type="file"
-                                multiple
-                                className="d-none"
-                                onChange={handleFileUpload}
-                                accept="image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                              />
-                              {isMobile && (
-                                <>
-                                  <button
-                                    type="button"
-                                    className="btn btn-primary mt-2"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setShowCamera(true);
-                                      setTimeout(() => {
-                                        cameraInputRef.current?.click();
-                                      }, 100);
-                                    }}
-                                  >
-                                    <em className="icon ni ni-camera"></em>
-                                    <span>Take Photo</span>
-                                  </button>
-                                  {showCamera && (
-                                    <input
-                                      ref={cameraInputRef}
-                                      type="file"
-                                      className="d-none"
-                                      onChange={handleCameraCapture}
-                                      accept="image/*"
-                                      capture="environment"
-                                    />
-                                  )}
-                                </>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* Auto-conversion toggle */}
-                          <div className="form-group mt-3">
-                            <div className="custom-control custom-switch">
-                              <input
-                                type="checkbox"
-                                className="custom-control-input"
-                                id="autoConvertToggle"
-                                checked={autoConvertToInvoice}
-                                onChange={(e) =>
-                                  setAutoConvertToInvoice(e.target.checked)
-                                }
-                              />
-                              <label
-                                className="custom-control-label"
-                                htmlFor="autoConvertToggle"
-                              >
-                                🤖 Auto-convert timesheet to invoice using AI
-                              </label>
-                            </div>
-                            <small className="form-note text-soft">
-                              When enabled, uploaded timesheet images will be
-                              automatically processed and converted to invoice
-                              format
-                            </small>
-                          </div>
-
-                          {/* Conversion status display */}
-                          {conversionProcessing && (
-                            <div className="alert alert-info mt-3">
-                              <div className="d-flex align-items-center">
-                                <div
-                                  className="spinner-border spinner-border-sm me-2"
-                                  role="status"
-                                >
-                                  <span className="visually-hidden">
-                                    Processing...
-                                  </span>
+                                  </select>
                                 </div>
-                                <span>
-                                  🔄 Processing timesheet with AI engine...
-                                </span>
+                              </div>
+
+                              <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">
+                                <div className="font-medium text-slate-700">Read-only client identifiers</div>
+                                <div className="mt-1">Client ID and Client Name are shown in the hours table below.</div>
                               </div>
                             </div>
-                          )}
-
-                          {conversionSuccess && invoiceData && (
-                            <div className="alert alert-success mt-3">
-                              <h6>✅ Conversion Successful!</h6>
-                              <p className="mb-2">
-                                Your timesheet has been processed and converted
-                                to invoice format.
-                              </p>
-                              <button
-                                type="button"
-                                className="btn btn-success btn-sm"
-                                onClick={() => {
-                                  router.push(`/${subdomain}/invoices/create`, {
-                                    state: {
-                                      timesheetData: invoiceData,
-                                      sourceTimesheet: {
-                                        week: selectedWeek,
-                                        file: "uploaded-timesheet"}}});
-                                }}
-                              >
-                                📄 Create Invoice Now
-                              </button>
-                            </div>
-                          )}
-
-                          {/* Uploading files progress */}
-                          {uploadingFiles.length > 0 && (
-                            <div className="attached-files mt-3">
-                              <h6 className="title mb-2">Uploading Files</h6>
-                              {uploadingFiles.map((file) => (
-                                <div key={file.id} className="file-item mb-2 p-2 border rounded">
-                                  <div className="d-flex align-items-center justify-content-between">
-                                    <div className="d-flex align-items-center">
-                                      <em className="icon ni ni-file me-2"></em>
-                                      <span>{file.name}</span>
-                                    </div>
-                                    <div className="d-flex align-items-center">
-                                      <div className="progress me-2" style={{ width: '100px', height: '20px' }}>
-                                        <div
-                                          className="progress-bar"
-                                          role="progressbar"
-                                          style={{ width: `${file.progress}%` }}
-                                          aria-valuenow={file.progress}
-                                          aria-valuemin="0"
-                                          aria-valuemax="100"
-                                        >
-                                          {file.progress}%
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-
-                          {/* Uploaded files from S3 */}
-                          {uploadedFiles.length > 0 && (
-                            <div className="attached-files mt-3">
-                              <h6 className="title mb-2">Uploaded Files</h6>
-                              <div className="row g-3">
-                                {uploadedFiles.map((file) => (
-                                  <div key={file.id} className="col-6 col-sm-4 col-md-3 col-lg-2">
-                                    <div className="attached-file">
-                                      <div className="attached-file-icon">
-                                        <em className="icon ni ni-file"></em>
-                                      </div>
-                                      <div className="attached-file-info">
-                                        <span className="attached-file-name" title={file.originalName}>
-                                          {file.originalName.length > 15
-                                            ? file.originalName.substring(0, 12) + "..."
-                                            : file.originalName}
-                                        </span>
-                                        <div className="d-flex gap-1 mt-1">
-                                          <button
-                                            type="button"
-                                            className="btn btn-xs btn-outline-primary"
-                                            onClick={() => downloadFile(file.id, file.originalName)}
-                                            title="Download"
-                                          >
-                                            <em className="icon ni ni-download"></em>
-                                          </button>
-                                          {!isReadOnly && (
-                                            <button
-                                              type="button"
-                                              className="btn btn-xs btn-outline-danger"
-                                              onClick={() => deleteFile(file.id, file.originalName)}
-                                              title="Delete"
-                                            >
-                                              <em className="icon ni ni-trash"></em>
-                                            </button>
-                                          )}
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Local preview images (for files not yet uploaded) */}
-                          {previewImages.length > 0 && attachments.length > 0 && (
-                            <div className="attached-files mt-3">
-                              <h6 className="title mb-2">Files to Upload</h6>
-                              <div className="row g-3">
-                                {previewImages.map((preview, index) => (
-                                  <div
-                                    key={index}
-                                    className="col-6 col-sm-4 col-md-3 col-lg-2"
-                                  >
-                                    <div className="attached-file">
-                                      {preview.url ? (
-                                        <div className="attached-file-image">
-                                          <img
-                                            src={preview.url}
-                                            alt={preview.file}
-                                          />
-                                        </div>
-                                      ) : (
-                                        <div className="attached-file-icon">
-                                          <em
-                                            className={`icon ni ${getFileIcon(
-                                              preview.type
-                                            )}`}
-                                          ></em>
-                                        </div>
-                                      )}
-                                      <div className="attached-file-info">
-                                        <span className="attached-file-name">
-                                          {preview.file.length > 15
-                                            ? preview.file.substring(0, 12) +
-                                              "..."
-                                            : preview.file}
-                                        </span>
-                                        <button
-                                          type="button"
-                                          className="btn btn-sm btn-icon btn-trigger attached-file-remove"
-                                          onClick={() =>
-                                            removeAttachment(index)
-                                          }
-                                        >
-                                          <em className="icon ni ni-cross"></em>
-                                        </button>
-                                      </div>
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Approver Selection */}
-                        <div className="form-group mb-4">
-                          <label className="form-label">
-                            Assign Reviewer/Approver{" "}
-                            <span className="text-danger">*</span>
-                          </label>
-                          <div className="form-control-wrap">
-                            <select
-                              className="form-select"
-                              value={selectedApprover}
-                              onChange={(e) =>
-                                setSelectedApprover(e.target.value)
-                              }
-                              disabled={isReadOnly}
-                              required
-                            >
-                              <option value="">Select an approver...</option>
-                              {availableApprovers.map((approver) => (
-                                <option key={approver.id} value={approver.id}>
-                                  {approver.name} ({approver.role})
-                                </option>
-                              ))}
-                            </select>
                           </div>
-                          <div className="form-note">
-                            Select an admin or manager to review and approve
-                            this timesheet
-                          </div>
-                        </div>
+                        </section>
+                      )}
 
-                        {/* Action Buttons */}
-                        <div className="form-group mt-4">
-                          <div className="timesheet-action-buttons">
+                     {clientType === "internal" && (
+  <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+
+    {/* Header */}
+    <div className="border-b border-slate-200 bg-slate-50 px-6 py-4">
+      <h3 className="text-sm font-semibold text-slate-900">
+        Weekly Timesheet Entry
+      </h3>
+      <p className="mt-1 text-xs text-slate-500">
+        Enter daily hours per client. Totals update automatically.
+      </p>
+    </div>
+
+    {/* Body */}
+    <div className="overflow-x-auto p-4">
+      <table className="w-full border-separate border-spacing-y-2 text-sm">
+
+        {/* Day Header */}
+        <thead>
+          <tr className="text-xs uppercase tracking-wide text-slate-500">
+            <th className="px-3 text-left">Client</th>
+            {["Sat","Sun","Mon","Tue","Wed","Thu","Fri"].map(day => (
+              <th key={day} className="text-center">{day}</th>
+            ))}
+            <th className="text-center">Total</th>
+            <th className="text-left">Comment</th>
+          </tr>
+        </thead>
+
+        <tbody>
+
+          {/* Client Rows */}
+          {clientHours.map((client, clientIndex) => (
+            <tr
+              key={client.id}
+              className="rounded-xl bg-white shadow-sm ring-1 ring-slate-200"
+            >
+              <td className="px-3 py-2 font-medium text-slate-800">
+                <div>{client.clientName}</div>
+                <div className="text-xs text-slate-400">ID: {client.id}</div>
+              </td>
+
+              {client.hours.map((hour, dayIndex) => (
+                <td key={dayIndex} className="px-2 py-2 text-center">
+                  <input
+                    type="number"
+                    value={hour || 0}
+                    min="0"
+                    max="24"
+                    step="0.5"
+                    readOnly={isReadOnly}
+                    disabled={isReadOnly}
+                    onChange={(e) =>
+                      handleClientHourChange(
+                        clientIndex,
+                        dayIndex,
+                        e.target.value
+                      )
+                    }
+                    className="
+                      w-14 rounded-lg border border-slate-300
+                      text-center text-sm
+                      focus:border-blue-500 focus:ring-2 focus:ring-blue-200
+                      disabled:bg-slate-100
+                    "
+                  />
+                </td>
+              ))}
+
+              <td className="text-center font-semibold text-slate-900">
+                {getTotalHoursForClient(clientIndex).toFixed(1)}
+              </td>
+
+              {/* <td className="px-3">
+                <input
+                  type="text"
+                  placeholder="Optional note"
+                  className="
+                    w-full rounded-lg border border-slate-300
+                    px-2 py-1 text-sm
+                    focus:border-blue-500 focus:ring-2 focus:ring-blue-200
+                    disabled:bg-slate-100
+                  "
+                />
+              </td> */}
+              <td className="px-3">
+  <input
+    type="text"
+    placeholder="Optional note (work done, blockers, reference)"
+    value={client.comment || ""}
+    onChange={(e) =>
+      handleClientCommentChange(clientIndex, e.target.value)
+    }
+    readOnly={isReadOnly}
+    disabled={isReadOnly}
+    className="
+      w-full rounded-lg border border-slate-300
+      px-2 py-1 text-sm
+      focus:border-blue-500 focus:ring-2 focus:ring-blue-200
+      disabled:bg-slate-100
+    "
+  />
+</td>
+
+
+            </tr>
+          ))}
+
+          {/* Divider */}
+          <tr>
+            <td colSpan={10} className="py-2"></td>
+          </tr>
+
+          {/* Holiday */}
+          {["holiday", "timeOff"].map((type) => (
+            <tr
+              key={type}
+              className="rounded-xl bg-slate-50 ring-1 ring-slate-200"
+            >
+              <td className="px-3 py-2 font-medium text-slate-700">
+                {type === "holiday" ? "Holiday" : "Time Off"}
+              </td>
+
+              {holidayHours[type].map((hour, dayIndex) => (
+                <td key={dayIndex} className="px-2 py-2 text-center">
+                  <input
+                    type="number"
+                    value={hour || 0}
+                    min="0"
+                    max="24"
+                    step="0.5"
+                    readOnly={isReadOnly}
+                    disabled={isReadOnly}
+                    onChange={(e) =>
+                      handleHolidayHourChange(
+                        type,
+                        dayIndex,
+                        e.target.value
+                      )
+                    }
+                    className="
+                      w-14 rounded-lg border border-slate-300
+                      text-center text-sm
+                      focus:border-blue-500 focus:ring-2 focus:ring-blue-200
+                      disabled:bg-slate-100
+                    "
+                  />
+                </td>
+              ))}
+
+              <td className="text-center font-semibold">
+                {holidayHours[type]
+                  .reduce((s, h) => s + (h || 0), 0)
+                  .toFixed(1)}
+              </td>
+              <td></td>
+            </tr>
+          ))}
+
+          {/* Grand Total */}
+          <tr className="bg-blue-50 ring-1 ring-blue-200">
+            <td className="px-3 py-3 font-bold text-blue-900">
+              Grand Total
+            </td>
+
+            {Array.from({ length: 7 }, (_, dayIndex) => (
+              <td key={dayIndex} className="text-center font-bold text-blue-900">
+                {getTotalHoursForDay(dayIndex).toFixed(1)}
+              </td>
+            ))}
+
+            <td className="text-center font-bold text-blue-900">
+              {getGrandTotal().toFixed(1)}
+            </td>
+            <td></td>
+          </tr>
+
+        </tbody>
+      </table>
+    </div>
+  </section>
+)}
+
+
+                      {/* 6) Notes & Attachments */}
+                      {clientType === "internal" && (
+                        <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_6px_24px_rgba(0,0,0,0.04)] transition hover:shadow-[0_10px_32px_rgba(0,0,0,0.07)]">
+  
+  {/* Header */}
+  <div className="border-b border-slate-100 bg-slate-50/70 px-5 py-2">
+    <div className="flex items-center gap-2">
+      
+      <div>
+        <h3 className="text-sm font-semibold text-slate-900">
+          Notes & Attachments
+        </h3>
+        <p className="mt-0.5 text-xs text-slate-500">
+          Add remarks and upload supporting documents for this timesheet.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  {/* Body */}
+  <div className="p-5">
+    <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+
+      {/* Notes */}
+      <div className="form-group">
+        <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-600">
+          Notes
+        </label>
+        <textarea
+          className="
+            w-full rounded-xl border border-slate-300 bg-white
+            px-3 py-2.5 text-sm text-slate-800
+            placeholder-slate-400
+            focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/10
+            disabled:bg-slate-100 disabled:text-slate-500
+          "
+          rows="4"
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          placeholder="Add comments, clarifications, or internal notes about this timesheet…"
+          readOnly={isReadOnly}
+          disabled={isReadOnly}
+        />
+        <p className="mt-1.5 text-xs text-slate-400">
+          Notes are visible to managers and approvers.
+        </p>
+      </div>
+
+      {/* Attachments */}
+      <div className="form-group">
+        <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-600">
+          Attachments
+        </label>
+       
+
+        {/* Upload Zone */}
+        <div
+          className={`group flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-300 bg-slate-50/50 px-4 py-6 text-center transition
+            hover:border-indigo-400 hover:bg-indigo-50/40
+            ${isReadOnly ? "pointer-events-none opacity-60" : ""}
+          `}
+          onDragOver={!isReadOnly ? handleDragOver : undefined}
+          onDrop={!isReadOnly ? handleDrop : undefined}
+          onClick={!isReadOnly ? () => fileInputRef.current?.click() : undefined}
+        >
+          <em className="icon ni ni-upload mb-2 text-2xl text-slate-400 group-hover:text-indigo-500"></em>
+
+          <span className="text-sm font-medium text-slate-700">
+            Drag & drop files here
+          </span>
+          <span className="my-1 text-xs text-slate-400">or</span>
+          <span className="text-xs font-semibold text-indigo-600">
+            Click to browse
+          </span>
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            className="hidden"
+            onChange={handleFileUpload}
+            accept="image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+          />
+
+          {isMobile && (
+            <>
+              <button
+                type="button"
+                className="mt-3 inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-3 py-2 text-xs font-semibold text-white shadow-sm hover:bg-indigo-500"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowCamera(true);
+                  setTimeout(() => {
+                    cameraInputRef.current?.click();
+                  }, 100);
+                }}
+              >
+                <em className="icon ni ni-camera"></em>
+                Take Photo
+              </button>
+
+              {showCamera && (
+                <input
+                  ref={cameraInputRef}
+                  type="file"
+                  className="hidden"
+                  onChange={handleCameraCapture}
+                  accept="image/*"
+                  capture="environment"
+                />
+              )}
+            </>
+          )}
+        </div>
+         <p className="mb-3 text-xs text-slate-500">
+          Upload approved timesheets, work samples, or supporting documents.
+        </p>
+      </div>
+    </div>
+
+    {/* Uploading */}
+    {uploadingFiles.length > 0 && (
+      <div className="mt-5">
+        <h6 className="mb-2 text-xs font-semibold uppercase text-slate-600">
+          Uploading Files
+        </h6>
+        {uploadingFiles.map((file) => (
+          <div key={file.id} className="mb-2 rounded-lg border border-slate-200 bg-white p-3">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2 text-sm">
+                <em className="icon ni ni-file text-slate-500"></em>
+                <span className="truncate">{file.name}</span>
+              </div>
+              <div className="h-2 w-28 overflow-hidden rounded-full bg-slate-200">
+                <div
+                  className="h-full bg-indigo-600 transition-all"
+                  style={{ width: `${file.progress}%` }}
+                />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    )}
+
+    {/* Uploaded Files */}
+    {uploadedFiles.length > 0 && (
+      <div className="mt-5">
+        <h6 className="mb-3 text-xs font-semibold uppercase text-slate-600">
+          Uploaded Files
+        </h6>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+          {uploadedFiles.map((file) => (
+            <div key={file.id} className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-center">
+              <em className="icon ni ni-file mb-2 text-xl text-slate-500"></em>
+              <div className="truncate text-xs font-medium text-slate-700">
+                {file.originalName}
+              </div>
+              <div className="mt-2 flex justify-center gap-1">
+                <button
+                  className="rounded-md border border-slate-300 px-2 py-1 text-xs hover:bg-slate-100"
+                  onClick={() => downloadFile(file.id, file.originalName)}
+                >
+                  <em className="icon ni ni-download"></em>
+                </button>
+                {!isReadOnly && (
+                  <button
+                    className="rounded-md border border-red-300 px-2 py-1 text-xs text-red-600 hover:bg-red-50"
+                    onClick={() => deleteFile(file.id, file.originalName)}
+                  >
+                    <em className="icon ni ni-trash"></em>
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    )}
+  </div>
+</section>
+
+                      )}
+
+                      {/* 7) Approval & Automation */}
+                      {clientType === "internal" && (
+                        <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_6px_24px_rgba(0,0,0,0.04)] transition hover:shadow-[0_10px_32px_rgba(0,0,0,0.07)]">
+
+  {/* Header */}
+  <div className="border-b border-slate-100 bg-slate-50/70 px-5 py-2">
+    <div className="flex items-center gap-3">
+      <div>
+        <h3 className="text-sm font-semibold text-slate-900">
+          Approval & Automation
+        </h3>
+        <p className="mt-0.5 text-xs text-slate-500">
+          Assign a reviewer and optionally automate invoice creation using AI.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  {/* Body */}
+  <div className="p-5">
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+
+      {/* Approver */}
+      <div className="form-group">
+        <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-600">
+          Assign Reviewer / Approver <span className="text-red-500">*</span>
+        </label>
+
+        <select
+          className="
+            w-full rounded-xl border border-slate-300 bg-white
+            px-3 py-2.5 text-sm font-medium text-slate-800
+            focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/10
+            disabled:bg-slate-100 disabled:text-slate-500
+          "
+          value={selectedApprover}
+          onChange={(e) => setSelectedApprover(e.target.value)}
+          disabled={isReadOnly}
+          required
+        >
+          <option value="">Select an approver…</option>
+          {availableApprovers.map((approver) => (
+            <option key={approver.id} value={approver.id}>
+              {approver.name} — {approver.role}
+            </option>
+          ))}
+        </select>
+
+        <p className="mt-2 text-xs text-slate-400">
+          The selected approver will review and approve this timesheet.
+        </p>
+      </div>
+
+      {/* Automation */}
+      <div className="relative rounded-xl border border-indigo-100 bg-indigo-50/40 p-4">
+
+        {/* Toggle */}
+        <div className="flex items-start gap-3">
+          <div className="mt-1">
+            <input
+              type="checkbox"
+              id="autoConvertToggle"
+              checked={autoConvertToInvoice}
+              onChange={(e) => setAutoConvertToInvoice(e.target.checked)}
+              className="h-4 w-4 cursor-pointer rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+            />
+          </div>
+
+          <label htmlFor="autoConvertToggle" className="cursor-pointer">
+            <div className="text-sm font-semibold text-slate-900">
+              🤖 AI Invoice Automation
+            </div>
+            <p className="mt-0.5 text-xs leading-relaxed text-slate-600">
+              Automatically convert uploaded timesheet images into invoice-ready data using AI.
+            </p>
+          </label>
+        </div>
+
+        {/* Processing */}
+        {conversionProcessing && (
+          <div className="mt-4 flex items-center gap-2 rounded-lg border border-indigo-200 bg-white px-3 py-2 text-xs text-indigo-700">
+            <span className="inline-flex h-4 w-4 animate-spin rounded-full border-2 border-indigo-300 border-t-indigo-600"></span>
+            Processing timesheet with AI engine…
+          </div>
+        )}
+
+        {/* Success */}
+        {conversionSuccess && invoiceData && (
+          <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+            <div className="flex items-start gap-2">
+              <em className="icon ni ni-check-circle-fill mt-0.5 text-emerald-600"></em>
+              <div>
+                <h6 className="text-sm font-semibold text-emerald-900">
+                  Conversion successful
+                </h6>
+                <p className="mt-1 text-xs text-emerald-700">
+                  Your timesheet has been processed and is ready to be turned into an invoice.
+                </p>
+
+                <button
+                  type="button"
+                  className="mt-3 inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white shadow-sm hover:bg-emerald-500"
+                  onClick={() => {
+                    router.push(`/${subdomain}/invoices/create`, {
+                      state: {
+                        timesheetData: invoiceData,
+                        sourceTimesheet: {
+                          week: selectedWeek,
+                          file: "uploaded-timesheet",
+                        },
+                      },
+                    });
+                  }}
+                >
+                  <em className="icon ni ni-file-text"></em>
+                  Create Invoice
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+    </div>
+  </div>
+</section>
+
+                      )}
+
+                      {/* 8) Actions Footer */}
+                      {clientType === "internal" && (
+                        <div className="sticky bottom-0 z-10 -mx-4 mt-2 border-t border-slate-200 bg-white/90 p-4 backdrop-blur">
+                          <div className="mx-auto flex max-w-6xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                             {!isReadOnly ? (
-                              <>
+                              <div className="flex flex-col gap-3 sm:flex-row">
                                 <button
                                   type="button"
-                                  className="btn-timesheet-save"
+                                  className="btn-timesheet-save inline-flex items-center justify-center gap-2 rounded-lg border !border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm hover:!bg-[#63B1D3] disabled:opacity-60"
                                   onClick={handleSaveDraft}
                                   disabled={submitting}
                                 >
-                                  <em className="icon ni ni-save"></em>
+                                  <i className="fas fa-floppy-disk text-slate-600"></i>
                                   <span>Save For Later</span>
                                 </button>
-                                <button
-                                  type="submit"
-                                  className="btn-timesheet-submit"
-                                  disabled={submitting || !selectedApprover}
-                                >
-                                  {submitting ? (
-                                    <>
-                                      <span
-                                        className="spinner-border spinner-border-sm me-1"
-                                        role="status"
-                                        aria-hidden="true"
-                                      ></span>
-                                      Submitting...
-                                    </>
-                                  ) : (
-                                    <>
-                                      <em className="icon ni ni-check-circle"></em>
-                                      <span>Submit Timesheet</span>
-                                    </>
-                                  )}
-                                </button>
-                              </>
+                               <button
+  type="submit"
+  disabled={submitting || !selectedApprover}
+  className="
+    inline-flex items-center justify-center gap-2
+    rounded-xl px-6 py-3
+    bg-sky-800 hover:bg-sky-900
+    text-sm font-semibold text-white
+    shadow-md transition-all
+    disabled:opacity-60 disabled:cursor-not-allowed
+  "
+>
+  {submitting ? (
+    <>
+      <span className="spinner-border spinner-border-sm"></span>
+      Submitting...
+    </>
+  ) : (
+    <>
+     <i className="fas fa-circle-check"></i>
+
+      Submit Timesheet
+    </>
+  )}
+</button>
+
+                              </div>
                             ) : (
-                              <div className="alert alert-info text-center mb-3">
+                              <div className="alert alert-info mb-0 rounded-lg border border-blue-200 bg-blue-50 text-blue-900">
                                 <em className="icon ni ni-info-fill me-2"></em>
-                                <strong>Read-Only View:</strong> This timesheet
-                                cannot be modified as the invoice has been
-                                raised.
+                                <strong>Read-Only View:</strong> This timesheet cannot be modified as the invoice has been raised.
                               </div>
                             )}
+
                             <div className="d-flex justify-content-center">
                               <button
                                 type="button"
-                                className="btn btn-outline-secondary btn-lg"
-                                onClick={() =>
-                                  router.push(`/${subdomain}/timesheets`)
-                                }
+                                className="btn btn-outline-secondary btn-lg inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50"
+                                onClick={() => router.push(`/${subdomain}/timesheets`)}
                               >
-                                <em className="icon ni ni-arrow-left me-2"></em>
+                                <i className="fas fa-arrow-left-long text-sm"></i>
                                 Return to Timesheet Summary
                               </button>
                             </div>
                           </div>
                         </div>
-                      </>
-                    )}
-
-                    {/* Find My Approvers Section */}
-                    <div className="text-center mt-4">
-                      <button
-                        type="button"
-                        className="btn btn-link text-primary"
-                      >
-                        Find My Approvers
-                      </button>
+                      )}
                     </div>
                   </form>
                 </div>
@@ -3195,6 +3181,8 @@ const TimesheetSubmit = () => {
         </div>
       )}
     </div>
+  {/* </div> */}
+  </div>
   );
 };
 

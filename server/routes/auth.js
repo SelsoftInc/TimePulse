@@ -20,33 +20,53 @@ const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '24h';
  */
 router.post('/login', async (req, res) => {
   try {
+    console.log('[Auth Login] Login attempt received');
     const { email, password } = req.body;
 
     if (!email || !password) {
+      console.log('[Auth Login] Missing email or password');
       return res.status(400).json({
         success: false,
         message: 'Email and password are required'
       });
     }
 
+    console.log('[Auth Login] Searching for user:', email);
+    
     // Find user by email
-    const user = await models.User.findOne({
-      where: { email: email.toLowerCase() },
-      include: [{
-        model: models.Tenant,
-        as: 'tenant'
-      }]
-    });
+    let user;
+    try {
+      user = await models.User.findOne({
+        where: { email: email.toLowerCase() },
+        include: [{
+          model: models.Tenant,
+          as: 'tenant',
+          required: false
+        }]
+      });
+    } catch (dbError) {
+      console.error('[Auth Login] Database error finding user:', dbError.message);
+      throw new Error('Database error: ' + dbError.message);
+    }
 
     if (!user) {
+      console.log('[Auth Login] User not found:', email);
       return res.status(401).json({
         success: false,
         message: 'Invalid credentials'
       });
     }
 
+    console.log('[Auth Login] User found:', {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      status: user.status
+    });
+
     // Check if user is active
     if (user.status !== 'active') {
+      console.log('[Auth Login] User is not active, status:', user.status);
       return res.status(401).json({
         success: false,
         message: 'Account is not active'
@@ -54,44 +74,81 @@ router.post('/login', async (req, res) => {
     }
 
     // Verify password
-    const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
+    console.log('[Auth Login] Verifying password...');
+    let isPasswordValid;
+    try {
+      isPasswordValid = await bcrypt.compare(password, user.passwordHash || user.password_hash);
+    } catch (bcryptError) {
+      console.error('[Auth Login] Password verification error:', bcryptError.message);
+      throw new Error('Password verification failed: ' + bcryptError.message);
+    }
+    
     if (!isPasswordValid) {
+      console.log('[Auth Login] Invalid password for user:', email);
       return res.status(401).json({
         success: false,
         message: 'Invalid credentials'
       });
     }
 
+    console.log('[Auth Login] Password verified successfully');
+
+    // Get tenant ID
+    const tenantId = user.tenant_id || user.tenantId;
+    console.log('[Auth Login] User tenant ID:', tenantId);
+
     // Generate JWT token
-    const token = jwt.sign(
-      {
-        userId: user.id,
-        email: user.email,
-        role: user.role,
-        tenantId: user.tenant_id
-      },
-      JWT_SECRET,
-      { expiresIn: JWT_EXPIRES_IN }
-    );
+    console.log('[Auth Login] Generating JWT token...');
+    let token;
+    try {
+      token = jwt.sign(
+        {
+          userId: user.id,
+          email: user.email,
+          role: user.role,
+          tenantId: tenantId
+        },
+        JWT_SECRET,
+        { expiresIn: JWT_EXPIRES_IN }
+      );
+      console.log('[Auth Login] JWT token generated successfully');
+    } catch (jwtError) {
+      console.error('[Auth Login] JWT generation error:', jwtError.message);
+      throw new Error('Token generation failed: ' + jwtError.message);
+    }
 
     // Update last login
-    await user.update({ lastLogin: new Date() });
+    try {
+      await user.update({ lastLogin: new Date() });
+      console.log('[Auth Login] Last login updated');
+    } catch (updateError) {
+      console.error('[Auth Login] Error updating last login:', updateError.message);
+      // Non-critical, continue
+    }
 
-    // Find employee record if user is an employee
+    // Find employee record for all users
     let employeeId = null;
-    if (user.role === 'employee') {
+    console.log('[Auth Login] Looking for employee record...');
+    try {
       const employee = await models.Employee.findOne({
         where: {
           email: user.email,
-          tenantId: user.tenant_id || user.tenantId
+          tenantId: tenantId
         }
       });
       if (employee) {
         employeeId = employee.id;
+        console.log('[Auth Login] Employee record found:', employeeId);
+      } else {
+        console.log('[Auth Login] No employee record found');
       }
+    } catch (empError) {
+      console.error('[Auth Login] Error finding employee:', empError.message);
+      // Non-critical, continue without employee ID
     }
 
     // Prepare response data
+    console.log('[Auth Login] Preparing response data...');
     const responseData = {
       success: true,
       message: 'Login successful',
@@ -104,9 +161,9 @@ router.post('/login', async (req, res) => {
         role: user.role,
         department: user.department,
         title: user.title,
-        tenantId: user.tenantId || user.tenant_id,
+        tenantId: tenantId,
         employeeId: employeeId,
-        mustChangePassword: user.mustChangePassword || user.must_change_password
+        mustChangePassword: user.mustChangePassword || user.must_change_password || false
       },
       tenant: user.tenant ? {
         id: user.tenant.id,
@@ -116,18 +173,34 @@ router.post('/login', async (req, res) => {
       } : null
     };
 
+    console.log('[Auth Login] Response data prepared:', {
+      hasToken: !!responseData.token,
+      hasUser: !!responseData.user,
+      hasTenant: !!responseData.tenant,
+      userRole: responseData.user.role
+    });
+
     // Encrypt and return response
-    const encryptedResponse = encryptAuthResponse(responseData);
-    res.json(encryptedResponse);
+    try {
+      console.log('[Auth Login] Encrypting response...');
+      const encryptedResponse = encryptAuthResponse(responseData);
+      console.log('[Auth Login] ✅ Login successful, sending response');
+      res.json(encryptedResponse);
+    } catch (encryptError) {
+      console.error('[Auth Login] Encryption error:', encryptError.message);
+      // Send unencrypted response as fallback
+      console.log('[Auth Login] Sending unencrypted response as fallback');
+      res.json(responseData);
+    }
 
   } catch (error) {
-    console.error('Login error:', error);
-    console.error('Error stack:', error.stack);
-    console.error('Error message:', error.message);
+    console.error('[Auth Login] ❌ ERROR:', error.message);
+    console.error('[Auth Login] Error stack:', error.stack);
+    console.error('[Auth Login] Full error:', error);
     res.status(500).json({
       success: false,
       message: 'Internal server error',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      error: error.message
     });
   }
 });

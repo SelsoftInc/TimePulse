@@ -4,7 +4,7 @@ const { models, sequelize } = require("../models");
 const { Op } = require("sequelize");
 const DataEncryptionService = require("../services/DataEncryptionService");
 
-const { Employee, Timesheet, User, Client, Invoice } = models;
+const { Employee, Timesheet, User, Client, Invoice, Vendor } = models;
 
 // Helper function to safely parse dates
 const parseDate = (dateStr) => {
@@ -360,38 +360,146 @@ router.get("/invoices", async (req, res) => {
           attributes: ["id", "clientName"],
           required: false,
         },
+        {
+          model: Vendor,
+          as: "vendor",
+          attributes: ["id", "name", "email"],
+          required: false,
+        },
       ],
       order: [["invoiceDate", "DESC"]],
     });
 
-    // Decrypt client names in invoices
-    const decryptedInvoices = invoices.map(invoice => {
-      const plainInvoice = invoice.get({ plain: true });
+    console.log(`📊 Found ${invoices.length} invoices for tenant ${tenantId}`);
+    
+    // Log first few invoices to debug vendor association
+    invoices.slice(0, 3).forEach((inv, idx) => {
+      const plainInv = inv.toJSON ? inv.toJSON() : inv;
+      console.log(`🔍 Invoice ${idx + 1} (${plainInv.invoiceNumber}):`, {
+        vendorId: plainInv.vendorId,
+        clientId: plainInv.clientId,
+        hasVendor: !!plainInv.vendor,
+        hasClient: !!plainInv.client,
+        vendorName: plainInv.vendor?.name,
+        clientName: plainInv.client?.clientName
+      });
+    });
+
+    // Decrypt invoice data including lineItems
+    const decryptedInvoices = DataEncryptionService.decryptInstances(invoices, 'invoice');
+
+    // Process invoices and decrypt vendor/client data
+    const processedInvoices = decryptedInvoices.map((invoice, index) => {
+      const plainInvoice = invoice.toJSON ? invoice.toJSON() : invoice;
+      
+      console.log(`🔍 Processing invoice ${index + 1} (${plainInvoice.invoiceNumber}):`, {
+        hasVendor: !!plainInvoice.vendor,
+        hasClient: !!plainInvoice.client,
+        vendorId: plainInvoice.vendorId,
+        clientId: plainInvoice.clientId
+      });
+      
+      // Decrypt client name if present
       if (plainInvoice.client && plainInvoice.client.clientName) {
-        plainInvoice.client.clientName = DataEncryptionService.decryptClientData({ 
-          clientName: plainInvoice.client.clientName 
-        }).clientName;
+        try {
+          const decryptedClient = DataEncryptionService.decryptClientData({ 
+            clientName: plainInvoice.client.clientName 
+          });
+          plainInvoice.client.clientName = decryptedClient.clientName;
+          console.log(`✅ Decrypted client name: ${plainInvoice.client.clientName}`);
+        } catch (err) {
+          console.error(`❌ Failed to decrypt client name:`, err.message);
+        }
       }
+      
+      // Decrypt vendor data if present
+      if (plainInvoice.vendor) {
+        try {
+          console.log(`🔐 Decrypting vendor for invoice ${plainInvoice.invoiceNumber}:`, {
+            vendorId: plainInvoice.vendor.id,
+            vendorNameRaw: plainInvoice.vendor.name,
+            vendorEmailRaw: plainInvoice.vendor.email
+          });
+          
+          // Convert to plain object
+          const vendorPlain = typeof plainInvoice.vendor.toJSON === 'function' 
+            ? plainInvoice.vendor.toJSON() 
+            : { ...plainInvoice.vendor };
+          
+          // Decrypt vendor data
+          const decryptedVendor = DataEncryptionService.decryptVendorData(vendorPlain);
+          
+          console.log(`✅ Decrypted vendor:`, {
+            id: decryptedVendor.id,
+            name: decryptedVendor.name,
+            email: decryptedVendor.email
+          });
+          
+          // Replace with clean decrypted object
+          plainInvoice.vendor = {
+            id: decryptedVendor.id,
+            name: decryptedVendor.name,
+            email: decryptedVendor.email,
+            phone: decryptedVendor.phone,
+            address: decryptedVendor.address,
+            city: decryptedVendor.city,
+            state: decryptedVendor.state,
+            zipCode: decryptedVendor.zipCode
+          };
+        } catch (err) {
+          console.error(`❌ Failed to decrypt vendor for invoice ${plainInvoice.invoiceNumber}:`, err.message);
+          plainInvoice.vendor = null;
+        }
+      } else {
+        console.log(`⚠️ No vendor found for invoice ${plainInvoice.invoiceNumber}`);
+      }
+      
       return plainInvoice;
     });
 
+    console.log('✅ Decrypted invoice data with lineItems');
+
     // Process data to create invoice reports
-    const invoiceReports = decryptedInvoices.map((invoice) => {
+    const invoiceReports = processedInvoices.map((invoice) => {
       const invoiceDate = new Date(invoice.invoiceDate);
       const month = invoiceDate.toLocaleDateString("en-US", { month: "long" });
       const year = invoiceDate.getFullYear();
       
-      // Calculate total hours from line items
-      const lineItems = invoice.lineItems || [];
-      const totalHours = lineItems.reduce((sum, item) => {
-        return sum + (parseFloat(item.hours) || 0);
-      }, 0);
+      // Calculate total hours from decrypted line items
+      let lineItems = invoice.lineItems || [];
+      
+      // Parse lineItems if it's a string
+      if (typeof lineItems === 'string') {
+        try {
+          lineItems = JSON.parse(lineItems);
+        } catch (e) {
+          console.error('Failed to parse lineItems for invoice', invoice.id, e);
+          lineItems = [];
+        }
+      }
+      
+      const totalHours = Array.isArray(lineItems) ? lineItems.reduce((sum, item) => {
+        const hours = parseFloat(item.hoursWorked || item.hours || item.quantity || 0);
+        return sum + hours;
+      }, 0) : 0;
+      
+      console.log(`Invoice ${invoice.invoiceNumber}: ${totalHours} hours from ${lineItems.length} line items`);
 
-      return {
+      // Extract vendor name - ensure it's decrypted
+      let vendorName = "N/A";
+      if (invoice.vendor && invoice.vendor.name) {
+        vendorName = invoice.vendor.name;
+        console.log(`📋 Using vendor name for ${invoice.invoiceNumber}: "${vendorName}"`);
+      } else if (invoice.vendorId) {
+        console.log(`⚠️ Invoice ${invoice.invoiceNumber} has vendorId but no vendor object`);
+      }
+      
+      const reportData = {
         id: invoice.id,
         invoiceNumber: invoice.invoiceNumber,
         clientId: invoice.clientId,
-        clientName: invoice.client?.clientName || "Unknown Client",
+        clientName: invoice.client?.clientName || invoice.vendor?.name || "Unknown Client",
+        vendorName: vendorName,
         month,
         year,
         totalHours: totalHours,
@@ -400,6 +508,14 @@ router.get("/invoices", async (req, res) => {
         issueDate: invoice.issueDate || invoice.createdAt,
         createdAt: invoice.createdAt,
       };
+      
+      console.log(`📋 Report data for ${invoice.invoiceNumber}:`, {
+        invoiceNumber: reportData.invoiceNumber,
+        vendorName: reportData.vendorName,
+        clientName: reportData.clientName
+      });
+      
+      return reportData;
     });
 
     // Group by month for summary
@@ -418,6 +534,15 @@ router.get("/invoices", async (req, res) => {
       monthlySummary[key].totalAmount += invoice.amount;
       monthlySummary[key].totalHours += invoice.totalHours;
       monthlySummary[key].invoiceCount += 1;
+    });
+
+    console.log('📤 Sending response with invoice reports:', {
+      totalInvoices: invoiceReports.length,
+      sampleInvoice: invoiceReports[0] ? {
+        invoiceNumber: invoiceReports[0].invoiceNumber,
+        vendorName: invoiceReports[0].vendorName,
+        clientName: invoiceReports[0].clientName
+      } : null
     });
 
     res.json({

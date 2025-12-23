@@ -9,7 +9,7 @@ import '../common/ActionsDropdown.css';
 import InvoicePDFPreviewModal from '../common/InvoicePDFPreviewModal';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 
 // Helper functions outside component to avoid dependency issues
 const getMonday = (date) => {
@@ -55,6 +55,9 @@ const ReportsDashboard = () => {
   // Dropdown state for Actions
   const [openActionsId, setOpenActionsId] = useState(null);
   const [actionsType, setActionsType] = useState(null); // 'client', 'employee', 'invoice'
+  
+  // Export dropdown state
+  const [showExportDropdown, setShowExportDropdown] = useState(false);
   
   // Client modals state
   const [showClientDetailsModal, setShowClientDetailsModal] = useState(false);
@@ -202,6 +205,12 @@ const ReportsDashboard = () => {
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedInvoiceForDetails, setSelectedInvoiceForDetails] = useState(null);
 
+  // Pagination state
+  const [clientPage, setClientPage] = useState(1);
+  const [employeePage, setEmployeePage] = useState(1);
+  const [invoicePage, setInvoicePage] = useState(1);
+  const itemsPerPage = 10;
+
   // Fetch data from API - wrapped in useCallback to prevent infinite loops
   const fetchReportsData = useCallback(async () => {
     try {
@@ -329,8 +338,7 @@ const ReportsDashboard = () => {
   }, [viewMode, weekStart, weekEnd, selectedMonth, selectedYear, fetchReportsData]);
 
   // Export functionality
-  const handleExport = () => {
-    const format = 'excel'; // Default to Excel, can add PDF option later
+  const handleExport = (format) => {
     const dateRange = viewMode === 'week' && weekStart && weekEnd
       ? `${formatDate(weekStart)} - ${formatDate(weekEnd)}`
       : `${selectedMonth} ${selectedYear}`;
@@ -342,6 +350,9 @@ const ReportsDashboard = () => {
     } else if (activeTab === 'invoice') {
       exportInvoiceData(format, dateRange);
     }
+    
+    // Close dropdown after export
+    setShowExportDropdown(false);
   };
 
   const exportClientData = (format, dateRange) => {
@@ -371,7 +382,7 @@ const ReportsDashboard = () => {
     } else if (format === 'pdf') {
       const doc = new jsPDF();
       doc.text(`Client Report - ${dateRange}`, 14, 15);
-      doc.autoTable({
+      autoTable(doc, {
         head: [['Client Name', 'Total Hours', 'Total Employees', 'Total Billed ($)']],
         body: clientReportData.map(client => [
           client.name,
@@ -411,7 +422,7 @@ const ReportsDashboard = () => {
     } else if (format === 'pdf') {
       const doc = new jsPDF();
       doc.text(`Employee Report - ${dateRange}`, 14, 15);
-      doc.autoTable({
+      autoTable(doc, {
         head: [['Employee Name', 'Client', 'Project', 'Total Hours', 'Utilization %']],
         body: employeeReportData.map(emp => [
           emp.name,
@@ -455,7 +466,7 @@ const ReportsDashboard = () => {
     } else if (format === 'pdf') {
       const doc = new jsPDF();
       doc.text(`Invoice Report - ${dateRange}`, 14, 15);
-      doc.autoTable({
+      autoTable(doc, {
         head: [['Invoice ID', 'Client', 'Month', 'Issue Date', 'Hours', 'Amount', 'Status']],
         body: invoiceReportData.map(inv => [
           inv.invoiceNumber || inv.id,
@@ -481,6 +492,9 @@ const ReportsDashboard = () => {
       }
       if (!event.target.closest('.date-range-navigator') && !event.target.closest('.calendar-picker')) {
         setShowCalendar(false);
+      }
+      if (!event.target.closest('.export-dropdown-container')) {
+        setShowExportDropdown(false);
       }
     };
 
@@ -515,68 +529,53 @@ const ReportsDashboard = () => {
 
   // Function to render client-wise report
   const renderClientReport = () => {
+    // Pagination calculations
+    const totalClients = clientReportData.length;
+    const totalPages = Math.ceil(totalClients / itemsPerPage);
+    const startIndex = (clientPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const paginatedClients = clientReportData.slice(startIndex, endIndex);
+
     return (
       <>
-        <div className="nk-bloc">
-          <div className="row g-g">
-            <div className="col-md-6 col-lg-4">
-              <div className="card card-bordered">
-                <div className="card-inne">
-                  <div className="card-title-group align-start mb-">
-                    <div className="card-title">
-                      <h6 className="title">Total Hours</h6>
-                    </div>
-                  </div>
-                  <div className="align-end flex-sm-wrap g-4 flex-md-nowrap">
-                    <div className="nk-sale-data">
-                      <span className="amount">{totalHours}</span>
-                      <span className="sub-title">
-                        {selectedMonth} {selectedYear}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
+        {/* Summary Cards - Tailwind Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+          {/* Total Hours Card */}
+          <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+            <div className="mb-4">
+              <h6 className="text-sm font-semibold text-gray-700">Total Hours</h6>
             </div>
-
-            <div className="col-md-6 col-lg-4">
-              <div className="card card-bordered">
-                <div className="card-inne">
-                  <div className="card-title-group align-start mb-">
-                    <div className="card-title">
-                      <h6 className="title">Total Billed Amount</h6>
-                    </div>
-                  </div>
-                  <div className="align-end flex-sm-wrap g-4 flex-md-nowrap">
-                    <div className="nk-sale-data">
-                      <span className="amount">
-                        ${totalAmount.toLocaleString()}
-                      </span>
-                      <span className="sub-title">
-                        {selectedMonth} {selectedYear}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
+            <div className="flex flex-col">
+              <span className="text-3xl font-bold text-gray-900">{totalHours}</span>
+              <span className="text-sm text-gray-500 mt-1">
+                {selectedMonth} {selectedYear}
+              </span>
             </div>
+          </div>
 
-            <div className="col-md-12 col-lg-4">
-              <div className="card card-bordered">
-                <div className="card-inne">
-                  <div className="card-title-group align-start mb-">
-                    <div className="card-title">
-                      <h6 className="title">Total Clients</h6>
-                    </div>
-                  </div>
-                  <div className="align-end flex-sm-wrap g-4 flex-md-nowrap">
-                    <div className="nk-sale-data">
-                      <span className="amount">{clientReportData.length}</span>
-                      <span className="sub-title">Active Clients</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
+          {/* Total Billed Amount Card */}
+          <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+            <div className="mb-4">
+              <h6 className="text-sm font-semibold text-gray-700">Total Billed Amount</h6>
+            </div>
+            <div className="flex flex-col">
+              <span className="text-3xl font-bold text-gray-900">
+                ${totalAmount.toLocaleString()}
+              </span>
+              <span className="text-sm text-gray-500 mt-1">
+                {selectedMonth} {selectedYear}
+              </span>
+            </div>
+          </div>
+
+          {/* Total Clients Card */}
+          <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+            <div className="mb-4">
+              <h6 className="text-sm font-semibold text-gray-700">Total Clients</h6>
+            </div>
+            <div className="flex flex-col">
+              <span className="text-3xl font-bold text-gray-900">{clientReportData.length}</span>
+              <span className="text-sm text-gray-500 mt-1">Active Clients</span>
             </div>
           </div>
         </div>
@@ -593,7 +592,7 @@ const ReportsDashboard = () => {
               </div>
 
               <div className="card-inner p-0">
-                <div className="nk-tb-list nk-tb-ulis">
+                <div className="nk-tb-list nk-tb-ulist">
                   <div className="nk-tb-item nk-tb-head">
                     <div className="nk-tb-col">
                       <span className="sub-text">Client Name</span>
@@ -612,7 +611,7 @@ const ReportsDashboard = () => {
                     </div>
                   </div>
 
-                  {clientReportData.map((client) => (
+                  {paginatedClients.map((client) => (
                     <div key={client.id} className="nk-tb-item">
                       <div className="nk-tb-col">
                         <span className="tb-lead">{client.name}</span>
@@ -685,6 +684,39 @@ const ReportsDashboard = () => {
                   ))}
                 </div>
               </div>
+
+              {totalClients > itemsPerPage && (
+                <div className="card-inner">
+                  <div className="flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                    <div className="text-sm text-gray-700 dark:text-gray-300">
+                      Showing <span className="font-semibold">{startIndex + 1}</span> to{" "}
+                      <span className="font-semibold">{Math.min(endIndex, totalClients)}</span> of{" "}
+                      <span className="font-semibold">{totalClients}</span> entries
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => setClientPage(clientPage - 1)}
+                        disabled={clientPage === 1}
+                        className="flex items-center justify-center w-9 h-9 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-blue-500 hover:text-white hover:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white dark:disabled:hover:bg-gray-700 disabled:hover:text-gray-700 dark:disabled:hover:text-gray-300 disabled:hover:border-gray-300 dark:disabled:hover:border-gray-600 transition-all duration-200"
+                      >
+                        <i className="fas fa-chevron-left text-xs"></i>
+                      </button>
+                      <div className="flex items-center gap-2 px-3">
+                        <span className="text-base font-bold text-blue-600 dark:text-blue-400">{clientPage}</span>
+                        <span className="text-sm text-gray-400 dark:text-gray-500">/</span>
+                        <span className="text-base font-semibold text-gray-600 dark:text-gray-400">{totalPages}</span>
+                      </div>
+                      <button
+                        onClick={() => setClientPage(clientPage + 1)}
+                        disabled={clientPage === totalPages}
+                        className="flex items-center justify-center w-9 h-9 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-blue-500 hover:text-white hover:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white dark:disabled:hover:bg-gray-700 disabled:hover:text-gray-700 dark:disabled:hover:text-gray-300 disabled:hover:border-gray-300 dark:disabled:hover:border-gray-600 transition-all duration-200"
+                      >
+                        <i className="fas fa-chevron-right text-xs"></i>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -761,6 +793,13 @@ const ReportsDashboard = () => {
 
   // Function to render employee-wise report
   const renderEmployeeReport = () => {
+    // Pagination calculations
+    const totalEmployees = employeeReportData.length;
+    const totalPages = Math.ceil(totalEmployees / itemsPerPage);
+    const startIndex = (employeePage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const paginatedEmployees = employeeReportData.slice(startIndex, endIndex);
+
     return (
       <>
         <div className="nk-block">
@@ -797,7 +836,7 @@ const ReportsDashboard = () => {
                     </div>
                   </div>
 
-                  {employeeReportData.map((employee) => (
+                  {paginatedEmployees.map((employee) => (
                     <div key={employee.id} className="nk-tb-item">
                       <div className="nk-tb-col">
                         <div className="user-card">
@@ -903,6 +942,40 @@ const ReportsDashboard = () => {
                   ))}
                 </div>
               </div>
+
+              {/* Pagination */}
+              {totalEmployees > itemsPerPage && (
+                <div className="card-inner">
+                  <div className="flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                    <div className="text-sm text-gray-700 dark:text-gray-300">
+                      Showing <span className="font-semibold">{startIndex + 1}</span> to{" "}
+                      <span className="font-semibold">{Math.min(endIndex, totalEmployees)}</span> of{" "}
+                      <span className="font-semibold">{totalEmployees}</span> entries
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => setEmployeePage(employeePage - 1)}
+                        disabled={employeePage === 1}
+                        className="flex items-center justify-center w-9 h-9 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-blue-500 hover:text-white hover:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white dark:disabled:hover:bg-gray-700 disabled:hover:text-gray-700 dark:disabled:hover:text-gray-300 disabled:hover:border-gray-300 dark:disabled:hover:border-gray-600 transition-all duration-200"
+                      >
+                        <i className="fas fa-chevron-left text-xs"></i>
+                      </button>
+                      <div className="flex items-center gap-2 px-3">
+                        <span className="text-base font-bold text-blue-600 dark:text-blue-400">{employeePage}</span>
+                        <span className="text-sm text-gray-400 dark:text-gray-500">/</span>
+                        <span className="text-base font-semibold text-gray-600 dark:text-gray-400">{totalPages}</span>
+                      </div>
+                      <button
+                        onClick={() => setEmployeePage(employeePage + 1)}
+                        disabled={employeePage === totalPages}
+                        className="flex items-center justify-center w-9 h-9 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-blue-500 hover:text-white hover:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white dark:disabled:hover:bg-gray-700 disabled:hover:text-gray-700 dark:disabled:hover:text-gray-300 disabled:hover:border-gray-300 dark:disabled:hover:border-gray-600 transition-all duration-200"
+                      >
+                        <i className="fas fa-chevron-right text-xs"></i>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -981,6 +1054,13 @@ const ReportsDashboard = () => {
 
   // Function to render invoice report
   const renderInvoiceReport = () => {
+    // Pagination calculations
+    const totalInvoices = invoiceReportData.length;
+    const totalPages = Math.ceil(totalInvoices / itemsPerPage);
+    const startIndex = (invoicePage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const paginatedInvoices = invoiceReportData.slice(startIndex, endIndex);
+
     return (
       <div className="nk-block">
         <div className="card card-bordered card-stretch">
@@ -1018,7 +1098,7 @@ const ReportsDashboard = () => {
                     <span className="sub-text">Actions</span>
                   </div>
                 </div>
-                {invoiceReportData.map((invoice) => (
+                {paginatedInvoices.map((invoice) => (
                   <div key={invoice.id} className={`nk-tb-item ${openActionsId === invoice.id ? 'dropdown-open' : ''}`}>
                     <div className="nk-tb-col">
                       <span className="tb-lead">{invoice.invoiceNumber || invoice.id}</span>
@@ -1115,6 +1195,40 @@ const ReportsDashboard = () => {
                   </div>
                 ))}
               </div>
+
+              {/* Pagination */}
+              {totalInvoices > itemsPerPage && (
+                <div className="card-inner">
+                  <div className="flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                    <div className="text-sm text-gray-700 dark:text-gray-300">
+                      Showing <span className="font-semibold">{startIndex + 1}</span> to{" "}
+                      <span className="font-semibold">{Math.min(endIndex, totalInvoices)}</span> of{" "}
+                      <span className="font-semibold">{totalInvoices}</span> entries
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => setInvoicePage(invoicePage - 1)}
+                        disabled={invoicePage === 1}
+                        className="flex items-center justify-center w-9 h-9 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-blue-500 hover:text-white hover:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white dark:disabled:hover:bg-gray-700 disabled:hover:text-gray-700 dark:disabled:hover:text-gray-300 disabled:hover:border-gray-300 dark:disabled:hover:border-gray-600 transition-all duration-200"
+                      >
+                        <i className="fas fa-chevron-left text-xs"></i>
+                      </button>
+                      <div className="flex items-center gap-2 px-3">
+                        <span className="text-base font-bold text-blue-600 dark:text-blue-400">{invoicePage}</span>
+                        <span className="text-sm text-gray-400 dark:text-gray-500">/</span>
+                        <span className="text-base font-semibold text-gray-600 dark:text-gray-400">{totalPages}</span>
+                      </div>
+                      <button
+                        onClick={() => setInvoicePage(invoicePage + 1)}
+                        disabled={invoicePage === totalPages}
+                        className="flex items-center justify-center w-9 h-9 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-blue-500 hover:text-white hover:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white dark:disabled:hover:bg-gray-700 disabled:hover:text-gray-700 dark:disabled:hover:text-gray-300 disabled:hover:border-gray-300 dark:disabled:hover:border-gray-600 transition-all duration-200"
+                      >
+                        <i className="fas fa-chevron-right text-xs"></i>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -1273,452 +1387,292 @@ const ReportsDashboard = () => {
   };
 
   return (
-    <div className="nk-conten">
-      <div className="container-fluid">
-        <div className="nk-content-inner">
-          <div className="nk-content-body">
-            <div className="nk-block-head nk-block-head-sm">
-              <div className="nk-block-between">
-                <div className="nk-block-head-content">
-                  <h3 className="nk-block-title page-title">
-                    Reports & Analytics
-                  </h3>
-                  <div className="nk-block-des text-soft">
-                    <p>
-                      View detailed reports and analytics for clients and
-                      employees.
-                    </p>
-                  </div>
+    <div className="reports-dashboard-scope">
+      <div className="max-w-8xl mx-auto space-y-4">
+        
+        {/* ================= REPORTS HEADER ================= */}
+        <div className="sticky top-4 z-30 mb-9 rounded-3xl bg-[#7cbdf2] dark:bg-gradient-to-br dark:from-[#0f1a25] dark:via-[#121f33] dark:to-[#162a45] shadow-sm dark:shadow-[0_8px_24px_rgba(0,0,0,0.6)] backdrop-blur-md border border-transparent dark:border-white/5">
+          <div className="px-6 py-4">
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_auto] lg:items-center">
+              
+              {/* ================= LEFT ================= */}
+              <div className="relative pl-5">
+                <span className="absolute left-0 top-2 h-10 w-1 rounded-full bg-purple-900" />
+                <h1 className="text-[2rem] font-bold text-white leading-[1.15] tracking-tight drop-shadow-[0_2px_8px_rgba(0,0,0,0.18)]">
+                  Reports & Analytics
+                </h1>
+                <p className="mt-1 text-sm text-white/80">
+                  View detailed reports and analytics for clients and employees
+                </p>
+              </div>
+
+              {/* ================= RIGHT CONTROLS ================= */}
+              <div className="flex flex-wrap items-center justify-start gap-3 lg:justify-end">
+                {/* View Mode Toggle */}
+                <div className="flex rounded-full bg-white/20 p-1 backdrop-blur">
+                  <button
+                    onClick={() => setViewMode("month")}
+                    className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition
+                      ${viewMode === "month"
+                        ? "bg-slate-900 text-white shadow"
+                        : "text-white/80 hover:bg-white/20"
+                      }`}
+                  >
+                    <i className="fas fa-calendar-alt text-sm" />
+                    Month
+                  </button>
+
+                  <button
+                    onClick={() => setViewMode("week")}
+                    className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition
+                      ${viewMode === "week"
+                        ? "bg-slate-900 text-white shadow"
+                        : "text-white/80 hover:bg-white/20"
+                      }`}
+                  >
+                    <i className="fas fa-calendar-week text-sm" />
+                    Week
+                  </button>
                 </div>
-                <div className="nk-block-head-content">
-                  <div className="reports-header-controls">
-                    {/* View Mode Toggle */}
-                    <div className="view-mode-toggle">
-                      <button
-                        type="button"
-                        className={`toggle-btn ${viewMode === 'month' ? 'active' : ''}`}
-                        onClick={() => setViewMode('month')}
-                      >
-                        <i className="fas fa-calendar-alt"></i>
-                        <span>Month</span>
-                      </button>
-                      <button
-                        type="button"
-                        className={`toggle-btn ${viewMode === 'week' ? 'active' : ''}`}
-                        onClick={() => setViewMode('week')}
-                      >
-                        <i className="fas fa-calendar-week"></i>
-                        <span>Week</span>
-                      </button>
-                    </div>
-                    
-                    {/* Date Range Navigator */}
-                    <div className="date-range-navigator">
-                      {viewMode === 'month' ? (
-                        <>
-                          <button
-                            className="nav-btn"
-                            onClick={goToPreviousMonth}
-                            title="Previous Month"
-                          >
-                            <i className="fas fa-chevron-left"></i>
-                          </button>
-                          
-                          <div className="date-display" onClick={handleDateDisplayClick} style={{ cursor: 'pointer' }}>
-                            <i className="fas fa-calendar-alt"></i>
-                            <span className="date-text">{selectedMonth} {selectedYear}</span>
-                            <i className="fas fa-caret-down" style={{ fontSize: '12px', marginLeft: '8px', opacity: 0.7 }}></i>
-                          </div>
-                          
-                          <button
-                            className="nav-btn"
-                            onClick={goToNextMonth}
-                            title="Next Month"
-                          >
-                            <i className="fas fa-chevron-right"></i>
-                          </button>
-                          
-                          {!isCurrentMonth() && (
-                            <button
-                              className="today-btn"
-                              onClick={goToCurrentMonth}
-                              title="Go to Current Month"
-                            >
-                              <i className="fas fa-calendar-day"></i>
-                              <span>Today</span>
-                            </button>
-                          )}
-                        </>
-                      ) : (
-                        weekStart && weekEnd && (
-                          <>
-                            <button
-                              className="nav-btn"
-                              onClick={goToPreviousWeek}
-                              title="Previous Week"
-                            >
-                              <i className="fas fa-chevron-left"></i>
-                            </button>
-                            
-                            <div className="date-display" onClick={handleDateDisplayClick} style={{ cursor: 'pointer' }}>
-                              <i className="fas fa-calendar-week"></i>
-                              <span className="date-text">
-                                {formatDate(weekStart)} - {formatDate(weekEnd)}
-                              </span>
-                              <i className="fas fa-caret-down" style={{ fontSize: '12px', marginLeft: '8px', opacity: 0.7 }}></i>
-                            </div>
-                            
-                            <button
-                              className="nav-btn"
-                              onClick={goToNextWeek}
-                              title="Next Week"
-                            >
-                              <i className="fas fa-chevron-right"></i>
-                            </button>
-                            
-                            {!isCurrentWeek() && (
-                              <button
-                                className="today-btn"
-                                onClick={goToCurrentWeek}
-                                title="Go to Current Week"
-                              >
-                                <i className="fas fa-calendar-day"></i>
-                                <span>Today</span>
-                              </button>
-                            )}
-                          </>
-                        )
-                      )}
-                    </div>
-                    
-                    {/* Export Button */}
-                    <button className="export-btn" onClick={handleExport}>
-                      <i className="fas fa-download"></i>
-                      <span>Export</span>
-                    </button>
+
+                {/* Date Navigator */}
+                <div className="flex items-center gap-2 rounded-full bg-white/20 px-3 py-2 text-sm text-white backdrop-blur">
+                  <button onClick={viewMode === "month" ? goToPreviousMonth : goToPreviousWeek}>
+                    <i className="fas fa-chevron-left" />
+                  </button>
+
+                  <div
+                    onClick={handleDateDisplayClick}
+                    className="cursor-pointer font-medium"
+                  >
+                    {viewMode === "month"
+                      ? `${selectedMonth} ${selectedYear}`
+                      : weekStart && weekEnd ? `${formatDate(weekStart)} - ${formatDate(weekEnd)}` : ''}
                   </div>
+
+                  <button onClick={viewMode === "month" ? goToNextMonth : goToNextWeek}>
+                    <i className="fas fa-chevron-right" />
+                  </button>
+                </div>
+
+                {/* Today Button */}
+                {(viewMode === "month" && !isCurrentMonth()) ||
+                (viewMode === "week" && !isCurrentWeek()) ? (
+                  <button
+                    onClick={viewMode === "month" ? goToCurrentMonth : goToCurrentWeek}
+                    className="rounded-full bg-white/90 px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-white"
+                  >
+                    <i className="fas fa-calendar-day mr-1" />
+                    Today
+                  </button>
+                ) : null}
+
+                {/* Export */}
+                <div className="export-dropdown-container">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowExportDropdown(!showExportDropdown);
+                    }}
+                    className="flex items-center gap-2 rounded-full bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white shadow-md hover:bg-slate-800"
+                  >
+                    <i className="fas fa-download" />
+                    Export
+                  </button>
                   
-                  {/* Calendar Picker */}
-                  {showCalendar && (
-                    <div className="calendar-picker">
-                      <div className="calendar-header">
-                        <button className="calendar-nav-btn" onClick={() => handleCalendarMonthChange(-1)}>
-                          <i className="fas fa-chevron-left"></i>
-                        </button>
-                        <div className="calendar-title">
-                          {calendarDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-                        </div>
-                        <button className="calendar-nav-btn" onClick={() => handleCalendarMonthChange(1)}>
-                          <i className="fas fa-chevron-right"></i>
-                        </button>
-                      </div>
-                      
-                      <div className="calendar-body">
-                        <div className="calendar-weekdays">
-                          <div className="calendar-weekday">Sun</div>
-                          <div className="calendar-weekday">Mon</div>
-                          <div className="calendar-weekday">Tue</div>
-                          <div className="calendar-weekday">Wed</div>
-                          <div className="calendar-weekday">Thu</div>
-                          <div className="calendar-weekday">Fri</div>
-                          <div className="calendar-weekday">Sat</div>
-                        </div>
-                        
-                        <div className="calendar-days">
-                          {(() => {
-                            const { daysInMonth, startingDayOfWeek, year, month } = getDaysInMonth(calendarDate);
-                            const days = [];
-                            
-                            // Empty cells for days before month starts
-                            for (let i = 0; i < startingDayOfWeek; i++) {
-                              days.push(<div key={`empty-${i}`} className="calendar-day empty"></div>);
-                            }
-                            
-                            // Days of the month
-                            for (let day = 1; day <= daysInMonth; day++) {
-                              const date = new Date(year, month, day);
-                              const monday = getMonday(date);
-                              const isSelected = viewMode === 'week' 
-                                ? isDateInSelectedWeek(date)
-                                : isDateInSelectedMonth(date);
-                              const isToday = date.toDateString() === new Date().toDateString();
-                              const isWeekStart = date.toDateString() === monday.toDateString();
-                              
-                              days.push(
-                                <div
-                                  key={day}
-                                  className={`calendar-day ${
-                                    isSelected ? 'selected' : ''
-                                  } ${
-                                    isToday ? 'today' : ''
-                                  } ${
-                                    viewMode === 'week' && isWeekStart ? 'week-start' : ''
-                                  }`}
-                                  onClick={() => {
-                                    if (viewMode === 'week') {
-                                      handleWeekSelect(monday);
-                                    } else {
-                                      const monthName = date.toLocaleDateString('en-US', { month: 'long' });
-                                      handleMonthSelect(monthName, year);
-                                    }
-                                  }}
-                                >
-                                  <span className="day-number">{day}</span>
-                                  {viewMode === 'week' && isWeekStart && (
-                                    <span className="week-indicator">Week</span>
-                                  )}
-                                </div>
-                              );
-                            }
-                            
-                            return days;
-                          })()}
-                        </div>
-                      </div>
-                      
-                      <div className="calendar-footer">
-                        <button 
-                          className="calendar-today-btn"
-                          onClick={() => {
-                            if (viewMode === 'week') {
-                              goToCurrentWeek();
-                            } else {
-                              goToCurrentMonth();
-                            }
-                            setShowCalendar(false);
-                          }}
-                        >
-                          <i className="fas fa-calendar-day"></i>
-                          <span>Today</span>
-                        </button>
-                      </div>
+                  {showExportDropdown && (
+                    <div className="export-dropdown-menu">
+                      <button
+                        className="export-dropdown-item"
+                        onClick={() => handleExport('excel')}
+                      >
+                        <i className="fas fa-file-excel" style={{ color: '#10b981' }}></i>
+                        <span>Export as Excel</span>
+                      </button>
+                      <button
+                        className="export-dropdown-item"
+                        onClick={() => handleExport('pdf')}
+                      >
+                        <i className="fas fa-file-pdf" style={{ color: '#ef4444' }}></i>
+                        <span>Export as PDF</span>
+                      </button>
                     </div>
                   )}
                 </div>
               </div>
             </div>
-            {/* Loading State */}
-            {loading && (
-              <div className="nk-block">
-                <div className="card">
-                  <div className="card-inner text-center p-4">
-                    <div className="spinner-border text-primary" role="status">
-                      <span className="visually-hidden">Loading...</span>
-                    </div>
-                    <p className="mt-3 mb-0">Loading reports data...</p>
-                  </div>
-                </div>
-              </div>
-            )}
+          </div>
 
-            {/* Error State */}
-            {error && (
-              <div className="nk-block">
-                <div className="card">
-                  <div className="card-inner text-center p-4">
-                    <div className="text-danger mb-3">
-                      <em className="icon ni ni-alert-circle fs-2x"></em>
+          {/* Calendar Picker */}
+          {showCalendar && (
+            <div className="relative px-6 pb-6">
+              <div className="absolute right-6 mt-4 w-[320px] rounded-2xl bg-white shadow-xl ring-1 ring-black/5">
+                <div className="calendar-picker">
+                  <div className="calendar-header">
+                    <button className="calendar-nav-btn" onClick={() => handleCalendarMonthChange(-1)}>
+                      <i className="fas fa-chevron-left"></i>
+                    </button>
+                    <div className="calendar-title">
+                      {calendarDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
                     </div>
-                    <h5 className="text-danger">Error Loading Reports</h5>
-                    <p className="text-muted">{error}</p>
-                    <button
-                      className="btn btn-primary"
-                      onClick={fetchReportsData}
+                    <button className="calendar-nav-btn" onClick={() => handleCalendarMonthChange(1)}>
+                      <i className="fas fa-chevron-right"></i>
+                    </button>
+                  </div>
+                  
+                  <div className="calendar-body">
+                    <div className="calendar-weekdays">
+                      <div className="calendar-weekday">Sun</div>
+                      <div className="calendar-weekday">Mon</div>
+                      <div className="calendar-weekday">Tue</div>
+                      <div className="calendar-weekday">Wed</div>
+                      <div className="calendar-weekday">Thu</div>
+                      <div className="calendar-weekday">Fri</div>
+                      <div className="calendar-weekday">Sat</div>
+                    </div>
+                    
+                    <div className="calendar-days">
+                      {(() => {
+                        const { daysInMonth, startingDayOfWeek, year, month } = getDaysInMonth(calendarDate);
+                        const days = [];
+                        
+                        for (let i = 0; i < startingDayOfWeek; i++) {
+                          days.push(<div key={`empty-${i}`} className="calendar-day empty"></div>);
+                        }
+                        
+                        for (let day = 1; day <= daysInMonth; day++) {
+                          const date = new Date(year, month, day);
+                          const monday = getMonday(date);
+                          const isSelected = viewMode === 'week' 
+                            ? isDateInSelectedWeek(date)
+                            : isDateInSelectedMonth(date);
+                          const isToday = date.toDateString() === new Date().toDateString();
+                          const isWeekStart = date.toDateString() === monday.toDateString();
+                          
+                          days.push(
+                            <div
+                              key={day}
+                              className={`calendar-day ${
+                                isSelected ? 'selected' : ''
+                              } ${
+                                isToday ? 'today' : ''
+                              } ${
+                                viewMode === 'week' && isWeekStart ? 'week-start' : ''
+                              }`}
+                              onClick={() => {
+                                if (viewMode === 'week') {
+                                  handleWeekSelect(monday);
+                                } else {
+                                  const monthName = date.toLocaleDateString('en-US', { month: 'long' });
+                                  handleMonthSelect(monthName, year);
+                                }
+                              }}
+                            >
+                              <span className="day-number">{day}</span>
+                              {viewMode === 'week' && isWeekStart && (
+                                <span className="week-indicator">Week</span>
+                              )}
+                            </div>
+                          );
+                        }
+                        
+                        return days;
+                      })()}
+                    </div>
+                  </div>
+                  
+                  <div className="calendar-footer">
+                    <button 
+                      className="calendar-today-btn"
+                      onClick={() => {
+                        if (viewMode === 'week') {
+                          goToCurrentWeek();
+                        } else {
+                          goToCurrentMonth();
+                        }
+                        setShowCalendar(false);
+                      }}
                     >
-                      <em className="icon ni ni-reload"></em>
-                      <span>Retry</span>
+                      <i className="fas fa-calendar-day"></i>
+                      <span>Today</span>
                     </button>
                   </div>
                 </div>
               </div>
-            )}
-
-            {/* Reports Content */}
-            {!loading && !error && (
-              <>
-                <div className="report-toggle-container">
-                  <div className="toggle-pill">
-                    <div
-                      className={`pill-option ${
-                        activeTab === "client" ? "active" : ""
-                      }`}
-                      onClick={() => setActiveTab("client")}
-                    >
-                      Client
-                    </div>
-                    <div
-                      className={`pill-option ${
-                        activeTab === "employee" ? "active" : ""
-                      }`}
-                      onClick={() => setActiveTab("employee")}
-                    >
-                      Employee
-                    </div>
-                    <div
-                      className={`pill-option ${
-                        activeTab === "invoice" ? "active" : ""
-                      }`}
-                      onClick={() => setActiveTab("invoice")}
-                    >
-                      Invoice
-                    </div>
-                    {/* <div
-                      className={`pill-option ${
-                        activeTab === "analytics" ? "active" : ""
-                      }`}
-                      onClick={() => setActiveTab("analytics")}
-                    >
-                      Analytics
-                    </div> */}
-                    <div className={`pill-slider ${activeTab}`}></div>
-                  </div>
-
-                  <div className="toggle-status">
-                    Viewing:{" "}
-                    <strong>
-                      {activeTab === "client"
-                        ? "Client-wise Report"
-                        : activeTab === "employee"
-                        ? "Employee-wise Report"
-                        : activeTab === "invoice"
-                        ? "Invoice Report"
-                        : "Analytics Dashboard"
-                        }
-                    </strong>
-                  </div>
-                </div>
-
-                {activeTab === "client" && renderClientReport()}
-                {activeTab === "employee" && renderEmployeeReport()}
-                {activeTab === "invoice" && renderInvoiceReport()}
-                {/* {activeTab === "analytics" && renderAnalyticsReport()} */}
-              </>
-            )}
-          </div>
-        </div>
-      </div>
-      
-      {/* Invoice PDF Preview Modal */}
-      {showPDFModal && selectedInvoiceForPDF && (
-        <InvoicePDFPreviewModal
-          invoice={selectedInvoiceForPDF}
-          onClose={() => {
-            setShowPDFModal(false);
-            setSelectedInvoiceForPDF(null);
-          }}
-        />
-      )}
-      
-      {/* Invoice Details Modal */}
-      {showDetailsModal && selectedInvoiceForDetails && (
-        <div className="modal-overlay" onClick={() => setShowDetailsModal(false)}>
-          <div className="modal-content invoice-details-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h4>Invoice Details</h4>
-              <button className="modal-close" onClick={() => setShowDetailsModal(false)}>×</button>
             </div>
-            
-            <div className="modal-body">
-              <div className="details-container">
-                <div className="details-section">
-                  <h5 className="section-title">
-                    <i className="fas fa-file-invoice"></i> Invoice Information
-                  </h5>
-                  <div className="details-grid">
-                    <div className="detail-item">
-                      <label>Invoice ID:</label>
-                      <span>{selectedInvoiceForDetails.invoiceNumber || selectedInvoiceForDetails.id}</span>
-                    </div>
-                    <div className="detail-item">
-                      <label>Client:</label>
-                      <span>{selectedInvoiceForDetails.clientName || 'N/A'}</span>
-                    </div>
-                    <div className="detail-item">
-                      <label>Month:</label>
-                      <span>{selectedInvoiceForDetails.month || 'N/A'}</span>
-                    </div>
-                    <div className="detail-item">
-                      <label>Issue Date:</label>
-                      <span>{selectedInvoiceForDetails.issueDate ? new Date(selectedInvoiceForDetails.issueDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : 'N/A'}</span>
-                    </div>
-                    <div className="detail-item">
-                      <label>Hours:</label>
-                      <span>{selectedInvoiceForDetails.totalHours || selectedInvoiceForDetails.hours || 0}</span>
-                    </div>
-                    <div className="detail-item">
-                      <label>Amount:</label>
-                      <span className="amount">${parseFloat(selectedInvoiceForDetails.amount || 0).toFixed(2)}</span>
-                    </div>
-                    <div className="detail-item">
-                      <label>Status:</label>
-                      <span className={`status-badge ${selectedInvoiceForDetails.status?.toLowerCase()}`}>
-                        {selectedInvoiceForDetails.status || 'N/A'}
-                      </span>
-                    </div>
-                  </div>
+          )}
+        </div>
+
+        {/* Loading State */}
+        {loading && (
+          <div className="nk-block">
+            <div className="card">
+              <div className="card-inner text-center p-4">
+                <div className="spinner-border text-primary" role="status">
+                  <span className="visually-hidden">Loading...</span>
                 </div>
-                
-                {selectedInvoiceForDetails.lineItems && selectedInvoiceForDetails.lineItems.length > 0 && (
-                  <div className="details-section">
-                    <h5 className="section-title">
-                      <i className="fas fa-list"></i> Line Items
-                    </h5>
-                    <div className="line-items-table">
-                      <table>
-                        <thead>
-                          <tr>
-                            <th>Description</th>
-                            <th>Hours</th>
-                            <th>Rate</th>
-                            <th>Amount</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {selectedInvoiceForDetails.lineItems.map((item, index) => (
-                            <tr key={index}>
-                              <td>{item.description || 'N/A'}</td>
-                              <td>{item.hours || 0}</td>
-                              <td>${parseFloat(item.rate || 0).toFixed(2)}</td>
-                              <td>${parseFloat(item.amount || 0).toFixed(2)}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                )}
-                
-                {selectedInvoiceForDetails.notes && (
-                  <div className="details-section">
-                    <h5 className="section-title">
-                      <i className="fas fa-sticky-note"></i> Notes
-                    </h5>
-                    <div className="notes-content">
-                      {selectedInvoiceForDetails.notes}
-                    </div>
-                  </div>
-                )}
+                <p className="mt-3 mb-0">Loading reports data...</p>
               </div>
             </div>
-            
-            <div className="modal-footer">
-              <button className="btn btn-secondary" onClick={() => setShowDetailsModal(false)}>
-                Close
-              </button>
-              <button 
-                className="btn btn-primary" 
-                onClick={() => {
-                  setSelectedInvoiceForPDF(selectedInvoiceForDetails);
-                  setShowPDFModal(true);
-                  setShowDetailsModal(false);
-                }}
-              >
-                <i className="fas fa-download mr-1"></i> Download PDF
-              </button>
+          </div>
+        )}
+
+        {/* Error State */}
+        {error && (
+          <div className="nk-block">
+            <div className="card">
+              <div className="card-inner text-center p-4">
+                <div className="text-danger mb-3">
+                  <em className="icon ni ni-alert-circle fs-2x"></em>
+                </div>
+                <h5 className="text-danger">Error Loading Reports</h5>
+                <p className="text-muted">{error}</p>
+                <button className="btn btn-primary" onClick={fetchReportsData}>
+                  <i className="fas fa-sync-alt mr-2"></i>
+                  <span>Retry</span>
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+
+        {/* Report Tabs */}
+        {!loading && !error && (
+          <>
+            <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="inline-flex rounded-full bg-slate-100 p-1">
+                {["client", "employee", "invoice"].map((tab) => (
+                  <button
+                    key={tab}
+                    onClick={() => setActiveTab(tab)}
+                    className={`rounded-full px-6 py-2 text-sm font-semibold transition-all
+                      ${activeTab === tab
+                        ? "bg-indigo-600 text-white shadow"
+                        : "text-slate-700 hover:bg-white"
+                      }`}
+                  >
+                    {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                  </button>
+                ))}
+              </div>
+
+              <div className="text-sm text-slate-600">
+                Viewing:{" "}
+                <strong className="text-slate-900">
+                  {activeTab === "client"
+                    ? "Client-wise Report"
+                    : activeTab === "employee"
+                    ? "Employee-wise Report"
+                    : "Invoice Report"}
+                </strong>
+              </div>
+            </div>
+
+            {activeTab === "client" && renderClientReport()}
+            {activeTab === "employee" && renderEmployeeReport()}
+            {activeTab === "invoice" && renderInvoiceReport()}
+          </>
+        )}
 
       {/* Client Details Modal */}
       {showClientDetailsModal && selectedClient && (
@@ -2083,7 +2037,89 @@ const ReportsDashboard = () => {
           </div>
         </div>
       )}
+
+      {/* Invoice Details Modal */}
+      {showDetailsModal && selectedInvoiceForDetails && (
+        <div className="modal-overlay" onClick={() => setShowDetailsModal(false)}>
+          <div className="modal-container" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h5 className="modal-title">Invoice Details</h5>
+              <button className="close-btn" onClick={() => setShowDetailsModal(false)}>
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+            <div className="modal-body">
+              <div className="details-grid">
+                <div className="detail-item">
+                  <label>Invoice Number:</label>
+                  <span>{selectedInvoiceForDetails.invoiceNumber || selectedInvoiceForDetails.id}</span>
+                </div>
+                <div className="detail-item">
+                  <label>Client:</label>
+                  <span>{selectedInvoiceForDetails.clientName}</span>
+                </div>
+                <div className="detail-item">
+                  <label>Month:</label>
+                  <span>{selectedInvoiceForDetails.month} {selectedInvoiceForDetails.year}</span>
+                </div>
+                <div className="detail-item">
+                  <label>Issue Date:</label>
+                  <span>
+                    {selectedInvoiceForDetails.issueDate 
+                      ? new Date(selectedInvoiceForDetails.issueDate).toLocaleDateString('en-US', { 
+                          month: 'long', 
+                          day: '2-digit',
+                          year: 'numeric'
+                        })
+                      : selectedInvoiceForDetails.createdAt 
+                        ? new Date(selectedInvoiceForDetails.createdAt).toLocaleDateString('en-US', { 
+                            month: 'long', 
+                            day: '2-digit',
+                            year: 'numeric'
+                          })
+                        : 'N/A'
+                    }
+                  </span>
+                </div>
+                <div className="detail-item">
+                  <label>Total Hours:</label>
+                  <span>{selectedInvoiceForDetails.totalHours} hrs</span>
+                </div>
+                <div className="detail-item">
+                  <label>Amount:</label>
+                  <span className="amount">${selectedInvoiceForDetails.amount?.toLocaleString()}</span>
+                </div>
+                <div className="detail-item">
+                  <label>Status:</label>
+                  <span className={`badge bg-outline-${
+                    selectedInvoiceForDetails.status === "Paid"
+                      ? "success"
+                      : selectedInvoiceForDetails.status === "Pending"
+                      ? "warning"
+                      : "danger"
+                  }`}>
+                    {selectedInvoiceForDetails.status}
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-secondary" onClick={() => setShowDetailsModal(false)}>
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <InvoicePDFPreviewModal
+        show={showPDFModal}
+        onClose={() => setShowPDFModal(false)}
+        invoice={selectedInvoiceForPDF}
+      />
     </div>
+  </div>
+
   );
 };
 

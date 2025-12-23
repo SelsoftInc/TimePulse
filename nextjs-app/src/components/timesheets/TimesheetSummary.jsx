@@ -6,6 +6,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import DataGridFilter from '../common/DataGridFilter';
 import Modal from '../common/Modal';
 import InvoicePDFPreviewModal from '../common/InvoicePDFPreviewModal';
+import InvoiceDetailsModal from '../common/InvoiceDetailsModal';
 import { useAuth } from '@/contexts/AuthContext';
 import axios from 'axios';
 import { API_BASE } from '@/config/api';
@@ -89,6 +90,20 @@ const TimesheetSummary = () => {
     showCancel: false,
     onConfirm: null
   });
+  
+  // Vendor assignment modal state
+  const [showVendorAssignModal, setShowVendorAssignModal] = useState(false);
+  const [vendorsList, setVendorsList] = useState([]);
+  const [selectedVendor, setSelectedVendor] = useState('');
+  const [assigningVendor, setAssigningVendor] = useState(false);
+  const [currentEmployeeForAssignment, setCurrentEmployeeForAssignment] = useState(null);
+  const [currentTimesheetForRetry, setCurrentTimesheetForRetry] = useState(null);
+  
+  // Email missing modal state
+  const [showEmailMissingModal, setShowEmailMissingModal] = useState(false);
+  const [emailMissingInfo, setEmailMissingInfo] = useState(null);
+  const [newEmail, setNewEmail] = useState('');
+  const [savingEmail, setSavingEmail] = useState(false);
   
   const closeModal = () => {
     setModalConfig(prev => ({ ...prev, isOpen: false }));
@@ -414,7 +429,7 @@ const TimesheetSummary = () => {
   const totalPages = Math.ceil(filteredTimesheets.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const paginatedTimesheets = filteredTimesheets.slice(startIndex, endIndex);
+  // const paginatedTimesheets = filteredTimesheets.slice(startIndex, endIndex);
 
   const handlePageChange = (page) => {
     setCurrentPage(page);
@@ -603,32 +618,226 @@ const TimesheetSummary = () => {
   
   // Handle invoice button click - check if invoice exists first
   const handleInvoiceButtonClick = async (timesheet) => {
-    if (timesheet.status.toLowerCase() !== 'approved') {
-      showModal({
-        type: 'warning',
-        title: 'Cannot Generate Invoice',
-        message: 'Only approved timesheets can be converted to invoices.'
-      });
-      return;
-    }
-    
-    // Check if invoice already exists
-    setGeneratingInvoiceId(timesheet.id);
-    const existingInvoice = await checkInvoiceExists(timesheet.id);
-    setGeneratingInvoiceId(null);
-    
-    if (existingInvoice) {
-      // Invoice exists - show details modal with full invoice object
-      handleViewInvoiceDetails(existingInvoice);
-    } else {
-      // No invoice - show generate confirmation
-      handleGenerateInvoiceFromTimesheet(timesheet);
+    if (timesheet.status.toLowerCase() !== 'approved') {
+      showModal({
+        type: 'warning',
+        title: 'Cannot Generate Invoice',
+        message: 'Only approved timesheets can be converted to invoices.'
+      });
+      return;
+    }
+    
+    // Check if invoice already exists
+    setGeneratingInvoiceId(timesheet.id);
+    const existingInvoice = await checkInvoiceExists(timesheet.id);
+    setGeneratingInvoiceId(null);
+    
+    if (existingInvoice) {
+      // Invoice exists - show details modal with full invoice object
+      handleViewInvoiceDetails(existingInvoice);
+    } else {
+      // No invoice - show generate confirmation
+      handleGenerateInvoiceFromTimesheet(timesheet);
+    }
+  };
+  
+  // Fetch vendors list for assignment
+  const fetchVendorsForAssignment = async () => {
+    try {
+      const tenantId = user?.tenantId;
+      const token = localStorage.getItem('token');
+      
+      console.log('📦 Fetching vendors for assignment...', { tenantId });
+      
+      const response = await fetch(
+        `${API_BASE}/api/vendors?tenantId=${tenantId}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      
+      const rawData = await response.json();
+      console.log('📥 Vendors API raw response:', rawData);
+      
+      // Import decryptAuthResponse dynamically
+      const { decryptAuthResponse } = await import('@/utils/encryption');
+      
+      // Decrypt the response using the proper decryption function
+      const decryptedData = decryptAuthResponse(rawData);
+      console.log('🔓 Decrypted vendors data:', decryptedData);
+      
+      if (decryptedData.success && decryptedData.vendors && Array.isArray(decryptedData.vendors)) {
+        setVendorsList(decryptedData.vendors);
+        console.log('✅ Loaded vendors:', decryptedData.vendors.length, decryptedData.vendors);
+      } else {
+        console.error('❌ No vendors found in response or invalid format');
+        console.error('Response structure:', decryptedData);
+        setVendorsList([]);
+      }
+    } catch (error) {
+      console.error('❌ Error fetching vendors:', error);
+      console.error('Error details:', error.message, error.stack);
+      setVendorsList([]);
     }
   };
   
-  // Generate invoice from approved timesheet
+  const handleAssignVendor = async () => {
+    if (!selectedVendor || !currentEmployeeForAssignment) {
+      showModal({
+        type: 'error',
+        title: 'Selection Required',
+        message: 'Please select a vendor before proceeding.'
+      });
+      return;
+    }
+
+    setAssigningVendor(true);
+
+    try {
+      const token = localStorage.getItem('token');
+      const tenantId = user?.tenantId;
+
+      if (!token || !tenantId) {
+        throw new Error('Authentication required');
+      }
+
+      console.log('📤 Assigning vendor to employee:', {
+        employeeId: currentEmployeeForAssignment.id,
+        vendorId: selectedVendor,
+        tenantId
+      });
+
+      const response = await fetch(
+        `${API_BASE}/api/employees/${currentEmployeeForAssignment.id}?tenantId=${tenantId}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            vendorId: selectedVendor
+          })
+        }
+      );
+
+      if (response.ok) {
+        console.log('✅ Vendor assigned successfully');
+        
+        setShowVendorAssignModal(false);
+        setSelectedVendor('');
+        setCurrentEmployeeForAssignment(null);
+        
+        if (currentTimesheetForRetry) {
+          console.log('🔄 Retrying invoice generation after vendor assignment...');
+          const timesheetToRetry = currentTimesheetForRetry;
+          setCurrentTimesheetForRetry(null);
+          
+          await generateInvoice(timesheetToRetry);
+        }
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to assign vendor');
+      }
+    } catch (error) {
+      console.error('❌ Error assigning vendor:', error);
+      showModal({
+        type: 'error',
+        title: 'Assignment Failed',
+        message: `Failed to assign vendor: ${error.message}`
+      });
+    } finally {
+      setAssigningVendor(false);
+    }
+  };
+  
+  const handleSaveEmailAndGenerateInvoice = async () => {
+    if (!newEmail || !emailMissingInfo) {
+      showModal({
+        type: 'error',
+        title: 'Email Required',
+        message: 'Please enter a valid email address.'
+      });
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(newEmail)) {
+      showModal({
+        type: 'error',
+        title: 'Invalid Email',
+        message: 'Please enter a valid email address format.'
+      });
+      return;
+    }
+
+    setSavingEmail(true);
+
+    try {
+      const token = localStorage.getItem('token');
+      const tenantId = user?.tenantId;
+
+      if (!token || !tenantId) {
+        throw new Error('Authentication required');
+      }
+
+      console.log('📤 Updating email for:', {
+        type: emailMissingInfo.type,
+        id: emailMissingInfo.id,
+        email: newEmail
+      });
+
+      const endpoint = emailMissingInfo.type === 'Vendor' 
+        ? `${API_BASE}/api/vendors/${emailMissingInfo.id}`
+        : `${API_BASE}/api/clients/${emailMissingInfo.id}`;
+
+      const response = await fetch(
+        `${endpoint}?tenantId=${tenantId}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            email: newEmail
+          })
+        }
+      );
+
+      if (response.ok) {
+        console.log('✅ Email updated successfully');
+        
+        setShowEmailMissingModal(false);
+        setNewEmail('');
+        
+        if (emailMissingInfo.timesheet) {
+          console.log('🔄 Retrying invoice generation after email update...');
+          const timesheetToRetry = emailMissingInfo.timesheet;
+          setEmailMissingInfo(null);
+          
+          await generateInvoice(timesheetToRetry);
+        }
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.error || errorData.message || 'Failed to update email');
+      }
+    } catch (error) {
+      console.error('❌ Error updating email:', error);
+      showModal({
+        type: 'error',
+        title: 'Update Failed',
+        message: `Failed to update email: ${error.message}`
+      });
+    } finally {
+      setSavingEmail(false);
+    }
+  };
+  
   const handleGenerateInvoiceFromTimesheet = async (timesheet) => {
-    // Show confirmation modal
     showModal({
       type: 'confirm',
       title: 'Generate Invoice',
@@ -697,13 +906,16 @@ const TimesheetSummary = () => {
         );
         
         console.log('📦 Employees API Response:', employeesResponse);
+        console.log('📦 Total employees returned:', employeesResponse?.employees?.length);
         
         if (!employeesResponse.success || !employeesResponse.employees) {
+          console.error('❌ Invalid employee API response:', employeesResponse);
           throw new Error('Failed to fetch employees from Employee API');
         }
         
         // Find the employee by email or name
         const allEmployees = employeesResponse.employees;
+        console.log('🔍 Searching for employee with email:', employeeEmail, 'or name:', employeeName);
         
         if (employeeEmail) {
           employeeData = allEmployees.find(emp => 
@@ -731,7 +943,11 @@ const TimesheetSummary = () => {
           name: `${employeeData.firstName} ${employeeData.lastName}`,
           email: employeeData.email,
           hasVendor: !!employeeData.vendor,
-          hasClient: !!employeeData.client
+          hasClient: !!employeeData.client,
+          vendorData: employeeData.vendor,
+          clientData: employeeData.client,
+          vendorId: employeeData.vendorId,
+          clientId: employeeData.clientId
         });
         
         // ============================================================
@@ -751,24 +967,39 @@ const TimesheetSummary = () => {
         else if (employeeData.client && employeeData.client.id) {
           vendorClientInfo = employeeData.client;
           vendorClientType = 'Client';
-          console.log('✅ Found client from employee API:', {
+          console.log('✅ Found client from employee API - RAW:', employeeData.client);
+          console.log('✅ Found client from employee API - PROCESSED:', {
             id: vendorClientInfo.id,
-            name: vendorClientInfo.clientName,
-            email: vendorClientInfo.email
+            name: vendorClientInfo.name || vendorClientInfo.clientName,
+            email: vendorClientInfo.email,
+            allKeys: Object.keys(vendorClientInfo)
           });
         }
         // No vendor or client found
         else {
           console.error('❌ No vendor or client assigned to employee');
           console.error('Employee data:', employeeData);
+          console.log('🔄 Preparing to show vendor assignment modal...');
+          
           setGeneratingInvoiceId(null);
           closeModal();
+          
+          // Store employee and timesheet for retry after vendor assignment
+          setCurrentEmployeeForAssignment(employeeData);
+          setCurrentTimesheetForRetry(timesheet);
+          
+          console.log('📋 Fetching vendors list...');
+          // Fetch vendors list
+          await fetchVendorsForAssignment();
+          
+          console.log('✅ Vendors fetched, showing modal...');
+          console.log('📋 Vendors list:', vendorsList);
+          console.log('👤 Employee for assignment:', employeeData);
+          
+          // Show vendor assignment modal
           setTimeout(() => {
-            showModal({
-              type: 'error',
-              title: 'Vendor/Client Not Assigned',
-              message: `Employee "${employeeData.firstName} ${employeeData.lastName}" must be associated with a vendor or client to generate invoice.\n\nAction Required:\n1. Go to Employees menu\n2. Edit employee: ${employeeData.firstName} ${employeeData.lastName}\n3. Assign a vendor OR client with email address\n4. Save and try generating invoice again`
-            });
+            console.log('🎯 Setting showVendorAssignModal to true');
+            setShowVendorAssignModal(true);
           }, 100);
           return;
         }
@@ -776,6 +1007,38 @@ const TimesheetSummary = () => {
       } catch (error) {
         console.error('❌ Error fetching employee data:', error);
         console.error('❌ Error details:', error.response?.data);
+        
+        // If we have basic employee info from timesheet, try to show vendor assignment modal
+        if (employeeName || employeeEmail) {
+          console.log('⚠️ Employee API failed, but we have basic info. Attempting vendor assignment...');
+          
+          // Create a basic employee object from timesheet data
+          const basicEmployeeData = {
+            id: null,
+            firstName: employeeName ? employeeName.split(' ')[0] : 'Unknown',
+            lastName: employeeName ? employeeName.split(' ').slice(1).join(' ') : '',
+            email: employeeEmail || '',
+            vendor: null,
+            client: null
+          };
+          
+          setGeneratingInvoiceId(null);
+          closeModal();
+          
+          setCurrentEmployeeForAssignment(basicEmployeeData);
+          setCurrentTimesheetForRetry(timesheet);
+          
+          console.log('📋 Fetching vendors list for fallback assignment...');
+          await fetchVendorsForAssignment();
+          
+          setTimeout(() => {
+            console.log('🎯 Showing vendor assignment modal (fallback mode)');
+            setShowVendorAssignModal(true);
+          }, 100);
+          return;
+        }
+        
+        // If we don't have any employee info, show error
         setGeneratingInvoiceId(null);
         closeModal();
         setTimeout(() => {
@@ -795,20 +1058,21 @@ const TimesheetSummary = () => {
         console.error('Vendor/Client info:', vendorClientInfo);
         setGeneratingInvoiceId(null);
         
-        // Close confirmation modal first, then show error
+        // Close confirmation modal first, then show email input modal
         closeModal();
+        
+        // Store info for email addition
+        setEmailMissingInfo({
+          type: vendorClientType,
+          id: vendorClientInfo.id,
+          name: vendorClientInfo.name || vendorClientInfo.vendorName || vendorClientInfo.clientName || 'Unknown',
+          employeeData: employeeData,
+          timesheet: timesheet
+        });
+        setNewEmail('');
+        
         setTimeout(() => {
-          showModal({
-            type: 'error',
-            title: `${vendorClientType} Email Missing`,
-            message: `${vendorClientType} "${vendorClientInfo.vendorName || vendorClientInfo.clientName || vendorClientInfo.name || 'Unknown'}" does not have an email address configured.\n\nAction Required:\n1. Go to ${vendorClientType}s menu\n2. Edit ${vendorClientType}: ${vendorClientInfo.vendorName || vendorClientInfo.clientName || vendorClientInfo.name || 'Unknown'}\n3. Add a valid email address\n4. Save and try generating invoice again`,
-            details: {
-              'Employee': `${employeeData.firstName} ${employeeData.lastName}`,
-              [`${vendorClientType} Name`]: vendorClientInfo.vendorName || vendorClientInfo.clientName || vendorClientInfo.name || 'Unknown',
-              [`${vendorClientType} ID`]: vendorClientInfo.id,
-              'Email Status': '❌ Missing'
-            }
-          });
+          setShowEmailMissingModal(true);
         }, 100);
         return;
       }
@@ -818,6 +1082,12 @@ const TimesheetSummary = () => {
       console.log('✅ Vendor/Client assignment confirmed');
       console.log('✅ Vendor/Client email verified');
       console.log('📤 Proceeding with invoice generation...');
+      console.log('📤 Final vendor/client info before API call:', {
+        type: vendorClientType,
+        id: vendorClientInfo.id,
+        name: vendorClientInfo.name || vendorClientInfo.vendorName || vendorClientInfo.clientName,
+        email: vendorClientInfo.email
+      });
 
       const response = await axios.post(
         `${API_BASE}/api/timesheets/${timesheet.id}/generate-invoice`,
@@ -972,680 +1242,675 @@ const TimesheetSummary = () => {
   };
 
   // Prevent hydration mismatch - don't render until mounted
-  if (!isMounted || loading) {
-    return (
-      <div className="nk-conten">
-        <div className="container-fluid">
-          <div className="nk-content-inne">
-            <div className="nk-content-body">
-              <div className="nk-block-head nk-block-head-sm">
-                <div className="nk-block-between">
-                  <div className="nk-block-head-content">
-                    <h1 className="nk-block-title page-title">Timesheets</h1>
-                  </div>
-                </div>
-              </div>
-              <div className="nk-bloc">
-                <div className="card card-bordered">
-                  <div className="card-inne">
-                    <div className="text-center">
-                      <div className="spinner-border" role="status">
-                        <span className="visually-hidden">Loading...</span>
-                      </div>
-                      <p className="mt-2">Loading timesheets...</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // if (!isMounted || loading) {
+  //   return (
+  //     <div className="nk-conten">
+  //       <div className="container-fluid">
+  //         <div className="nk-content-inne">
+  //           <div className="nk-content-body">
+  //             <div className="nk-block-head nk-block-head-sm mb-4">
+  //               <div className="nk-block-between items-center">
+  //                 <div className="nk-block-head-content">
+  //                   <h1 className="nk-block-title page-title">Timesheets</h1>
+  //                 </div>
+  //               </div>
+  //             </div>
+  //             <div className="nk-bloc">
+  //               <div className="card card-bordered">
+  //                 <div className="card-inne">
+  //                   <div className="text-center">
+  //                     <div className="spinner-border" role="status">
+  //                       <span className="visually-hidden">Loading...</span>
+  //                     </div>
+  //                     <p className="mt-2">Loading timesheets...</p>
+  //                   </div>
+  //                 </div>
+  //               </div>
+  //             </div>
+  // Calculate paginated timesheets from filtered data
+  const paginatedTimesheets = filteredTimesheets.slice(startIndex, endIndex);
 
   return (
-    <div className="containe">
-      <div className="container-fluid">
-        <div className="nk-content-inne">
-          <div className="nk-content-body">
-            <div className="nk-block-head nk-block-head-sm">
-              <div className="nk-block-between">
-                <div className="nk-block-head-content">
-                  <h1 className="nk-block-title page-title">Timesheets</h1>
-                  <div className="nk-block-des text-soft">
-                    {/* <p>Timesheet Summary</p> */}
-                    <div className="mt-2 toggle-container">
-                      <label
-                        className="toggle-switch"
-                        title="Switch the Toggle between Internal and External client types"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={clientType === "external"}
-                          onChange={toggleClientType}
-                        />
-                        <span className="slider"></span>
-                        <span className="label-text">
-                          Switch to{" "}
-                          {clientType === "internal"
-                            ? "External Client"
-                            : "Internal Client"}
-                        </span>
-                      </label>
 
-                      <span
-                        className={`badge-toggle ${
-                          clientType === "internal"
-                            ? "badge-internal"
-                            : "badge-external"
-                        } mr-2`}
-                      >
-                        {clientType === "internal"
-                          ? "Internal Client"
-                          : "External Client"}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                {/* Submit Timesheet Button - Matching Employee Dashboard Design */}
-                <button
-                  className="btn-submit-timesheet"
-                  onClick={handleNewTimesheet}
-                  title="Submit a new timesheet"
-                >
-                  <em className="icon ni ni-file-plus"></em>
-                  <span>Submit Timesheet</span>
-                </button>
-              </div>
-            </div>
+  <div
+  className="timesheet-dashboard">
+
+  <div className="max-w-8xl mx-auto space-y-4">
+
+    {/* ================= TIMESHEET HEADER ================= */}
+    <div
+      className="
+        sticky top-4 z-30 mb-9
+        rounded-3xl
+        bg-[#7cbdf2]
+        dark:bg-gradient-to-br dark:from-[#0f1a25] dark:via-[#121f33] dark:to-[#162a45]
+        shadow-sm dark:shadow-[0_8px_24px_rgba(0,0,0,0.6)]
+        backdrop-blur-md
+        border border-transparent dark:border-white/5
+      "
+    >
+      <div className="px-6 py-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-[1fr_auto] md:items-center">
+
+          {/* LEFT */}
+          <div className="relative pl-5">
+            <span className="absolute left-0 top-2 h-10 w-1 rounded-full bg-purple-900 dark:bg-indigo-400" />
+
+            <h1
+              className="
+                text-[2rem]
+                font-bold
+                text-white
+                leading-[1.15]
+                tracking-tight
+                drop-shadow-[0_2px_8px_rgba(0,0,0,0.18)]
+              "
+            >
+              Timesheets
+            </h1>
+
+            <p className="mt-0 text-sm text-white/80 dark:text-slate-300">
+              Track, submit, and manage weekly work logs
+            </p>
           </div>
 
-          <div className="nk-block">
-            <div className="card card-bordered card-stretch">
-              <div className="card-inner-group">
-                <div className="card-inne">
-                  <div className="card-title-group">
-                    <div className="card-title">
-                      <h6 className="title">
-                        <span className="mr-2">
-                          Please follow basic troubleshooting if you face any
-                          discrepancies in accessing the page.
-                        </span>
-                      </h6>
-                    </div>
+          {/* RIGHT */}
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              onClick={handleNewTimesheet}
+              className="
+                flex items-center gap-2.5
+                rounded-full
+                bg-slate-900 px-6 py-3
+                text-sm font-semibold text-white
+                shadow-md
+                transition-all
+                cursor-pointer
+                hover:bg-slate-800 hover:scale-[1.04]
+                active:scale-[0.97]
+                dark:bg-indigo-600 dark:hover:bg-indigo-500
+                dark:shadow-[0_6px_18px_rgba(79,70,229,0.45)]
+              "
+            >
+              <i className="fas fa-plus-circle text-base" />
+              Submit Timesheet
+            </button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    {/* ================= CONTENT ================= */}
+    <div
+      className="
+        bg-white dark:bg-[#0f1a25]
+        rounded-2xl
+        shadow-sm dark:shadow-[0_8px_24px_rgba(0,0,0,0.6)]
+        border border-slate-200 dark:border-white/5
+        overflow-hidden
+      "
+    >
+
+      {/* ===== FILTERS ===== */}
+      <div
+  className="
+    p-4
+    bg-slate-50
+    border-b border-slate-200
+  "
+>
+
+        <p className="mb-2 text-xs font-medium uppercase text-slate-500 dark:text-slate-400">
+          Filters
+        </p>
+
+        <DataGridFilter
+          filters={filterConfig}
+          onFilterChange={handleFilterChange}
+          onClearFilters={handleClearFilters}
+          resultCount={filteredTimesheets.length}
+          totalCount={timesheets.length}
+        />
+      </div>
+
+      {/* ===== TABLE ===== */}
+      <div className="overflow-x-auto max-h-[65vh]">
+        <table className="w-full text-sm">
+          <thead
+            className="
+              sticky top-0 z-10
+              bg-slate-100 dark:bg-[#162233]
+              text-slate-700 dark:text-slate-300
+              border-b border-slate-200 dark:border-white/5
+            "
+          >
+            <tr>
+              <th className="px-4 py-3 text-left">Week Range</th>
+              <th className="px-4 py-3 text-left">Status</th>
+              <th className="px-4 py-3 text-center">Hours</th>
+              <th className="px-4 py-3 text-center">Time Off</th>
+              <th className="px-4 py-3 text-center">Total</th>
+              <th className="px-4 py-3 text-center">Actions</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {paginatedTimesheets.map((timesheet) => (
+              <tr
+                key={timesheet.id}
+                className="
+                  border-b border-slate-200 dark:border-white/5
+                  hover:bg-slate-50 dark:hover:bg-[#1a2736]
+                  transition-colors
+                "
+              >
+                <td className="px-4 py-3 font-medium text-slate-800 dark:text-slate-100">
+                  {timesheet.weekRange}
+                </td>
+
+                <td className="px-4 py-3">
+                  {getStatusBadge(timesheet.status)}
+                </td>
+
+                <td className="px-4 py-3 text-center text-slate-700 dark:text-slate-300">
+                  {timesheet.billableProjectHrs}
+                </td>
+
+                <td className="px-4 py-3 text-center text-slate-700 dark:text-slate-300">
+                  {timesheet.timeOffHolidayHrs}
+                </td>
+
+                <td className="px-4 py-3 text-center font-medium text-slate-800 dark:text-slate-100">
+                  {timesheet.totalTimeHours}
+                </td>
+
+                <td className="px-4 py-3">
+                  <div className="flex items-center justify-center gap-2">
+
+                    <button
+                      onClick={() =>
+                        router.push(
+                          `/${subdomain}/timesheets/submit/${timesheet.id}?mode=edit`
+                        )
+                      }
+                      className="
+                        p-2 rounded-lg
+                        border border-slate-200 dark:border-white/10
+                        text-indigo-600 dark:text-indigo-400
+                        hover:bg-indigo-50 dark:hover:bg-indigo-500/10
+                        transition
+                      "
+                    >
+                      <i className="fas fa-edit" />
+                    </button>
+
+                    {/* Invoice button - Only visible for admin/manager roles */}
+                    {(user?.role === 'admin' || user?.role === 'manager') && (
+                      <button
+                        onClick={() => handleInvoiceButtonClick(timesheet)}
+                        className="
+                          p-2 rounded-lg
+                          border border-slate-200 dark:border-white/10
+                          text-emerald-600 dark:text-emerald-400
+                          hover:bg-emerald-50 dark:hover:bg-emerald-500/10
+                          transition
+                        "
+                      >
+                        <i className="fas fa-file-invoice" />
+                      </button>
+                    )}
+
+                    <button
+                      onClick={() =>
+                        router.push(
+                          `/${subdomain}/timesheets/submit/${timesheet.id}?mode=view`
+                        )
+                      }
+                      className="
+                        p-2 rounded-lg
+                        border border-slate-200 dark:border-white/10
+                        text-slate-600 dark:text-slate-300
+                        hover:bg-slate-100 dark:hover:bg-white/5
+                        transition
+                      "
+                    >
+                      <i className="fas fa-eye" />
+                    </button>
+
                   </div>
-                </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
-                {/* Filter Section */}
-                <div className="card-inner border-top">
-                  <DataGridFilter
-                    filters={filterConfig}
-                    onFilterChange={handleFilterChange}
-                    onClearFilters={handleClearFilters}
-                    resultCount={filteredTimesheets.length}
-                    totalCount={timesheets.length}
-                  />
-                </div>
+      {/* ===== PAGINATION ===== */}
+      {totalPages > 1 && (
+        <div
+          className="
+            p-4
+            border-t border-slate-200 dark:border-white/5
+            flex flex-col md:flex-row gap-3 md:gap-0
+            md:items-center md:justify-between
+            text-sm
+          "
+        >
+          <span className="text-slate-600 dark:text-slate-400">
+            Showing {startIndex + 1} to{" "}
+            {Math.min(endIndex, filteredTimesheets.length)} of{" "}
+            {filteredTimesheets.length}
+          </span>
 
-                {/* Timesheet Table */}
-                <div className="card-inner">
-                  <div className="table-responsive">
-                    <table className="table table-hove timesheet-summary-tabl">
-                      <thead className="">
-                        <tr>
-                          <th>Week Range</th>
-                          <th>Status</th>
-                          <th>Hours</th>
-                          <th>Time off/Holiday Hrs</th>
-                          <th>Total Time Hours</th>
-                          <th>Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {paginatedTimesheets.map((timesheet) => {
-                          // Debug logging
-                          console.log('📋 Timesheet:', {
-                            id: timesheet.id,
-                            status: timesheet.status,
-                            statusLower: timesheet.status?.toLowerCase(),
-                            isApproved: timesheet.status?.toLowerCase() === "approved" || timesheet.status === "Approved",
-                            weekRange: timesheet.weekRange
-                          });
-                          
-                          return (
-                          <tr key={timesheet.id} className="timesheet-row">
-                            <td>
-                              <div className="timesheet-week">
-                                <span className="week-range">
-                                  {timesheet.weekRange}
-                                </span>
-                              </div>
-                            </td>
-                            <td>{getStatusBadge(timesheet.status)}</td>
-                            <td className="text-center">
-                              <span className="hours-value">
-                                {timesheet.billableProjectHrs}
-                              </span>
-                            </td>
-                            <td className="text-center">
-                              <span className="hours-value">
-                                {timesheet.timeOffHolidayHrs}
-                              </span>
-                            </td>
-                            <td className="text-center">
-                              <span className="hours-value">
-                                {timesheet.totalTimeHours}
-                              </span>
-                            </td>
-                            <td className="text-center actions-column">
-                              <div className="btn-group btn-group-sm" role="group" style={{display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'nowrap'}}>
-                                {/* Edit Button - Always visible */}
-                                <button
-                                  className="btn btn-outline-primary btn-sm"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    router.push(`/${subdomain}/timesheets/submit/${timesheet.id}?mode=edit`);
-                                  }}
-                                  title="Edit Timesheet"
-                                  style={{minWidth: '55px', padding: '4px 8px', fontSize: '13px'}}
-                                >
-                                  <em className="icon ni ni-edit" style={{marginRight: '4px'}}></em>
-                                  Edit
-                                </button>
+          <ul className="flex items-center gap-1">
+            {[...Array(totalPages)].map((_, i) => (
+              <li key={i}>
+                <button
+                  onClick={() => handlePageChange(i + 1)}
+                  className={`px-3 py-1 rounded-lg border text-sm transition
+                    ${
+                      currentPage === i + 1
+                        ? "bg-indigo-600 text-white border-indigo-600"
+                        : "border-slate-300 dark:border-white/10 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5"
+                    }`}
+                >
+                  {i + 1}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
-                                {/* Invoice Button - For employees: only show if invoice exists. For admin/manager: show for all approved */}
-                                {timesheet.status === "Approved" && (
-                                  (user?.role === 'admin' || user?.role === 'manager') ? (
-                                    // Admin/Manager: Show button for all approved timesheets (can generate or view)
-                                    <button
-                                      className="btn btn-outline-success btn-sm"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleInvoiceButtonClick(timesheet);
-                                      }}
-                                      disabled={generatingInvoiceId === timesheet.id}
-                                      title={generatingInvoiceId === timesheet.id ? "Checking..." : "View or Generate Invoice"}
-                                      style={{minWidth: '70px', padding: '4px 8px', fontSize: '13px'}}
-                                    >
-                                      {generatingInvoiceId === timesheet.id ? (
-                                        <span>
-                                          <em className="icon ni ni-loader" style={{animation: 'spin 1s linear infinite'}}></em>
-                                        </span>
-                                      ) : (
-                                        <>
-                                          <em className="icon ni ni-file-docs" style={{marginRight: '4px'}}></em>
-                                          Invoice
-                                        </>
-                                      )}
-                                    </button>
-                                  ) : (
-                                    // Employee: Only show if invoice exists (view-only)
-                                    timesheetsWithInvoices.has(timesheet.id) && (
-                                      <button
-                                        className="btn btn-outline-info btn-sm"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          handleViewInvoiceForEmployee(timesheet);
-                                        }}
-                                        title="View Invoice"
-                                        style={{minWidth: '70px', padding: '4px 8px', fontSize: '13px'}}
-                                      >
-                                        <em className="icon ni ni-eye" style={{marginRight: '4px'}}></em>
-                                        Invoice
-                                      </button>
-                                    )
-                                  )
-                                )}
+    </div>
+  </div>
 
-                                {/* View Button - Always visible */}
-                                <button
-                                  className="btn btn-outline-info btn-sm"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    router.push(`/${subdomain}/timesheets/submit/${timesheet.id}?mode=view`);
-                                  }}
-                                  title="View Details"
-                                  style={{minWidth: '55px', padding: '4px 8px', fontSize: '13px'}}
-                                >
-                                  <em className="icon ni ni-eye" style={{marginRight: '4px'}}></em>
-                                  View
-                                </button>
-                              </div>
-                            </td>
-                            
-                          </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
+    {/* Modal for alerts and confirmations */}
+    <Modal
+      isOpen={modalConfig.isOpen}
+      onClose={closeModal}
+      type={modalConfig.type}
+      title={modalConfig.title}
+      message={modalConfig.message}
+      details={modalConfig.details}
+      showCancel={modalConfig.showCancel}
+      onConfirm={modalConfig.onConfirm}
+      confirmText={modalConfig.confirmText}
+      cancelText={modalConfig.cancelText}
+    />
 
-                {/* Pagination */}
-                {totalPages > 1 && (
-                  <div className="card-inner border-top">
-                    <div className="d-flex justify-content-between align-items-center">
-                      <div className="text-muted">
-                        Showing {startIndex + 1} to {Math.min(endIndex, filteredTimesheets.length)} of {filteredTimesheets.length} entries
-                      </div>
-                      <ul className="pagination pagination-sm">
-                        <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
-                          <button 
-                            className="page-link" 
-                            onClick={() => handlePageChange(currentPage - 1)}
-                            disabled={currentPage === 1}
-                          >
-                            <em className="icon ni ni-chevron-left"></em>
-                            <span style={{marginLeft: '4px'}}>Previous</span>
-                          </button>
-                        </li>
-                        {[...Array(totalPages)].map((_, i) => (
-                          <li key={i} className={`page-item ${currentPage === i + 1 ? 'active' : ''}`}>
-                            <button 
-                              className="page-link" 
-                              onClick={() => handlePageChange(i + 1)}
-                            >
-                              {i + 1}
-                            </button>
-                          </li>
-                        ))}
-                        <li className={`page-item ${currentPage === totalPages ? 'disabled' : ''}`}>
-                          <button 
-                            className="page-link" 
-                            onClick={() => handlePageChange(currentPage + 1)}
-                            disabled={currentPage === totalPages}
-                          >
-                            <span style={{marginRight: '4px'}}>Next</span>
-                            <em className="icon ni ni-chevron-right"></em>
-                          </button>
-                        </li>
-                      </ul>
-                    </div>
-                  </div>
-                )}
-              </div>
+    {/* Invoice PDF Preview Modal */}
+    {pdfPreviewOpen && invoiceForPDF && (
+      <InvoicePDFPreviewModal
+        isOpen={pdfPreviewOpen}
+        onClose={() => {
+          setPdfPreviewOpen(false);
+          setInvoiceForPDF(null);
+        }}
+        invoice={invoiceForPDF}
+      />
+    )}
+
+    {/* Invoice Details Modal */}
+    {invoiceModalOpen && selectedInvoice && (
+      <InvoiceDetailsModal
+        invoice={selectedInvoice}
+        onClose={() => {
+          setInvoiceModalOpen(false);
+          setSelectedInvoice(null);
+        }}
+      />
+    )}
+
+    {/* Vendor Assignment Modal */}
+    {showVendorAssignModal && currentEmployeeForAssignment && (
+      <div className="modal-overlay" style={{ zIndex: 10001 }}>
+        <div className="modal-container" style={{ maxWidth: '500px' }} onClick={(e) => e.stopPropagation()}>
+          <div className="modal-header" style={{ 
+            background: 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)', 
+            color: '#ffffff',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '16px 20px',
+            borderTopLeftRadius: '8px',
+            borderTopRightRadius: '8px'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', flex: 1, minWidth: 0 }}>
+              <i className="fas fa-exclamation-circle" style={{ fontSize: '24px', marginRight: '12px', flexShrink: 0 }}></i>
+              <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '600', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Vendor/Client Not Assigned</h3>
             </div>
+            <button 
+              className="modal-close" 
+              onClick={() => {
+                setShowVendorAssignModal(false);
+                setSelectedVendor('');
+                setCurrentEmployeeForAssignment(null);
+                setCurrentTimesheetForRetry(null);
+              }}
+              style={{ 
+                background: 'rgba(255,255,255,0.2)', 
+                border: 'none', 
+                color: '#ffffff', 
+                fontSize: '24px', 
+                width: '32px', 
+                height: '32px', 
+                borderRadius: '6px', 
+                cursor: 'pointer',
+                flexShrink: 0,
+                marginLeft: '12px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'background 0.2s ease'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.3)'}
+              onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
+            >
+              ×
+            </button>
+          </div>
+          
+          <div className="modal-body" style={{ padding: '24px' }}>
+            <p style={{ marginBottom: '16px', color: 'var(--text-secondary, #4b5563)', lineHeight: '1.6' }}>
+              Employee <strong>"{currentEmployeeForAssignment.firstName} {currentEmployeeForAssignment.lastName}"</strong> must be associated with a vendor or client to generate invoice.
+            </p>
+            
+            <div style={{ 
+              background: 'var(--bg-secondary, #f9fafb)', 
+              padding: '16px', 
+              borderRadius: '8px', 
+              marginBottom: '20px',
+              border: '1px solid var(--border-color, #e5e7eb)'
+            }}>
+              <p style={{ margin: '0 0 12px 0', fontWeight: '600', color: 'var(--text-primary, #1f2937)' }}>
+                Quick Assignment:
+              </p>
+              <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '500', color: 'var(--text-primary, #1f2937)' }}>
+                Select Vendor:
+              </label>
+              <select
+                value={selectedVendor}
+                onChange={(e) => setSelectedVendor(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '10px 12px',
+                  border: '1px solid var(--border-color, #d1d5db)',
+                  borderRadius: '6px',
+                  fontSize: '14px',
+                  background: 'var(--card-bg, #ffffff)',
+                  color: 'var(--text-primary, #1f2937)',
+                  cursor: 'pointer'
+                }}
+                disabled={assigningVendor}
+              >
+                <option value="">-- Select a Vendor --</option>
+                {vendorsList.map((vendor) => (
+                  <option key={vendor.id} value={vendor.id}>
+                    {vendor.name} {vendor.email ? `(${vendor.email})` : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div style={{ 
+              background: '#fff3cd', 
+              border: '1px solid #ffc107', 
+              borderRadius: '6px', 
+              padding: '12px',
+              marginBottom: '16px'
+            }}>
+              <p style={{ margin: 0, fontSize: '13px', color: '#856404' }}>
+                <i className="fas fa-info-circle" style={{ marginRight: '6px' }}></i>
+                After assigning a vendor, the invoice will be generated automatically.
+              </p>
+            </div>
+          </div>
+          
+          <div className="modal-footer" style={{ padding: '16px 24px', display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+            <button
+              onClick={() => {
+                setShowVendorAssignModal(false);
+                setSelectedVendor('');
+                setCurrentEmployeeForAssignment(null);
+                setCurrentTimesheetForRetry(null);
+              }}
+              disabled={assigningVendor}
+              style={{
+                padding: '10px 20px',
+                borderRadius: '6px',
+                border: 'none',
+                background: 'var(--bg-secondary, #f3f4f6)',
+                color: 'var(--text-secondary, #6b7280)',
+                fontSize: '14px',
+                fontWeight: '600',
+                cursor: assigningVendor ? 'not-allowed' : 'pointer',
+                opacity: assigningVendor ? 0.6 : 1
+              }}
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleAssignVendor}
+              disabled={assigningVendor || !selectedVendor}
+              style={{
+                padding: '10px 20px',
+                borderRadius: '6px',
+                border: 'none',
+                background: selectedVendor && !assigningVendor ? '#3b82f6' : '#9ca3af',
+                color: '#ffffff',
+                fontSize: '14px',
+                fontWeight: '600',
+                cursor: selectedVendor && !assigningVendor ? 'pointer' : 'not-allowed',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}
+            >
+              {assigningVendor ? (
+                <>
+                  <i className="fas fa-spinner fa-spin"></i>
+                  Assigning...
+                </>
+              ) : (
+                <>
+                  <i className="fas fa-check"></i>
+                  Assign Vendor & Generate Invoice
+                </>
+              )}
+            </button>
           </div>
         </div>
       </div>
-      
-      {/* Modal for alerts and confirmations */}
-      <Modal
-        isOpen={modalConfig.isOpen}
-        onClose={closeModal}
-        type={modalConfig.type}
-        title={modalConfig.title}
-        message={modalConfig.message}
-        details={modalConfig.details}
-        showCancel={modalConfig.showCancel}
-        onConfirm={modalConfig.onConfirm}
-        confirmText={modalConfig.confirmText}
-        cancelText={modalConfig.cancelText}
-      />
-      
-      {/* Invoice Details Modal */}
-      {invoiceModalOpen && selectedInvoice && (
-        <div className="invoice-modal-overlay" onClick={() => setInvoiceModalOpen(false)}>
-          <div className="invoice-modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="invoice-modal-header">
-              <div className="invoice-modal-title">
-                <em className="icon ni ni-file-docs" style={{fontSize: '24px', color: '#10b981'}}></em>
-                <h3>Invoice Details</h3>
+    )}
+
+    {/* Email Missing Modal */}
+    {showEmailMissingModal && emailMissingInfo && (
+      <div className="modal-overlay" style={{ zIndex: 10001 }}>
+        <div className="modal-container" style={{ maxWidth: '550px' }} onClick={(e) => e.stopPropagation()}>
+          <div className="modal-header" style={{ 
+            background: 'linear-gradient(135deg, #9333ea 0%, #7e22ce 100%)', 
+            color: '#ffffff',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '16px 20px',
+            borderTopLeftRadius: '8px',
+            borderTopRightRadius: '8px'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', flex: 1, minWidth: 0 }}>
+              <i className="fas fa-envelope" style={{ fontSize: '24px', marginRight: '12px', flexShrink: 0 }}></i>
+              <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '600', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {emailMissingInfo.type} Email Missing
+              </h3>
+            </div>
+            <button 
+              className="modal-close" 
+              onClick={() => {
+                setShowEmailMissingModal(false);
+                setNewEmail('');
+                setEmailMissingInfo(null);
+              }}
+              style={{ 
+                background: 'rgba(255,255,255,0.2)', 
+                border: 'none', 
+                color: '#ffffff', 
+                fontSize: '24px', 
+                width: '32px', 
+                height: '32px', 
+                borderRadius: '6px', 
+                cursor: 'pointer',
+                flexShrink: 0,
+                marginLeft: '12px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'background 0.2s ease'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.3)'}
+              onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
+            >
+              ×
+            </button>
+          </div>
+          
+          <div className="modal-body" style={{ padding: '24px' }}>
+            <p style={{ marginBottom: '20px', color: 'var(--text-secondary, #4b5563)', lineHeight: '1.6' }}>
+              {emailMissingInfo.type} <strong>"{emailMissingInfo.name}"</strong> does not have an email address configured.
+            </p>
+            
+            <div style={{ 
+              background: 'var(--bg-secondary, #f9fafb)', 
+              padding: '16px', 
+              borderRadius: '8px', 
+              marginBottom: '20px',
+              border: '1px solid var(--border-color, #e5e7eb)'
+            }}>
+              <div style={{ marginBottom: '12px' }}>
+                <label style={{ display: 'block', marginBottom: '4px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary, #6b7280)' }}>
+                  Employee:
+                </label>
+                <div style={{ fontSize: '14px', fontWeight: '600', color: 'var(--text-primary, #1f2937)' }}>
+                  {emailMissingInfo.employeeData ? `${emailMissingInfo.employeeData.firstName} ${emailMissingInfo.employeeData.lastName}` : 'N/A'}
+                </div>
               </div>
-              <button 
-                className="invoice-modal-close"
-                onClick={() => setInvoiceModalOpen(false)}
-                title="Close"
-              >
-                ×
-              </button>
+              
+              <div style={{ marginBottom: '12px' }}>
+                <label style={{ display: 'block', marginBottom: '4px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary, #6b7280)' }}>
+                  {emailMissingInfo.type} Name:
+                </label>
+                <div style={{ fontSize: '14px', fontWeight: '600', color: 'var(--text-primary, #1f2937)' }}>
+                  {emailMissingInfo.name}
+                </div>
+              </div>
+              
+              <div style={{ marginBottom: '12px' }}>
+                <label style={{ display: 'block', marginBottom: '4px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary, #6b7280)' }}>
+                  {emailMissingInfo.type} ID:
+                </label>
+                <div style={{ fontSize: '13px', fontFamily: 'monospace', color: 'var(--text-secondary, #6b7280)' }}>
+                  {emailMissingInfo.id}
+                </div>
+              </div>
+              
+              <div>
+                <label style={{ display: 'block', marginBottom: '4px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary, #6b7280)' }}>
+                  Email Status:
+                </label>
+                <div style={{ fontSize: '14px', fontWeight: '600', color: '#dc2626' }}>
+                  ❌ Missing
+                </div>
+              </div>
             </div>
             
-            <div className="invoice-modal-body">
-              {/* Invoice Header Info */}
-              <div className="invoice-info-grid">
-                <div className="invoice-info-card">
-                  <div className="invoice-info-label">
-                    <em className="icon ni ni-file-text"></em>
-                    Invoice Number
-                  </div>
-                  <div className="invoice-info-value">{selectedInvoice.invoiceNumber}</div>
-                </div>
-                
-                <div className="invoice-info-card">
-                  <div className="invoice-info-label">
-                    <em className="icon ni ni-calendar"></em>
-                    Invoice Date
-                  </div>
-                  <div className="invoice-info-value">
-                    {selectedInvoice.invoiceDate 
-                      ? new Date(selectedInvoice.invoiceDate).toLocaleDateString('en-US', { 
-                          year: 'numeric', 
-                          month: 'short', 
-                          day: '2-digit' 
-                        })
-                      : 'N/A'
-                    }
-                  </div>
-                </div>
-                
-                <div className="invoice-info-card">
-                  <div className="invoice-info-label">
-                    <em className="icon ni ni-calendar-check"></em>
-                    Due Date
-                  </div>
-                  <div className="invoice-info-value">
-                    {selectedInvoice.dueDate 
-                      ? new Date(selectedInvoice.dueDate).toLocaleDateString('en-US', { 
-                          year: 'numeric', 
-                          month: 'short', 
-                          day: '2-digit' 
-                        })
-                      : 'N/A'
-                    }
-                  </div>
-                </div>
-                
-                <div className="invoice-info-card">
-                  <div className="invoice-info-label">
-                    <em className="icon ni ni-sign-dollar"></em>
-                    Total Amount
-                  </div>
-                  <div className="invoice-info-value invoice-amount">
-                    ${parseFloat(selectedInvoice.totalAmount || selectedInvoice.total || 0).toFixed(2)}
-                  </div>
-                </div>
-              </div>
-              
-              {/* Vendor & Employee Info */}
-              <div className="invoice-details-section">
-                <h4 className="invoice-section-title">
-                  <em className="icon ni ni-users"></em>
-                  Vendor & Employee Information
-                </h4>
-                <div className="invoice-details-grid">
-                  <div className="invoice-detail-item">
-                    <span className="invoice-detail-label">Vendor:</span>
-                    <span className="invoice-detail-value">
-                      {(() => {
-                        console.log('🔍 Full selectedInvoice object:', selectedInvoice);
-                        console.log('🔍 selectedInvoice.vendor:', selectedInvoice.vendor);
-                        console.log('🔍 selectedInvoice.employee:', selectedInvoice.employee);
-                        console.log('🔍 selectedInvoice.timesheet:', selectedInvoice.timesheet);
-                        
-                        // Try multiple paths to find vendor name
-                        const vendorName = selectedInvoice.vendor?.name || 
-                                          selectedInvoice.timesheet?.employee?.vendor?.name || 
-                                          selectedInvoice.employee?.vendor?.name;
-                        console.log('🏢 Final vendor name:', vendorName);
-                        return vendorName || 'N/A';
-                      })()}
-                    </span>
-                  </div>
-                  <div className="invoice-detail-item">
-                    <span className="invoice-detail-label">Vendor Email:</span>
-                    <span className="invoice-detail-value">
-                      {(() => {
-                        // Try multiple paths to find vendor email
-                        const vendorEmail = selectedInvoice.vendor?.email || 
-                                           selectedInvoice.timesheet?.employee?.vendor?.email || 
-                                           selectedInvoice.employee?.vendor?.email;
-                        console.log('📧 Final vendor email:', vendorEmail);
-                        return vendorEmail || 'N/A';
-                      })()}
-                    </span>
-                  </div>
-                  <div className="invoice-detail-item">
-                    <span className="invoice-detail-label">Employee:</span>
-                    <span className="invoice-detail-value">
-                      {(() => {
-                        // Try multiple paths to find employee name
-                        let employeeName = 'N/A';
-                        if (selectedInvoice.employee?.firstName && selectedInvoice.employee?.lastName) {
-                          employeeName = `${selectedInvoice.employee.firstName} ${selectedInvoice.employee.lastName}`;
-                        } else if (selectedInvoice.timesheet?.employee?.firstName && selectedInvoice.timesheet?.employee?.lastName) {
-                          employeeName = `${selectedInvoice.timesheet.employee.firstName} ${selectedInvoice.timesheet.employee.lastName}`;
-                        }
-                        console.log('👤 Final employee name:', employeeName);
-                        return employeeName;
-                      })()}
-                    </span>
-                  </div>
-                  <div className="invoice-detail-item">
-                    <span className="invoice-detail-label">Employee Email:</span>
-                    <span className="invoice-detail-value">
-                      {(() => {
-                        // Try multiple paths to find employee email
-                        const employeeEmail = selectedInvoice.employee?.email || 
-                                             selectedInvoice.timesheet?.employee?.email;
-                        console.log('📧 Final employee email:', employeeEmail);
-                        return employeeEmail || 'N/A';
-                      })()}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Timesheet Period */}
-              {selectedInvoice.timesheet && (
-                <div className="invoice-details-section">
-                  <h4 className="invoice-section-title">
-                    <em className="icon ni ni-calendar-alt"></em>
-                    Timesheet Period
-                  </h4>
-                  <div className="invoice-details-grid">
-                    <div className="invoice-detail-item">
-                      <span className="invoice-detail-label">Week Start:</span>
-                      <span className="invoice-detail-value">
-                        {new Date(selectedInvoice.timesheet.weekStart).toLocaleDateString('en-US', {
-                          year: 'numeric',
-                          month: 'short',
-                          day: '2-digit'
-                        })}
-                      </span>
-                    </div>
-                    <div className="invoice-detail-item">
-                      <span className="invoice-detail-label">Week End:</span>
-                      <span className="invoice-detail-value">
-                        {new Date(selectedInvoice.timesheet.weekEnd).toLocaleDateString('en-US', {
-                          year: 'numeric',
-                          month: 'short',
-                          day: '2-digit'
-                        })}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              )}
-              
-              {/* Line Items */}
-              {selectedInvoice.lineItems && selectedInvoice.lineItems.length > 0 && (
-                <div className="invoice-details-section">
-                  <h4 className="invoice-section-title">
-                    <em className="icon ni ni-list"></em>
-                    Line Items
-                  </h4>
-                  <div className="invoice-line-items">
-                    <table className="invoice-items-table">
-                      <thead>
-                        <tr>
-                          <th>Description</th>
-                          <th>Hours</th>
-                          <th>Rate</th>
-                          <th>Amount</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {selectedInvoice.lineItems.map((item, index) => (
-                          <tr key={index}>
-                            <td>{item.description}</td>
-                            <td>{item.hours || item.quantity || 0}</td>
-                            <td>${parseFloat(item.rate || item.hourlyRate || 0).toFixed(2)}</td>
-                            <td>${parseFloat(item.amount || 0).toFixed(2)}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-              
-              {/* Status & Payment Info */}
-              <div className="invoice-details-section">
-                <h4 className="invoice-section-title">
-                  <em className="icon ni ni-info"></em>
-                  Status Information
-                </h4>
-                <div className="invoice-details-grid">
-                  <div className="invoice-detail-item">
-                    <span className="invoice-detail-label">Invoice Status:</span>
-                    <span className="invoice-detail-value">
-                      <span className={`badge badge-${selectedInvoice.status === 'paid' ? 'success' : selectedInvoice.status === 'pending' ? 'warning' : 'info'}`}>
-                        {selectedInvoice.status || 'Pending'}
-                      </span>
-                    </span>
-                  </div>
-                  <div className="invoice-detail-item">
-                    <span className="invoice-detail-label">Payment Status:</span>
-                    <span className="invoice-detail-value">
-                      <span className={`badge badge-${selectedInvoice.paymentStatus === 'paid' ? 'success' : 'warning'}`}>
-                        {selectedInvoice.paymentStatus || 'Pending'}
-                      </span>
-                    </span>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Notes */}
-              {selectedInvoice.notes && (
-                <div className="invoice-details-section">
-                  <h4 className="invoice-section-title">
-                    <em className="icon ni ni-notes"></em>
-                    Notes
-                  </h4>
-                  <div className="invoice-notes">
-                    {selectedInvoice.notes}
-                  </div>
-                </div>
-              )}
-            </div>
-            
-            <div className="invoice-modal-footer">
-              <button 
-                className="btn btn-secondary"
-                onClick={() => setInvoiceModalOpen(false)}
-              >
-                <em className="icon ni ni-cross"></em>
-                Close
-              </button>
-              {/* Edit Invoice button removed - not needed for timesheet module */}
-              <button 
-                className="btn btn-success"
-                onClick={() => {
-                  setInvoiceModalOpen(false);
-                  handleViewInvoicePDF(selectedInvoice.id);
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: 'var(--text-primary, #1f2937)' }}>
+                Add Email Address: <span style={{ color: '#dc2626' }}>*</span>
+              </label>
+              <input
+                type="email"
+                value={newEmail}
+                onChange={(e) => setNewEmail(e.target.value)}
+                placeholder={`Enter ${emailMissingInfo.type.toLowerCase()} email address`}
+                style={{
+                  width: '100%',
+                  padding: '12px 14px',
+                  border: '2px solid var(--border-color, #d1d5db)',
+                  borderRadius: '6px',
+                  fontSize: '14px',
+                  background: 'var(--card-bg, #ffffff)',
+                  color: 'var(--text-primary, #1f2937)',
+                  outline: 'none',
+                  transition: 'border-color 0.2s ease'
                 }}
-                style={{backgroundColor: '#10b981'}}
-              >
-                <em className="icon ni ni-eye"></em>
-                Preview PDF
-              </button>
-              <button 
-                className="btn btn-info"
-                onClick={async () => {
-                  try {
-                    // Fetch PDF data and trigger download
-                    const response = await axios.get(
-                      `${API_BASE}/api/invoices/${selectedInvoice.id}/pdf-data?tenantId=${user.tenantId}`
-                    );
-                    if (response.data.success) {
-                      setInvoiceForPDF(response.data.invoice);
-                      // Trigger download via InvoicePDFPreviewModal
-                      setPdfPreviewOpen(true);
-                      setTimeout(() => {
-                        // Auto-trigger download
-                        document.querySelector('.invoice-pdf-download-btn')?.click();
-                      }, 500);
-                    }
-                  } catch (error) {
-                    console.error('Error downloading invoice:', error);
-                    showModal({
-                      type: 'error',
-                      title: 'Error',
-                      message: 'Failed to download invoice.'
-                    });
-                  }
-                }}
-              >
-                <em className="icon ni ni-download"></em>
-                Download Invoice
-              </button>
+                onFocus={(e) => e.target.style.borderColor = '#9333ea'}
+                onBlur={(e) => e.target.style.borderColor = 'var(--border-color, #d1d5db)'}
+                disabled={savingEmail}
+              />
+              <p style={{ marginTop: '8px', fontSize: '12px', color: 'var(--text-secondary, #6b7280)', fontStyle: 'italic' }}>
+                <i className="fas fa-info-circle" style={{ marginRight: '4px' }}></i>
+                This email will be saved to the database and used for invoice delivery.
+              </p>
             </div>
           </div>
+          
+          <div className="modal-footer" style={{ padding: '16px 24px', display: 'flex', gap: '12px', justifyContent: 'flex-end', borderTop: '1px solid var(--border-color, #e5e7eb)' }}>
+            <button
+              onClick={() => {
+                setShowEmailMissingModal(false);
+                setNewEmail('');
+                setEmailMissingInfo(null);
+              }}
+              disabled={savingEmail}
+              style={{
+                padding: '10px 20px',
+                borderRadius: '6px',
+                border: 'none',
+                background: 'var(--bg-secondary, #f3f4f6)',
+                color: 'var(--text-secondary, #6b7280)',
+                fontSize: '14px',
+                fontWeight: '600',
+                cursor: savingEmail ? 'not-allowed' : 'pointer',
+                opacity: savingEmail ? 0.6 : 1
+              }}
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSaveEmailAndGenerateInvoice}
+              disabled={savingEmail || !newEmail}
+              style={{
+                padding: '10px 20px',
+                borderRadius: '6px',
+                border: 'none',
+                background: newEmail && !savingEmail ? '#9333ea' : '#9ca3af',
+                color: '#ffffff',
+                fontSize: '14px',
+                fontWeight: '600',
+                cursor: newEmail && !savingEmail ? 'pointer' : 'not-allowed',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}
+            >
+              {savingEmail ? (
+                <>
+                  <i className="fas fa-spinner fa-spin"></i>
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <i className="fas fa-save"></i>
+                  Save & Generate Invoice
+                </>
+              )}
+            </button>
+          </div>
         </div>
-      )}
-      
-      {/* Edit Invoice Modal - REMOVED (not needed for timesheet module) */}
-      
-      {/* PDF Preview Modal */}
-      {pdfPreviewOpen && invoiceForPDF && (
-        <InvoicePDFPreviewModal
-          invoice={invoiceForPDF}
-          onClose={() => {
-            setPdfPreviewOpen(false);
-            setInvoiceForPDF(null);
-          }}
-          onUpdate={async (updatedInvoice) => {
-            try {
-              console.log('💾 Saving invoice updates to backend...', updatedInvoice);
-              
-              // Save to backend
-              const response = await axios.put(
-                `${API_BASE}/api/invoices/${updatedInvoice.id}?tenantId=${user.tenantId}`,
-                {
-                  ...updatedInvoice,
-                  tenantId: user.tenantId
-                },
-                {
-                  headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                  }
-                }
-              );
-              
-              if (response.data.success) {
-                console.log('✅ Invoice saved successfully!');
-                
-                // Close the modal
-                setPdfPreviewOpen(false);
-                setInvoiceForPDF(null);
-                
-                // Show success message
-                showModal({
-                  type: 'success',
-                  title: 'Success',
-                  message: 'Invoice updated successfully!'
-                });
-                
-                // Reload timesheet data to refresh the invoice list
-                await loadTimesheetData();
-              } else {
-                throw new Error(response.data.message || 'Failed to save invoice');
-              }
-            } catch (error) {
-              console.error('❌ Error saving invoice:', error);
-              showModal({
-                type: 'error',
-                title: 'Error',
-                message: error.response?.data?.message || error.message || 'Failed to save invoice'
-              });
-            }
-          }}
-        />
-      )}
-    </div>
+      </div>
+    )}
+  </div>
   );
 };
 

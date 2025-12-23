@@ -123,13 +123,17 @@ router.get("/", async (req, res, next) => {
 
     // Transform data for frontend
     const transformedTimesheets = await Promise.all(decryptedTimesheets.map(async (ts) => {
-      // Get employee name - use stored employeeName first, then fallback to Employee/User
+      // Get employee name - decrypt employee data if present
       let employeeName = ts.employeeName || "Unknown";
       
       // If no stored name, try to get from Employee or User
       if (!employeeName || employeeName === "Unknown") {
         if (ts.employee) {
-          employeeName = `${ts.employee.firstName} ${ts.employee.lastName}`;
+          // Decrypt employee data
+          const employeeObj = ts.employee.get ? ts.employee.get({ plain: true }) : ts.employee;
+          const decryptedEmployee = DataEncryptionService.decryptEmployeeData(employeeObj);
+          employeeName = `${decryptedEmployee.firstName} ${decryptedEmployee.lastName}`;
+          console.log('👤 Decrypted employee name:', employeeName);
         } else {
           // Try to get user directly if employee record doesn't exist
           const user = await models.User.findByPk(ts.employeeId);
@@ -139,17 +143,32 @@ router.get("/", async (req, res, next) => {
         }
       }
 
+      // Decrypt client data if present
+      let clientName = "No Client";
+      if (ts.client) {
+        // Convert Sequelize instance to plain object if needed
+        const clientObj = ts.client.get ? ts.client.get({ plain: true }) : ts.client;
+        const decryptedClient = DataEncryptionService.decryptClientData(clientObj);
+        clientName = decryptedClient.clientName || decryptedClient.name || "No Client";
+        console.log('🏢 Decrypted client name:', clientName);
+      }
+
       return {
         id: ts.id,
         employeeId: ts.employeeId,
         employeeName: employeeName,
-        client: ts.client ? ts.client.clientName : "No Client",
+        client: clientName,
+        clientName: clientName,
+        clientId: ts.clientId || (ts.client ? ts.client.id : null),
         weekEnding: ts.weekEnd,
+        weekStart: ts.weekStart,
         hours: ts.totalHours || 0,
         overtimeHours: 0, // Calculate if needed
         billRate: ts.billRate || 0,
         payRate: ts.payRate || 0,
         approved: ts.status === "approved",
+        status: ts.status,
+        projectName: ts.projectName || 'N/A',
       };
     }));
 
@@ -558,28 +577,27 @@ router.get("/pending-approval", async (req, res, next) => {
         }
       }
 
-      // Get employee info - use stored employeeName first, then fallback to Employee/User
-      let employeeName = ts.employeeName || "Unknown Employee";
+      // Get employee info from Employee association or User
+      let employeeName = "Unknown Employee";
       let employeeEmail = "N/A";
       let department = "N/A";
 
-      // If no stored name or need email/department, get from Employee or User
-      if (!ts.employeeName || !employeeEmail || employeeEmail === "N/A") {
-        if (ts.employee) {
-          if (!ts.employeeName) {
-            employeeName = `${ts.employee.firstName || ""} ${ts.employee.lastName || ""}`.trim();
-          }
-          employeeEmail = ts.employee.email || "N/A";
-          department = ts.employee.department || "N/A";
-        } else {
-          // Try to get user directly if employee record doesn't exist
-          const user = await models.User.findByPk(ts.employeeId);
-          if (user) {
-            if (!ts.employeeName) {
-              employeeName = `${user.firstName} ${user.lastName}`;
-            }
-            employeeEmail = user.email;
-          }
+      if (ts.employee) {
+        // Decrypt employee data
+        const decryptedEmployee = DataEncryptionService.decryptEmployeeData(ts.employee);
+        
+        employeeName = `${decryptedEmployee.firstName || ""} ${decryptedEmployee.lastName || ""}`.trim() || "Unknown Employee";
+        employeeEmail = decryptedEmployee.email || "N/A";
+        department = decryptedEmployee.department || "N/A";
+      } else if (ts.employeeName) {
+        // Fallback to stored employeeName if no employee association
+        employeeName = ts.employeeName;
+      } else {
+        // Try to get user directly if employee record doesn't exist
+        const user = await models.User.findByPk(ts.employeeId);
+        if (user) {
+          employeeName = `${user.firstName} ${user.lastName}`;
+          employeeEmail = user.email;
         }
       }
 
@@ -615,7 +633,7 @@ router.get("/pending-approval", async (req, res, next) => {
               year: "numeric",
             })
           : "N/A",
-        clientName: ts.client?.name || ts.client?.clientName || "No Client",
+        clientName: ts.client ? (DataEncryptionService.decryptClientData(ts.client).clientName || ts.client.name || "No Client") : "No Client",
         clientType: ts.client?.clientType || "N/A",
         reviewer: ts.reviewer
           ? {
@@ -927,6 +945,8 @@ router.post("/submit", async (req, res, next) => {
         }
       }
 
+      console.log(`🔔 Creating timesheet notifications for employee: ${employeeName}, tenant: ${tenantId}`);
+      
       // Create timesheet notification
       await NotificationService.createTimesheetNotification(
         tenantId,
@@ -939,6 +959,7 @@ router.post("/submit", async (req, res, next) => {
         }
       );
 
+      console.log(`🔔 Creating approval notification for managers/admins`);
       // Create approval notification for managers/admins
       await NotificationService.createApprovalNotification(
         tenantId,
@@ -949,6 +970,8 @@ router.post("/submit", async (req, res, next) => {
           weekEndDate: weekEnd,
         }
       );
+      
+      console.log(`✅ Timesheet notifications created successfully`);
 
       // Send real-time notification via WebSocket
       if (global.wsService) {
@@ -2190,6 +2213,15 @@ router.post("/:timesheetId/generate-invoice", async (req, res) => {
     }
 
     const vendor = employee.vendor;
+    
+    // Log vendor data before decryption
+    console.log('🔍 Vendor data (encrypted):', {
+      id: vendor.id,
+      name: vendor.name,
+      email: vendor.email,
+      contactPerson: vendor.contactPerson
+    });
+    
     if (!vendor.email) {
       return res.status(400).json({
         success: false,
@@ -2266,10 +2298,26 @@ router.post("/:timesheetId/generate-invoice", async (req, res) => {
       totalAmount: invoice.totalAmount,
     });
 
-    // Generate invoice link
+    // Generate invoice link with subdomain
     const baseUrl = process.env.APP_URL || 'http://localhost:3000';
-    const invoiceLink = `${baseUrl}/invoice/${invoice.invoiceHash}`;
+    const tenant = timesheet.tenant || await models.Tenant.findByPk(tenantId);
+    const subdomain = tenant?.subdomain || 'app';
+    const invoiceLink = `${baseUrl}/${subdomain}/invoices/${invoice.id}`;
 
+    console.log('📄 Generated invoice link:', invoiceLink);
+
+    // Decrypt vendor data before sending to frontend
+    const DataEncryptionService = require('../services/DataEncryptionService');
+    const vendorPlainObject = vendor.toJSON ? vendor.toJSON() : vendor;
+    const decryptedVendor = DataEncryptionService.decryptVendorData(vendorPlainObject);
+    
+    console.log('🔓 Decrypted vendor data:', {
+      id: decryptedVendor.id,
+      name: decryptedVendor.name,
+      email: decryptedVendor.email,
+      contactPerson: decryptedVendor.contactPerson
+    });
+    
     // Return success response
     res.json({
       success: true,
@@ -2280,7 +2328,7 @@ router.post("/:timesheetId/generate-invoice", async (req, res) => {
         totalAmount: parseFloat(invoice.totalAmount),
         dueDate: invoice.dueDate,
         invoiceLink,
-        vendorEmail: vendor.email,
+        vendorEmail: decryptedVendor.email,
         emailSent: false,
       },
     });

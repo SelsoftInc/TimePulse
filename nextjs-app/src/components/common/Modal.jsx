@@ -17,6 +17,60 @@ const Modal = ({
 }) => {
   if (!isOpen) return null;
 
+  // Helper function to check if a value is a URL
+  const isURL = (str) => {
+    if (typeof str !== 'string') return false;
+    return str.startsWith('http://') || str.startsWith('https://');
+  };
+
+  // Helper function to handle PDF download
+  const handlePDFDownload = async (url) => {
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = `invoice-${Date.now()}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(downloadUrl);
+    } catch (error) {
+      console.error('Error downloading PDF:', error);
+      // Fallback to opening in new tab if download fails
+      window.open(url, '_blank');
+    }
+  };
+
+  // Helper function to render detail value (as link if URL)
+  const renderDetailValue = (key, value) => {
+    if (isURL(value)) {
+      return (
+        <button 
+          onClick={(e) => {
+            e.stopPropagation();
+            handlePDFDownload(value);
+          }}
+          className="modal-detail-link"
+          style={{
+            background: 'none',
+            border: 'none',
+            padding: 0,
+            cursor: 'pointer',
+            color: 'inherit',
+            font: 'inherit',
+            textAlign: 'left'
+          }}
+        >
+          <i className="fas fa-file-pdf" style={{ marginRight: '6px' }}></i>
+          View Invoice PDF
+        </button>
+      );
+    }
+    return <span className="modal-detail-value">{value}</span>;
+  };
+
   const getIcon = () => {
     switch (type) {
       case 'success':
@@ -64,7 +118,7 @@ const Modal = ({
               {Object.entries(details).map(([key, value]) => (
                 <div key={key} className="modal-detail-item">
                   <span className="modal-detail-label">{key}:</span>
-                  <span className="modal-detail-value">{value}</span>
+                  {renderDetailValue(key, value)}
                 </div>
               ))}
             </div>

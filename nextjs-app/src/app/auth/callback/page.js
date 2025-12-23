@@ -34,6 +34,7 @@ export default function AuthCallback() {
           // Check if user exists in our database
           const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
           console.log('[OAuth Callback] API Base:', API_BASE);
+          console.log('[OAuth Callback] Calling check-user endpoint...');
           
           const response = await fetch(`${API_BASE}/api/oauth/check-user`, {
             method: 'POST',
@@ -47,12 +48,41 @@ export default function AuthCallback() {
           });
 
           console.log('[OAuth Callback] Response status:', response.status);
-          const rawData = await response.json();
-          console.log('[OAuth Callback] Raw response data:', rawData);
+          console.log('[OAuth Callback] Response OK:', response.ok);
           
-          // Decrypt the response if encrypted
-          const data = decryptAuthResponse(rawData);
-          console.log('[OAuth Callback] Decrypted response data:', data);
+          if (!response.ok && response.status !== 403) {
+            // If response is not OK and not 403 (pending/rejected), throw error
+            throw new Error(`API call failed with status ${response.status}`);
+          }
+          
+          const rawData = await response.json();
+          console.log('[OAuth Callback] Raw response data:', JSON.stringify(rawData, null, 2));
+          
+          // Decrypt the response if encrypted, handle errors gracefully
+          let data;
+          try {
+            data = decryptAuthResponse(rawData);
+            console.log('[OAuth Callback] Decrypted response data:', JSON.stringify(data, null, 2));
+          } catch (decryptError) {
+            console.error('[OAuth Callback] Decryption error:', decryptError.message);
+            console.log('[OAuth Callback] Using raw data as fallback');
+            // If decryption fails, use raw data (might be unencrypted)
+            data = rawData;
+          }
+          console.log('[OAuth Callback] Data properties:', {
+            exists: data.exists,
+            needsOnboarding: data.needsOnboarding,
+            isPending: data.isPending,
+            isRejected: data.isRejected,
+            hasUser: !!data.user,
+            hasTenant: !!data.tenant,
+            hasToken: !!data.token
+          });
+
+          // Handle non-200 responses (403 for pending/rejected)
+          if (!response.ok && (response.status === 403 || response.status === 401)) {
+            console.log('[OAuth Callback] Non-OK response, checking for pending/rejected status');
+          }
 
           // Check if user is pending approval
           if (data.isPending) {
@@ -87,25 +117,21 @@ export default function AuthCallback() {
             return;
           }
 
-          if (data.needsOnboarding) {
-            // New user - redirect to onboarding
-            const params = new URLSearchParams({
-              email: session.user.email,
-              googleId: session.user.id || '',
-              name: session.user.name || ''
-            });
-            router.push(`/onboarding?${params.toString()}`);
-            return;
-          }
-
-          if (data.exists && data.user) {
+          // Check if user exists and has complete data (existing user login)
+          if (data.exists && data.user && data.token) {
             // Existing user - store data and redirect to dashboard
+            console.log('[OAuth Callback] ✅ Existing user found, processing login...');
             const userData = data.user;
             const tenantData = data.tenant;
             const token = data.token;
 
+            console.log('[OAuth Callback] User data:', userData);
+            console.log('[OAuth Callback] Tenant data:', tenantData);
+            console.log('[OAuth Callback] Token present:', !!token);
+
             // Store authentication data
             localStorage.setItem('token', token);
+            console.log('[OAuth Callback] Token stored in localStorage');
             
             const userInfo = {
               id: userData.id,
@@ -120,6 +146,7 @@ export default function AuthCallback() {
             };
             localStorage.setItem('user', JSON.stringify(userInfo));
             localStorage.setItem('userInfo', JSON.stringify(userInfo));
+            console.log('[OAuth Callback] User info stored in localStorage');
 
             // Store tenant info
             if (tenantData) {
@@ -133,6 +160,7 @@ export default function AuthCallback() {
               localStorage.setItem('tenants', JSON.stringify([tenantInfo]));
               localStorage.setItem('currentTenant', JSON.stringify(tenantInfo));
               localStorage.setItem('currentEmployer', JSON.stringify(tenantInfo));
+              console.log('[OAuth Callback] Tenant info stored in localStorage');
             }
 
             // Redirect based on role
@@ -141,24 +169,55 @@ export default function AuthCallback() {
               ? `/${subdomain}/employee-dashboard`
               : `/${subdomain}/dashboard`;
             
+            console.log('[OAuth Callback] 🚀 Redirecting to dashboard:', dashboardPath);
+            console.log('[OAuth Callback] User role:', userData.role);
+            console.log('[OAuth Callback] Subdomain:', subdomain);
+            
+            // Use window.location.href for hard redirect
             window.location.href = dashboardPath;
-          } else {
-            // Something went wrong, redirect to onboarding
+            
+            // Prevent further execution
+            return;
+          }
+          
+          // Check if user needs onboarding (new user)
+          if (data.needsOnboarding) {
+            // New user - redirect to onboarding
+            console.log('[OAuth Callback] New user detected, redirecting to onboarding');
             const params = new URLSearchParams({
               email: session.user.email,
+              googleId: session.user.id || '',
               name: session.user.name || ''
             });
             router.push(`/onboarding?${params.toString()}`);
+            return;
           }
-        } catch (error) {
-          console.error('[OAuth Callback] Error:', error);
-          // On error, redirect to onboarding
+          
+          // If we reach here, something unexpected happened
+          console.error('[OAuth Callback] Unexpected state - no clear action to take');
+          console.error('[OAuth Callback] Data state:', {
+            exists: data.exists,
+            needsOnboarding: data.needsOnboarding,
+            hasUser: !!data.user,
+            hasToken: !!data.token,
+            hasTenant: !!data.tenant
+          });
+          
+          // Default to onboarding for safety
           const params = new URLSearchParams({
             email: session.user.email,
             name: session.user.name || ''
           });
-          console.log('[OAuth Callback] Redirecting to onboarding due to error');
           router.push(`/onboarding?${params.toString()}`);
+        } catch (error) {
+          console.error('[OAuth Callback] Error:', error);
+          console.error('[OAuth Callback] Error details:', error.message);
+          
+          // Don't redirect to onboarding on server errors
+          // Show error message and redirect to login
+          alert('Authentication error: ' + (error.message || 'Unable to complete sign in. Please try again.'));
+          console.log('[OAuth Callback] Redirecting to login due to error');
+          router.push('/login');
         }
       } else if (session?.user && !session.user.email) {
         console.error('[OAuth Callback] Session exists but no email found:', session.user);

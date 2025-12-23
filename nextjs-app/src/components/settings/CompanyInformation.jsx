@@ -202,12 +202,14 @@ const CompanyInformation = () => {
         contactInfo: {
           ...(companyInfo.contactEmail && { email: companyInfo.contactEmail }),
           ...(companyInfo.contactPhone && { phone: companyInfo.contactPhone })},
-        ...(companyInfo.logo && { logo: companyInfo.logo })};
+        logo: companyInfo.logo || null};
 
       console.log("📦 Update data to send:", updateData);
       console.log("🖼️ Logo included:", !!companyInfo.logo);
       if (companyInfo.logo) {
         console.log("📏 Logo length:", companyInfo.logo.length);
+      } else {
+        console.log("🗑️ Logo deletion requested");
       }
 
       const apiBase = process.env.REACT_APP_API_BASE || 'http://localhost:5001';

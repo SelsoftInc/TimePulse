@@ -14,9 +14,13 @@ const NotificationBell = () => {
 
   // Fetch unread count
   const fetchUnreadCount = async () => {
-    if (!user?.id || !user?.tenantId) return;
+    if (!user?.id || !user?.tenantId) {
+      console.log('⚠️ NotificationBell: Missing user data', { userId: user?.id, tenantId: user?.tenantId });
+      return;
+    }
 
     try {
+      console.log('🔔 NotificationBell: Fetching unread count for user:', user.id);
       const response = await fetch(
         `${API_BASE}/api/notifications/unread-count?userId=${user.id}&tenantId=${user.tenantId}`,
         {
@@ -26,12 +30,19 @@ const NotificationBell = () => {
         }
       );
 
+      console.log('📡 NotificationBell: Response status:', response.status);
+
       if (response.ok) {
         const data = await response.json();
-        setUnreadCount(data.unreadCount || 0);
+        console.log('📬 NotificationBell: Unread count response:', data);
+        const count = data.count || data.unreadCount || 0;
+        console.log('🔢 NotificationBell: Setting unread count to:', count);
+        setUnreadCount(count);
+      } else {
+        console.error('❌ NotificationBell: Failed to fetch unread count, status:', response.status);
       }
     } catch (error) {
-      console.error('Error fetching unread count:', error);
+      console.error('❌ NotificationBell: Error fetching unread count:', error);
     }
   };
 

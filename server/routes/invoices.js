@@ -104,7 +104,7 @@ router.get("/", async (req, res) => {
     includeClause.push({
       model: models.Timesheet,
       as: "timesheet",
-      attributes: ["id", "weekStart", "weekEnd", "employeeId"],
+      attributes: ["id", "weekStart", "weekEnd", "employeeId", "totalHours"],
       required: false,
       include: [{
         model: models.Employee,
@@ -130,7 +130,29 @@ router.get("/", async (req, res) => {
     // Decrypt invoice data
     const decryptedInvoices = DataEncryptionService.decryptInstances(invoices, 'invoice');
 
-    const formattedInvoices = decryptedInvoices.map((inv) => ({
+    // Decrypt vendor and client data for each invoice
+    const fullyDecryptedInvoices = decryptedInvoices.map(inv => {
+      const decryptedInv = { ...inv };
+      
+      // Decrypt vendor if present
+      if (decryptedInv.vendor) {
+        decryptedInv.vendor = DataEncryptionService.decryptVendorData(decryptedInv.vendor);
+      }
+      
+      // Decrypt nested vendor in timesheet.employee.vendor
+      if (decryptedInv.timesheet?.employee?.vendor) {
+        decryptedInv.timesheet.employee.vendor = DataEncryptionService.decryptVendorData(decryptedInv.timesheet.employee.vendor);
+      }
+      
+      // Decrypt client if present
+      if (decryptedInv.client) {
+        decryptedInv.client = DataEncryptionService.decryptClientData(decryptedInv.client);
+      }
+      
+      return decryptedInv;
+    });
+
+    const formattedInvoices = fullyDecryptedInvoices.map((inv) => ({
       id: inv.id,
       invoiceNumber: inv.invoiceNumber,
       vendor: inv.vendor?.name || inv.timesheet?.employee?.vendor?.name || "N/A",
@@ -152,7 +174,7 @@ router.get("/", async (req, res) => {
           : "N/A",
       weekStart: inv.weekStart,
       weekEnd: inv.weekEnd,
-      total: parseFloat(inv.total),
+      total: parseFloat(inv.totalAmount || inv.total || 0),
       status: inv.status,
       lineItems: inv.lineItems || [],
       attachments: inv.attachments || [],
@@ -170,7 +192,7 @@ router.get("/", async (req, res) => {
     }));
 
     // Transform data for frontend dashboard
-    const transformedInvoices = decryptedInvoices.map((inv) => ({
+    const transformedInvoices = fullyDecryptedInvoices.map((inv) => ({
       id: inv.id,
       invoiceNumber: inv.invoiceNumber,
       vendor: inv.vendor?.name || inv.timesheet?.employee?.vendor?.name || "N/A",
@@ -247,6 +269,7 @@ router.post("/", async (req, res) => {
       total,
       subtotal,
       tax,
+      invoiceDate,
       dueDate,
       notes,
       attachments,
@@ -257,6 +280,17 @@ router.post("/", async (req, res) => {
       return res
         .status(400)
         .json({ success: false, message: "tenantId is required" });
+    }
+
+    if (!clientId) {
+      console.error('❌ Missing clientId in invoice creation request');
+      console.error('Request body:', JSON.stringify(req.body, null, 2));
+      return res
+        .status(400)
+        .json({ 
+          success: false, 
+          message: "clientId is required. Please ensure timesheets have valid client associations."
+        });
     }
 
     // Generate invoice number in format IN-2025-XXX
@@ -289,24 +323,41 @@ router.post("/", async (req, res) => {
     const newInvoice = await models.Invoice.create({
       tenantId,
       invoiceNumber,
+      invoiceDate: invoiceDate || new Date().toISOString().split('T')[0],
+      dueDate: dueDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       vendorId,
       clientId,
       employeeId,
       timesheetId,
-      weekStart,
-      weekEnd,
       lineItems: encryptedData.lineItems || [],
       subtotal: subtotal || 0,
-      tax: tax || 0,
-      total: total || 0,
-      status: "draft",
-      dueDate,
+      taxAmount: tax || 0,
+      totalAmount: total || 0,
+      status: "active",
+      paymentStatus: "pending",
       notes: encryptedData.notes || "",
-      attachments: attachments || [],
-      quickbooksSync: quickbooksSync || false,
     });
 
-    res.status(201).json({ success: true, invoice: newInvoice });
+    // Decrypt the invoice data before returning to frontend
+    const decryptedInvoice = DataEncryptionService.decryptInstance(newInvoice, 'invoice');
+    
+    // Convert to plain object if it's a Sequelize instance
+    const decryptedData = decryptedInvoice.toJSON ? decryptedInvoice.toJSON() : decryptedInvoice;
+    
+    // Add additional fields from request body that aren't stored in DB
+    const responseInvoice = {
+      ...decryptedData,
+      month: req.body.month,
+      year: req.body.year,
+      totalHours: req.body.totalHours,
+      clientName: req.body.clientName,
+      weekStart: req.body.weekStart,
+      weekEnd: req.body.weekEnd
+    };
+
+    console.log('✅ Returning decrypted invoice with lineItems:', responseInvoice.lineItems);
+
+    res.status(201).json({ success: true, invoice: responseInvoice });
   } catch (error) {
     console.error("❌ Error creating invoice:", error);
     res.status(500).json({
@@ -405,11 +456,17 @@ router.get("/:id/pdf-data", async (req, res) => {
     // Fetch vendor if vendorId exists
     if (invoice.vendorId) {
       try {
-        vendor = await models.Vendor.findOne({
+        const vendorRaw = await models.Vendor.findOne({
           where: { id: invoice.vendorId },
           attributes: ["id", "name", "email", "phone", "address", "city", "state", "zipCode"]
         });
-        console.log('✅ Vendor found:', vendor?.name);
+        
+        if (vendorRaw) {
+          // Decrypt vendor data
+          const vendorPlain = vendorRaw.toJSON ? vendorRaw.toJSON() : vendorRaw;
+          vendor = DataEncryptionService.decryptVendorData(vendorPlain);
+          console.log('✅ Vendor found and decrypted for PDF:', vendor?.name);
+        }
       } catch (err) {
         console.log('⚠️ Vendor fetch error:', err.message);
       }
@@ -418,11 +475,17 @@ router.get("/:id/pdf-data", async (req, res) => {
     // Fetch client if clientId exists
     if (invoice.clientId) {
       try {
-        client = await models.Client.findOne({
+        const clientRaw = await models.Client.findOne({
           where: { id: invoice.clientId },
           attributes: ["id", "clientName", "email", "billingAddress"]
         });
-        console.log('✅ Client found:', client?.clientName);
+        
+        if (clientRaw) {
+          // Decrypt client data
+          const clientPlain = clientRaw.toJSON ? clientRaw.toJSON() : clientRaw;
+          client = DataEncryptionService.decryptClientData(clientPlain);
+          console.log('✅ Client found and decrypted for PDF:', client?.clientName);
+        }
       } catch (err) {
         console.log('⚠️ Client fetch error:', err.message);
       }
@@ -453,11 +516,16 @@ router.get("/:id/pdf-data", async (req, res) => {
 
         // If employee has vendor and we don't have vendor yet, fetch it
         if (employee?.vendorId && !vendor) {
-          vendor = await models.Vendor.findOne({
+          const vendorRaw = await models.Vendor.findOne({
             where: { id: employee.vendorId },
             attributes: ["id", "name", "email", "phone", "address", "city", "state", "zipCode"]
           });
-          console.log('✅ Vendor found via employee:', vendor?.name);
+          
+          if (vendorRaw) {
+            const vendorPlain = vendorRaw.toJSON ? vendorRaw.toJSON() : vendorRaw;
+            vendor = DataEncryptionService.decryptVendorData(vendorPlain);
+            console.log('✅ Vendor found and decrypted via employee:', vendor?.name);
+          }
         }
       } catch (err) {
         console.log('⚠️ Employee fetch error:', err.message);
@@ -608,11 +676,17 @@ router.get("/:id", async (req, res) => {
     // Fetch vendor
     if (invoice.vendorId) {
       try {
-        vendor = await models.Vendor.findOne({
+        const vendorRaw = await models.Vendor.findOne({
           where: { id: invoice.vendorId },
           attributes: ["id", "name", "email", "phone", "address", "city", "state", "zipCode"]
         });
-        console.log('✅ Vendor found via invoice.vendorId:', vendor?.name, 'Email:', vendor?.email);
+        
+        if (vendorRaw) {
+          // Decrypt vendor data
+          const vendorPlain = vendorRaw.toJSON ? vendorRaw.toJSON() : vendorRaw;
+          vendor = DataEncryptionService.decryptVendorData(vendorPlain);
+          console.log('✅ Vendor found and decrypted via invoice.vendorId:', vendor?.name, 'Email:', vendor?.email);
+        }
       } catch (err) {
         console.log('⚠️ Vendor fetch error:', err.message);
       }
@@ -623,11 +697,17 @@ router.get("/:id", async (req, res) => {
     // Fetch client
     if (invoice.clientId) {
       try {
-        client = await models.Client.findOne({
+        const clientRaw = await models.Client.findOne({
           where: { id: invoice.clientId },
           attributes: ["id", "clientName", "email", "billingAddress"]
         });
-        console.log('✅ Client found:', client?.clientName);
+        
+        if (clientRaw) {
+          // Decrypt client data
+          const clientPlain = clientRaw.toJSON ? clientRaw.toJSON() : clientRaw;
+          client = DataEncryptionService.decryptClientData(clientPlain);
+          console.log('✅ Client found and decrypted:', client?.clientName);
+        }
       } catch (err) {
         console.log('⚠️ Client fetch error:', err.message);
       }
@@ -665,15 +745,21 @@ router.get("/:id", async (req, res) => {
 
         // If employee has vendor and we don't have vendor yet, use employee's vendor
         if (employee?.vendor && !vendor) {
-          vendor = employee.vendor;
-          console.log('✅ Using vendor from employee association:', vendor?.name, 'Email:', vendor?.email);
+          const vendorPlain = employee.vendor.toJSON ? employee.vendor.toJSON() : employee.vendor;
+          vendor = DataEncryptionService.decryptVendorData(vendorPlain);
+          console.log('✅ Using vendor from employee association (decrypted):', vendor?.name, 'Email:', vendor?.email);
         } else if (employee?.vendorId && !vendor) {
           // Fallback: Fetch vendor separately if association didn't work
-          vendor = await models.Vendor.findOne({
+          const vendorRaw = await models.Vendor.findOne({
             where: { id: employee.vendorId },
             attributes: ["id", "name", "email", "phone", "address", "city", "state", "zipCode"]
           });
-          console.log('✅ Vendor found via separate query:', vendor?.name, 'Email:', vendor?.email);
+          
+          if (vendorRaw) {
+            const vendorPlain = vendorRaw.toJSON ? vendorRaw.toJSON() : vendorRaw;
+            vendor = DataEncryptionService.decryptVendorData(vendorPlain);
+            console.log('✅ Vendor found via separate query (decrypted):', vendor?.name, 'Email:', vendor?.email);
+          }
         } else if (!vendor) {
           console.log('⚠️ No vendor found - employee.vendorId:', employee?.vendorId);
         }
@@ -682,9 +768,25 @@ router.get("/:id", async (req, res) => {
       }
     }
 
+    // Parse lineItems if it's a string (JSONB stored as string)
+    let lineItems = decryptedInvoice.lineItems;
+    if (typeof lineItems === 'string') {
+      try {
+        lineItems = JSON.parse(lineItems);
+        console.log('✅ Parsed lineItems from string:', lineItems);
+      } catch (err) {
+        console.error('❌ Failed to parse lineItems:', err);
+        lineItems = [];
+      }
+    } else if (!Array.isArray(lineItems)) {
+      console.log('⚠️ lineItems is not an array, defaulting to empty array');
+      lineItems = [];
+    }
+
     // Build complete response with decrypted data
     const completeInvoice = {
       ...decryptedInvoice,
+      lineItems: lineItems, // Ensure lineItems is properly parsed
       vendor: vendor,
       client: client,
       employee: employee,
@@ -695,6 +797,7 @@ router.get("/:id", async (req, res) => {
     };
 
     console.log('✅ Complete invoice data prepared');
+    console.log('📋 LineItems in response:', completeInvoice.lineItems);
     console.log('📋 Final vendor in response:', completeInvoice.vendor ? `${completeInvoice.vendor.name} (${completeInvoice.vendor.email})` : 'NULL');
     console.log('👤 Final employee in response:', completeInvoice.employee ? `${completeInvoice.employee.firstName} ${completeInvoice.employee.lastName}` : 'NULL');
 
@@ -1041,7 +1144,8 @@ router.post("/generate-from-timesheet", (req, res) => {
         parseFloat(timesheetData?.results?.Entry?.[0]?.Total_Hours || 0) *
         (clientInfo?.hourlyRate || 125),
 
-      status: "draft",
+      status: "active",
+      paymentStatus: "pending",
       notes: `Invoice generated from timesheet analysis.`,
 
       metadata: {

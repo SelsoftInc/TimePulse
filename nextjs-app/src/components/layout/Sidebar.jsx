@@ -113,7 +113,7 @@ const Sidebar = ({ collapsed, toggleSidebar, mobileVisible = false, isMobile = f
             fallback={null}
           >
             <li className="sidebar-item">
-              <Link href={`/${currentSubdomain}/invoices`}
+              <Link href={`/${currentSubdomain}/invoices/new`}
                 className={`sidebar-link ${
                   currentPath.includes(`/${currentSubdomain}/invoices`)
                     ? "active"
@@ -164,7 +164,7 @@ const Sidebar = ({ collapsed, toggleSidebar, mobileVisible = false, isMobile = f
                 }`}
               >
                 <div className="sidebar-icon">
-                  <i className="fa fa-truck"></i>
+                  <i class="fa-solid fa-people-carry-box"></i>
                 </div>
                 {(isMobile || !collapsed) && <span className="sidebar-text">Vendors</span>}
               </Link>
@@ -209,7 +209,7 @@ const Sidebar = ({ collapsed, toggleSidebar, mobileVisible = false, isMobile = f
                   <i className="fa fa-handshake"></i>
                 </div>
                 {!collapsed && (
-                  <span className="sidebar-text">Impl Partners</span>
+                  <span className="sidebar-text">Implementation Partners</span>
                 )}
               </Link>
             </li>

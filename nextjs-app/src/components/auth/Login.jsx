@@ -46,19 +46,14 @@ const Login = () => {
     checkOAuthConfig();
   }, [searchParams]);
 
-  // Load saved credentials on component mount
+  // Load saved email only (NOT password for security)
   useEffect(() => {
     const savedEmail = localStorage.getItem("rememberedEmail");
-    const savedPassword = localStorage.getItem("rememberedPassword");
     if (savedEmail) {
       setFormData({
         email: savedEmail,
-        password: savedPassword || ""});
-      setRememberMe(true);
-    } else {
-      setFormData({
-        email: "",
         password: ""});
+      setRememberMe(true);
     }
   }, []);
 
@@ -95,36 +90,31 @@ const Login = () => {
       setError("Session expired, please login again");
     }
 
-    // Handle remember me functionality - store both email and password
+    // Handle remember me functionality - store ONLY email (NOT password for security)
     if (rememberMe) {
       localStorage.setItem("rememberedEmail", formData.email);
-      localStorage.setItem("rememberedPassword", formData.password);
     } else {
       localStorage.removeItem("rememberedEmail");
-      localStorage.removeItem("rememberedPassword");
     }
 
     const persistAuth = (token, userInfo, tenantInfo) => {
-      // If rememberMe is ON -> persist in localStorage
-      // If rememberMe is OFF -> session-only in sessionStorage
-      const store = rememberMe ? localStorage : sessionStorage;
-      const other = rememberMe ? sessionStorage : localStorage;
+      // Always use localStorage for auth data (Remember Me only affects email prefill)
+      // Clear any old session storage data
+      sessionStorage.removeItem('token');
+      sessionStorage.removeItem('user');
+      sessionStorage.removeItem('userInfo');
+      sessionStorage.removeItem('tenants');
+      sessionStorage.removeItem('currentTenant');
+      sessionStorage.removeItem('currentEmployer');
 
-      other.removeItem('token');
-      other.removeItem('user');
-      other.removeItem('userInfo');
-      other.removeItem('tenants');
-      other.removeItem('currentTenant');
-      other.removeItem('currentEmployer');
-
-      store.setItem('token', token);
-      store.setItem('user', JSON.stringify(userInfo));
-      store.setItem('userInfo', JSON.stringify(userInfo));
+      localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify(userInfo));
+      localStorage.setItem('userInfo', JSON.stringify(userInfo));
 
       if (tenantInfo) {
-        store.setItem('tenants', JSON.stringify([tenantInfo]));
-        store.setItem('currentTenant', JSON.stringify(tenantInfo));
-        store.setItem('currentEmployer', JSON.stringify(tenantInfo));
+        localStorage.setItem('tenants', JSON.stringify([tenantInfo]));
+        localStorage.setItem('currentTenant', JSON.stringify(tenantInfo));
+        localStorage.setItem('currentEmployer', JSON.stringify(tenantInfo));
       }
     };
 
@@ -391,16 +381,16 @@ const Login = () => {
 
       <div className="auth-card">
         <div className="auth-header">
-          <img src="/assets/images/jsTree/TimePulseLogoAuth.png" alt="TimePulse Logo" className="auth-logo" />
-          <h2>Welcome to TimePulse</h2>
-          <p>Sign in to your account</p>
+          <img src="/assets/images/jsTree/TimePulse4.png" alt="TimePulse Logo" className="auth-logo" />
+          <h2 style={{ color: '#ffffff' }}>Welcome to TimePulse</h2>
+          <p style={{ color: '#ffffff', opacity: 1 }}>Sign in to your account</p>
         </div>
 
-        {error && <div className="auth-error">{error}</div>}
+        {error && <div className="auth-error !text-white">{error}</div>}
 
         <form onSubmit={handleSubmit} className="auth-form" autoComplete="off">
           <div className="form-group">
-            <label htmlFor="email">Username or Email</label>
+            <label htmlFor="email" className='!text-white/80'>Username or Email</label>
             <input
               type="text"
               id="email"
@@ -415,7 +405,7 @@ const Login = () => {
           </div>
 
           <div className="form-group">
-            <label htmlFor="password">Password</label>
+            <label htmlFor="password" className='!text-white/80'>Password</label>
             <div className="password-input-container">
               <input
                 type={showPassword ? "text" : "password"}
@@ -471,7 +461,7 @@ const Login = () => {
                 checked={rememberMe}
                 onChange={(e) => setRememberMe(e.target.checked)}
               />
-              <label htmlFor="remember">Remember Me</label>
+              <label htmlFor="remember" className='!text-white/80'>Remember Me</label>
             </div>
             <Link href="/forgot-password" className="forgot-link">
               Forgot Password?
@@ -490,7 +480,7 @@ const Login = () => {
         {/* OAuth Divider - Only show if OAuth is configured */}
         {isOAuthConfigured && (
           <div className="auth-divider">
-            <span>OR</span>
+            <span className='!text-white/80'>OR</span>
           </div>
         )}
 

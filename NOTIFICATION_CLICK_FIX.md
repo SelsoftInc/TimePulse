@@ -104,7 +104,7 @@ npm run dev
 ### **2. Test Notification Click:**
 
 ```
-1. Navigate to: http://localhost:3000/selsoft/notifications
+1. Navigate to: https://goggly-casteless-torri.ngrok-free.dev/selsoft/notifications
 2. Click on "New User Registration Pending Approval" card
 3. Check browser console for logs:
    [Notification Click] { category: 'approval', metadata: {...}, title: '...' }

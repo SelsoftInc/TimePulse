@@ -64,7 +64,7 @@
 npm run dev
 
 # Open browser
-http://localhost:3000
+https://goggly-casteless-torri.ngrok-free.dev
 ```
 
 ## What Was Fixed

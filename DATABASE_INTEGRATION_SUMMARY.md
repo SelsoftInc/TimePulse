@@ -130,7 +130,7 @@ test123#
 ```
 
 ### Login Process
-1. Navigate to: `http://localhost:3000/selsoft/login`
+1. Navigate to: `https://goggly-casteless-torri.ngrok-free.dev/selsoft/login`
 2. Enter user email from Excel file
 3. Enter password: `test123#`
 4. User will be prompted to change password on first login
@@ -202,7 +202,7 @@ Run: `node scripts/list-selsoft-users.js`
 ### To Test Employee Login
 1. Use any employee email from the database
 2. Password: `test123#`
-3. Login at: `http://localhost:3000/selsoft/login`
+3. Login at: `https://goggly-casteless-torri.ngrok-free.dev/selsoft/login`
 
 ---
 

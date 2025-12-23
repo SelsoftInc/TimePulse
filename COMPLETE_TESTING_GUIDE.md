@@ -106,7 +106,7 @@ npm run dev
 **Expected:**
 ```
 ✓ Ready in 2s
-- Local: http://localhost:3000
+- Local: https://goggly-casteless-torri.ngrok-free.dev
 ```
 
 ---
@@ -115,7 +115,7 @@ npm run dev
 
 #### **6.1 Login as Admin**
 ```
-1. Go to: http://localhost:3000
+1. Go to: https://goggly-casteless-torri.ngrok-free.dev
 2. Login with admin credentials:
    - Email: pushban@selsoftinc.com (or your admin email)
    - Password: your password
@@ -124,7 +124,7 @@ npm run dev
 #### **6.2 Navigate to Notifications**
 ```
 1. Click the bell icon in header
-2. OR go directly to: http://localhost:3000/selsoft/notifications
+2. OR go directly to: https://goggly-casteless-torri.ngrok-free.dev/selsoft/notifications
 ```
 
 **You should see:**
@@ -374,7 +374,7 @@ cd ../nextjs-app
 npm run dev
 
 # 5. Open browser
-# http://localhost:3000/selsoft/notifications
+# https://goggly-casteless-torri.ngrok-free.dev/selsoft/notifications
 
 # 6. Click "View" button
 

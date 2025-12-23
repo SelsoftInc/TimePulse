@@ -25,7 +25,7 @@ Your `.env.local` now contains:
 GOOGLE_CLIENT_ID=1012443421048-sg42k7t4i6vcdaj0r14mac2ndn8b6ilp.apps.googleusercontent.com
 GOOGLE_CLIENT_SECRET=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
 NEXTAUTH_SECRET=timepulse-nextauth-secret-key-2024-production-change-this
-NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_URL=https://goggly-casteless-torri.ngrok-free.dev
 ```
 
 ---
@@ -50,7 +50,7 @@ NEXTAUTH_URL=http://localhost:3000
 
 4. **Wait for the server to fully start:**
    - Look for: `✓ Ready in X.Xs`
-   - URL: `http://localhost:3000`
+   - URL: `https://goggly-casteless-torri.ngrok-free.dev`
 
 5. **Clear browser cache or use Incognito mode**
 
@@ -63,7 +63,7 @@ NEXTAUTH_URL=http://localhost:3000
 ### After Server Restart:
 
 1. **Open browser** (preferably Incognito/Private mode)
-2. **Go to:** `http://localhost:3000/login`
+2. **Go to:** `https://goggly-casteless-torri.ngrok-free.dev/login`
 3. **Check for "Sign in with Google" button:**
    - ✅ Button should now be visible
    - ✅ No error messages
@@ -151,7 +151,7 @@ powershell -ExecutionPolicy Bypass -File setup-env.ps1
 3. Edit your OAuth 2.0 Client ID
 4. Under "Authorized redirect URIs", ensure you have:
    ```
-   http://localhost:3000/api/auth/callback/google
+   https://goggly-casteless-torri.ngrok-free.dev/api/auth/callback/google
    ```
 5. Save and try again
 
@@ -174,7 +174,7 @@ Your OAuth credentials are already set up with:
 ### Required Redirect URIs:
 Make sure these are configured in Google Cloud Console:
 ```
-http://localhost:3000/api/auth/callback/google
+https://goggly-casteless-torri.ngrok-free.dev/api/auth/callback/google
 http://localhost:3001/api/auth/callback/google
 ```
 
@@ -185,7 +185,7 @@ http://localhost:3001/api/auth/callback/google
 After restarting the server, verify:
 
 - [ ] Server restarted successfully
-- [ ] Navigate to `http://localhost:3000/login`
+- [ ] Navigate to `https://goggly-casteless-torri.ngrok-free.dev/login`
 - [ ] "Sign in with Google" button is visible
 - [ ] No error messages on page load
 - [ ] Click "Sign in with Google"

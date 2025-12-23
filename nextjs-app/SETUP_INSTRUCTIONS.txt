@@ -32,7 +32,7 @@ The following has been installed and configured:
    d) Go to Credentials → Create Credentials → OAuth 2.0 Client ID
    e) Application type: Web application
    f) Add Authorized redirect URI:
-      http://localhost:3000/api/auth/callback/google
+      https://goggly-casteless-torri.ngrok-free.dev/api/auth/callback/google
    g) Copy Client ID and Client Secret
 
 4. Update .env.local with your Google credentials:
@@ -52,7 +52,7 @@ npm run dev
   STEP 3: TEST THE APPLICATION
 ═══════════════════════════════════════════════════════════════
 
-1. Open: http://localhost:3000
+1. Open: https://goggly-casteless-torri.ngrok-free.dev
    - You should see the login page with "Sign in with Google" button
 
 2. Click "Sign in with Google"
@@ -117,7 +117,7 @@ npm install next-auth
   SERVER STATUS
 ═══════════════════════════════════════════════════════════════
 
-✅ Server is running at: http://localhost:3000
+✅ Server is running at: https://goggly-casteless-torri.ngrok-free.dev
 ✅ Ready to test (after adding Google credentials)
 
 ═══════════════════════════════════════════════════════════════

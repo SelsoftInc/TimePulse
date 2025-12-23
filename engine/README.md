@@ -231,7 +231,7 @@ CLAUDE_MODEL_ID=us.anthropic.claude-3-5-sonnet-20241022-v2:0
 | `BEDROCK_IDP_ENDPOINT` | Optional Bedrock IDP endpoint for document processing | (empty) |
 | `MAX_FILE_SIZE_MB` | Maximum file size | `10` |
 | `ALLOWED_EXTENSIONS` | Allowed file types | `png,jpg,jpeg,pdf,csv,docx,xlsx` |
-| `CORS_ORIGINS` | CORS allowed origins | `http://localhost:3000,http://localhost:8000` |
+| `CORS_ORIGINS` | CORS allowed origins | `https://goggly-casteless-torri.ngrok-free.dev,http://localhost:8000` |
 | `LOG_LEVEL` | Logging level | `INFO` |
 | `RATE_LIMIT_PER_MINUTE` | API rate limit | `30` |
 

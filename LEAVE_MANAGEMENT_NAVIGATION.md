@@ -64,7 +64,7 @@ Added "Leave Management" to the left sidebar navigation with proper routing to t
 ## Navigation Flow
 
 1. **User clicks "Leave Management" in sidebar**
-2. **Navigates to**: `http://localhost:3000/selsoft/leave-management`
+2. **Navigates to**: `https://goggly-casteless-torri.ngrok-free.dev/selsoft/leave-management`
 3. **Component loads**: LeaveManagement.jsx
 4. **Displays**:
    - Leave balance cards
@@ -95,7 +95,7 @@ Added "Leave Management" to the left sidebar navigation with proper routing to t
 2. Look for "Leave Management" in the left sidebar (with calendar icon)
 3. Click on "Leave Management"
 4. **Expected**: Navigate to leave management screen
-5. **URL**: `http://localhost:3000/selsoft/leave-management`
+5. **URL**: `https://goggly-casteless-torri.ngrok-free.dev/selsoft/leave-management`
 
 ### Test Active State:
 1. Navigate to Leave Management

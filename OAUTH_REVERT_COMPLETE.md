@@ -56,7 +56,7 @@ npm run dev
 
 ### **2. Test Login**
 
-Visit: **http://localhost:3000/login**
+Visit: **https://goggly-casteless-torri.ngrok-free.dev/login**
 
 You should see:
 - ✅ Traditional login form (email/password)
@@ -109,7 +109,7 @@ git status
 npm run dev
 
 # Visit
-http://localhost:3000/login
+https://goggly-casteless-torri.ngrok-free.dev/login
 ```
 
 **Expected:** Original login form without OAuth button

@@ -46,14 +46,14 @@ Google OAuth credentials (`GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`) are not
    
    **Authorized JavaScript origins:**
    ```
-   http://localhost:3000
+   https://goggly-casteless-torri.ngrok-free.dev
    http://localhost:3001
    https://yourdomain.com
    ```
 
    **Authorized redirect URIs:**
    ```
-   http://localhost:3000/api/auth/callback/google
+   https://goggly-casteless-torri.ngrok-free.dev/api/auth/callback/google
    http://localhost:3001/api/auth/callback/google
    https://yourdomain.com/api/auth/callback/google
    ```
@@ -77,13 +77,13 @@ NEXT_PUBLIC_SOCKET_URL=http://localhost:5001
 
 # Application Configuration
 NEXT_PUBLIC_APP_NAME=TimePulse
-NEXT_PUBLIC_APP_URL=http://localhost:3000
+NEXT_PUBLIC_APP_URL=https://goggly-casteless-torri.ngrok-free.dev
 
 # Google OAuth Configuration
 GOOGLE_CLIENT_ID=your-actual-client-id-here
 GOOGLE_CLIENT_SECRET=your-actual-client-secret-here
 NEXTAUTH_SECRET=generate-a-random-secret-here
-NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_URL=https://goggly-casteless-torri.ngrok-free.dev
 ```
 
 2. **Generate NEXTAUTH_SECRET**:
@@ -211,7 +211,7 @@ useEffect(() => {
 GOOGLE_CLIENT_ID=your-google-client-id-here
 GOOGLE_CLIENT_SECRET=your-google-client-secret-here
 NEXTAUTH_SECRET=your-nextauth-secret-here
-NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_URL=https://goggly-casteless-torri.ngrok-free.dev
 ```
 
 ---
@@ -270,7 +270,7 @@ NEXTAUTH_URL=http://localhost:3000
 **Solution:**
 1. Go to Google Cloud Console → Credentials
 2. Edit your OAuth client
-3. Add the exact redirect URI: `http://localhost:3000/api/auth/callback/google`
+3. Add the exact redirect URI: `https://goggly-casteless-torri.ngrok-free.dev/api/auth/callback/google`
 4. Save and try again
 
 ### Issue: OAuth button still shows but doesn't work

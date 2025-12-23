@@ -83,7 +83,7 @@ NODE_ENV=development
 USE_LOCAL_DB=true
 
 # CORS Configuration
-CORS_ORIGIN=http://localhost:3000
+CORS_ORIGIN=https://goggly-casteless-torri.ngrok-free.dev
 
 # Database Configuration - PostgreSQL
 DB_HOST=localhost
@@ -129,7 +129,7 @@ HOST=0.0.0.0
 PORT=8000
 
 # CORS Settings
-CORS_ORIGINS=http://localhost:3000,http://localhost:5001
+CORS_ORIGINS=https://goggly-casteless-torri.ngrok-free.dev,http://localhost:5001
 
 # File Upload Settings
 MAX_FILE_SIZE_MB=10
@@ -255,7 +255,7 @@ npm run dev
 
 Once all services are running:
 
-- **Frontend (Next.js)**: http://localhost:3000
+- **Frontend (Next.js)**: https://goggly-casteless-torri.ngrok-free.dev
 - **Backend API (Server)**: http://localhost:5001
 - **Engine API**: http://localhost:8000
 - **Engine API Docs**: http://localhost:8000/docs
@@ -280,7 +280,7 @@ Expected response: `{"status":"healthy"}`
 
 ### 3. Check Next.js App
 
-Open browser: http://localhost:3000
+Open browser: https://goggly-casteless-torri.ngrok-free.dev
 
 You should see the TimePulse login page.
 
@@ -456,7 +456,7 @@ If you encounter issues:
 
 If all services are running without errors, you're ready to use TimePulse!
 
-Visit http://localhost:3000 to get started.
+Visit https://goggly-casteless-torri.ngrok-free.dev to get started.
 
 ---
 

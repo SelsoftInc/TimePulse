@@ -142,7 +142,7 @@ npm run dev
 **Expected:**
 ```
 ✓ Ready in 2s
-- Local: http://localhost:3000
+- Local: https://goggly-casteless-torri.ngrok-free.dev
 ```
 
 ---
@@ -150,9 +150,9 @@ npm run dev
 ### **Step 5: Test in Browser**
 
 ```
-1. Go to: http://localhost:3000
+1. Go to: https://goggly-casteless-torri.ngrok-free.dev
 2. Login as admin (pushban@selsoftinc.com)
-3. Go to: http://localhost:3000/selsoft/notifications
+3. Go to: https://goggly-casteless-torri.ngrok-free.dev/selsoft/notifications
 4. Click "View" button
 5. Modal should open! ✅
 6. Click "Approve User"
@@ -211,7 +211,7 @@ npm start
 | Check pending users | `node test-pending-users.js` |
 | Start backend | `npm start` |
 | Start frontend | `cd ../nextjs-app && npm run dev` |
-| Test in browser | http://localhost:3000/selsoft/notifications |
+| Test in browser | https://goggly-casteless-torri.ngrok-free.dev/selsoft/notifications |
 
 ---
 

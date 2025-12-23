@@ -2,7 +2,7 @@
 
 ## Pre-Testing Setup
 - [ ] Backend server restarted (to load updated code)
-- [ ] Frontend running on http://localhost:3000 or http://localhost:3001
+- [ ] Frontend running on https://goggly-casteless-torri.ngrok-free.dev or http://localhost:3001
 - [ ] Browser console open (F12) to monitor for errors
 
 ## Test Case 1: Timesheet Approval - Review Button

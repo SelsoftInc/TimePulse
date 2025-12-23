@@ -36,13 +36,13 @@ Option 3 - Clean restart (if still issues):
 
 AFTER RESTART:
 --------------
-1. Test NextAuth API: http://localhost:3000/api/auth/providers
+1. Test NextAuth API: https://goggly-casteless-torri.ngrok-free.dev/api/auth/providers
    Should return JSON (not 404)
 
-2. Test OAuth page: http://localhost:3000/test-oauth
+2. Test OAuth page: https://goggly-casteless-torri.ngrok-free.dev/test-oauth
    Should show environment status
 
-3. Try Google Sign-in: http://localhost:3000/login
+3. Try Google Sign-in: https://goggly-casteless-torri.ngrok-free.dev/login
    Should redirect to Google (not 404)
 
 IMPORTANT:

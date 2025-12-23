@@ -206,7 +206,7 @@ const dashboardData = await response.json();
 2. **Access employee dashboard**:
    - Login as an employee
    - Click on the TimePulse logo in the header
-   - Or navigate to: `http://localhost:3000/selsoft/employee-dashboard`
+   - Or navigate to: `https://goggly-casteless-torri.ngrok-free.dev/selsoft/employee-dashboard`
 
 3. **Verify live data**:
    - Check timesheet statistics match database

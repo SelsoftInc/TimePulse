@@ -245,8 +245,8 @@ async function importExcelEmployees() {
 
     console.log('\n🌐 ACCESS INFORMATION');
     console.log('─'.repeat(80));
-    console.log(`Login URL: http://localhost:3000/selsoft/login`);
-    console.log(`Employee List: http://localhost:3000/selsoft/employees`);
+    console.log(`Login URL: https://goggly-casteless-torri.ngrok-free.dev/selsoft/login`);
+    console.log(`Employee List: https://goggly-casteless-torri.ngrok-free.dev/selsoft/employees`);
 
     console.log('\n✅ Import complete!');
     console.log('='.repeat(80));

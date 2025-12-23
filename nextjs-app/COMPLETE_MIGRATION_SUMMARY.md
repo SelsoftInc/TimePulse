@@ -80,9 +80,9 @@ npm run dev
 ```
 
 ### Access Points
-- **Frontend:** http://localhost:3000
+- **Frontend:** https://goggly-casteless-torri.ngrok-free.dev
 - **Backend API:** http://localhost:5001
-- **Dashboard:** http://localhost:3000/selsoft/dashboard
+- **Dashboard:** https://goggly-casteless-torri.ngrok-free.dev/selsoft/dashboard
 
 ## ✅ Expected Behavior
 

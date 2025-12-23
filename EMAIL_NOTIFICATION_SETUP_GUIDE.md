@@ -57,7 +57,7 @@ SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
 SMTP_USER=your-email@gmail.com
 SMTP_PASS=your-16-char-app-password
-FRONTEND_URL=http://localhost:3000
+FRONTEND_URL=https://goggly-casteless-torri.ngrok-free.dev
 ```
 
 ---
@@ -69,7 +69,7 @@ SMTP_HOST=smtp.office365.com
 SMTP_PORT=587
 SMTP_USER=your-email@outlook.com
 SMTP_PASS=your-password
-FRONTEND_URL=http://localhost:3000
+FRONTEND_URL=https://goggly-casteless-torri.ngrok-free.dev
 ```
 
 ---
@@ -108,7 +108,7 @@ SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
 SMTP_USER=your-email@gmail.com
 SMTP_PASS=your-app-password
-FRONTEND_URL=http://localhost:3000
+FRONTEND_URL=https://goggly-casteless-torri.ngrok-free.dev
 ```
 
 ---
@@ -165,12 +165,12 @@ Or if SMTP not configured:
 #### **Step 5: Test Approval in Browser**
 
 1. **Login as Admin:**
-   - Go to: http://localhost:3000
+   - Go to: https://goggly-casteless-torri.ngrok-free.dev
    - Login with admin credentials
 
 2. **Navigate to Notifications:**
    - Click bell icon OR
-   - Go to: http://localhost:3000/selsoft/notifications
+   - Go to: https://goggly-casteless-torri.ngrok-free.dev/selsoft/notifications
 
 3. **Open Approval Modal:**
    - Click "View" button on notification

@@ -164,7 +164,7 @@ node scripts/create-selsoft-users.js default
 
 ### **3. Test Login**
 
-Open `http://localhost:3000/selsfot/login`
+Open `https://goggly-casteless-torri.ngrok-free.dev/selsfot/login`
 
 Try logging in with:
 - **Email:** `admin@selsfot.com`

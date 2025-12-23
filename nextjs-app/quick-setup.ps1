@@ -73,7 +73,7 @@ Write-Host "1. Edit .env.local file with your Google OAuth credentials"
 Write-Host "2. Restart Next.js server:"
 Write-Host "   - Stop: Ctrl+C"
 Write-Host "   - Start: npm run dev"
-Write-Host "3. Test at: http://localhost:3000/test-oauth"
+Write-Host "3. Test at: https://goggly-casteless-torri.ngrok-free.dev/test-oauth"
 Write-Host ""
 
 $open = Read-Host "Open .env.local in notepad? (y/n)"

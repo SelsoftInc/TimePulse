@@ -52,7 +52,7 @@ Timesheet ID: uuid-123
 
 ### Step 3: Test in Frontend
 
-1. **Open browser and go to**: http://localhost:3000/selsoft/timesheets/submit
+1. **Open browser and go to**: https://goggly-casteless-torri.ngrok-free.dev/selsoft/timesheets/submit
 
 2. **Open Developer Console** (F12)
 
@@ -137,7 +137,7 @@ Check console for navigation errors:
 navigate(`/${subdomain}/timesheets`);
 ```
 
-If navigation fails, manually go to: http://localhost:3000/selsoft/timesheets
+If navigation fails, manually go to: https://goggly-casteless-torri.ngrok-free.dev/selsoft/timesheets
 
 ### Issue 5: Data Not Showing in Summary
 

@@ -187,7 +187,7 @@ export default function TestOAuth() {
 {`GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
 GOOGLE_CLIENT_SECRET=your-client-secret
 NEXTAUTH_SECRET=your-generated-secret
-NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_URL=https://goggly-casteless-torri.ngrok-free.dev
 NEXT_PUBLIC_API_URL=http://localhost:5001`}
             </pre>
           </li>

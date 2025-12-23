@@ -150,7 +150,7 @@ if (data.success) {
 ### **Test 1: Employees Module**
 ```bash
 # 1. Open browser
-http://localhost:3000/selsoft/employees
+https://goggly-casteless-torri.ngrok-free.dev/selsoft/employees
 
 # 2. Expected result:
 ✅ Employees list displays
@@ -161,7 +161,7 @@ http://localhost:3000/selsoft/employees
 ### **Test 2: Vendors Module**
 ```bash
 # 1. Open browser
-http://localhost:3000/selsoft/vendors
+https://goggly-casteless-torri.ngrok-free.dev/selsoft/vendors
 
 # 2. Expected result:
 ✅ Vendors list displays
@@ -172,7 +172,7 @@ http://localhost:3000/selsoft/vendors
 ### **Test 3: Clients Module**
 ```bash
 # 1. Open browser
-http://localhost:3000/selsoft/clients
+https://goggly-casteless-torri.ngrok-free.dev/selsoft/clients
 
 # 2. Expected result:
 ✅ Clients list displays

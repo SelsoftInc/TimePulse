@@ -298,7 +298,7 @@ ClientForm.jsx
 
 **Both servers running:**
 - Backend: http://localhost:5001 ✅
-- Frontend: http://localhost:3000 ✅
+- Frontend: https://goggly-casteless-torri.ngrok-free.dev ✅
 
 **Please refresh your browser (Ctrl+F5) and test:**
 1. Add Client form (should open without errors)

@@ -95,8 +95,8 @@ async function onboardSelsoft() {
     console.log(`   🔑 Default Password: ${onboardData.summary.defaultPassword}`);
     console.log('');
     console.log('🌐 Access URLs:');
-    console.log(`   Frontend: http://localhost:3000/${SUBDOMAIN}`);
-    console.log(`   Login Page: http://localhost:3000/${SUBDOMAIN}/login`);
+    console.log(`   Frontend: https://goggly-casteless-torri.ngrok-free.dev/${SUBDOMAIN}`);
+    console.log(`   Login Page: https://goggly-casteless-torri.ngrok-free.dev/${SUBDOMAIN}/login`);
     console.log('');
     console.log('📝 Login Instructions:');
     console.log('   1. Go to the login page');

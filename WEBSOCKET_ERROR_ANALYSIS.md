@@ -15,7 +15,7 @@ WebSocket connection error: Rl: websocket error
 - **Impact**: Socket.IO WebSocket connections fail, even though polling should work as fallback
 
 ### 2. **CORS Configuration Mismatch**
-- **Backend CORS**: Configured for `process.env.FRONTEND_URL` or `http://localhost:3000`
+- **Backend CORS**: Configured for `process.env.FRONTEND_URL` or `https://goggly-casteless-torri.ngrok-free.dev`
 - **Frontend URL**: `https://app.timepulse.io` (production)
 - **Issue**: CORS origin may not match, causing WebSocket handshake to fail
 
@@ -72,7 +72,7 @@ this.io = new Server(server, {
   cors: {
     origin: process.env.FRONTEND_URL 
       ? process.env.FRONTEND_URL.split(',').map(o => o.trim())
-      : ["http://localhost:3000", "https://app.timepulse.io"],
+      : ["https://goggly-casteless-torri.ngrok-free.dev", "https://app.timepulse.io"],
     methods: ["GET", "POST"],
     credentials: true,
     allowedHeaders: ["Authorization", "Content-Type"],

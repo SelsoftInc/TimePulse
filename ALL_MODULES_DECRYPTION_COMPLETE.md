@@ -186,7 +186,7 @@ if (data.success) {
 
 ### **✅ Employees Module**
 ```bash
-# Test URL: http://localhost:3000/selsoft/employees
+# Test URL: https://goggly-casteless-torri.ngrok-free.dev/selsoft/employees
 
 ✅ Employee list displays
 ✅ Can assign clients to employees
@@ -198,7 +198,7 @@ if (data.success) {
 
 ### **✅ Vendors Module**
 ```bash
-# Test URL: http://localhost:3000/selsoft/vendors
+# Test URL: https://goggly-casteless-torri.ngrok-free.dev/selsoft/vendors
 
 ✅ Vendor list displays
 ✅ All vendor details visible
@@ -208,7 +208,7 @@ if (data.success) {
 
 ### **✅ Clients Module**
 ```bash
-# Test URL: http://localhost:3000/selsoft/clients
+# Test URL: https://goggly-casteless-torri.ngrok-free.dev/selsoft/clients
 
 ✅ Client list displays
 ✅ All client details visible
@@ -218,7 +218,7 @@ if (data.success) {
 
 ### **✅ Leave Management Module**
 ```bash
-# Test URL: http://localhost:3000/selsoft/leave-management
+# Test URL: https://goggly-casteless-torri.ngrok-free.dev/selsoft/leave-management
 
 ✅ Leave balance cards display correctly
 ✅ Total Leaves shows correct numbers
@@ -233,7 +233,7 @@ if (data.success) {
 
 ### **✅ Leave Approvals Module**
 ```bash
-# Test URL: http://localhost:3000/selsoft/leave-management (Manager/Admin)
+# Test URL: https://goggly-casteless-torri.ngrok-free.dev/selsoft/leave-management (Manager/Admin)
 
 ✅ Pending approvals display
 ✅ Can approve requests

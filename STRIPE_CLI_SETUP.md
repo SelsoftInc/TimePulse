@@ -60,7 +60,7 @@ Make sure your TimePulse server has the correct environment variables in `/serve
 # Stripe Configuration
 STRIPE_SECRET_KEY=sk_test_your_actual_stripe_key
 STRIPE_WEBHOOK_SECRET=whsec_your_webhook_secret_from_cli
-APP_BASE_URL=http://localhost:3000
+APP_BASE_URL=https://goggly-casteless-torri.ngrok-free.dev
 ```
 
 ### 3. Start Your Server
@@ -244,7 +244,7 @@ curl -X POST http://localhost:5000/api/billing/webhook \
    ```
 
 5. **Test Subscription Flow**
-   - Navigate to http://localhost:3000
+   - Navigate to https://goggly-casteless-torri.ngrok-free.dev
    - Go to Settings → Billing
    - Select a plan
    - Use test card: `4242 4242 4242 4242`

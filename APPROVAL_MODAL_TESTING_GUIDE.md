@@ -69,7 +69,7 @@ This guide will help you test the complete user approval workflow including:
    SMTP_PORT=587
    SMTP_USER=your-email@gmail.com
    SMTP_PASS=your-app-password
-   FRONTEND_URL=http://localhost:3000
+   FRONTEND_URL=https://goggly-casteless-torri.ngrok-free.dev
    ```
 
 2. **Start Services:**
@@ -89,7 +89,7 @@ This guide will help you test the complete user approval workflow including:
 
 **Steps:**
 ```
-1. Open browser: http://localhost:3000
+1. Open browser: https://goggly-casteless-torri.ngrok-free.dev
 2. Click "Sign in with Google"
 3. Select a Google account (not already registered)
 4. Complete OAuth flow
@@ -394,7 +394,7 @@ User record updated:
    SMTP_PORT=587
    SMTP_USER=your-email@gmail.com
    SMTP_PASS=your-16-char-app-password
-   FRONTEND_URL=http://localhost:3000
+   FRONTEND_URL=https://goggly-casteless-torri.ngrok-free.dev
    ```
 
 4. **Restart Server:**

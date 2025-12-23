@@ -429,7 +429,7 @@ router.post('/tenants/:tenantName/onboard', async (req, res) => {
     await transaction.commit();
     
     // Send welcome emails to all created users (after transaction commit)
-    const loginUrl = process.env.APP_URL || 'http://localhost:3000';
+    const loginUrl = process.env.APP_URL || 'https://goggly-casteless-torri.ngrok-free.dev';
     const emailPromises = createdUsers.map(async (user) => {
       try {
         await sendWelcomeEmail({
@@ -681,7 +681,7 @@ router.post('/create-role-users', async (req, res) => {
     await transaction.commit();
     
     // Send welcome emails to all created users (after transaction commit)
-    const loginUrl = process.env.APP_URL || 'http://localhost:3000';
+    const loginUrl = process.env.APP_URL || 'https://goggly-casteless-torri.ngrok-free.dev';
     const emailPromises = users.map(async (userData, index) => {
       const user = createdUsers[index];
       try {
@@ -882,7 +882,7 @@ router.post('/create-default-users', async (req, res) => {
     await transaction.commit();
     
     // Send welcome emails to all created users (after transaction commit)
-    const loginUrl = process.env.APP_URL || 'http://localhost:3000';
+    const loginUrl = process.env.APP_URL || 'https://goggly-casteless-torri.ngrok-free.dev';
     const emailPromises = createdUsers.map(async (user) => {
       try {
         await sendWelcomeEmail({

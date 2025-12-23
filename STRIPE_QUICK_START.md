@@ -31,7 +31,7 @@ This will open your browser to authenticate.
 ```bash
 STRIPE_SECRET_KEY=sk_test_your_key_here
 STRIPE_WEBHOOK_SECRET=whsec_temporary
-APP_BASE_URL=http://localhost:3000
+APP_BASE_URL=https://goggly-casteless-torri.ngrok-free.dev
 ```
 
 ### Step 4: Set Up Stripe Products (One-time setup)
@@ -102,11 +102,11 @@ cd /Users/selva/Projects/TimePulse/frontend
 npm start
 ```
 
-Your app should open at http://localhost:3000
+Your app should open at https://goggly-casteless-torri.ngrok-free.dev
 
 ### Step 8: Test It!
 
-1. **Login to TimePulse** at http://localhost:3000
+1. **Login to TimePulse** at https://goggly-casteless-torri.ngrok-free.dev
 2. **Go to Settings** → **Billing**
 3. **Click on a plan** (e.g., Professional)
 4. **Use test card**: `4242 4242 4242 4242`
@@ -184,7 +184,7 @@ stripe prices list
 - [ ] `.env` file has correct `STRIPE_SECRET_KEY`
 - [ ] `.env` file has correct `STRIPE_WEBHOOK_SECRET` from CLI
 - [ ] Webhook forwarding is running
-- [ ] Can access http://localhost:3000
+- [ ] Can access https://goggly-casteless-torri.ngrok-free.dev
 - [ ] Can complete test checkout with card `4242 4242 4242 4242`
 
 ## 🐛 Troubleshooting

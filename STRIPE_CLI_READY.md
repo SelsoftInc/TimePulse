@@ -35,7 +35,7 @@ Create or update `/Users/selva/Projects/TimePulse/server/.env`:
 ```bash
 STRIPE_SECRET_KEY=sk_test_your_actual_key_here
 STRIPE_WEBHOOK_SECRET=whsec_temporary
-APP_BASE_URL=http://localhost:3000
+APP_BASE_URL=https://goggly-casteless-torri.ngrok-free.dev
 ```
 
 Get your test key from: https://dashboard.stripe.com/test/apikeys
@@ -94,7 +94,7 @@ npm start
 ```
 
 ### 6️⃣ Test It!
-1. Open http://localhost:3000
+1. Open https://goggly-casteless-torri.ngrok-free.dev
 2. Login to TimePulse
 3. Go to **Settings** → **Billing**
 4. Click on a subscription plan
@@ -252,7 +252,7 @@ Before testing subscriptions, verify:
 - [ ] Webhook secret updated in `.env`
 - [ ] Server restarted after updating `.env`
 - [ ] Frontend running on port 3000
-- [ ] Can access http://localhost:3000
+- [ ] Can access https://goggly-casteless-torri.ngrok-free.dev
 - [ ] Can see Billing page in Settings
 
 ---

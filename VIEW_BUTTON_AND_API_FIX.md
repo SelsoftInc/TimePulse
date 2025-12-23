@@ -244,7 +244,7 @@ npm run dev
 ### **2. Test View Button:**
 
 ```
-1. Navigate to: http://localhost:3000/selsoft/notifications
+1. Navigate to: https://goggly-casteless-torri.ngrok-free.dev/selsoft/notifications
 2. Find "New User Registration Pending Approval" card
 3. Look for blue "View" button on right side
 4. Click "View" button

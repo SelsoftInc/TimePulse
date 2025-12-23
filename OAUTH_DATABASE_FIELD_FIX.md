@@ -254,7 +254,7 @@ fetch('http://localhost:5001/api/user-approvals/pending?tenantId=5eda5596-b1d9-4
 
 ```
 1. Login as admin
-2. Navigate to: http://localhost:3000/selsoft/notifications
+2. Navigate to: https://goggly-casteless-torri.ngrok-free.dev/selsoft/notifications
 3. Click "View" button on notification
 4. Modal should open with user details
 ```

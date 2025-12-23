@@ -27,7 +27,7 @@ The `package.json` and service files were accidentally deleted during git restor
 
 ```
 ▲ Next.js 14.2.33
-- Local:        http://localhost:3000
+- Local:        https://goggly-casteless-torri.ngrok-free.dev
 - Environments: .env.local
 
 ✓ Ready in 3.7s
@@ -49,7 +49,7 @@ Your application is now:
 
 ## 🎯 WHAT TO DO NOW
 
-1. **Open your browser** to `http://localhost:3000`
+1. **Open your browser** to `https://goggly-casteless-torri.ngrok-free.dev`
 2. **Test the application** - all modules should work as they did before today
 3. **Verify all features** are functioning correctly
 

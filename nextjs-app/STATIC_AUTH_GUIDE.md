@@ -24,7 +24,7 @@ Password: test123#
    npm run dev
    ```
 
-2. Go to: http://localhost:3000/login
+2. Go to: https://goggly-casteless-torri.ngrok-free.dev/login
 
 3. Enter the static credentials above
 
@@ -264,7 +264,7 @@ npm run dev
 
 ### Step 2: Login
 
-- Go to http://localhost:3000/login
+- Go to https://goggly-casteless-torri.ngrok-free.dev/login
 - Email: `shunmugavel@selsoftinc.com`
 - Password: `test123#`
 
@@ -427,7 +427,7 @@ Real API calls are logged with 🌐 emoji:
 ## ✅ Quick Checklist
 
 - [ ] Started dev server: `npm run dev`
-- [ ] Opened http://localhost:3000/login
+- [ ] Opened https://goggly-casteless-torri.ngrok-free.dev/login
 - [ ] Used email: `shunmugavel@selsoftinc.com`
 - [ ] Used password: `test123#`
 - [ ] Logged in successfully

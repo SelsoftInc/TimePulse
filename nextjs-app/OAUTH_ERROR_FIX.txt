@@ -40,7 +40,7 @@ STEP 1: GET GOOGLE OAUTH CREDENTIALS
 5. Add Authorized Redirect URI:
    ⚠️ IMPORTANT - Add this EXACT URL:
    
-   http://localhost:3000/api/auth/callback/google
+   https://goggly-casteless-torri.ngrok-free.dev/api/auth/callback/google
    
    (Copy and paste exactly as shown above)
 
@@ -72,8 +72,8 @@ STEP 2: UPDATE .env.local FILE
 3. Keep these values as they are (already correct):
    ────────────────────────────────────────────────────────────
    NEXTAUTH_SECRET=8KzP9mN2vL5xR7wQ3jT6hY4nB1gF0sA8dE2cV5xZ9mK3pL7wR4tY6hN8jB0gF2sA
-   NEXTAUTH_URL=http://localhost:3000
-   NEXT_PUBLIC_APP_URL=http://localhost:3000
+   NEXTAUTH_URL=https://goggly-casteless-torri.ngrok-free.dev
+   NEXT_PUBLIC_APP_URL=https://goggly-casteless-torri.ngrok-free.dev
    ────────────────────────────────────────────────────────────
 
 STEP 3: RESTART THE SERVER
@@ -91,7 +91,7 @@ After updating .env.local, restart the development server:
 STEP 4: TEST OAUTH
 ────────────────────────────────────────────────────────────────
 
-1. Go to: http://localhost:3000/login
+1. Go to: https://goggly-casteless-torri.ngrok-free.dev/login
 
 2. Click "Sign in with Google"
 
@@ -110,7 +110,7 @@ STEP 4: TEST OAUTH
 If you don't want to set up Google OAuth right now, you can still use
 the traditional email/password login:
 
-1. Go to: http://localhost:3000/login
+1. Go to: https://goggly-casteless-torri.ngrok-free.dev/login
 
 2. Enter your email and password
 
@@ -124,7 +124,7 @@ the traditional email/password login:
 
 ERROR: "Redirect URI mismatch"
 SOLUTION: Make sure you added EXACTLY this URI in Google Console:
-          http://localhost:3000/api/auth/callback/google
+          https://goggly-casteless-torri.ngrok-free.dev/api/auth/callback/google
 
 ERROR: "Invalid client"
 SOLUTION: Double-check your GOOGLE_CLIENT_ID in .env.local
@@ -144,7 +144,7 @@ SOLUTION: 1. Verify .env.local has real credentials (not placeholders)
 □ Created Google Cloud project
 □ Enabled Google+ API
 □ Created OAuth 2.0 Client ID
-□ Added redirect URI: http://localhost:3000/api/auth/callback/google
+□ Added redirect URI: https://goggly-casteless-torri.ngrok-free.dev/api/auth/callback/google
 □ Copied Client ID and Client Secret
 □ Updated .env.local with real credentials
 □ Restarted development server

@@ -42,7 +42,7 @@ Add these to your `.env` file in the server directory:
 # Stripe Configuration
 STRIPE_SECRET_KEY=sk_test_your_stripe_secret_key_here
 STRIPE_WEBHOOK_SECRET=whsec_your_webhook_secret_here
-APP_BASE_URL=http://localhost:3000
+APP_BASE_URL=https://goggly-casteless-torri.ngrok-free.dev
 ```
 
 ### 3. Webhook Configuration

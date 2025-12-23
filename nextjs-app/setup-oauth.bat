@@ -32,7 +32,7 @@ echo 1. Edit .env.local file with your credentials
 echo 2. Restart Next.js server:
 echo    - Stop: Ctrl+C
 echo    - Start: npm run dev
-echo 3. Test at: http://localhost:3000/test-oauth
+echo 3. Test at: https://goggly-casteless-torri.ngrok-free.dev/test-oauth
 echo.
 
 set /p OPEN="Open .env.local in notepad? (y/n): "

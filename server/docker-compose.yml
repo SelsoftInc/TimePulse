@@ -14,7 +14,7 @@ services:
       - DB_USER=postgres
       - DB_PASSWORD=password
       - JWT_SECRET=your_jwt_secret_key_here
-      - CORS_ORIGIN=http://localhost:3000
+      - CORS_ORIGIN=https://goggly-casteless-torri.ngrok-free.dev
     depends_on:
       - postgres
     volumes:

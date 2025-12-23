@@ -83,14 +83,14 @@ Dashboard
    
    **Authorized JavaScript origins:**
    ```
-   http://localhost:3000
+   https://goggly-casteless-torri.ngrok-free.dev
    https://your-production-domain.com
    ```
    
    **Authorized redirect URIs:**
    ```
-   http://localhost:3000/api/auth/callback/google
-   http://localhost:3000/auth/callback
+   https://goggly-casteless-torri.ngrok-free.dev/api/auth/callback/google
+   https://goggly-casteless-torri.ngrok-free.dev/auth/callback
    https://your-production-domain.com/api/auth/callback/google
    https://your-production-domain.com/auth/callback
    ```
@@ -110,7 +110,7 @@ Dashboard
 2. **Update .env.local:**
    ```env
    # NextAuth Configuration
-   NEXTAUTH_URL=http://localhost:3000
+   NEXTAUTH_URL=https://goggly-casteless-torri.ngrok-free.dev
    NEXTAUTH_SECRET=your-random-secret-here
    
    # Google OAuth Credentials (from Google Cloud Console)
@@ -121,7 +121,7 @@ Dashboard
    NEXT_PUBLIC_API_URL=http://localhost:5001
    
    # App URL
-   NEXT_PUBLIC_APP_URL=http://localhost:3000
+   NEXT_PUBLIC_APP_URL=https://goggly-casteless-torri.ngrok-free.dev
    ```
 
 3. **Generate NEXTAUTH_SECRET:**
@@ -362,7 +362,7 @@ Register a new user from Google OAuth with onboarding data.
    npm run dev
    ```
 
-2. **Open browser:** http://localhost:3000/login
+2. **Open browser:** https://goggly-casteless-torri.ngrok-free.dev/login
 
 3. **Click "Sign in with Google"**
 
@@ -431,8 +431,8 @@ Register a new user from Google OAuth with onboarding data.
 1. Go to Google Cloud Console > Credentials
 2. Edit OAuth 2.0 Client ID
 3. Add redirect URIs:
-   - `http://localhost:3000/api/auth/callback/google`
-   - `http://localhost:3000/auth/callback`
+   - `https://goggly-casteless-torri.ngrok-free.dev/api/auth/callback/google`
+   - `https://goggly-casteless-torri.ngrok-free.dev/auth/callback`
 4. Save changes
 5. Wait a few minutes for changes to propagate
 

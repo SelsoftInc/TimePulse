@@ -239,7 +239,7 @@ setLeaveData({
 ### **Test 1: Leave Balance Display**
 ```bash
 # 1. Open Leave Management page
-http://localhost:3000/selsoft/leave-management
+https://goggly-casteless-torri.ngrok-free.dev/selsoft/leave-management
 
 # 2. Expected result:
 ✅ Leave balance cards display correctly

@@ -142,7 +142,7 @@ DB_PASSWORD=postgres
 DB_SSL=false
 
 # CORS Configuration
-CORS_ORIGIN=http://localhost:3000
+CORS_ORIGIN=https://goggly-casteless-torri.ngrok-free.dev
 
 # JWT Configuration
 JWT_SECRET=your_jwt_secret_key_here_change_this
@@ -166,7 +166,7 @@ HOST=0.0.0.0
 DEBUG=False
 
 # CORS Settings
-CORS_ORIGINS=http://localhost:3000,http://localhost:5001
+CORS_ORIGINS=https://goggly-casteless-torri.ngrok-free.dev,http://localhost:5001
 
 # File Upload Settings
 MAX_FILE_SIZE_MB=10
@@ -255,7 +255,7 @@ Once all services are running:
 
 | Service | URL | Description |
 |---------|-----|-------------|
-| **Frontend** | http://localhost:3000 | Main application UI |
+| **Frontend** | https://goggly-casteless-torri.ngrok-free.dev | Main application UI |
 | **Server API** | http://localhost:5001 | Backend REST API |
 | **Engine API** | http://localhost:8000 | Document processing API |
 | **API Docs** | http://localhost:8000/docs | Interactive API documentation |
@@ -280,7 +280,7 @@ Expected response: `{"status":"healthy"}`
 
 ### 3. Check Frontend
 
-Open browser: http://localhost:3000
+Open browser: https://goggly-casteless-torri.ngrok-free.dev
 
 You should see the TimePulse login page.
 
@@ -522,7 +522,7 @@ If you encounter issues:
 - [ ] All `.env` files configured
 - [ ] Dependencies installed for all three components
 - [ ] All three services starting without errors
-- [ ] Can access http://localhost:3000
+- [ ] Can access https://goggly-casteless-torri.ngrok-free.dev
 - [ ] Can access http://localhost:5001/api/health
 - [ ] Can access http://localhost:8000/docs
 
@@ -530,7 +530,7 @@ If you encounter issues:
 
 Once everything is running:
 
-1. Open http://localhost:3000
+1. Open https://goggly-casteless-torri.ngrok-free.dev
 2. Create an admin account
 3. Configure your organization
 4. Start using TimePulse!

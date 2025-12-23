@@ -274,7 +274,7 @@ await userApprovalEmailService.sendUserApprovedEmail({
   userName: `${user.firstName} ${user.lastName}`,
   userRole: user.role,
   approvedBy: `${admin.firstName} ${admin.lastName}`,
-  loginLink: 'http://localhost:3000/login',
+  loginLink: 'https://goggly-casteless-torri.ngrok-free.dev/login',
   tenantName: tenant.tenantName
 });
 ```
@@ -314,7 +314,7 @@ SMTP_USER=your-email@gmail.com
 SMTP_PASS=your-app-password
 
 # Frontend URL (for email links)
-FRONTEND_URL=http://localhost:3000
+FRONTEND_URL=https://goggly-casteless-torri.ngrok-free.dev
 ```
 
 ### **Gmail Setup (Example):**
@@ -332,7 +332,7 @@ SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
 SMTP_USER=your-email@gmail.com
 SMTP_PASS=your-16-char-app-password
-FRONTEND_URL=http://localhost:3000
+FRONTEND_URL=https://goggly-casteless-torri.ngrok-free.dev
 ```
 
 ### **Development Mode:**
@@ -449,7 +449,7 @@ SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
 SMTP_USER=your-email@gmail.com
 SMTP_PASS=your-app-password
-FRONTEND_URL=http://localhost:3000
+FRONTEND_URL=https://goggly-casteless-torri.ngrok-free.dev
 
 # 2. Restart server
 cd server

@@ -80,7 +80,7 @@ cd /Users/selva/Projects/TimePulse/server
    # Create .env file and add:
    STRIPE_SECRET_KEY=sk_test_your_key_here
    STRIPE_WEBHOOK_SECRET=whsec_temporary
-   APP_BASE_URL=http://localhost:3000
+   APP_BASE_URL=https://goggly-casteless-torri.ngrok-free.dev
    ```
 
 3. **Create Stripe Products**
@@ -117,7 +117,7 @@ cd /Users/selva/Projects/TimePulse/server
 ### Test New Subscription
 
 1. Start server and Stripe CLI
-2. Open frontend: http://localhost:3000
+2. Open frontend: https://goggly-casteless-torri.ngrok-free.dev
 3. Go to Settings → Billing
 4. Click on a plan
 5. Use test card: `4242 4242 4242 4242`

@@ -37,12 +37,12 @@ $envContent = Get-Content .env.local -Raw
 
 # Check each required variable
 $checks = @{
-    "NEXTAUTH_URL" = "http://localhost:3000"
+    "NEXTAUTH_URL" = "https://goggly-casteless-torri.ngrok-free.dev"
     "NEXTAUTH_SECRET" = $null
     "GOOGLE_CLIENT_ID" = $null
     "GOOGLE_CLIENT_SECRET" = $null
     "NEXT_PUBLIC_API_URL" = "http://localhost:5001"
-    "NEXT_PUBLIC_APP_URL" = "http://localhost:3000"
+    "NEXT_PUBLIC_APP_URL" = "https://goggly-casteless-torri.ngrok-free.dev"
 }
 
 foreach ($key in $checks.Keys) {
@@ -91,7 +91,7 @@ Write-Host ""
 Write-Host "To get Google OAuth credentials:" -ForegroundColor Yellow
 Write-Host "1. Go to: https://console.cloud.google.com/" -ForegroundColor White
 Write-Host "2. Create OAuth 2.0 Client ID" -ForegroundColor White
-Write-Host "3. Add redirect URI: http://localhost:3000/api/auth/callback/google" -ForegroundColor White
+Write-Host "3. Add redirect URI: https://goggly-casteless-torri.ngrok-free.dev/api/auth/callback/google" -ForegroundColor White
 Write-Host "4. Copy Client ID and Secret" -ForegroundColor White
 Write-Host ""
 
@@ -121,12 +121,12 @@ Write-Host "1. [OK] .env.local file is configured" -ForegroundColor Green
 Write-Host "2. [ACTION] Restart Next.js server:" -ForegroundColor Yellow
 Write-Host "   - Stop current server (Ctrl+C)" -ForegroundColor White
 Write-Host "   - Run: npm run dev" -ForegroundColor White
-Write-Host "3. [TEST] Test OAuth at: http://localhost:3000/test-oauth" -ForegroundColor Yellow
+Write-Host "3. [TEST] Test OAuth at: https://goggly-casteless-torri.ngrok-free.dev/test-oauth" -ForegroundColor Yellow
 Write-Host ""
 
 $openTest = Read-Host "Do you want to open the test page in browser? (y/n)"
 if ($openTest -eq "y") {
-    Start-Process "http://localhost:3000/test-oauth"
+    Start-Process "https://goggly-casteless-torri.ngrok-free.dev/test-oauth"
 }
 
 Write-Host ""

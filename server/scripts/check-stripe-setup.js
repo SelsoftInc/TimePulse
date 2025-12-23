@@ -208,7 +208,7 @@ async function checkSetup() {
     console.log('Quick Start:');
     console.log('1. Start your server: npm start');
     console.log('2. Start Stripe CLI: ./stripe-cli-start.sh');
-    console.log('3. Open http://localhost:3000');
+    console.log('3. Open https://goggly-casteless-torri.ngrok-free.dev');
     console.log('4. Go to Settings → Billing');
     console.log('5. Test with card: 4242 4242 4242 4242');
     console.log('');

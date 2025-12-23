@@ -231,7 +231,7 @@ router.post("/request", async (req, res) => {
       const tenant = await models.Tenant.findByPk(tenantId);
       
       if (approver && tenant) {
-        const leaveRequestLink = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/${tenant.subdomain}/leave-management`;
+        const leaveRequestLink = `${process.env.FRONTEND_URL || 'https://goggly-casteless-torri.ngrok-free.dev'}/${tenant.subdomain}/leave-management`;
         
         await LeaveManagementEmailService.sendLeaveRequestSubmittedNotification({
           approverEmail: approver.email,

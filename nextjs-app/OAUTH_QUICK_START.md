@@ -12,8 +12,8 @@
 6. Set Application type: **Web application**
 7. Add Authorized redirect URIs:
    ```
-   http://localhost:3000/api/auth/callback/google
-   http://localhost:3000/auth/callback
+   https://goggly-casteless-torri.ngrok-free.dev/api/auth/callback/google
+   https://goggly-casteless-torri.ngrok-free.dev/auth/callback
    ```
 8. Copy **Client ID** and **Client Secret**
 
@@ -53,11 +53,11 @@
    cd nextjs-app
    npm run dev
    ```
-   Should run on http://localhost:3000
+   Should run on https://goggly-casteless-torri.ngrok-free.dev
 
 ### Step 4: Test OAuth Flow
 
-1. Open http://localhost:3000/login
+1. Open https://goggly-casteless-torri.ngrok-free.dev/login
 2. Click **"Sign in with Google"**
 3. Select your Google account
 4. **First time:** Fill onboarding form
@@ -113,7 +113,7 @@ Login → Google OAuth → Dashboard (Direct)
 
 ### "Redirect URI mismatch" error
 - Verify redirect URIs in Google Cloud Console
-- Must include: `http://localhost:3000/api/auth/callback/google`
+- Must include: `https://goggly-casteless-torri.ngrok-free.dev/api/auth/callback/google`
 
 ### Backend connection error
 - Ensure backend is running on port 5001

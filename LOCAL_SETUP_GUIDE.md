@@ -70,12 +70,12 @@ The backend will run on http://localhost:5001
 cd frontend
 npm start
 ```
-The frontend will run on http://localhost:3000
+The frontend will run on https://goggly-casteless-torri.ngrok-free.dev
 
 ### 5. Verify Setup
 
 1. Backend health check: http://localhost:5001/health
-2. Frontend application: http://localhost:3000
+2. Frontend application: https://goggly-casteless-torri.ngrok-free.dev
 
 ## Available Scripts
 
@@ -160,4 +160,4 @@ The application includes the following main models:
 | `DB_USER` | Database username | postgres |
 | `DB_PASSWORD` | Database password | password |
 | `JWT_SECRET` | JWT signing secret | your_jwt_secret_key_here |
-| `CORS_ORIGIN` | Frontend URL for CORS | http://localhost:3000 |
+| `CORS_ORIGIN` | Frontend URL for CORS | https://goggly-casteless-torri.ngrok-free.dev |

@@ -61,14 +61,14 @@ const data = response.data;
 NEXT_PUBLIC_API_URL=http://localhost:5001
 NEXT_PUBLIC_SOCKET_URL=http://localhost:5001
 NEXT_PUBLIC_APP_NAME=TimePulse
-NEXT_PUBLIC_APP_URL=http://localhost:3000
+NEXT_PUBLIC_APP_URL=https://goggly-casteless-torri.ngrok-free.dev
 ```
 
 **server/.env:**
 ```env
 PORT=5001
 NODE_ENV=development
-CORS_ORIGIN=http://localhost:3000
+CORS_ORIGIN=https://goggly-casteless-torri.ngrok-free.dev
 USE_SQLITE=true
 JWT_SECRET=your_jwt_secret_key_here
 JWT_EXPIRES_IN=24h
@@ -105,7 +105,7 @@ npm run dev
 **Expected output:**
 ```
 ▲ Next.js 14.2.33
-- Local:        http://localhost:3000
+- Local:        https://goggly-casteless-torri.ngrok-free.dev
 ✓ Ready in 2s
 ```
 
@@ -208,7 +208,7 @@ The Next.js app now works **EXACTLY like the original React app**:
 ## 📝 NEXT STEPS
 
 1. **Start both servers** (see "How to Run" above)
-2. **Open browser** to `http://localhost:3000`
+2. **Open browser** to `https://goggly-casteless-torri.ngrok-free.dev`
 3. **Login** with your credentials
 4. **Navigate to Timesheets** - data should display
 5. **Check all modules** - everything should work

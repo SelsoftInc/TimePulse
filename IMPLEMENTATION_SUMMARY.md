@@ -146,7 +146,7 @@ SMTP_USER=your-email@gmail.com
 SMTP_PASS=your-app-password
 
 # Frontend URL
-FRONTEND_URL=http://localhost:3000
+FRONTEND_URL=https://goggly-casteless-torri.ngrok-free.dev
 ```
 
 ### **Optional (Development Mode):**

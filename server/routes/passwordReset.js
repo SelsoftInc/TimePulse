@@ -68,7 +68,7 @@ router.post('/request', async (req, res) => {
     const subdomain = user.tenant ? user.tenant.subdomain : 'selsoft';
     
     // Construct reset URL
-    const resetUrl = `${process.env.APP_URL || 'http://localhost:3000'}/reset-password`;
+    const resetUrl = `${process.env.APP_URL || 'https://goggly-casteless-torri.ngrok-free.dev'}/reset-password`;
 
     // Send password reset email
     try {

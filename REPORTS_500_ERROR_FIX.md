@@ -272,7 +272,7 @@ The invoice report now correctly displays all invoice data:
 
 Both servers successfully restarted:
 - ✅ Backend: http://localhost:5001
-- ✅ Frontend: http://localhost:3000
+- ✅ Frontend: https://goggly-casteless-torri.ngrok-free.dev
 
 ## Verification Steps
 

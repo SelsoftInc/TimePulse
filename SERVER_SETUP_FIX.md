@@ -30,7 +30,7 @@ DB_PASSWORD=your_password
 JWT_SECRET=your_jwt_secret_key_here
 
 # CORS Configuration
-CORS_ORIGIN=http://localhost:3000
+CORS_ORIGIN=https://goggly-casteless-torri.ngrok-free.dev
 
 # Node Environment
 NODE_ENV=development
@@ -47,7 +47,7 @@ NEXT_PUBLIC_SOCKET_URL=http://localhost:5001
 
 # Application Configuration
 NEXT_PUBLIC_APP_NAME=TimePulse
-NEXT_PUBLIC_APP_URL=http://localhost:3000
+NEXT_PUBLIC_APP_URL=https://goggly-casteless-torri.ngrok-free.dev
 ```
 
 ### Step 3: Start Both Servers
@@ -82,7 +82,7 @@ After starting both servers, you should see:
 **Next.js Terminal:**
 ```
 ▲ Next.js 14.2.33
-- Local:        http://localhost:3000
+- Local:        https://goggly-casteless-torri.ngrok-free.dev
 ✓ Ready in 2.6s
 ```
 

@@ -434,7 +434,7 @@ router.post("/", async (req, res) => {
     // Get tenant information for email
     const tenant = await models.Tenant.findByPk(employeeData.tenantId);
     const companyName = tenant ? tenant.tenantName : 'Your Company';
-    const loginUrl = process.env.APP_URL || 'http://localhost:3000';
+    const loginUrl = process.env.APP_URL || 'https://goggly-casteless-torri.ngrok-free.dev';
 
     // Send welcome email with temporary password
     try {

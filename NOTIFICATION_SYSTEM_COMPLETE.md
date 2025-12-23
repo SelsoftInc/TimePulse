@@ -151,7 +151,7 @@ SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
 SMTP_USER=your-email@gmail.com
 SMTP_PASS=your-app-password
-FRONTEND_URL=http://localhost:3000
+FRONTEND_URL=https://goggly-casteless-torri.ngrok-free.dev
 ```
 
 ### **Step 2: Get Gmail App Password**
@@ -194,10 +194,10 @@ node set-existing-user-pending.js
 npm start
 
 # 3. Login as admin
-# http://localhost:3000
+# https://goggly-casteless-torri.ngrok-free.dev
 
 # 4. Go to notifications
-# http://localhost:3000/selsoft/notifications
+# https://goggly-casteless-torri.ngrok-free.dev/selsoft/notifications
 
 # 5. Click "View" → "Approve User"
 
@@ -213,10 +213,10 @@ npm start
 
 ```bash
 # 1. Login as employee
-# http://localhost:3000
+# https://goggly-casteless-torri.ngrok-free.dev
 
 # 2. Go to Leave Management
-# http://localhost:3000/selsoft/leave-management
+# https://goggly-casteless-torri.ngrok-free.dev/selsoft/leave-management
 
 # 3. Submit leave request
 
@@ -239,10 +239,10 @@ npm start
 
 ```bash
 # 1. Login as employee
-# http://localhost:3000
+# https://goggly-casteless-torri.ngrok-free.dev
 
 # 2. Go to Timesheets
-# http://localhost:3000/selsoft/timesheets
+# https://goggly-casteless-torri.ngrok-free.dev/selsoft/timesheets
 
 # 3. Submit timesheet
 

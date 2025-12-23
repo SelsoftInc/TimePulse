@@ -109,10 +109,10 @@ router.post("/checkout", async (req, res, next) => {
       mode: "subscription",
       customer: customerId,
       success_url: `${
-        process.env.APP_BASE_URL || "http://localhost:3000"
+        process.env.APP_BASE_URL || "https://goggly-casteless-torri.ngrok-free.dev"
       }/billing/success?session_id={CHECKOUT_SESSION_ID}&plan=${plan}&seats=${seats}&amount=${totalAmount}`,
       cancel_url: `${
-        process.env.APP_BASE_URL || "http://localhost:3000"
+        process.env.APP_BASE_URL || "https://goggly-casteless-torri.ngrok-free.dev"
       }/billing/cancelled`,
       allow_promotion_codes: true,
       line_items: [
@@ -208,7 +208,7 @@ router.post("/portal", async (req, res, next) => {
     const portal = await stripe.billingPortal.sessions.create({
       customer: tenant.stripeCustomerId,
       return_url: `${
-        process.env.APP_BASE_URL || "http://localhost:3000"
+        process.env.APP_BASE_URL || "https://goggly-casteless-torri.ngrok-free.dev"
       }/settings/billing`,
     });
 

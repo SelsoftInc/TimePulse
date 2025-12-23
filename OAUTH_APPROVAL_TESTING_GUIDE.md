@@ -4,7 +4,7 @@
 
 ### Prerequisites
 1. Backend server running on `http://localhost:5001`
-2. Frontend running on `http://localhost:3000`
+2. Frontend running on `https://goggly-casteless-torri.ngrok-free.dev`
 3. Database migration completed
 4. Google OAuth configured
 
@@ -70,7 +70,7 @@ ORDER BY created_at DESC LIMIT 1;
 
 **Steps:**
 1. As admin, navigate to User Approvals page
-   - Direct URL: `http://localhost:3000/selsoft/user-approvals`
+   - Direct URL: `https://goggly-casteless-torri.ngrok-free.dev/selsoft/user-approvals`
    - Or click notification
 2. See pending user card
 3. Click "Approve" button

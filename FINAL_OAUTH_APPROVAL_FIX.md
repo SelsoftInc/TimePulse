@@ -206,7 +206,7 @@ npm start
 
 ```
 1. Login as admin (chandralekha@selsoftinc.com)
-2. Navigate to: http://localhost:3000/selsoft/notifications
+2. Navigate to: https://goggly-casteless-torri.ngrok-free.dev/selsoft/notifications
 3. You should see notification: "New User Registration Pending Approval"
 4. Click "View" button
 5. Modal should open with user details

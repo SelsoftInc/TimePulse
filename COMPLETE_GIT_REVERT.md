@@ -122,7 +122,7 @@ npm run dev
 
 ### **2. Test the Application**
 
-Open `http://localhost:3000` and verify all modules work correctly.
+Open `https://goggly-casteless-torri.ngrok-free.dev` and verify all modules work correctly.
 
 ---
 

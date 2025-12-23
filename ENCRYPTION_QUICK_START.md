@@ -46,7 +46,7 @@ cd nextjs-app
 npm run dev
 ```
 
-3. Test login at `http://localhost:3000/login`
+3. Test login at `https://goggly-casteless-torri.ngrok-free.dev/login`
 
 ### Step 4: Verify in Browser Console
 

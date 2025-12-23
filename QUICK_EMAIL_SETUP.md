@@ -59,7 +59,7 @@ SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
 SMTP_USER=your-email@gmail.com
 SMTP_PASS=abcdefghijklmnop
-FRONTEND_URL=http://localhost:3000
+FRONTEND_URL=https://goggly-casteless-torri.ngrok-free.dev
 ```
 
 **Replace:**
@@ -96,7 +96,7 @@ npm start
 node set-existing-user-pending.js
 
 # 2. Login as admin
-# http://localhost:3000
+# https://goggly-casteless-torri.ngrok-free.dev
 
 # 3. Approve user
 

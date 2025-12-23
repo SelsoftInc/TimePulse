@@ -401,7 +401,7 @@ const toggleActions = (id, type) => {
 
 **Servers:**
 - [x] Backend running: http://localhost:5001
-- [x] Frontend running: http://localhost:3000
+- [x] Frontend running: https://goggly-casteless-torri.ngrok-free.dev
 
 ---
 

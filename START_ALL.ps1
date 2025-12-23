@@ -140,7 +140,7 @@ Write-Host ""
 Write-Host "✅ All services started!" -ForegroundColor Green
 Write-Host ""
 Write-Host "📍 Service URLs:" -ForegroundColor Cyan
-Write-Host "   🌐 Next.js App:  http://localhost:3000" -ForegroundColor White
+Write-Host "   🌐 Next.js App:  https://goggly-casteless-torri.ngrok-free.dev" -ForegroundColor White
 Write-Host "   🔧 Server API:   http://localhost:5001" -ForegroundColor White
 Write-Host "   ⚙️  Engine API:   http://localhost:8000" -ForegroundColor White
 Write-Host "   📚 Engine Docs:  http://localhost:8000/docs" -ForegroundColor White

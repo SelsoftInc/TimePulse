@@ -91,7 +91,7 @@ export default function RootLayout({ children }) {
 
 ## Testing
 
-Visit `http://localhost:3000/forgot-password` after starting your Next.js dev server:
+Visit `https://goggly-casteless-torri.ngrok-free.dev/forgot-password` after starting your Next.js dev server:
 
 ```bash
 npm run dev

@@ -135,7 +135,7 @@ router.post('/approve/:userId', async (req, res) => {
 
     // Send approval email to user
     try {
-      const loginLink = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/login`;
+      const loginLink = `${process.env.FRONTEND_URL || 'https://goggly-casteless-torri.ngrok-free.dev'}/login`;
       await userApprovalEmailService.sendUserApprovedEmail({
         userEmail: user.email,
         userName: `${user.firstName} ${user.lastName}`,

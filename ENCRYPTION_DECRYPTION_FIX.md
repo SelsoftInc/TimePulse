@@ -129,7 +129,7 @@ export function decryptAuthResponse(response) {
 
 ```bash
 # 1. Open browser
-http://localhost:3000/login
+https://goggly-casteless-torri.ngrok-free.dev/login
 
 # 2. Enter credentials:
 Email: pushban@selsoftinc.com
@@ -247,7 +247,7 @@ npm start
 ```bash
 cd nextjs-app
 npm run dev
-# Frontend running on http://localhost:3000
+# Frontend running on https://goggly-casteless-torri.ngrok-free.dev
 ```
 
 ### **Verify Keys:**

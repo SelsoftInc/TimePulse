@@ -280,7 +280,7 @@ npm run dev
 ### **2. Register New User:**
 
 ```
-1. Go to: http://localhost:3000
+1. Go to: https://goggly-casteless-torri.ngrok-free.dev
 2. Click "Sign in with Google"
 3. Select Google account
 4. Complete onboarding form:
@@ -418,7 +418,7 @@ SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
 SMTP_USER=your-email@gmail.com
 SMTP_PASS=your-app-password
-FRONTEND_URL=http://localhost:3000
+FRONTEND_URL=https://goggly-casteless-torri.ngrok-free.dev
 ```
 
 **Generate Gmail App Password:**

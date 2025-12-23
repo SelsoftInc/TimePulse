@@ -10,7 +10,7 @@
 ### 1. Test Logo Navigation
 1. Login to the application
 2. From any page, click on the **TimePulse logo** in the header
-3. **Expected**: Should navigate to `http://localhost:3000/selsoft/employee-dashboard`
+3. **Expected**: Should navigate to `https://goggly-casteless-torri.ngrok-free.dev/selsoft/employee-dashboard`
 
 ### 2. Test Dashboard Data Loading
 1. Navigate to employee dashboard

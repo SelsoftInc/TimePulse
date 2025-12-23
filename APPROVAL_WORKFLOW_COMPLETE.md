@@ -159,7 +159,7 @@ This document describes the complete end-to-end workflow for OAuth user registra
                               ↓
 ┌─────────────────────────────────────────────────────────────────┐
 │  User clicks "Login to TimePulse"                               │
-│  → Redirects to: http://localhost:3000/login                    │
+│  → Redirects to: https://goggly-casteless-torri.ngrok-free.dev/login                    │
 │  → User signs in with Google                                    │
 │  → Successfully authenticated                                   │
 │  → Redirected to dashboard                                      │
@@ -361,7 +361,7 @@ SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
 SMTP_USER=your-email@gmail.com
 SMTP_PASS=your-app-password
-FRONTEND_URL=http://localhost:3000
+FRONTEND_URL=https://goggly-casteless-torri.ngrok-free.dev
 ```
 
 ### **Development Mode:**

@@ -95,7 +95,7 @@ npm run dev
 
 ### **2. Test All Modules**
 
-Open `http://localhost:3000` and test:
+Open `https://goggly-casteless-torri.ngrok-free.dev` and test:
 - ✅ Dashboard - Should load overview data
 - ✅ Timesheets - Should display timesheet data (already working!)
 - ✅ Invoices - Should display invoice data

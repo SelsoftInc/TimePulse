@@ -304,7 +304,7 @@ Write-Host '     🟢 TimePulse Next.js App' -ForegroundColor Green
 Write-Host '═══════════════════════════════════════════════════════════' -ForegroundColor Cyan
 Write-Host ''
 Write-Host '📍 Port: 3000' -ForegroundColor Yellow
-Write-Host '📍 URL: http://localhost:3000' -ForegroundColor Yellow
+Write-Host '📍 URL: https://goggly-casteless-torri.ngrok-free.dev' -ForegroundColor Yellow
 Write-Host ''
 cd '$PWD\nextjs-app'
 npm run dev
@@ -317,7 +317,7 @@ Write-Host "══════════════════════�
 Write-Host ""
 Write-Host "📍 Access Your Application:" -ForegroundColor Cyan
 Write-Host ""
-Write-Host "   🌐 Frontend:    http://localhost:3000" -ForegroundColor White
+Write-Host "   🌐 Frontend:    https://goggly-casteless-torri.ngrok-free.dev" -ForegroundColor White
 Write-Host "   🔧 Server API:  http://localhost:5001" -ForegroundColor White
 Write-Host "   ⚙️  Engine API:  http://localhost:8000" -ForegroundColor White
 Write-Host "   📚 API Docs:    http://localhost:8000/docs" -ForegroundColor White

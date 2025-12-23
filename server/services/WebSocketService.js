@@ -7,7 +7,7 @@ class WebSocketService {
     // Get allowed origins from environment or use defaults
     const allowedOrigins = process.env.FRONTEND_URL 
       ? process.env.FRONTEND_URL.split(',').map(o => o.trim())
-      : ["http://localhost:3000", "https://app.timepulse.io"];
+      : ["https://goggly-casteless-torri.ngrok-free.dev", "https://app.timepulse.io"];
     
     this.io = new Server(server, {
       cors: {

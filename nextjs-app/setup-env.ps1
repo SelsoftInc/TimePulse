@@ -20,7 +20,7 @@ if (Test-Path $envPath) {
         Write-Host "Adding NEXTAUTH_SECRET to .env.local..." -ForegroundColor Yellow
         
         # Add NEXTAUTH_SECRET
-        $newContent = $content.TrimEnd() + "`n`n# NextAuth Configuration (REQUIRED)`nNEXTAUTH_SECRET=timepulse-nextauth-secret-key-2024-production-change-this`nNEXTAUTH_URL=http://localhost:3000`n"
+        $newContent = $content.TrimEnd() + "`n`n# NextAuth Configuration (REQUIRED)`nNEXTAUTH_SECRET=timepulse-nextauth-secret-key-2024-production-change-this`nNEXTAUTH_URL=https://goggly-casteless-torri.ngrok-free.dev`n"
         Set-Content -Path $envPath -Value $newContent -NoNewline
         
         Write-Host "✅ NEXTAUTH_SECRET added!" -ForegroundColor Green
@@ -36,7 +36,7 @@ NEXT_PUBLIC_SOCKET_URL=http://localhost:5001
 
 # Application Configuration
 NEXT_PUBLIC_APP_NAME=TimePulse
-NEXT_PUBLIC_APP_URL=http://localhost:3000
+NEXT_PUBLIC_APP_URL=https://goggly-casteless-torri.ngrok-free.dev
 
 # Google OAuth Configuration (REQUIRED for OAuth login)
 GOOGLE_CLIENT_ID=1012443421048-sg42k7t4i6vcdaj0r14mac2ndn8b6ilp.apps.googleusercontent.com
@@ -44,7 +44,7 @@ GOOGLE_CLIENT_SECRET=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
 
 # NextAuth Configuration (REQUIRED)
 NEXTAUTH_SECRET=timepulse-nextauth-secret-key-2024-production-change-this
-NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_URL=https://goggly-casteless-torri.ngrok-free.dev
 "@
     
     Set-Content -Path $envPath -Value $templateContent -NoNewline

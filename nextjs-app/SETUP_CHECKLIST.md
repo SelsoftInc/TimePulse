@@ -23,7 +23,7 @@ The 404 error occurs because NextAuth routes are not properly configured or envi
 3. **Edit .env.local** and add these values:
    ```env
    # NextAuth Configuration
-   NEXTAUTH_URL=http://localhost:3000
+   NEXTAUTH_URL=https://goggly-casteless-torri.ngrok-free.dev
    NEXTAUTH_SECRET=your-secret-here
    
    # Google OAuth Credentials
@@ -34,7 +34,7 @@ The 404 error occurs because NextAuth routes are not properly configured or envi
    NEXT_PUBLIC_API_URL=http://localhost:5001
    
    # App URL
-   NEXT_PUBLIC_APP_URL=http://localhost:3000
+   NEXT_PUBLIC_APP_URL=https://goggly-casteless-torri.ngrok-free.dev
    ```
 
 ### Step 2: Generate NEXTAUTH_SECRET
@@ -70,8 +70,8 @@ Copy the output and paste it as `NEXTAUTH_SECRET` in `.env.local`
 6. Set Application type: **Web application**
 7. Add these **Authorized redirect URIs**:
    ```
-   http://localhost:3000/api/auth/callback/google
-   http://localhost:3000/auth/callback
+   https://goggly-casteless-torri.ngrok-free.dev/api/auth/callback/google
+   https://goggly-casteless-torri.ngrok-free.dev/auth/callback
    ```
 8. Copy **Client ID** and **Client Secret**
 9. Paste them in `.env.local`
@@ -93,7 +93,7 @@ npm run dev
 
 Open this URL in your browser:
 ```
-http://localhost:3000/test-oauth
+https://goggly-casteless-torri.ngrok-free.dev/test-oauth
 ```
 
 This page will show:
@@ -107,13 +107,13 @@ This page will show:
 
 - [ ] `.env.local` file exists in `nextjs-app` directory
 - [ ] `NEXTAUTH_SECRET` is set (32+ character random string)
-- [ ] `NEXTAUTH_URL` is set to `http://localhost:3000`
+- [ ] `NEXTAUTH_URL` is set to `https://goggly-casteless-torri.ngrok-free.dev`
 - [ ] `GOOGLE_CLIENT_ID` is set (even if placeholder)
 - [ ] `GOOGLE_CLIENT_SECRET` is set (even if placeholder)
 - [ ] `NEXT_PUBLIC_API_URL` is set to `http://localhost:5001`
 - [ ] Next.js server restarted after creating `.env.local`
 - [ ] Backend server is running on port 5001
-- [ ] Test page loads: http://localhost:3000/test-oauth
+- [ ] Test page loads: https://goggly-casteless-torri.ngrok-free.dev/test-oauth
 
 ---
 
@@ -127,7 +127,7 @@ This page will show:
 1. Verify `.env.local` exists
 2. Restart Next.js server
 3. Check browser console for errors
-4. Visit http://localhost:3000/test-oauth to verify config
+4. Visit https://goggly-casteless-torri.ngrok-free.dev/test-oauth to verify config
 
 ### Issue 2: "OAuth not configured" warning
 
@@ -145,7 +145,7 @@ This page will show:
 **Solution:**
 1. Go to Google Cloud Console
 2. Edit OAuth 2.0 Client ID
-3. Add exact redirect URI: `http://localhost:3000/api/auth/callback/google`
+3. Add exact redirect URI: `https://goggly-casteless-torri.ngrok-free.dev/api/auth/callback/google`
 4. Save and wait a few minutes
 
 ### Issue 4: Server not reading .env.local
@@ -170,21 +170,21 @@ node -e "require('dotenv').config({ path: '.env.local' }); console.log('NEXTAUTH
 ### Test 2: NextAuth Route
 Open browser and visit:
 ```
-http://localhost:3000/api/auth/providers
+https://goggly-casteless-torri.ngrok-free.dev/api/auth/providers
 ```
 
 Should return JSON with Google provider info.
 
 ### Test 3: Test Page
 ```
-http://localhost:3000/test-oauth
+https://goggly-casteless-torri.ngrok-free.dev/test-oauth
 ```
 
 Should show environment status and sign-in button.
 
 ### Test 4: Login Page
 ```
-http://localhost:3000/login
+https://goggly-casteless-torri.ngrok-free.dev/login
 ```
 
 Click "Sign in with Google" - should redirect to Google (or show error if credentials invalid).
@@ -195,7 +195,7 @@ Click "Sign in with Google" - should redirect to Google (or show error if creden
 
 ```env
 # NextAuth Configuration
-NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_URL=https://goggly-casteless-torri.ngrok-free.dev
 NEXTAUTH_SECRET=8KzP9mN2vL5xR7wQ3jT6hY4nB1gF0sA8dE2cV5xZ9mK3pL7wR4tY6hN8jB0gF2sA
 
 # Google OAuth Credentials
@@ -207,7 +207,7 @@ GOOGLE_CLIENT_SECRET=GOCSPX-abcdefghijklmnopqrstuvwx
 NEXT_PUBLIC_API_URL=http://localhost:5001
 
 # App URL
-NEXT_PUBLIC_APP_URL=http://localhost:3000
+NEXT_PUBLIC_APP_URL=https://goggly-casteless-torri.ngrok-free.dev
 ```
 
 ---
@@ -237,7 +237,7 @@ if (!(Test-Path .env.local)) {
 2. ✅ Add NEXTAUTH_SECRET (use generated value)
 3. ✅ Add Google credentials (or placeholders)
 4. ✅ Restart Next.js server
-5. ✅ Test at http://localhost:3000/test-oauth
+5. ✅ Test at https://goggly-casteless-torri.ngrok-free.dev/test-oauth
 6. ✅ Try Google sign-in
 
 **After completing these steps, the 404 error should be resolved!**

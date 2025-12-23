@@ -31,12 +31,12 @@ The script will:
 
 2. **Edit .env.local** and add this content:
    ```env
-   NEXTAUTH_URL=http://localhost:3000
+   NEXTAUTH_URL=https://goggly-casteless-torri.ngrok-free.dev
    NEXTAUTH_SECRET=8KzP9mN2vL5xR7wQ3jT6hY4nB1gF0sA8dE2cV5xZ9mK3pL7wR4tY6hN8jB0gF2sA
    GOOGLE_CLIENT_ID=your-google-client-id.apps.googleusercontent.com
    GOOGLE_CLIENT_SECRET=your-google-client-secret
    NEXT_PUBLIC_API_URL=http://localhost:5001
-   NEXT_PUBLIC_APP_URL=http://localhost:3000
+   NEXT_PUBLIC_APP_URL=https://goggly-casteless-torri.ngrok-free.dev
    ```
 
 3. **Restart Next.js server:**
@@ -44,7 +44,7 @@ The script will:
    - Run `npm run dev` to start
 
 4. **Test:**
-   - Open http://localhost:3000/test-oauth
+   - Open https://goggly-casteless-torri.ngrok-free.dev/test-oauth
    - Check if environment variables are loaded
    - Try Google sign-in
 
@@ -65,19 +65,19 @@ After fixing, you should see:
 
 1. **Test page works:**
    ```
-   http://localhost:3000/test-oauth
+   https://goggly-casteless-torri.ngrok-free.dev/test-oauth
    ```
    Shows: ✅ Environment variables loaded
 
 2. **NextAuth providers endpoint works:**
    ```
-   http://localhost:3000/api/auth/providers
+   https://goggly-casteless-torri.ngrok-free.dev/api/auth/providers
    ```
    Returns: JSON with Google provider
 
 3. **Login page works:**
    ```
-   http://localhost:3000/login
+   https://goggly-casteless-torri.ngrok-free.dev/login
    ```
    Google button redirects to Google OAuth (not 404)
 
@@ -111,7 +111,7 @@ You can use the placeholder values in `.env.local.example` just to test that the
 ### For Production (Real Credentials)
 1. Go to https://console.cloud.google.com/
 2. Create OAuth 2.0 Client ID
-3. Add redirect URI: `http://localhost:3000/api/auth/callback/google`
+3. Add redirect URI: `https://goggly-casteless-torri.ngrok-free.dev/api/auth/callback/google`
 4. Copy Client ID and Secret to `.env.local`
 
 ---

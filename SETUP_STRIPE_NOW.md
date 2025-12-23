@@ -132,7 +132,7 @@ npm start
 
 ### Step 8: Test Subscription Flow
 
-1. Open: http://localhost:3000
+1. Open: https://goggly-casteless-torri.ngrok-free.dev
 2. Login to TimePulse
 3. Go to: **Settings** → **Billing**
 4. Click on a plan (e.g., Professional)
@@ -257,7 +257,7 @@ cd /Users/selva/Projects/TimePulse/frontend
 npm start
 ```
 
-**Done!** Test at http://localhost:3000 → Settings → Billing
+**Done!** Test at https://goggly-casteless-torri.ngrok-free.dev → Settings → Billing
 
 ---
 

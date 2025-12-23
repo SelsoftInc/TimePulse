@@ -17,7 +17,7 @@ try {
   console.log('GOOGLE_CLIENT_ID=1012443421048-sg42k7t4i6vcdaj0r14mac2ndn8b6ilp.apps.googleusercontent.com');
   console.log('GOOGLE_CLIENT_SECRET=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');
   console.log('NEXTAUTH_SECRET=your-random-secret-here');
-  console.log('NEXTAUTH_URL=http://localhost:3000');
+  console.log('NEXTAUTH_URL=https://goggly-casteless-torri.ngrok-free.dev');
   process.exit(1);
 }
 
@@ -39,7 +39,7 @@ if (!hasClientId || !hasClientSecret || !hasNextAuthSecret) {
   console.log('GOOGLE_CLIENT_ID=1012443421048-sg42k7t4i6vcdaj0r14mac2ndn8b6ilp.apps.googleusercontent.com');
   console.log('GOOGLE_CLIENT_SECRET=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');
   console.log('NEXTAUTH_SECRET=generate-a-random-secret-here');
-  console.log('NEXTAUTH_URL=http://localhost:3000');
+  console.log('NEXTAUTH_URL=https://goggly-casteless-torri.ngrok-free.dev');
   process.exit(1);
 } else {
   console.log('\n✅ OAuth configuration looks good!');

@@ -73,13 +73,13 @@ cd ..
 
 ## 🌐 Access Your Application
 
-- **Frontend**: http://localhost:3000
+- **Frontend**: https://goggly-casteless-torri.ngrok-free.dev
 - **Server API**: http://localhost:5001
 - **Engine API**: http://localhost:8000/docs
 
 ## ✅ Verify Everything Works
 
-Open http://localhost:3000 in your browser. You should see the TimePulse login page!
+Open https://goggly-casteless-torri.ngrok-free.dev in your browser. You should see the TimePulse login page!
 
 ## 🆘 Need Help?
 

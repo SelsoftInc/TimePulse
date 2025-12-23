@@ -22,7 +22,7 @@ node setup-encryption-keys.js
 
 ### **3. Restarted Servers**
 - ✅ Backend: http://localhost:5001
-- ✅ Frontend: http://localhost:3000
+- ✅ Frontend: https://goggly-casteless-torri.ngrok-free.dev
 
 ### **4. Verified Encryption**
 ```bash
@@ -44,7 +44,7 @@ Result: ✅ All tests passed!
 
 ## 🧪 Test Login Now
 
-1. **Open:** http://localhost:3000/login
+1. **Open:** https://goggly-casteless-torri.ngrok-free.dev/login
 2. **Enter:**
    - Email: `pushban@selsoftinc.com`
    - Password: `test123#`

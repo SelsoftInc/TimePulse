@@ -180,7 +180,7 @@ The frontend will receive:
 ## 🚀 Next Steps
 
 1. **Start the server**: `cd server && npm run dev`
-2. **Test in Next.js app**: Open http://localhost:3000
+2. **Test in Next.js app**: Open https://goggly-casteless-torri.ngrok-free.dev
 3. **Verify data is readable**: Check timesheets and invoices display correctly
 4. **Check browser console**: No encryption-related errors
 

@@ -137,10 +137,10 @@ cd server
 node set-existing-user-pending.js
 
 # 2. Login as admin
-# http://localhost:3000
+# https://goggly-casteless-torri.ngrok-free.dev
 
 # 3. Check notifications
-# http://localhost:3000/selsoft/notifications
+# https://goggly-casteless-torri.ngrok-free.dev/selsoft/notifications
 
 # 4. Approve user
 # User should receive email notification
@@ -150,7 +150,7 @@ node set-existing-user-pending.js
 
 ```bash
 # 1. Login as employee
-# http://localhost:3000
+# https://goggly-casteless-torri.ngrok-free.dev
 
 # 2. Submit leave request
 # Approver receives notification + email
@@ -263,7 +263,7 @@ const data = decryptAuthResponse(rawData); // Handles both encrypted and plain
 
 **Servers Running:**
 - ✅ Backend: http://localhost:5001
-- ✅ Frontend: http://localhost:3000
+- ✅ Frontend: https://goggly-casteless-torri.ngrok-free.dev
 
 **All Features Working:**
 - ✅ Encryption/Decryption

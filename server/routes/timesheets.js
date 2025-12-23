@@ -2299,7 +2299,7 @@ router.post("/:timesheetId/generate-invoice", async (req, res) => {
     });
 
     // Generate invoice link with subdomain
-    const baseUrl = process.env.APP_URL || 'http://localhost:3000';
+    const baseUrl = process.env.APP_URL || 'https://goggly-casteless-torri.ngrok-free.dev';
     const tenant = timesheet.tenant || await models.Tenant.findByPk(tenantId);
     const subdomain = tenant?.subdomain || 'app';
     const invoiceLink = `${baseUrl}/${subdomain}/invoices/${invoice.id}`;

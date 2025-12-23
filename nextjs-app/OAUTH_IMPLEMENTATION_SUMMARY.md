@@ -155,7 +155,7 @@ Successfully implemented Google OAuth authentication with role-based onboarding 
    ```
 
 4. **Test:**
-   - Open http://localhost:3000/login
+   - Open https://goggly-casteless-torri.ngrok-free.dev/login
    - Click "Sign in with Google"
    - Complete onboarding (first time)
    - Verify dashboard redirect
@@ -327,7 +327,7 @@ Required in `.env.local`:
 
 ```env
 # NextAuth
-NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_URL=https://goggly-casteless-torri.ngrok-free.dev
 NEXTAUTH_SECRET=your-random-secret
 
 # Google OAuth
@@ -338,7 +338,7 @@ GOOGLE_CLIENT_SECRET=your-client-secret
 NEXT_PUBLIC_API_URL=http://localhost:5001
 
 # App URL
-NEXT_PUBLIC_APP_URL=http://localhost:3000
+NEXT_PUBLIC_APP_URL=https://goggly-casteless-torri.ngrok-free.dev
 ```
 
 ---

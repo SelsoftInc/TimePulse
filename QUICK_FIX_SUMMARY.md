@@ -21,7 +21,7 @@ node setup-encryption-keys.js
 - ✅ `nextjs-app/.env.local` - Created with matching key
 
 ### **3. Restarted Servers**
-- ✅ Backend: http://localhost:5001
+- ✅ Backend: http://44.222.217.57:5001
 - ✅ Frontend: https://goggly-casteless-torri.ngrok-free.dev
 
 ### **4. Verified Encryption**

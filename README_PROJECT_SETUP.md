@@ -166,7 +166,7 @@ HOST=0.0.0.0
 DEBUG=False
 
 # CORS Settings
-CORS_ORIGINS=https://goggly-casteless-torri.ngrok-free.dev,http://localhost:5001
+CORS_ORIGINS=https://goggly-casteless-torri.ngrok-free.dev,http://44.222.217.57:5001
 
 # File Upload Settings
 MAX_FILE_SIZE_MB=10
@@ -180,8 +180,8 @@ LOG_FILE=app.log
 ### 3. Next.js Configuration (`nextjs-app/.env.local`)
 
 ```env
-NEXT_PUBLIC_API_URL=http://localhost:5001
-NEXT_PUBLIC_ENGINE_URL=http://localhost:8000
+NEXT_PUBLIC_API_URL=http://44.222.217.57:5001
+NEXT_PUBLIC_ENGINE_URL=http://44.222.217.57:8000
 ```
 
 ## 📦 Install Dependencies
@@ -256,16 +256,16 @@ Once all services are running:
 | Service | URL | Description |
 |---------|-----|-------------|
 | **Frontend** | https://goggly-casteless-torri.ngrok-free.dev | Main application UI |
-| **Server API** | http://localhost:5001 | Backend REST API |
-| **Engine API** | http://localhost:8000 | Document processing API |
-| **API Docs** | http://localhost:8000/docs | Interactive API documentation |
+| **Server API** | http://44.222.217.57:5001 | Backend REST API |
+| **Engine API** | http://44.222.217.57:8000 | Document processing API |
+| **API Docs** | http://44.222.217.57:8000/docs | Interactive API documentation |
 
 ## ✅ Verify Installation
 
 ### 1. Check Server Health
 
 ```powershell
-curl http://localhost:5001/api/health
+curl http://44.222.217.57:5001/api/health
 ```
 
 Expected response: `{"status":"ok"}`
@@ -273,7 +273,7 @@ Expected response: `{"status":"ok"}`
 ### 2. Check Engine Health
 
 ```powershell
-curl http://localhost:8000/health
+curl http://44.222.217.57:8000/health
 ```
 
 Expected response: `{"status":"healthy"}`
@@ -523,8 +523,8 @@ If you encounter issues:
 - [ ] Dependencies installed for all three components
 - [ ] All three services starting without errors
 - [ ] Can access https://goggly-casteless-torri.ngrok-free.dev
-- [ ] Can access http://localhost:5001/api/health
-- [ ] Can access http://localhost:8000/docs
+- [ ] Can access http://44.222.217.57:5001/api/health
+- [ ] Can access http://44.222.217.57:8000/docs
 
 ## 🚀 Next Steps
 

@@ -67,7 +67,7 @@ The server should automatically pick up the new Lookup model. If using nodemon, 
 
 Test the payment terms endpoint:
 ```bash
-curl http://localhost:5001/api/lookups/payment_terms
+curl http://44.222.217.57:5001/api/lookups/payment_terms
 ```
 
 **Expected Response**:
@@ -97,21 +97,21 @@ curl http://localhost:5001/api/lookups/payment_terms
 
 ### Get Payment Terms
 ```javascript
-const response = await fetch('http://localhost:5001/api/lookups/payment_terms');
+const response = await fetch('http://44.222.217.57:5001/api/lookups/payment_terms');
 const data = await response.json();
 // data.lookups contains the payment terms
 ```
 
 ### Get All Lookups
 ```javascript
-const response = await fetch('http://localhost:5001/api/lookups');
+const response = await fetch('http://44.222.217.57:5001/api/lookups');
 const data = await response.json();
 // data.lookups is grouped by category
 ```
 
 ### Create Custom Lookup (Admin)
 ```javascript
-const response = await fetch('http://localhost:5001/api/lookups', {
+const response = await fetch('http://44.222.217.57:5001/api/lookups', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({

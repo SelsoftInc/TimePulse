@@ -18,8 +18,8 @@ copy .env.example .env.local
 
 Edit `.env.local`:
 ```env
-NEXT_PUBLIC_API_URL=http://localhost:5001
-NEXT_PUBLIC_SOCKET_URL=http://localhost:5001
+NEXT_PUBLIC_API_URL=http://44.222.217.57:5001
+NEXT_PUBLIC_SOCKET_URL=http://44.222.217.57:5001
 ```
 
 ### Step 3: Update Imports (1 minute)
@@ -102,7 +102,7 @@ Add this to your component:
 ```
 
 ### Error: API calls failing
-1. Check backend is running: `http://localhost:5001`
+1. Check backend is running: `http://44.222.217.57:5001`
 2. Check `.env.local` has correct API_URL
 3. Restart Next.js dev server
 

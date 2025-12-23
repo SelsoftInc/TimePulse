@@ -77,8 +77,8 @@ if (-not (Test-Path "engine\.env")) {
 if (-not (Test-Path "nextjs-app\.env.local")) {
     Write-Host "   Creating nextjs-app\.env.local..." -ForegroundColor Cyan
     @"
-NEXT_PUBLIC_API_URL=http://localhost:5001
-NEXT_PUBLIC_ENGINE_URL=http://localhost:8000
+NEXT_PUBLIC_API_URL=http://44.222.217.57:5001
+NEXT_PUBLIC_ENGINE_URL=http://44.222.217.57:8000
 "@ | Out-File -FilePath "nextjs-app\.env.local" -Encoding UTF8
 }
 
@@ -141,9 +141,9 @@ Write-Host "✅ All services started!" -ForegroundColor Green
 Write-Host ""
 Write-Host "📍 Service URLs:" -ForegroundColor Cyan
 Write-Host "   🌐 Next.js App:  https://goggly-casteless-torri.ngrok-free.dev" -ForegroundColor White
-Write-Host "   🔧 Server API:   http://localhost:5001" -ForegroundColor White
-Write-Host "   ⚙️  Engine API:   http://localhost:8000" -ForegroundColor White
-Write-Host "   📚 Engine Docs:  http://localhost:8000/docs" -ForegroundColor White
+Write-Host "   🔧 Server API:   http://44.222.217.57:5001" -ForegroundColor White
+Write-Host "   ⚙️  Engine API:   http://44.222.217.57:8000" -ForegroundColor White
+Write-Host "   📚 Engine Docs:  http://44.222.217.57:8000/docs" -ForegroundColor White
 Write-Host ""
 Write-Host "💡 Tip: Each service is running in a separate PowerShell window" -ForegroundColor Yellow
 Write-Host "   Close the windows or press Ctrl+C in each to stop services" -ForegroundColor Yellow

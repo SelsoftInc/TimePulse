@@ -109,7 +109,7 @@ aws ecs create-cluster --cluster-name timepulse-engine-cluster --region us-east-
         {"name": "HOST", "value": "0.0.0.0"}
       ],
       "healthCheck": {
-        "command": ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"],
+        "command": ["CMD-SHELL", "curl -f http://44.222.217.57:8000/health || exit 1"],
         "interval": 30,
         "timeout": 5,
         "retries": 3

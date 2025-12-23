@@ -18,7 +18,7 @@ services:
   - BEDROCK_IDP_ENDPOINT=${BEDROCK_IDP_ENDPOINT}
       - MAX_FILE_SIZE_MB=10
       - ALLOWED_EXTENSIONS=png,jpg,jpeg,pdf,csv,docx,xlsx
-      - CORS_ORIGINS=https://goggly-casteless-torri.ngrok-free.dev,http://localhost:8000,https://yourdomain.com
+      - CORS_ORIGINS=https://goggly-casteless-torri.ngrok-free.dev,http://44.222.217.57:8000,https://yourdomain.com
       - LOG_LEVEL=INFO
       - LOG_FILE=app.log
       - RATE_LIMIT_PER_MINUTE=30
@@ -27,7 +27,7 @@ services:
       - ./uploads:/app/uploads
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: ["CMD", "curl", "-f", "http://44.222.217.57:8000/health"]
       interval: 30s
       timeout: 10s
       retries: 3

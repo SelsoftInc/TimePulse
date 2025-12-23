@@ -5,7 +5,7 @@
 
 const fetch = require('node-fetch');
 
-const API_BASE = 'http://localhost:5001';
+const API_BASE = 'http://44.222.217.57:5001';
 const TENANT_ID = '5eda5596-b1d9-4963-953d-7af9d0511ce8'; // Replace with actual tenant ID
 const TOKEN = 'your-auth-token'; // Replace with actual token
 

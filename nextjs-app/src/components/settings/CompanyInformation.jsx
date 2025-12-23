@@ -212,7 +212,7 @@ const CompanyInformation = () => {
         console.log("🗑️ Logo deletion requested");
       }
 
-      const apiBase = process.env.REACT_APP_API_BASE || 'http://localhost:5001';
+      const apiBase = process.env.REACT_APP_API_BASE || 'http://44.222.217.57:5001';
       console.log(
         `🌐 Making API call to: ${apiBase}/api/tenants/${tenantId}`
       );

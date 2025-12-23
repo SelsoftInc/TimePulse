@@ -148,7 +148,7 @@ Open your browser DevTools (F12) and check the Network tab:
 
 **Test Vendors API:**
 ```
-GET http://localhost:5001/api/vendors?tenantId=your-tenant-id
+GET http://44.222.217.57:5001/api/vendors?tenantId=your-tenant-id
 ```
 
 Response should show **decrypted plain text**:
@@ -168,7 +168,7 @@ Response should show **decrypted plain text**:
 
 **Test Employees API:**
 ```
-GET http://localhost:5001/api/employees?tenantId=your-tenant-id
+GET http://44.222.217.57:5001/api/employees?tenantId=your-tenant-id
 ```
 
 Response should show **decrypted plain text**:

@@ -200,8 +200,8 @@ if (-not (Test-Path "engine\.env")) {
 if (-not (Test-Path "nextjs-app\.env.local")) {
     Write-Host "   Creating nextjs-app\.env.local..." -ForegroundColor Cyan
     @"
-NEXT_PUBLIC_API_URL=http://localhost:5001
-NEXT_PUBLIC_ENGINE_URL=http://localhost:8000
+NEXT_PUBLIC_API_URL=http://44.222.217.57:5001
+NEXT_PUBLIC_ENGINE_URL=http://44.222.217.57:8000
 "@ | Out-File -FilePath "nextjs-app\.env.local" -Encoding UTF8
     Write-Host "✅ Created nextjs-app\.env.local" -ForegroundColor Green
 } else {
@@ -266,7 +266,7 @@ Write-Host '     🟢 TimePulse Server (Node.js)' -ForegroundColor Green
 Write-Host '═══════════════════════════════════════════════════════════' -ForegroundColor Cyan
 Write-Host ''
 Write-Host '📍 Port: 5001' -ForegroundColor Yellow
-Write-Host '📍 API: http://localhost:5001' -ForegroundColor Yellow
+Write-Host '📍 API: http://44.222.217.57:5001' -ForegroundColor Yellow
 Write-Host ''
 cd '$PWD\server'
 npm run dev
@@ -284,8 +284,8 @@ Write-Host '     🟢 TimePulse Engine (FastAPI)' -ForegroundColor Green
 Write-Host '═══════════════════════════════════════════════════════════' -ForegroundColor Cyan
 Write-Host ''
 Write-Host '📍 Port: 8000' -ForegroundColor Yellow
-Write-Host '📍 API: http://localhost:8000' -ForegroundColor Yellow
-Write-Host '📍 Docs: http://localhost:8000/docs' -ForegroundColor Yellow
+Write-Host '📍 API: http://44.222.217.57:8000' -ForegroundColor Yellow
+Write-Host '📍 Docs: http://44.222.217.57:8000/docs' -ForegroundColor Yellow
 Write-Host ''
 cd '$PWD\engine'
 .\venv\Scripts\Activate.ps1
@@ -318,9 +318,9 @@ Write-Host ""
 Write-Host "📍 Access Your Application:" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "   🌐 Frontend:    https://goggly-casteless-torri.ngrok-free.dev" -ForegroundColor White
-Write-Host "   🔧 Server API:  http://localhost:5001" -ForegroundColor White
-Write-Host "   ⚙️  Engine API:  http://localhost:8000" -ForegroundColor White
-Write-Host "   📚 API Docs:    http://localhost:8000/docs" -ForegroundColor White
+Write-Host "   🔧 Server API:  http://44.222.217.57:5001" -ForegroundColor White
+Write-Host "   ⚙️  Engine API:  http://44.222.217.57:8000" -ForegroundColor White
+Write-Host "   📚 API Docs:    http://44.222.217.57:8000/docs" -ForegroundColor White
 Write-Host ""
 Write-Host "💡 Tips:" -ForegroundColor Yellow
 Write-Host "   • Each service runs in a separate window" -ForegroundColor White

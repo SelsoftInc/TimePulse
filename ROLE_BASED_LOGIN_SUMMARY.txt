@@ -149,7 +149,7 @@ Previous Files (Still valid):
 
 Using cURL:
 ──────────
-curl -X POST http://localhost:5001/api/onboarding/create-default-users \
+curl -X POST http://44.222.217.57:5001/api/onboarding/create-default-users \
   -H "Content-Type: application/json" \
   -d '{"subdomain": "selsfot", "prefix": "Selsoft"}'
 
@@ -157,7 +157,7 @@ curl -X POST http://localhost:5001/api/onboarding/create-default-users \
 Using JavaScript/Fetch:
 ───────────────────────
 const response = await fetch(
-  'http://localhost:5001/api/onboarding/create-default-users',
+  'http://44.222.217.57:5001/api/onboarding/create-default-users',
   {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

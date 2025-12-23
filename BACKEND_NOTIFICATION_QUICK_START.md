@@ -457,19 +457,19 @@ router.patch('/api/timesheets/:id/reject', authenticateToken, async (req, res) =
 
 ```bash
 # Get all notifications
-curl -X GET "http://localhost:5001/api/notifications?tenantId=YOUR_TENANT_ID" \
+curl -X GET "http://44.222.217.57:5001/api/notifications?tenantId=YOUR_TENANT_ID" \
   -H "Authorization: Bearer YOUR_TOKEN"
 
 # Get unread count
-curl -X GET "http://localhost:5001/api/notifications/count?tenantId=YOUR_TENANT_ID" \
+curl -X GET "http://44.222.217.57:5001/api/notifications/count?tenantId=YOUR_TENANT_ID" \
   -H "Authorization: Bearer YOUR_TOKEN"
 
 # Mark as read
-curl -X PATCH "http://localhost:5001/api/notifications/NOTIFICATION_ID/read?tenantId=YOUR_TENANT_ID" \
+curl -X PATCH "http://44.222.217.57:5001/api/notifications/NOTIFICATION_ID/read?tenantId=YOUR_TENANT_ID" \
   -H "Authorization: Bearer YOUR_TOKEN"
 
 # Create notification (for testing)
-curl -X POST "http://localhost:5001/api/notifications?tenantId=YOUR_TENANT_ID" \
+curl -X POST "http://44.222.217.57:5001/api/notifications?tenantId=YOUR_TENANT_ID" \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{

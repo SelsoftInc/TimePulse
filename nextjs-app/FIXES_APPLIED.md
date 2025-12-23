@@ -113,8 +113,8 @@ The `src/config/api.js` file now provides:
 ### Environment Variables
 Make sure your `.env.local` has:
 ```env
-NEXT_PUBLIC_API_URL=http://localhost:5001
-NEXT_PUBLIC_SOCKET_URL=http://localhost:5001
+NEXT_PUBLIC_API_URL=http://44.222.217.57:5001
+NEXT_PUBLIC_SOCKET_URL=http://44.222.217.57:5001
 ```
 
 ### Import Pattern

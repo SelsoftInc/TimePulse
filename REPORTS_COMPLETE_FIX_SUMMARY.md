@@ -400,7 +400,7 @@ const toggleActions = (id, type) => {
 - [x] Date filtering working
 
 **Servers:**
-- [x] Backend running: http://localhost:5001
+- [x] Backend running: http://44.222.217.57:5001
 - [x] Frontend running: https://goggly-casteless-torri.ngrok-free.dev
 
 ---

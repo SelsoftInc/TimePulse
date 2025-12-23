@@ -7,7 +7,7 @@
 
 const fetch = require('node-fetch');
 
-const API_BASE = 'http://localhost:5001/api/onboarding';
+const API_BASE = 'http://44.222.217.57:5001/api/onboarding';
 const TENANT_NAME = 'Selsoft';
 const SUBDOMAIN = 'selsoft';
 

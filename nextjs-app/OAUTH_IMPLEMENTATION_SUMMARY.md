@@ -335,7 +335,7 @@ GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
 GOOGLE_CLIENT_SECRET=your-client-secret
 
 # Backend API
-NEXT_PUBLIC_API_URL=http://localhost:5001
+NEXT_PUBLIC_API_URL=http://44.222.217.57:5001
 
 # App URL
 NEXT_PUBLIC_APP_URL=https://goggly-casteless-torri.ngrok-free.dev

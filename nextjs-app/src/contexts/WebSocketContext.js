@@ -36,7 +36,7 @@ export const WebSocketProvider = ({ children }) => {
 
     const connectWebSocket = () => {
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:5001';
+        const apiUrl = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://44.222.217.57:5001';
         const newSocket = io(apiUrl, {
           auth: {
             token: typeof window !== 'undefined' ? localStorage.getItem('token') : null,

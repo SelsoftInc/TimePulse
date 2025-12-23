@@ -13,7 +13,7 @@ const axios = require('axios');
 const router = express.Router();
 
 // Python engine URL
-const PYTHON_ENGINE_URL = process.env.PYTHON_ENGINE_URL || 'http://localhost:8000';
+const PYTHON_ENGINE_URL = process.env.PYTHON_ENGINE_URL || 'http://44.222.217.57:8000';
 
 // Configure multer for file uploads
 const storage = multer.diskStorage({

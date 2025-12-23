@@ -28,7 +28,7 @@ This creates 4 default users:
 ### **Method 2: Using API (Postman/cURL)**
 
 ```bash
-curl -X POST http://localhost:5001/api/onboarding/create-default-users \
+curl -X POST http://44.222.217.57:5001/api/onboarding/create-default-users \
   -H "Content-Type: application/json" \
   -d '{
     "subdomain": "selsfot",
@@ -115,7 +115,7 @@ After running the creation script, you'll have these accounts:
 
 ### **Endpoint 1: Create Custom Users**
 
-**URL:** `POST http://localhost:5001/api/onboarding/create-role-users`
+**URL:** `POST http://44.222.217.57:5001/api/onboarding/create-role-users`
 
 **Body:**
 ```json
@@ -137,7 +137,7 @@ After running the creation script, you'll have these accounts:
 
 ### **Endpoint 2: Create Default Users**
 
-**URL:** `POST http://localhost:5001/api/onboarding/create-default-users`
+**URL:** `POST http://44.222.217.57:5001/api/onboarding/create-default-users`
 
 **Body:**
 ```json

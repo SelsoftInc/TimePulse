@@ -32,7 +32,7 @@ class Settings(BaseSettings):
     PDF_TO_PNG_DPI: int = 300
     
     # CORS
-    CORS_ORIGINS: str = "https://goggly-casteless-torri.ngrok-free.dev,http://localhost:8000"
+    CORS_ORIGINS: str = "https://goggly-casteless-torri.ngrok-free.dev,http://44.222.217.57:8000"
     
     # Logging
     LOG_LEVEL: str = "INFO"

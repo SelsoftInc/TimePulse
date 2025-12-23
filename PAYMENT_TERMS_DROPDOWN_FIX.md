@@ -16,7 +16,7 @@ The `fetchPaymentTerms` function was using `REACT_APP_API_BASE` instead of `NEXT
 
 ```javascript
 // OLD - Wrong environment variable
-const response = await fetch(`${process.env.REACT_APP_API_BASE || 'http://localhost:5001'}/api/lookups/payment_terms`);
+const response = await fetch(`${process.env.REACT_APP_API_BASE || 'http://44.222.217.57:5001'}/api/lookups/payment_terms`);
 ```
 
 **Problem**: `REACT_APP_API_BASE` is undefined in Next.js (it's a Create React App variable)
@@ -34,7 +34,7 @@ The `lookups` table had no payment terms seeded, so even if the API call worked,
 // NEW - Correct environment variable
 export const fetchPaymentTerms = async () => {
   try {
-    const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+    const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://44.222.217.57:5001';
     const response = await fetch(`${API_BASE}/api/lookups/payment_terms`);
     if (response.ok) {
       const data = await response.json();
@@ -114,7 +114,7 @@ node scripts/seed-payment-terms.js
 
 2. **API Call** to `/api/lookups/payment_terms`
    ```javascript
-   GET http://localhost:5001/api/lookups/payment_terms
+   GET http://44.222.217.57:5001/api/lookups/payment_terms
    ```
 
 3. **Backend Response** from `server/routes/lookups.js`
@@ -257,7 +257,7 @@ SELECT * FROM lookups WHERE category = 'payment_terms' ORDER BY display_order;
 
 ### 2. Test API Endpoint
 ```bash
-curl http://localhost:5001/api/lookups/payment_terms
+curl http://44.222.217.57:5001/api/lookups/payment_terms
 ```
 
 **Expected Response**:

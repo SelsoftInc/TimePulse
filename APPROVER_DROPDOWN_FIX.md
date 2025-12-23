@@ -172,7 +172,7 @@ Server running on port 5001
 **Check 2: API Endpoint Working?**
 ```bash
 # Test directly:
-curl "http://localhost:5001/api/timesheets/reviewers?tenantId=5eda5596-b1d9-4963-953d-7af9d0511ce8"
+curl "http://44.222.217.57:5001/api/timesheets/reviewers?tenantId=5eda5596-b1d9-4963-953d-7af9d0511ce8"
 ```
 
 **Check 3: Console Errors?**

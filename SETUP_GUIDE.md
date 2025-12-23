@@ -129,7 +129,7 @@ HOST=0.0.0.0
 PORT=8000
 
 # CORS Settings
-CORS_ORIGINS=https://goggly-casteless-torri.ngrok-free.dev,http://localhost:5001
+CORS_ORIGINS=https://goggly-casteless-torri.ngrok-free.dev,http://44.222.217.57:5001
 
 # File Upload Settings
 MAX_FILE_SIZE_MB=10
@@ -157,8 +157,8 @@ cd nextjs-app
 Create `.env.local`:
 
 ```env
-NEXT_PUBLIC_API_URL=http://localhost:5001
-NEXT_PUBLIC_ENGINE_URL=http://localhost:8000
+NEXT_PUBLIC_API_URL=http://44.222.217.57:5001
+NEXT_PUBLIC_ENGINE_URL=http://44.222.217.57:8000
 ```
 
 ## 📦 Install Dependencies
@@ -256,16 +256,16 @@ npm run dev
 Once all services are running:
 
 - **Frontend (Next.js)**: https://goggly-casteless-torri.ngrok-free.dev
-- **Backend API (Server)**: http://localhost:5001
-- **Engine API**: http://localhost:8000
-- **Engine API Docs**: http://localhost:8000/docs
+- **Backend API (Server)**: http://44.222.217.57:5001
+- **Engine API**: http://44.222.217.57:8000
+- **Engine API Docs**: http://44.222.217.57:8000/docs
 
 ## ✅ Verify Installation
 
 ### 1. Check Server
 
 ```bash
-curl http://localhost:5001/api/health
+curl http://44.222.217.57:5001/api/health
 ```
 
 Expected response: `{"status":"ok"}`
@@ -273,7 +273,7 @@ Expected response: `{"status":"ok"}`
 ### 2. Check Engine
 
 ```bash
-curl http://localhost:8000/health
+curl http://44.222.217.57:8000/health
 ```
 
 Expected response: `{"status":"healthy"}`
@@ -409,10 +409,10 @@ Expected: `✅ ALL TESTS PASSED`
 
 ```bash
 # Test server health
-curl http://localhost:5001/api/health
+curl http://44.222.217.57:5001/api/health
 
 # Test engine health
-curl http://localhost:8000/health
+curl http://44.222.217.57:8000/health
 ```
 
 ## 📚 Additional Resources
@@ -420,7 +420,7 @@ curl http://localhost:8000/health
 - **Server Documentation**: `server/README.md`
 - **Engine Documentation**: `engine/README.md`
 - **Encryption Documentation**: `server/ENCRYPTION_README.md`
-- **API Documentation**: http://localhost:8000/docs (when engine is running)
+- **API Documentation**: http://44.222.217.57:8000/docs (when engine is running)
 
 ## 🔐 Security Notes
 

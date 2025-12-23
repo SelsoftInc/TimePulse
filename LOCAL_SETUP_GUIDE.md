@@ -63,7 +63,7 @@ npm run setup-db
 cd server
 npm start
 ```
-The backend will run on http://localhost:5001
+The backend will run on http://44.222.217.57:5001
 
 **Start Frontend (in a new terminal):**
 ```bash
@@ -74,7 +74,7 @@ The frontend will run on https://goggly-casteless-torri.ngrok-free.dev
 
 ### 5. Verify Setup
 
-1. Backend health check: http://localhost:5001/health
+1. Backend health check: http://44.222.217.57:5001/health
 2. Frontend application: https://goggly-casteless-torri.ngrok-free.dev
 
 ## Available Scripts

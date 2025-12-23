@@ -94,7 +94,7 @@ grep -n "employees/by-email" routes/timesheets.js
 
 ### Check 2: Test Route Directly
 ```bash
-curl "http://localhost:5001/api/timesheets/employees/by-email/selvakumar@selsoftinc.com?tenantId=5eda5596-b1d9-4963-953d-7af9d0511ce8"
+curl "http://44.222.217.57:5001/api/timesheets/employees/by-email/selvakumar@selsoftinc.com?tenantId=5eda5596-b1d9-4963-953d-7af9d0511ce8"
 ```
 
 ### Check 3: Verify Timesheet Status

@@ -74,8 +74,8 @@ cd ..
 ## 🌐 Access Your Application
 
 - **Frontend**: https://goggly-casteless-torri.ngrok-free.dev
-- **Server API**: http://localhost:5001
-- **Engine API**: http://localhost:8000/docs
+- **Server API**: http://44.222.217.57:5001
+- **Engine API**: http://44.222.217.57:8000/docs
 
 ## ✅ Verify Everything Works
 

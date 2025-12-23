@@ -4,7 +4,7 @@
 export const API_BASE = (() => {
   const envBase = process.env.NEXT_PUBLIC_API_URL;
   if (envBase) return envBase;
-  const fallback = "http://localhost:5001";
+  const fallback = "http://44.222.217.57:5001";
   // Surface a helpful hint in dev
   if (typeof window !== "undefined" && process.env.NODE_ENV !== "production") {
     // eslint-disable-next-line no-console
@@ -14,7 +14,7 @@ export const API_BASE = (() => {
 })();
 
 export const API_URL = `${API_BASE}/api`;
-export const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:5001';
+export const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://44.222.217.57:5001';
 
 /**
  * apiFetch: wrapper around fetch that prefixes API_BASE and sets JSON headers.

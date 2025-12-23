@@ -46,11 +46,11 @@ This document outlines the conversion of the `ForgotPassword.jsx` React componen
 
 ### 5. **Environment Variables**
 - **Before**: `import { API_BASE } from '../../config/api';`
-- **After**: `const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:5001';`
+- **After**: `const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'http://44.222.217.57:5001';`
 - **Reason**: Next.js requires `NEXT_PUBLIC_` prefix for client-side environment variables
 - **Note**: Add to `.env.local`:
 ```env
-NEXT_PUBLIC_API_BASE=http://localhost:5001
+NEXT_PUBLIC_API_BASE=http://44.222.217.57:5001
 ```
 
 ### 6. **CSS Import**
@@ -123,7 +123,7 @@ nextjs-converted/
 ### 1. **Environment Variables**
 Create `.env.local` in project root:
 ```env
-NEXT_PUBLIC_API_BASE=http://localhost:5001
+NEXT_PUBLIC_API_BASE=http://44.222.217.57:5001
 ```
 
 ### 2. **Move Assets**

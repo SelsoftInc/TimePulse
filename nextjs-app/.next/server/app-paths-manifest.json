@@ -1,8 +1,6 @@
 {
-  "/api/auth/[...nextauth]/route": "app/api/auth/[...nextauth]/route.js",
-  "/[subdomain]/settings/page": "app/[subdomain]/settings/page.js",
-  "/[subdomain]/notifications/page": "app/[subdomain]/notifications/page.js",
-  "/[subdomain]/leave-management/page": "app/[subdomain]/leave-management/page.js",
-  "/[subdomain]/dashboard/page": "app/[subdomain]/dashboard/page.js",
-  "/[subdomain]/reports/page": "app/[subdomain]/reports/page.js"
+  "/_not-found/page": "app/_not-found/page.js",
+  "/page": "app/page.js",
+  "/login/page": "app/login/page.js",
+  "/api/auth/[...nextauth]/route": "app/api/auth/[...nextauth]/route.js"
 }

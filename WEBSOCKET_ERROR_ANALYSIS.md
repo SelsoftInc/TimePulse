@@ -40,7 +40,7 @@ WebSocket connection error: Rl: websocket error
 
 ```javascript
 const newSocket = io(
-  process.env.REACT_APP_API_BASE || "http://localhost:5001",
+  process.env.REACT_APP_API_BASE || "http://44.222.217.57:5001",
   {
     auth: {
       token: localStorage.getItem("token"),
@@ -89,7 +89,7 @@ this.io = new Server(server, {
 ```javascript
 const connectWebSocket = () => {
   try {
-    const apiBase = process.env.REACT_APP_API_BASE || "http://localhost:5001";
+    const apiBase = process.env.REACT_APP_API_BASE || "http://44.222.217.57:5001";
     
     const newSocket = io(apiBase, {
       auth: {

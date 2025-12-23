@@ -179,7 +179,7 @@ Response: {"success":true,"data":{...}}
 
 ## Backend Server Status
 
-✅ **Server Running:** http://localhost:5001
+✅ **Server Running:** http://44.222.217.57:5001
 ✅ **Database Connected:** PostgreSQL
 ✅ **All Routes Loaded:** Successfully
 ✅ **All Endpoints Working:** 200 OK responses

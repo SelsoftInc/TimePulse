@@ -51,15 +51,15 @@ const data = response.data;
 ## 🔧 CONFIGURATION
 
 ### **API Base URL:**
-- **Server:** `http://localhost:5001` (configured in `server/.env`)
-- **Next.js:** Points to `http://localhost:5001` (configured in `.env.local`)
+- **Server:** `http://44.222.217.57:5001` (configured in `server/.env`)
+- **Next.js:** Points to `http://44.222.217.57:5001` (configured in `.env.local`)
 
 ### **Files:**
 
 **nextjs-app/.env.local:**
 ```env
-NEXT_PUBLIC_API_URL=http://localhost:5001
-NEXT_PUBLIC_SOCKET_URL=http://localhost:5001
+NEXT_PUBLIC_API_URL=http://44.222.217.57:5001
+NEXT_PUBLIC_SOCKET_URL=http://44.222.217.57:5001
 NEXT_PUBLIC_APP_NAME=TimePulse
 NEXT_PUBLIC_APP_URL=https://goggly-casteless-torri.ngrok-free.dev
 ```
@@ -90,7 +90,7 @@ npm start
 **Expected output:**
 ```
 🚀 TimePulse Server running on port 5001
-📖 Health check: http://localhost:5001/health
+📖 Health check: http://44.222.217.57:5001/health
 🔧 Environment: development
 🗄️  Database: Connected
 🔌 WebSocket: Enabled
@@ -171,7 +171,7 @@ Browser (Next.js)
     ↓
 axios.get(`${API_BASE}/api/timesheets`)
     ↓
-http://localhost:5001/api/timesheets
+http://44.222.217.57:5001/api/timesheets
     ↓
 Server (Express)
     ↓

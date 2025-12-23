@@ -48,7 +48,7 @@ Check notifications section shows:
 
 Open browser console and run:
 ```javascript
-fetch('http://localhost:5001/api/employee-dashboard?employeeId=YOUR_EMPLOYEE_ID&tenantId=YOUR_TENANT_ID', {
+fetch('http://44.222.217.57:5001/api/employee-dashboard?employeeId=YOUR_EMPLOYEE_ID&tenantId=YOUR_TENANT_ID', {
   headers: {
     'Authorization': 'Bearer ' + localStorage.getItem('token')
   }

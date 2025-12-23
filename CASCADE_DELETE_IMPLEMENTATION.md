@@ -83,7 +83,7 @@ if (models.LeaveRequest) {
 
 1. **Via API**:
 ```bash
-curl -X DELETE "http://localhost:5001/api/employees/{employeeId}?tenantId={tenantId}" \
+curl -X DELETE "http://44.222.217.57:5001/api/employees/{employeeId}?tenantId={tenantId}" \
   -H "Authorization: Bearer YOUR_TOKEN"
 ```
 

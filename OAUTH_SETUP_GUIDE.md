@@ -72,8 +72,8 @@ Google OAuth credentials (`GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`) are not
 
 ```bash
 # Backend API Configuration
-NEXT_PUBLIC_API_URL=http://localhost:5001
-NEXT_PUBLIC_SOCKET_URL=http://localhost:5001
+NEXT_PUBLIC_API_URL=http://44.222.217.57:5001
+NEXT_PUBLIC_SOCKET_URL=http://44.222.217.57:5001
 
 # Application Configuration
 NEXT_PUBLIC_APP_NAME=TimePulse

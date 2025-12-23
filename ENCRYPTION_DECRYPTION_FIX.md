@@ -240,7 +240,7 @@ The following routes now use encryption:
 ```bash
 cd server
 npm start
-# Server running on http://localhost:5001
+# Server running on http://44.222.217.57:5001
 ```
 
 ### **Frontend:**

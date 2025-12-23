@@ -168,11 +168,11 @@ const Login = () => {
       ) {
         // Use real authentication for test user
         console.log("=== DEBUGGING LOGIN ===");
-        console.log("Making request to:", `${API_BASE}/api/auth/login`);
+        console.log("Making request to:", `${API_BASE}api/auth/login`);
 
         let response, data;
         try {
-          response = await fetch(`${API_BASE}/api/auth/login`, {
+          response = await fetch(`${API_BASE}api/auth/login`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json"},
@@ -254,7 +254,7 @@ const Login = () => {
         }
       } else {
         // Try real authentication with backend
-        const response = await fetch(`${API_BASE}/api/auth/login`, {
+        const response = await fetch(`${API_BASE}api/auth/login`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json"},

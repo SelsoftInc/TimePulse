@@ -33,7 +33,7 @@ function testLogin() {
     const options = {
       hostname: "zewunzistm.us-east-1.awsapprunner.com",
       port: 443,
-      path: "/api/auth/login",
+      path: "api/auth/login",
       method: "POST",
       headers: {
         "Content-Type": "application/json",

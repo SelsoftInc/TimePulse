@@ -5,7 +5,7 @@
 const axios = require('axios');
 
 async function testEndpoints() {
-  const baseURL = 'http://localhost:5001';
+  const baseURL = 'http://44.222.217.57:5001';
   
   console.log('Testing API Endpoints...\n');
   console.log('═══════════════════════════════════════════════════════\n');

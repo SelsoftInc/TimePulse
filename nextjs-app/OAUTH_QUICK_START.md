@@ -46,7 +46,7 @@
    cd server
    npm start
    ```
-   Should run on http://localhost:5001
+   Should run on http://44.222.217.57:5001
 
 2. **Frontend (Terminal 2):**
    ```bash

@@ -291,7 +291,7 @@ All users are required to change their password on first login.
 
 **cURL:**
 ```bash
-curl -X POST http://localhost:5001/api/onboarding/create-role-users \
+curl -X POST http://44.222.217.57:5001/api/onboarding/create-role-users \
   -H "Content-Type: application/json" \
   -d '{
     "subdomain": "selsfot",
@@ -330,7 +330,7 @@ curl -X POST http://localhost:5001/api/onboarding/create-role-users \
 
 **JavaScript (Fetch):**
 ```javascript
-const response = await fetch('http://localhost:5001/api/onboarding/create-role-users', {
+const response = await fetch('http://44.222.217.57:5001/api/onboarding/create-role-users', {
   method: 'POST',
   headers: {
     'Content-Type': 'application/json'
@@ -361,7 +361,7 @@ console.log('Default password:', result.defaultPassword);
 
 **cURL:**
 ```bash
-curl -X POST http://localhost:5001/api/onboarding/create-default-users \
+curl -X POST http://44.222.217.57:5001/api/onboarding/create-default-users \
   -H "Content-Type: application/json" \
   -d '{
     "subdomain": "selsfot",
@@ -371,7 +371,7 @@ curl -X POST http://localhost:5001/api/onboarding/create-default-users \
 
 **JavaScript (Fetch):**
 ```javascript
-const response = await fetch('http://localhost:5001/api/onboarding/create-default-users', {
+const response = await fetch('http://44.222.217.57:5001/api/onboarding/create-default-users', {
   method: 'POST',
   headers: {
     'Content-Type': 'application/json'
@@ -429,7 +429,7 @@ console.log('Login credentials:', result.loginCredentials);
 
 ### **Step 1: Create Default Users**
 ```bash
-curl -X POST http://localhost:5001/api/onboarding/create-default-users \
+curl -X POST http://44.222.217.57:5001/api/onboarding/create-default-users \
   -H "Content-Type: application/json" \
   -d '{"subdomain": "selsfot", "prefix": "Test"}'
 ```
@@ -491,7 +491,7 @@ Use the `/create-role-users` endpoint to create proper role-based accounts.
 
 ```bash
 # Create default users for quick testing
-curl -X POST http://localhost:5001/api/onboarding/create-default-users \
+curl -X POST http://44.222.217.57:5001/api/onboarding/create-default-users \
   -H "Content-Type: application/json" \
   -d '{
     "subdomain": "selsfot",

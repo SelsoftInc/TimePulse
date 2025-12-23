@@ -64,7 +64,7 @@ The "Timesheets" screen requires an employee record. Admin user needs to be adde
 1. Check backend console for errors
 2. Verify API endpoint is working:
    ```
-   GET http://localhost:5001/api/timesheets/approved-today?tenantId=1&date=2025-10-07
+   GET http://44.222.217.57:5001/api/timesheets/approved-today?tenantId=1&date=2025-10-07
    ```
 3. Check if `approvedAt` field is set in database:
    ```sql
@@ -76,7 +76,7 @@ The "Timesheets" screen requires an employee record. Admin user needs to be adde
 2. Look for error messages
 3. Check if employee record exists:
    ```
-   GET http://localhost:5001/api/timesheets/employees/by-email/admin@pushpan.com?tenantId=1
+   GET http://44.222.217.57:5001/api/timesheets/employees/by-email/admin@pushpan.com?tenantId=1
    ```
 4. If employee not found, create employee record (see Step 3 above)
 

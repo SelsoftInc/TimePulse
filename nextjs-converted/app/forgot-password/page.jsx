@@ -26,7 +26,7 @@ const ForgotPasswordPage = () => {
     }
 
     try {
-      const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:5001';
+      const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'http://44.222.217.57:5001';
       const response = await fetch(`${API_BASE}/api/password-reset/request`, {
         method: 'POST',
         headers: {

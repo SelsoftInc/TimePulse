@@ -218,7 +218,7 @@ const dashboardData = await response.json();
 
 Test the endpoint directly:
 ```bash
-curl "http://localhost:5001/api/employee-dashboard?employeeId=YOUR_EMPLOYEE_ID&tenantId=YOUR_TENANT_ID" \
+curl "http://44.222.217.57:5001/api/employee-dashboard?employeeId=YOUR_EMPLOYEE_ID&tenantId=YOUR_TENANT_ID" \
   -H "Authorization: Bearer YOUR_TOKEN"
 ```
 

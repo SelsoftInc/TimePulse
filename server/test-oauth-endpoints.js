@@ -5,7 +5,7 @@
 
 const axios = require('axios');
 
-const API_BASE = process.env.API_BASE || 'http://localhost:5001';
+const API_BASE = process.env.API_BASE || 'http://44.222.217.57:5001';
 
 async function testOAuthEndpoints() {
   console.log('🧪 Testing OAuth Endpoints\n');

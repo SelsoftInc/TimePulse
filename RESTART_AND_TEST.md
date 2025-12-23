@@ -27,12 +27,12 @@ Wait for these messages:
 Open a new terminal and run:
 ```bash
 # Test 1: Employee lookup
-curl "http://localhost:5001/api/timesheets/employees/by-email/selvakumar@selsoftinc.com?tenantId=5eda5596-b1d9-4963-953d-7af9d0511ce8"
+curl "http://44.222.217.57:5001/api/timesheets/employees/by-email/selvakumar@selsoftinc.com?tenantId=5eda5596-b1d9-4963-953d-7af9d0511ce8"
 
 # Expected: {"success":true,"employee":{"id":"5c1982f0-bf32-4945-b6a6-b3eaf5a27cb3",...}}
 
 # Test 2: Pending approvals
-curl "http://localhost:5001/api/timesheets/pending-approval?tenantId=5eda5596-b1d9-4963-953d-7af9d0511ce8"
+curl "http://44.222.217.57:5001/api/timesheets/pending-approval?tenantId=5eda5596-b1d9-4963-953d-7af9d0511ce8"
 
 # Expected: {"success":true,"timesheets":[{...}]}
 ```

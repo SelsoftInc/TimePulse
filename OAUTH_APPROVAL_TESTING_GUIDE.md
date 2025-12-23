@@ -3,7 +3,7 @@
 ## 🚀 Quick Start
 
 ### Prerequisites
-1. Backend server running on `http://localhost:5001`
+1. Backend server running on `http://44.222.217.57:5001`
 2. Frontend running on `https://goggly-casteless-torri.ngrok-free.dev`
 3. Database migration completed
 4. Google OAuth configured
@@ -317,7 +317,7 @@ WHERE email = 'user@example.com';
 ```javascript
 // Create 100 test notifications
 for (let i = 0; i < 100; i++) {
-  await fetch('http://localhost:5001/api/notifications', {
+  await fetch('http://44.222.217.57:5001/api/notifications', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

@@ -31,7 +31,7 @@ The 404 error occurs because NextAuth routes are not properly configured or envi
    GOOGLE_CLIENT_SECRET=your-google-client-secret
    
    # Backend API URL
-   NEXT_PUBLIC_API_URL=http://localhost:5001
+   NEXT_PUBLIC_API_URL=http://44.222.217.57:5001
    
    # App URL
    NEXT_PUBLIC_APP_URL=https://goggly-casteless-torri.ngrok-free.dev
@@ -110,7 +110,7 @@ This page will show:
 - [ ] `NEXTAUTH_URL` is set to `https://goggly-casteless-torri.ngrok-free.dev`
 - [ ] `GOOGLE_CLIENT_ID` is set (even if placeholder)
 - [ ] `GOOGLE_CLIENT_SECRET` is set (even if placeholder)
-- [ ] `NEXT_PUBLIC_API_URL` is set to `http://localhost:5001`
+- [ ] `NEXT_PUBLIC_API_URL` is set to `http://44.222.217.57:5001`
 - [ ] Next.js server restarted after creating `.env.local`
 - [ ] Backend server is running on port 5001
 - [ ] Test page loads: https://goggly-casteless-torri.ngrok-free.dev/test-oauth
@@ -204,7 +204,7 @@ GOOGLE_CLIENT_ID=123456789-abcdefghijklmnop.apps.googleusercontent.com
 GOOGLE_CLIENT_SECRET=GOCSPX-abcdefghijklmnopqrstuvwx
 
 # Backend API URL
-NEXT_PUBLIC_API_URL=http://localhost:5001
+NEXT_PUBLIC_API_URL=http://44.222.217.57:5001
 
 # App URL
 NEXT_PUBLIC_APP_URL=https://goggly-casteless-torri.ngrok-free.dev

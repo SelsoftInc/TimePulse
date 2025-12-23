@@ -37,7 +37,7 @@ cp path/to/TimePulseLogoAuth.png your-nextjs-project/public/images/
 Create or update `.env.local`:
 
 ```env
-NEXT_PUBLIC_API_BASE=http://localhost:5001
+NEXT_PUBLIC_API_BASE=http://44.222.217.57:5001
 ```
 
 ### 3. Install Dependencies (if needed)

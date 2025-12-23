@@ -45,13 +45,13 @@ npm start
 Open **ANOTHER** PowerShell window and run:
 ```powershell
 # Test 1: Check server is running
-curl http://localhost:5001/health
+curl http://44.222.217.57:5001/health
 
 # Test 2: Check pending approvals
-curl "http://localhost:5001/api/timesheets/pending-approval?tenantId=5eda5596-b1d9-4963-953d-7af9d0511ce8"
+curl "http://44.222.217.57:5001/api/timesheets/pending-approval?tenantId=5eda5596-b1d9-4963-953d-7af9d0511ce8"
 
 # Test 3: Check employee lookup
-curl "http://localhost:5001/api/timesheets/employees/by-email/selvakumar@selsoftinc.com?tenantId=5eda5596-b1d9-4963-953d-7af9d0511ce8"
+curl "http://44.222.217.57:5001/api/timesheets/employees/by-email/selvakumar@selsoftinc.com?tenantId=5eda5596-b1d9-4963-953d-7af9d0511ce8"
 ```
 
 **Expected Results:**

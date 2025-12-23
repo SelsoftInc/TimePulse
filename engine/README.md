@@ -72,9 +72,9 @@ One model call extracts text AND structures data simultaneously!
    ```
 
 6. **Access the application:**
-   - Web Interface: http://localhost:8000
-   - API Documentation: http://localhost:8000/docs
-   - Health Check: http://localhost:8000/health
+   - Web Interface: http://44.222.217.57:8000
+   - API Documentation: http://44.222.217.57:8000/docs
+   - Health Check: http://44.222.217.57:8000/health
 
 ## 🧪 Testing with Postman
 
@@ -82,7 +82,7 @@ One model call extracts text AND structures data simultaneously!
 
 1. **Create a New Request**
    - Method: **POST**
-   - URL: `http://localhost:8000/api/v1/timesheet/extract`
+   - URL: `http://44.222.217.57:8000/api/v1/timesheet/extract`
 
 2. **Configure Request Body**
    - Go to **Body** tab
@@ -121,7 +121,7 @@ Save this as `timesheet-api.postman_collection.json`:
           ]
         },
         "url": {
-          "raw": "http://localhost:8000/api/v1/timesheet/extract",
+          "raw": "http://44.222.217.57:8000/api/v1/timesheet/extract",
           "protocol": "http",
           "host": ["localhost"],
           "port": "8000",
@@ -134,7 +134,7 @@ Save this as `timesheet-api.postman_collection.json`:
       "name": "Health Check",
       "request": {
         "method": "GET",
-        "url": "http://localhost:8000/health"
+        "url": "http://44.222.217.57:8000/health"
       }
     }
   ]
@@ -210,9 +210,9 @@ CLAUDE_MODEL_ID=us.anthropic.claude-3-5-sonnet-20241022-v2:0
    ```
 
 6. **Access the application:**
-   - Web Interface: http://localhost:8000
-   - API Documentation: http://localhost:8000/docs
-   - Health Check: http://localhost:8000/health
+   - Web Interface: http://44.222.217.57:8000
+   - API Documentation: http://44.222.217.57:8000/docs
+   - Health Check: http://44.222.217.57:8000/health
 
 ## Configuration
 
@@ -231,7 +231,7 @@ CLAUDE_MODEL_ID=us.anthropic.claude-3-5-sonnet-20241022-v2:0
 | `BEDROCK_IDP_ENDPOINT` | Optional Bedrock IDP endpoint for document processing | (empty) |
 | `MAX_FILE_SIZE_MB` | Maximum file size | `10` |
 | `ALLOWED_EXTENSIONS` | Allowed file types | `png,jpg,jpeg,pdf,csv,docx,xlsx` |
-| `CORS_ORIGINS` | CORS allowed origins | `https://goggly-casteless-torri.ngrok-free.dev,http://localhost:8000` |
+| `CORS_ORIGINS` | CORS allowed origins | `https://goggly-casteless-torri.ngrok-free.dev,http://44.222.217.57:8000` |
 | `LOG_LEVEL` | Logging level | `INFO` |
 | `RATE_LIMIT_PER_MINUTE` | API rate limit | `30` |
 
@@ -337,7 +337,7 @@ The application uses structured logging with Loguru:
 ## 💻 Example Usage
 
 ### Web Interface
-1. Open http://localhost:8000
+1. Open http://44.222.217.57:8000
 2. Drag and drop or browse for a timesheet file
 3. Click "Extract Timesheet Data"
 4. View structured results instantly
@@ -345,7 +345,7 @@ The application uses structured logging with Loguru:
 ### cURL Example
 
 ```bash
-curl -X POST "http://localhost:8000/api/v1/timesheet/extract" \
+curl -X POST "http://44.222.217.57:8000/api/v1/timesheet/extract" \
   -H "Content-Type: multipart/form-data" \
   -F "file=@timesheet.pdf"
 ```
@@ -358,7 +358,7 @@ import requests
 # Single file upload
 with open('timesheet.png', 'rb') as f:
     response = requests.post(
-        'http://localhost:8000/api/v1/timesheet/extract',
+        'http://44.222.217.57:8000/api/v1/timesheet/extract',
         files={'file': f}
     )
 

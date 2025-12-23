@@ -16,7 +16,7 @@ const SimpleLogin = () => {
       localStorage.clear();
 
       // Use real authentication
-      const response = await fetch(`${API_BASE}/api/auth/login`, {
+      const response = await fetch(`${API_BASE}api/auth/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json"},

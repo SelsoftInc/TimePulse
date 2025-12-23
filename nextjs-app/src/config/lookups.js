@@ -95,7 +95,7 @@ export const PAYMENT_TERMS_OPTIONS = [
 // Fetch payment terms from API
 export const fetchPaymentTerms = async () => {
   try {
-    const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+    const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://44.222.217.57:5001';
     const response = await fetch(`${API_BASE}/api/lookups/payment_terms`);
     if (response.ok) {
       const data = await response.json();

@@ -262,7 +262,7 @@ const data = decryptAuthResponse(rawData); // Handles both encrypted and plain
 **Status:** ✅ **RESOLVED - Everything Working!**
 
 **Servers Running:**
-- ✅ Backend: http://localhost:5001
+- ✅ Backend: http://44.222.217.57:5001
 - ✅ Frontend: https://goggly-casteless-torri.ngrok-free.dev
 
 **All Features Working:**

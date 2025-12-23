@@ -219,7 +219,7 @@ npm start
 
 ```javascript
 // Test fetching pending users
-fetch('http://localhost:5001/api/user-approvals/pending?tenantId=5eda5596-b1d9-4963-953d-7af9d0511ce8', {
+fetch('http://44.222.217.57:5001/api/user-approvals/pending?tenantId=5eda5596-b1d9-4963-953d-7af9d0511ce8', {
   headers: {
     'Authorization': 'Bearer YOUR_TOKEN'
   }

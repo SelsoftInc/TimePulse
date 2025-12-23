@@ -42,8 +42,8 @@ Ensure `nextjs-app/.env.local` exists with:
 
 ```env
 # Backend API Configuration
-NEXT_PUBLIC_API_URL=http://localhost:5001
-NEXT_PUBLIC_SOCKET_URL=http://localhost:5001
+NEXT_PUBLIC_API_URL=http://44.222.217.57:5001
+NEXT_PUBLIC_SOCKET_URL=http://44.222.217.57:5001
 
 # Application Configuration
 NEXT_PUBLIC_APP_NAME=TimePulse
@@ -73,7 +73,7 @@ After starting both servers, you should see:
 **Server Terminal:**
 ```
 🚀 TimePulse Server running on port 5001
-📖 Health check: http://localhost:5001/health
+📖 Health check: http://44.222.217.57:5001/health
 🔧 Environment: development
 🗄️  Database: Connected
 🔌 WebSocket: Enabled

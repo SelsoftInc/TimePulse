@@ -41,7 +41,7 @@ $checks = @{
     "NEXTAUTH_SECRET" = $null
     "GOOGLE_CLIENT_ID" = $null
     "GOOGLE_CLIENT_SECRET" = $null
-    "NEXT_PUBLIC_API_URL" = "http://localhost:5001"
+    "NEXT_PUBLIC_API_URL" = "http://44.222.217.57:5001"
     "NEXT_PUBLIC_APP_URL" = "https://goggly-casteless-torri.ngrok-free.dev"
 }
 

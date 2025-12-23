@@ -81,7 +81,7 @@ npm run dev
 
 ### Access Points
 - **Frontend:** https://goggly-casteless-torri.ngrok-free.dev
-- **Backend API:** http://localhost:5001
+- **Backend API:** http://44.222.217.57:5001
 - **Dashboard:** https://goggly-casteless-torri.ngrok-free.dev/selsoft/dashboard
 
 ## ✅ Expected Behavior
@@ -248,7 +248,7 @@ All documentation files available:
 
 5. **Verify environment variables:**
    - Check `.env.local` exists
-   - Verify `NEXT_PUBLIC_API_URL=http://localhost:5001`
+   - Verify `NEXT_PUBLIC_API_URL=http://44.222.217.57:5001`
 
 ## 🎊 Success Metrics
 

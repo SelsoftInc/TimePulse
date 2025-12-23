@@ -35,7 +35,7 @@ The script will:
    NEXTAUTH_SECRET=8KzP9mN2vL5xR7wQ3jT6hY4nB1gF0sA8dE2cV5xZ9mK3pL7wR4tY6hN8jB0gF2sA
    GOOGLE_CLIENT_ID=your-google-client-id.apps.googleusercontent.com
    GOOGLE_CLIENT_SECRET=your-google-client-secret
-   NEXT_PUBLIC_API_URL=http://localhost:5001
+   NEXT_PUBLIC_API_URL=http://44.222.217.57:5001
    NEXT_PUBLIC_APP_URL=https://goggly-casteless-torri.ngrok-free.dev
    ```
 

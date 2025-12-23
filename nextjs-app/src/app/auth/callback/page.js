@@ -32,7 +32,7 @@ export default function AuthCallback() {
         
         try {
           // Check if user exists in our database
-          const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+          const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://44.222.217.57:5001';
           console.log('[OAuth Callback] API Base:', API_BASE);
           console.log('[OAuth Callback] Calling check-user endpoint...');
           

@@ -41,8 +41,8 @@ export default function RootLayout({ children }) {
           href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
         />
         {/* Preconnect to API server for faster requests */}
-        <link rel="preconnect" href="http://localhost:5001" />
-        <link rel="dns-prefetch" href="http://localhost:5001" />
+        <link rel="preconnect" href="http://44.222.217.57:5001" />
+        <link rel="dns-prefetch" href="http://44.222.217.57:5001" />
       </head>
       <body className={inter.className} suppressHydrationWarning>
         <SessionProvider>

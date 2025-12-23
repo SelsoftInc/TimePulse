@@ -17,88 +17,10 @@
       "static/css/app/login/page.css",
       "static/chunks/app/login/page.js"
     ],
-    "/[subdomain]/dashboard/page": [
+    "/_not-found/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/css/app/[subdomain]/dashboard/page.css",
-      "static/chunks/app/[subdomain]/dashboard/page.js"
-    ],
-    "/[subdomain]/layout": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/css/app/[subdomain]/layout.css",
-      "static/chunks/app/[subdomain]/layout.js"
-    ],
-    "/[subdomain]/employees/[id]/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/css/app/[subdomain]/employees/[id]/page.css",
-      "static/chunks/app/[subdomain]/employees/[id]/page.js"
-    ],
-    "/[subdomain]/vendors/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/css/app/[subdomain]/vendors/page.css",
-      "static/chunks/app/[subdomain]/vendors/page.js"
-    ],
-    "/[subdomain]/vendors/new/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/css/app/[subdomain]/vendors/new/page.css",
-      "static/chunks/app/[subdomain]/vendors/new/page.js"
-    ],
-    "/[subdomain]/vendors/edit/[id]/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/css/app/[subdomain]/vendors/edit/[id]/page.css",
-      "static/chunks/app/[subdomain]/vendors/edit/[id]/page.js"
-    ],
-    "/[subdomain]/clients/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/css/app/[subdomain]/clients/page.css",
-      "static/chunks/app/[subdomain]/clients/page.js"
-    ],
-    "/[subdomain]/settings/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/css/app/[subdomain]/settings/page.css",
-      "static/chunks/app/[subdomain]/settings/page.js"
-    ],
-    "/[subdomain]/employee-dashboard/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/css/app/[subdomain]/employee-dashboard/page.css",
-      "static/chunks/app/[subdomain]/employee-dashboard/page.js"
-    ],
-    "/[subdomain]/notifications/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/css/app/[subdomain]/notifications/page.css",
-      "static/chunks/app/[subdomain]/notifications/page.js"
-    ],
-    "/[subdomain]/leave-management/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/css/app/[subdomain]/leave-management/page.css",
-      "static/chunks/app/[subdomain]/leave-management/page.js"
-    ],
-    "/[subdomain]/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/css/app/[subdomain]/page.css",
-      "static/chunks/app/[subdomain]/page.js"
-    ],
-    "/auth/callback/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/auth/callback/page.js"
-    ],
-    "/[subdomain]/reports/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/css/app/[subdomain]/reports/page.css",
-      "static/chunks/app/[subdomain]/reports/page.js"
+      "static/chunks/app/_not-found/page.js"
     ]
   }
 }

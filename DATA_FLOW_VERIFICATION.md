@@ -268,7 +268,7 @@ Should show: Cognizant client exists
 **Check 2: Backend API**
 ```bash
 # Check if server is running
-curl http://localhost:5001/api/clients?tenantId=5eda5596-b1d9-4963-953d-7af9d0511ce8
+curl http://44.222.217.57:5001/api/clients?tenantId=5eda5596-b1d9-4963-953d-7af9d0511ce8
 ```
 Should return: `{ "success": true, "clients": [...] }`
 

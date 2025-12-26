@@ -60,6 +60,9 @@ const LeaveApprovals = () => {
 
   const { user } = useAuth();
   const { toast } = useToast();
+  
+  // Hydration fix: Track if component is mounted on client
+  const [isMounted, setIsMounted] = useState(false);
   const [loading, setLoading] = useState(true);
   const [pendingRequests, setPendingRequests] = useState([]);
   const [allRequests, setAllRequests] = useState([]);
@@ -80,6 +83,14 @@ const LeaveApprovals = () => {
   const fetchLeaveRequests = useCallback(async () => {
     try {
       setLoading(true);
+      
+      if (!user?.id || !user?.tenantId) {
+        console.warn('⚠️ Leave Approvals: Missing user ID or tenant ID', { userId: user?.id, tenantId: user?.tenantId });
+        setLoading(false);
+        return;
+      }
+
+      console.log('🔍 Fetching leave approvals for:', { managerId: user.id, tenantId: user.tenantId });
       
       // Fetch pending approvals
       const pendingResponse = await fetch(
@@ -124,11 +135,39 @@ const LeaveApprovals = () => {
     }
   }, [user?.id, user?.tenantId, isAdmin]);
 
+  // Hydration fix: Set mounted state on client
   useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  // Fetch data only after component is mounted
+  useEffect(() => {
+    if (!isMounted) return;
+    
     if (isApprover) {
       fetchLeaveRequests();
+    } else {
+      setLoading(false);
     }
-  }, [isApprover, fetchLeaveRequests]);
+  }, [isMounted, isApprover, fetchLeaveRequests]);
+
+  // Auto-refresh when page becomes visible (e.g., after approving/rejecting leave)
+  useEffect(() => {
+    if (!isMounted) return;
+
+    const handleVisibilityChange = () => {
+      if (!document.hidden && user?.tenantId && isApprover) {
+        console.log('🔄 Leave Approvals: Page became visible, reloading data...');
+        fetchLeaveRequests();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [isMounted, user?.tenantId, isApprover, fetchLeaveRequests]);
 
   const handleApprove = async () => {
     if (!selectedRequest) return;

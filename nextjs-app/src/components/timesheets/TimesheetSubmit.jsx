@@ -1161,9 +1161,12 @@ const TimesheetSubmit = () => {
       console.log("📤 Submitting timesheet with approver:", selectedApprover);
 
       // Get employee ID and name
-      const employeeId = !isEmployee() ? selectedEmployee : user.employeeId;
+      // For employees: use user.id (their user ID is their employee ID)
+      // For admins/managers: use the selected employee from dropdown
+      const employeeId = !isEmployee() ? selectedEmployee : (user.employeeId || user.id);
 
       if (!employeeId) {
+        console.error("❌ Employee ID not found. User object:", user);
         toast.error(
           "Employee ID not found. Please try logging in again.",
           "error"
@@ -1724,7 +1727,7 @@ const TimesheetSubmit = () => {
       setUploadedAiFile(file);
 
       try {
-        const employeeId = !isEmployee() ? selectedEmployee : user.employeeId;
+        const employeeId = !isEmployee() ? selectedEmployee : (user.employeeId || user.id);
         const result = await uploadAndProcessTimesheet(file, employeeId);
 
         if (result.success) {
@@ -3028,9 +3031,10 @@ const TimesheetSubmit = () => {
               console.log("📤 Proceeding with overtime submission after comment provided");
               
               // Get employee ID
-              const employeeId = !isEmployee() ? selectedEmployee : user.employeeId;
+              const employeeId = !isEmployee() ? selectedEmployee : (user.employeeId || user.id);
               
               if (!employeeId) {
+                console.error("❌ Employee ID not found. User object:", user);
                 toast.error("Employee ID not found. Please try logging in again.", "error");
                 setSubmitting(false);
                 return;

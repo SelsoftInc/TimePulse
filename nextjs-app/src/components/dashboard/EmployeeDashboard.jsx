@@ -363,8 +363,14 @@ const EmployeeDashboard = () => {
 
   useEffect(() => {
     const loadDashboardData = async () => {
-      if (!user?.tenantId || !user?.employeeId) {
-        console.warn("Missing tenant ID or employee ID");
+      // Use user.id as employeeId if employeeId is not set
+      const employeeId = user?.employeeId || user?.id;
+      const tenantId = user?.tenantId;
+
+      console.log('🔍 Dashboard loading with:', { employeeId, tenantId, user });
+
+      if (!tenantId || !employeeId) {
+        console.warn("Missing tenant ID or employee ID", { tenantId, employeeId });
         setLoading(false);
         return;
       }
@@ -372,20 +378,28 @@ const EmployeeDashboard = () => {
       try {
         setLoading(true);
 
-        // Fetch dashboard data from new API endpoint
+        // Fetch dashboard data from API endpoint
+        const apiUrl = `/api/employee-dashboard?employeeId=${employeeId}&tenantId=${tenantId}`;
+        console.log('📡 Fetching dashboard from:', apiUrl);
+
         const dashboardResponse = await apiFetch(
-          `/api/employee-dashboard?employeeId=${user.employeeId}&tenantId=${user.tenantId}`,
+          apiUrl,
           {
             method: "GET",
             headers: {
               Authorization: `Bearer ${localStorage.getItem("token")}`}}
         );
 
+        console.log('📊 Dashboard response status:', dashboardResponse.status);
+
         if (!dashboardResponse.ok) {
-          throw new Error("Failed to fetch dashboard data");
+          const errorText = await dashboardResponse.text();
+          console.error('❌ Dashboard API error:', errorText);
+          throw new Error(`Failed to fetch dashboard data: ${dashboardResponse.status}`);
         }
 
         const dashboardData = await dashboardResponse.json();
+        console.log('✅ Dashboard data received:', dashboardData);
 
         if (!dashboardData.success) {
           throw new Error(dashboardData.error || "Failed to load dashboard");

@@ -15,7 +15,7 @@ import { WebSocketProvider } from '@/contexts/WebSocketContext';
 import { ToastProvider, ToastContainer } from '@/contexts/ToastContext';
 import { NotificationProvider } from '@/contexts/NotificationContext';
 import { SessionProvider } from 'next-auth/react';
-import DemoControls from '@/components/demo/DemoControls';
+// import DemoControls from '@/components/demo/DemoControls';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useState } from 'react';
 
@@ -54,7 +54,7 @@ export default function RootLayout({ children }) {
                     <WebSocketProvider>
                       {children}
                       <ToastContainer />
-                      <DemoControls />
+                      {/* <DemoControls /> */}
                     </WebSocketProvider>
                   </NotificationProvider>
                 </AuthProvider>

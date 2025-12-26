@@ -232,20 +232,27 @@ const TimesheetSummary = () => {
         // Regular employee - get their own timesheets
         console.log('👤 Employee detected - loading personal timesheets');
 
-        // First, get the employee ID from email
-        console.log('📡 Fetching employee by email...');
-        const empResponse = await axios.get(`${API_BASE}/api/timesheets/employees/by-email/${encodeURIComponent(userEmail)}?tenantId=${tenantId}`);
+        // Try to get employeeId from user object first, fallback to email lookup
+        let employeeId = user?.employeeId || user?.id;
+        console.log('🔍 Initial employeeId from user:', employeeId);
 
-        if (!empResponse.data.success || !empResponse.data.employee) {
-          console.error('❌ Employee not found for email:', userEmail);
-          console.error('This user may not have an employee record.');
-          setTimesheets([]);
-          setLoading(false);
-          return;
+        // If no employeeId, try to get it from email
+        if (!employeeId) {
+          console.log('📡 Fetching employee by email...');
+          const empResponse = await axios.get(`${API_BASE}/api/timesheets/employees/by-email/${encodeURIComponent(userEmail)}?tenantId=${tenantId}`);
+
+          if (!empResponse.data.success || !empResponse.data.employee) {
+            console.error('❌ Employee not found for email:', userEmail);
+            console.error('This user may not have an employee record.');
+            setTimesheets([]);
+            setLoading(false);
+            return;
+          }
+
+          employeeId = empResponse.data.employee.id;
         }
-
-        const employeeId = empResponse.data.employee.id;
-        console.log('✅ Got employeeId:', employeeId);
+        
+        console.log('✅ Using employeeId:', employeeId);
 
         // Fetch all timesheets for the employee from API
         const apiUrl = `${API_BASE}/api/timesheets/employee/${employeeId}/all?tenantId=${tenantId}`;
@@ -319,6 +326,24 @@ const TimesheetSummary = () => {
     
     checkAndFetch();
   }, [isMounted, user, loadTimesheetData]);
+
+  // Auto-refresh when page becomes visible (e.g., after submitting a timesheet)
+  useEffect(() => {
+    if (!isMounted) return;
+
+    const handleVisibilityChange = () => {
+      if (!document.hidden && user?.tenantId) {
+        console.log('🔄 Page became visible, reloading timesheet data...');
+        loadTimesheetData();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [isMounted, user?.tenantId, loadTimesheetData]);
 
   // useEffect(() => {
   //   if (isMounted && location.state?.refresh && user?.tenantId) {

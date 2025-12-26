@@ -18,6 +18,9 @@ const LeaveManagement = () => {
   const isApprover = userRole === "admin" || userRole === "manager" || userRole === "hr";
   const isAdmin = userRole === "admin";
   const isOwner = isAdmin; // Owners are admins who don't need personal leave balance
+  
+  // Hydration fix: Track if component is mounted on client
+  const [isMounted, setIsMounted] = useState(false);
   const [loading, setLoading] = useState(true);
   const [leaveData, setLeaveData] = useState({
     balance: {},
@@ -48,9 +51,12 @@ const LeaveManagement = () => {
       setLoading(true);
 
       if (!user?.id || !user?.tenantId) {
+        console.warn('⚠️ Leave Management: Missing user ID or tenant ID', { userId: user?.id, tenantId: user?.tenantId });
         setLoading(false);
         return;
       }
+
+      console.log('🔍 Fetching leave data for:', { userId: user.id, tenantId: user.tenantId });
 
       // Fetch leave balance
       const balanceResponse = await fetch(
@@ -155,10 +161,36 @@ const LeaveManagement = () => {
     }
   }, [user?.tenantId]);
 
+  // Hydration fix: Set mounted state on client
   useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  // Fetch data only after component is mounted
+  useEffect(() => {
+    if (!isMounted) return;
+    
     fetchLeaveData();
     fetchApprovers();
-  }, [fetchLeaveData, fetchApprovers]);
+  }, [isMounted, fetchLeaveData, fetchApprovers]);
+
+  // Auto-refresh when page becomes visible (e.g., after approving/rejecting leave)
+  useEffect(() => {
+    if (!isMounted) return;
+
+    const handleVisibilityChange = () => {
+      if (!document.hidden && user?.tenantId) {
+        console.log('🔄 Leave Management: Page became visible, reloading data...');
+        fetchLeaveData();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [isMounted, user?.tenantId, fetchLeaveData]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -363,7 +395,8 @@ const LeaveManagement = () => {
     }
   };
 
-  if (loading) {
+  // Prevent hydration mismatch - don't render until mounted
+  if (!isMounted || loading) {
     return (
       <div
         style={{

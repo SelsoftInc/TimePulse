@@ -100,7 +100,7 @@ router.get("/", async (req, res) => {
       required: false,
     });
 
-    // Add Timesheet association to get employee and vendor data
+    // Add Timesheet association to get employee data (without vendor - association removed)
     includeClause.push({
       model: models.Timesheet,
       as: "timesheet",
@@ -109,14 +109,8 @@ router.get("/", async (req, res) => {
       include: [{
         model: models.Employee,
         as: "employee",
-        attributes: ["id", "firstName", "lastName", "vendorId"],
-        required: false,
-        include: [{
-          model: models.Vendor,
-          as: "vendor",
-          attributes: ["id", "name", "email"],
-          required: false
-        }]
+        attributes: ["id", "firstName", "lastName"],
+        required: false
       }]
     });
 
@@ -139,10 +133,7 @@ router.get("/", async (req, res) => {
         decryptedInv.vendor = DataEncryptionService.decryptVendorData(decryptedInv.vendor);
       }
       
-      // Decrypt nested vendor in timesheet.employee.vendor
-      if (decryptedInv.timesheet?.employee?.vendor) {
-        decryptedInv.timesheet.employee.vendor = DataEncryptionService.decryptVendorData(decryptedInv.timesheet.employee.vendor);
-      }
+      // Note: employee.vendor association removed - vendor comes from invoice.vendorId only
       
       // Decrypt client if present
       if (decryptedInv.client) {
@@ -155,7 +146,7 @@ router.get("/", async (req, res) => {
     const formattedInvoices = fullyDecryptedInvoices.map((inv) => ({
       id: inv.id,
       invoiceNumber: inv.invoiceNumber,
-      vendor: inv.vendor?.name || inv.timesheet?.employee?.vendor?.name || "N/A",
+      vendor: inv.vendor?.name || "N/A",
       client: inv.client?.clientName || "N/A",
       employee: inv.employee
         ? `${inv.employee.firstName} ${inv.employee.lastName}`
@@ -195,8 +186,8 @@ router.get("/", async (req, res) => {
     const transformedInvoices = fullyDecryptedInvoices.map((inv) => ({
       id: inv.id,
       invoiceNumber: inv.invoiceNumber,
-      vendor: inv.vendor?.name || inv.timesheet?.employee?.vendor?.name || "N/A",
-      vendorEmail: inv.vendor?.email || inv.timesheet?.employee?.vendor?.email || "N/A",
+      vendor: inv.vendor?.name || "N/A",
+      vendorEmail: inv.vendor?.email || "N/A",
       client: inv.client ? inv.client.clientName : "No Client",
       employeeId: inv.timesheet?.employeeId || inv.employeeId,
       employeeName: inv.timesheet?.employee
@@ -510,23 +501,12 @@ router.get("/:id/pdf-data", async (req, res) => {
       try {
         employee = await models.Employee.findOne({
           where: { id: employeeId },
-          attributes: ["id", "firstName", "lastName", "email", "title", "position", "department", "hourlyRate", "vendorId"]
+          attributes: ["id", "firstName", "lastName", "email", "title", "position", "department", "hourlyRate"]
         });
         console.log('✅ Employee found:', employee?.firstName, employee?.lastName);
 
-        // If employee has vendor and we don't have vendor yet, fetch it
-        if (employee?.vendorId && !vendor) {
-          const vendorRaw = await models.Vendor.findOne({
-            where: { id: employee.vendorId },
-            attributes: ["id", "name", "email", "phone", "address", "city", "state", "zipCode"]
-          });
-          
-          if (vendorRaw) {
-            const vendorPlain = vendorRaw.toJSON ? vendorRaw.toJSON() : vendorRaw;
-            vendor = DataEncryptionService.decryptVendorData(vendorPlain);
-            console.log('✅ Vendor found and decrypted via employee:', vendor?.name);
-          }
-        }
+        // Note: vendorId column doesn't exist in employee table anymore
+        // Vendor should come from invoice.vendorId directly
       } catch (err) {
         console.log('⚠️ Employee fetch error:', err.message);
       }
@@ -726,42 +706,20 @@ router.get("/:id", async (req, res) => {
       }
     }
 
-    // Fetch employee with vendor association
+    // Fetch employee
     const employeeId = invoice.employeeId || timesheet?.employeeId;
     if (employeeId) {
       try {
         employee = await models.Employee.findOne({
           where: { id: employeeId },
-          attributes: ["id", "firstName", "lastName", "email", "title", "position", "department", "hourlyRate", "vendorId"],
-          include: [{
-            model: models.Vendor,
-            as: 'vendor',
-            attributes: ["id", "name", "email", "phone", "address", "city", "state", "zipCode"],
-            required: false
-          }]
+          attributes: ["id", "firstName", "lastName", "email", "title", "position", "department", "hourlyRate"]
         });
         console.log('✅ Employee found:', employee?.firstName, employee?.lastName);
-        console.log('✅ Employee vendor (nested):', employee?.vendor?.name, employee?.vendor?.email);
-
-        // If employee has vendor and we don't have vendor yet, use employee's vendor
-        if (employee?.vendor && !vendor) {
-          const vendorPlain = employee.vendor.toJSON ? employee.vendor.toJSON() : employee.vendor;
-          vendor = DataEncryptionService.decryptVendorData(vendorPlain);
-          console.log('✅ Using vendor from employee association (decrypted):', vendor?.name, 'Email:', vendor?.email);
-        } else if (employee?.vendorId && !vendor) {
-          // Fallback: Fetch vendor separately if association didn't work
-          const vendorRaw = await models.Vendor.findOne({
-            where: { id: employee.vendorId },
-            attributes: ["id", "name", "email", "phone", "address", "city", "state", "zipCode"]
-          });
-          
-          if (vendorRaw) {
-            const vendorPlain = vendorRaw.toJSON ? vendorRaw.toJSON() : vendorRaw;
-            vendor = DataEncryptionService.decryptVendorData(vendorPlain);
-            console.log('✅ Vendor found via separate query (decrypted):', vendor?.name, 'Email:', vendor?.email);
-          }
-        } else if (!vendor) {
-          console.log('⚠️ No vendor found - employee.vendorId:', employee?.vendorId);
+        
+        // Note: vendorId column doesn't exist in employee table anymore
+        // Vendor should come from invoice.vendorId directly
+        if (!vendor) {
+          console.log('⚠️ No vendor found in invoice data');
         }
       } catch (err) {
         console.log('⚠️ Employee fetch error:', err.message);

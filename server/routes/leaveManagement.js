@@ -95,6 +95,7 @@ router.post("/request", async (req, res) => {
     // Check if employee exists, if not create one
     let employee = await Employee.findOne({
       where: { id: employeeId, tenantId },
+      attributes: ['id', 'tenantId', 'firstName', 'lastName', 'email', 'status', 'startDate']
     });
 
     if (!employee) {
@@ -284,6 +285,7 @@ router.get("/balance", async (req, res) => {
     // Check if employee exists, if not create one
     let employee = await Employee.findOne({
       where: { id: employeeId, tenantId },
+      attributes: ['id', 'tenantId', 'firstName', 'lastName', 'email', 'status', 'startDate']
     });
 
     if (!employee) {

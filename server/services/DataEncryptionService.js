@@ -251,12 +251,30 @@ class DataEncryptionService {
         if (typeof encrypted.contactInfo === 'object') {
           // If it's an object, stringify it first then encrypt
           const contactInfoStr = JSON.stringify(encrypted.contactInfo);
-          if (contactInfoStr !== '{}') {
+          if (contactInfoStr !== '{}' && contactInfoStr !== 'null') {
             encrypted.contactInfo = encryptionService.encrypt(contactInfoStr);
+          } else {
+            // Empty object, set to null or empty JSONB
+            encrypted.contactInfo = {};
           }
         } else if (typeof encrypted.contactInfo === 'string' && encrypted.contactInfo.trim()) {
-          // If it's already a string, encrypt it as-is
-          encrypted.contactInfo = encryptionService.encrypt(encrypted.contactInfo);
+          // If it's already a string, it might be a JSON string from frontend
+          // Try to parse it first to validate, then encrypt
+          try {
+            const parsed = JSON.parse(encrypted.contactInfo);
+            const contactInfoStr = JSON.stringify(parsed);
+            if (contactInfoStr !== '{}' && contactInfoStr !== 'null') {
+              encrypted.contactInfo = encryptionService.encrypt(contactInfoStr);
+            } else {
+              encrypted.contactInfo = {};
+            }
+          } catch (e) {
+            // Not valid JSON, encrypt as plain string
+            encrypted.contactInfo = encryptionService.encrypt(encrypted.contactInfo);
+          }
+        } else {
+          // Empty or null, set to empty JSONB
+          encrypted.contactInfo = {};
         }
       }
       
@@ -265,26 +283,14 @@ class DataEncryptionService {
         encrypted.notes = encryptionService.encrypt(encrypted.notes);
       }
 
-      // Encrypt numeric fields - only if they are valid numbers
+      // Don't encrypt numeric fields - database columns are DECIMAL type, not encrypted
+      // Keep hourlyRate and salaryAmount as plain numbers to match database schema
       if (encrypted.hourlyRate !== null && encrypted.hourlyRate !== undefined && encrypted.hourlyRate !== '') {
-        const rate = parseFloat(encrypted.hourlyRate);
-        if (!isNaN(rate)) {
-          encrypted.hourlyRate = encryptionService.encryptNumber(rate);
-        }
+        encrypted.hourlyRate = parseFloat(encrypted.hourlyRate);
       }
       
       if (encrypted.salaryAmount !== null && encrypted.salaryAmount !== undefined && encrypted.salaryAmount !== '') {
-        const amount = parseFloat(encrypted.salaryAmount);
-        if (!isNaN(amount)) {
-          encrypted.salaryAmount = encryptionService.encryptNumber(amount);
-        }
-      }
-      
-      if (encrypted.overtimeRate !== null && encrypted.overtimeRate !== undefined && encrypted.overtimeRate !== '') {
-        const rate = parseFloat(encrypted.overtimeRate);
-        if (!isNaN(rate)) {
-          encrypted.overtimeRate = encryptionService.encryptNumber(rate);
-        }
+        encrypted.salaryAmount = parseFloat(encrypted.salaryAmount);
       }
 
       console.log('🔒 Employee data encrypted');
@@ -346,17 +352,14 @@ class DataEncryptionService {
         decrypted.notes = encryptionService.decrypt(decrypted.notes);
       }
 
-      // Decrypt numeric fields
-      if (decrypted.hourlyRate !== null && decrypted.hourlyRate !== undefined && typeof decrypted.hourlyRate === 'string') {
-        decrypted.hourlyRate = encryptionService.decryptNumber(decrypted.hourlyRate);
+      // Numeric fields are NOT encrypted (database columns are DECIMAL type)
+      // Just ensure they are numbers
+      if (decrypted.hourlyRate !== null && decrypted.hourlyRate !== undefined) {
+        decrypted.hourlyRate = parseFloat(decrypted.hourlyRate) || 0;
       }
       
-      if (decrypted.salaryAmount !== null && decrypted.salaryAmount !== undefined && typeof decrypted.salaryAmount === 'string') {
-        decrypted.salaryAmount = encryptionService.decryptNumber(decrypted.salaryAmount);
-      }
-      
-      if (decrypted.overtimeRate !== null && decrypted.overtimeRate !== undefined && typeof decrypted.overtimeRate === 'string') {
-        decrypted.overtimeRate = encryptionService.decryptNumber(decrypted.overtimeRate);
+      if (decrypted.salaryAmount !== null && decrypted.salaryAmount !== undefined) {
+        decrypted.salaryAmount = parseFloat(decrypted.salaryAmount) || 0;
       }
 
       console.log('🔓 Employee data decrypted');

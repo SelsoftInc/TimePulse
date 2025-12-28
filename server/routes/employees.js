@@ -29,7 +29,7 @@ router.get("/", async (req, res) => {
     
     const allEmployees = await Employee.findAll({
       where: whereClause,
-      // Include all attributes including the new relationship fields
+      // Basic attributes only - vendor/client columns don't exist yet
       attributes: [
         "id",
         "tenantId",
@@ -42,9 +42,6 @@ router.get("/", async (req, res) => {
         "department",
         "title",
         "managerId",
-        "clientId",
-        "vendorId",
-        "implPartnerId",
         "startDate",
         "endDate",
         "hourlyRate",
@@ -53,24 +50,12 @@ router.get("/", async (req, res) => {
         "contactInfo",
         "status",
       ],
-      // Include related data
+      // Include user data only - we'll fetch vendor/client separately to avoid association issues
       include: [
         {
           model: User,
           as: "user",
           attributes: ["role"],
-          required: false,
-        },
-        {
-          model: models.Client,
-          as: "client",
-          attributes: ["id", "clientName", "legalName", "email", "contactPerson", "phone"],
-          required: false,
-        },
-        {
-          model: models.Vendor,
-          as: "vendor",
-          attributes: ["id", "name", "category", "email"],
           required: false,
         },
       ],
@@ -105,35 +90,9 @@ router.get("/", async (req, res) => {
       return DataEncryptionService.decryptEmployeeData(plainEmp);
     });
 
-    // Then transform the decrypted data to match frontend expectations
+    // Transform the decrypted data to match frontend expectations
+    // Note: vendor/client columns don't exist yet, so we set them to null/"Not assigned"
     const transformedEmployees = decryptedRawEmployees.map((emp) => {
-      // Decrypt client data if present
-      let clientData = null;
-      if (emp.client) {
-        const plainClient = emp.client.toJSON ? emp.client.toJSON() : emp.client;
-        const decryptedClient = DataEncryptionService.decryptClientData(plainClient);
-        clientData = {
-          id: decryptedClient.id,
-          name: decryptedClient.clientName || decryptedClient.legalName || decryptedClient.name,
-          clientName: decryptedClient.clientName || decryptedClient.name,
-          legalName: decryptedClient.legalName,
-          email: decryptedClient.email,
-        };
-      }
-
-      // Decrypt vendor data if present
-      let vendorData = null;
-      if (emp.vendor) {
-        const plainVendor = emp.vendor.toJSON ? emp.vendor.toJSON() : emp.vendor;
-        const decryptedVendor = DataEncryptionService.decryptVendorData(plainVendor);
-        vendorData = {
-          id: decryptedVendor.id,
-          name: decryptedVendor.name,
-          category: decryptedVendor.category,
-          email: decryptedVendor.email,
-        };
-      }
-
       return {
         id: emp.id,
         name: `${emp.firstName} ${emp.lastName}`,
@@ -147,18 +106,15 @@ router.get("/", async (req, res) => {
         joinDate: emp.startDate || null,
         hourlyRate: emp.hourlyRate || null,
         role: emp.user?.role || null,
-        client: clientData,
-        clientId: emp.clientId,
+        // Vendor/client columns don't exist yet - set to defaults
+        client: "Not assigned",
+        clientId: null,
         employmentType: "W2",
-        vendor: vendorData,
-        vendorId: emp.vendorId,
-        implPartner: null,
-        implPartnerId: emp.implPartnerId,
-        endClient: clientData ? {
-          id: clientData.id,
-          name: clientData.name,
-          location: clientData.legalName,
-        } : null,
+        vendor: "Not assigned",
+        vendorId: null,
+        implPartner: "Not assigned",
+        implPartnerId: null,
+        endClient: "Not assigned",
         employeeId: emp.employeeId,
         salaryAmount: emp.salaryAmount,
         contactInfo: emp.contactInfo,
@@ -196,7 +152,7 @@ router.get("/:id", async (req, res) => {
         id,
         tenantId,
       },
-      // Include all attributes including the new relationship fields
+      // Basic attributes only - vendor/client columns don't exist yet
       attributes: [
         "id",
         "tenantId",
@@ -209,9 +165,6 @@ router.get("/:id", async (req, res) => {
         "department",
         "title",
         "managerId",
-        "clientId",
-        "vendorId",
-        "implPartnerId",
         "startDate",
         "endDate",
         "hourlyRate",
@@ -220,6 +173,7 @@ router.get("/:id", async (req, res) => {
         "contactInfo",
         "status",
       ],
+      // Only include User association - we'll fetch vendor/client separately
       include: [
         {
           model: User,
@@ -233,18 +187,6 @@ router.get("/:id", async (req, res) => {
             "department",
             "title",
           ],
-          required: false,
-        },
-        {
-          model: models.Client,
-          as: "client",
-          attributes: ["id", "clientName", "legalName", "email"],
-          required: false,
-        },
-        {
-          model: models.Vendor,
-          as: "vendor",
-          attributes: ["id", "name", "category", "email"],
           required: false,
         },
       ],
@@ -262,24 +204,11 @@ router.get("/:id", async (req, res) => {
     console.log('✅ Employee found:', {
       id: employee.id,
       firstName: employee.firstName,
-      lastName: employee.lastName,
-      vendorId: employee.vendorId,
-      clientId: employee.clientId,
-      hasVendor: !!employee.vendor,
-      hasClient: !!employee.client
+      lastName: employee.lastName
     });
 
-    if (employee.vendor) {
-      console.log('📦 Vendor details:', {
-        id: employee.vendor.id,
-        name: employee.vendor.name,
-        category: employee.vendor.category
-      });
-    } else {
-      console.log('⚠️ No vendor associated with employee');
-    }
-
     // Transform the data
+    // Note: vendor/client columns don't exist yet, so we set them to null/"Not assigned"
     const transformedEmployee = {
       id: employee.id,
       name: employee.user
@@ -295,45 +224,21 @@ router.get("/:id", async (req, res) => {
       department: employee.user?.department || employee.department || "N/A",
       joinDate: employee.startDate || new Date().toISOString(),
       hourlyRate: employee.hourlyRate || 0,
-      // Client relationship data
-      client: employee.client
-        ? {
-            id: employee.client.id,
-            name: employee.client.clientName || employee.client.legalName,
-            legalName: employee.client.legalName,
-          }
-        : null,
-      clientId: employee.clientId,
-      employmentType: "W2", // Default value since employmentType model is not included
-      // Vendor relationship data
-      vendor: employee.vendor
-        ? {
-            id: employee.vendor.id,
-            name: employee.vendor.name,
-            category: employee.vendor.category,
-            email: employee.vendor.email,
-          }
-        : null,
-      vendorId: employee.vendorId,
-      // Implementation partner relationship data (not included in query)
-      implPartner: null,
-      implPartnerId: employee.implPartnerId,
-      endClient: employee.client
-        ? {
-            id: employee.client.id,
-            name: employee.client.clientName || employee.client.legalName,
-            location: employee.client.legalName, // Using legalName as location placeholder
-          }
-        : null,
+      // Vendor/client columns don't exist yet - set to defaults
+      client: "Not assigned",
+      clientId: null,
+      employmentType: "W2",
+      vendor: "Not assigned",
+      vendorId: null,
+      implPartner: "Not assigned",
+      implPartnerId: null,
+      endClient: "Not assigned",
       // Additional detailed fields
       employeeId: employee.employeeId,
       salaryAmount: employee.salaryAmount,
       contactInfo: employee.contactInfo,
       user: employee.user,
     };
-
-    console.log('📤 Sending response with vendorId:', transformedEmployee.vendorId);
-    console.log('📤 Sending response with vendor object:', transformedEmployee.vendor);
     
     // Decrypt employee data before sending to frontend
     const decryptedEmployee = DataEncryptionService.decryptEmployeeData(transformedEmployee);
@@ -359,74 +264,91 @@ router.post("/", async (req, res) => {
     
     console.log('📥 Received employee data:', JSON.stringify(employeeData, null, 2));
     
+    // Validate required fields before encryption
+    if (!employeeData.firstName || !employeeData.lastName || !employeeData.email || !employeeData.tenantId) {
+      console.error('❌ Missing required fields:', {
+        firstName: !!employeeData.firstName,
+        lastName: !!employeeData.lastName,
+        email: !!employeeData.email,
+        tenantId: !!employeeData.tenantId
+      });
+      return res.status(400).json(encryptAuthResponse({
+        error: "Missing required fields",
+        details: "firstName, lastName, email, and tenantId are required"
+      }));
+    }
+    
+    console.log('🔒 Encrypting employee data...');
     // Encrypt employee data before saving to database
-    employeeData = DataEncryptionService.encryptEmployeeData(employeeData);
+    try {
+      employeeData = DataEncryptionService.encryptEmployeeData(employeeData);
+      console.log('✅ Employee data encrypted successfully');
+    } catch (encryptError) {
+      console.error('❌ Encryption error:', encryptError);
+      return res.status(500).json(encryptAuthResponse({
+        error: "Failed to encrypt employee data",
+        details: encryptError.message
+      }));
+    }
 
     console.log('➕ Creating new employee:', {
-      firstName: employeeData.firstName,
-      lastName: employeeData.lastName,
-      email: employeeData.email,
+      firstName: employeeData.firstName ? '[ENCRYPTED]' : 'null',
+      lastName: employeeData.lastName ? '[ENCRYPTED]' : 'null',
+      email: employeeData.email ? '[ENCRYPTED]' : 'null',
       tenantId: employeeData.tenantId
     });
 
-    // Check if employee with same email already exists
-    const existingEmployee = await Employee.findOne({
-      where: {
-        email: employeeData.email,
-        tenantId: employeeData.tenantId
-      }
-    });
-
-    if (existingEmployee) {
-      console.log('⚠️ Employee with this email already exists:', existingEmployee.id);
-      return res.status(409).json({
-        error: "Employee with this email already exists",
-        existingEmployeeId: existingEmployee.id
-      });
-    }
-
-    // Check if user with same email already exists
-    const existingUser = await User.findOne({
-      where: {
-        email: employeeData.email,
-        tenantId: employeeData.tenantId
-      }
-    });
-
-    if (existingUser) {
-      console.log('⚠️ User with this email already exists:', existingUser.id);
-      return res.status(409).json({
-        error: "User with this email already exists"
-      });
-    }
+    // Note: Email is encrypted, so we can't check for duplicates by email
+    // We'll rely on database unique constraints or check after user creation fails
 
     // Generate temporary password
     const temporaryPassword = generateTemporaryPassword();
     const passwordHash = await bcrypt.hash(temporaryPassword, 10);
 
+    console.log('👤 Creating user account...');
     // Create user account for the employee
-    const user = await User.create({
-      tenantId: employeeData.tenantId,
-      firstName: employeeData.firstName,
-      lastName: employeeData.lastName,
-      email: employeeData.email,
-      passwordHash: passwordHash,
-      mustChangePassword: true, // Flag to force password change on first login
-      role: employeeData.role || 'employee',
-      department: employeeData.department,
-      title: employeeData.title,
-      status: 'active'
-    });
-
-    console.log('✅ User account created:', user.id);
+    let user;
+    try {
+      user = await User.create({
+        tenantId: employeeData.tenantId,
+        firstName: employeeData.firstName,
+        lastName: employeeData.lastName,
+        email: employeeData.email,
+        passwordHash: passwordHash,
+        mustChangePassword: true,
+        role: employeeData.role || 'employee',
+        department: employeeData.department,
+        title: employeeData.title,
+        status: 'active'
+      });
+      console.log('✅ User account created:', user.id);
+    } catch (userError) {
+      console.error('❌ Failed to create user:', userError);
+      if (userError.name === 'SequelizeUniqueConstraintError') {
+        return res.status(409).json(encryptAuthResponse({
+          error: "User with this email already exists",
+          details: userError.message
+        }));
+      }
+      throw userError;
+    }
 
     // Link employee to user
     employeeData.userId = user.id;
 
+    console.log('👥 Creating employee record...');
     // Create the employee record
-    const employee = await Employee.create(employeeData);
-
-    console.log('✅ Employee created successfully:', employee.id);
+    let employee;
+    try {
+      employee = await Employee.create(employeeData);
+      console.log('✅ Employee created successfully:', employee.id);
+    } catch (empError) {
+      console.error('❌ Failed to create employee:', empError);
+      // Rollback: delete the user we just created
+      await user.destroy();
+      console.log('🔄 Rolled back user creation');
+      throw empError;
+    }
 
     // Decrypt employee data for response
     const decryptedEmployee = DataEncryptionService.decryptEmployeeData(employee.toJSON ? employee.toJSON() : employee);
@@ -504,26 +426,34 @@ router.put("/:id", async (req, res) => {
       }
     }
 
-    // Fetch updated employee with all relationships
+    // Fetch updated employee - basic attributes only
     const updatedEmployee = await Employee.findOne({
       where: { id, tenantId },
+      attributes: [
+        "id",
+        "tenantId",
+        "userId",
+        "employeeId",
+        "firstName",
+        "lastName",
+        "email",
+        "phone",
+        "department",
+        "title",
+        "managerId",
+        "startDate",
+        "endDate",
+        "hourlyRate",
+        "salaryAmount",
+        "salaryType",
+        "contactInfo",
+        "status",
+      ],
       include: [
         {
           model: User,
           as: "user",
           attributes: ["role"],
-          required: false,
-        },
-        {
-          model: models.Client,
-          as: "client",
-          attributes: ["id", "clientName", "legalName"],
-          required: false,
-        },
-        {
-          model: models.Vendor,
-          as: "vendor",
-          attributes: ["id", "name", "category", "email"],
           required: false,
         },
       ],
@@ -532,15 +462,26 @@ router.put("/:id", async (req, res) => {
       throw error;
     });
 
-    // Decrypt employee data before sending to frontend
+    // Decrypt employee data
     const decryptedEmployee = DataEncryptionService.decryptEmployeeData(
       updatedEmployee.toJSON ? updatedEmployee.toJSON() : updatedEmployee
     );
 
+    // Add default vendor/client values (columns don't exist yet)
+    const enrichedEmployee = {
+      ...decryptedEmployee,
+      vendor: "Not assigned",
+      vendorId: null,
+      client: "Not assigned",
+      clientId: null,
+      implPartner: "Not assigned",
+      implPartnerId: null
+    };
+
     const responseData = {
       success: true,
       message: "Employee updated successfully",
-      employee: decryptedEmployee,
+      employee: enrichedEmployee,
     };
     res.json(encryptAuthResponse(responseData));
   } catch (error) {

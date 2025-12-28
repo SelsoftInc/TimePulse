@@ -116,16 +116,8 @@ class InvoiceService {
         "title",
         "department",
         "hourlyRate",
-        "vendorId",
       ],
-      include: [
-        {
-          model: models.Vendor,
-          as: "vendor",
-          attributes: ["id", "name", "email"],
-          required: false,
-        },
-      ],
+      // Note: vendorId and vendor association removed - doesn't exist in schema
     });
 
     if (!employee) {
@@ -135,8 +127,6 @@ class InvoiceService {
     console.log("📋 Employee fetched:", {
       id: employee.id,
       name: `${employee.firstName} ${employee.lastName}`,
-      vendorId: employee.vendorId,
-      hasVendor: !!employee.vendor,
     });
 
     return employee;
@@ -331,19 +321,10 @@ class InvoiceService {
         tenantId
       );
 
-      // 5. Fetch vendor data from Vendor API (if employee has vendor)
+      // 5. Vendor assignment no longer stored in employee table
+      // Invoice will be created without vendor, can be assigned later via frontend
       let vendor = null;
-      if (employee.vendorId) {
-        console.log("📦 Fetching vendor for employee:", employee.vendorId);
-        vendor = await this.fetchVendorData(employee.vendorId, tenantId);
-        if (vendor) {
-          console.log("✅ Vendor found:", vendor.name);
-        } else {
-          console.log("⚠️ Vendor not found for ID:", employee.vendorId);
-        }
-      } else {
-        console.log("⚠️ Employee has no vendorId assigned");
-      }
+      console.log("⚠️ Vendor not assigned - invoice will be created without vendor");
 
       // 6. Fetch client data from Client API
       const client = await this.fetchClientData(timesheet.clientId, tenantId);

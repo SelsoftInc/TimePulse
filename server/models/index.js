@@ -187,9 +187,7 @@ models.User = sequelize.define(
     email: {
       type: DataTypes.STRING(255),
       allowNull: false,
-      validate: {
-        isEmail: true,
-      },
+      // Removed isEmail validation because email is encrypted before saving
     },
     passwordHash: {
       type: DataTypes.STRING(255),
@@ -364,42 +362,8 @@ models.Employee = sequelize.define(
         key: "id",
       },
     },
-    clientId: {
-      type: DataTypes.UUID,
-      allowNull: true,
-      field: "client_id",
-      references: {
-        model: "clients",
-        key: "id",
-      },
-    },
-    vendorId: {
-      type: DataTypes.UUID,
-      allowNull: true,
-      field: "vendor_id",
-      references: {
-        model: "vendors",
-        key: "id",
-      },
-    },
-    implPartnerId: {
-      type: DataTypes.UUID,
-      allowNull: true,
-      field: "impl_partner_id",
-      references: {
-        model: "implementation_partners",
-        key: "id",
-      },
-    },
-    employmentTypeId: {
-      type: DataTypes.UUID,
-      allowNull: true,
-      field: "employment_type_id",
-      references: {
-        model: "employment_types",
-        key: "id",
-      },
-    },
+    // Note: clientId, vendorId, implPartnerId, employmentTypeId fields
+    // are not in the current database schema. Removed from model.
     startDate: {
       type: DataTypes.DATEONLY,
       field: "start_date",
@@ -431,35 +395,9 @@ models.Employee = sequelize.define(
     status: {
       type: DataTypes.ENUM("active", "inactive", "terminated"),
       defaultValue: "active",
-    },
-    overtimeRate: {
-      type: DataTypes.DECIMAL(10, 2),
-      allowNull: true,
-      field: "overtime_rate",
-    },
-    enableOvertime: {
-      type: DataTypes.BOOLEAN,
-      defaultValue: false,
-      field: "enable_overtime",
-    },
-    overtimeMultiplier: {
-      type: DataTypes.DECIMAL(3, 2),
-      defaultValue: 1.5,
-      field: "overtime_multiplier",
-    },
-    approver: {
-      type: DataTypes.UUID,
-      allowNull: true,
-      field: "approver",
-      references: {
-        model: "users",
-        key: "id",
-      },
-    },
-    notes: {
-      type: DataTypes.TEXT,
-      allowNull: true,
-    },
+    }
+    // Note: overtime_rate, enable_overtime, overtime_multiplier, approver, and notes fields
+    // are defined in migration but not yet applied to database. Removed from model until migration runs.
   },
   {
     tableName: "employees",
@@ -784,11 +722,8 @@ models.Vendor.belongsTo(models.Tenant, {
   foreignKey: "tenantId",
   as: "tenant",
 });
-// Vendor-Employee reverse association (Employee.belongsTo is defined at line ~1223)
-models.Vendor.hasMany(models.Employee, { 
-  foreignKey: "vendorId", 
-  as: "employees" 
-});
+// Vendor-Employee reverse association - commented out since vendorId column doesn't exist
+// models.Vendor.hasMany(models.Employee, { foreignKey: "vendorId", as: "employees" });
 
 // Implementation Partner associations
 models.Tenant.hasMany(models.ImplementationPartner, {
@@ -1467,38 +1402,22 @@ const getTenantBySubdomain = async (subdomain) => {
 // =============================================
 
 // Employee associations (set up after all models are defined)
-models.Employee.belongsTo(models.Client, {
-  foreignKey: "clientId",
-  as: "client",
-});
-models.Employee.belongsTo(models.Vendor, {
-  foreignKey: "vendorId",
-  as: "vendor",
-});
-models.Employee.belongsTo(models.ImplementationPartner, {
-  foreignKey: "implPartnerId",
-  as: "implPartner",
-});
-models.Employee.belongsTo(models.EmploymentType, {
-  foreignKey: "employmentTypeId",
-  as: "employmentType",
-});
+// Note: clientId, vendorId, implPartnerId, employmentTypeId columns don't exist in database schema
+// These associations are commented out until the migration is applied
+// models.Employee.belongsTo(models.Client, { foreignKey: "clientId", as: "client" });
+// models.Employee.belongsTo(models.Vendor, { foreignKey: "vendorId", as: "vendor" });
+// models.Employee.belongsTo(models.ImplementationPartner, { foreignKey: "implPartnerId", as: "implPartner" });
+// models.Employee.belongsTo(models.EmploymentType, { foreignKey: "employmentTypeId", as: "employmentType" });
 
 // Client associations
-models.Client.hasMany(models.Employee, {
-  foreignKey: "clientId",
-  as: "employees",
-});
+// models.Client.hasMany(models.Employee, { foreignKey: "clientId", as: "employees" });
 
 // EmploymentType associations
 models.EmploymentType.belongsTo(models.Tenant, {
   foreignKey: "tenantId",
   as: "tenant",
 });
-models.EmploymentType.hasMany(models.Employee, {
-  foreignKey: "employmentTypeId",
-  as: "employees",
-});
+// models.EmploymentType.hasMany(models.Employee, { foreignKey: "employmentTypeId", as: "employees" });
 
 // Notification associations
 models.Notification.belongsTo(models.Tenant, {

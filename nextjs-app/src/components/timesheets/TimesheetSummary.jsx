@@ -722,57 +722,42 @@ const TimesheetSummary = () => {
     setAssigningVendor(true);
 
     try {
-      const token = localStorage.getItem('token');
-      const tenantId = user?.tenantId;
+      // Since vendorId doesn't exist in employee schema anymore,
+      // we'll fetch the vendor details and pass it directly to invoice generation
+      console.log('📤 Using selected vendor for invoice generation:', selectedVendor);
 
-      if (!token || !tenantId) {
-        throw new Error('Authentication required');
-      }
-
-      console.log('📤 Assigning vendor to employee:', {
-        employeeId: currentEmployeeForAssignment.id,
-        vendorId: selectedVendor,
-        tenantId
-      });
-
-      const response = await fetch(
-        `${API_BASE}/api/employees/${currentEmployeeForAssignment.id}?tenantId=${tenantId}`,
-        {
-          method: 'PUT',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            vendorId: selectedVendor
-          })
-        }
+      // Fetch the selected vendor details
+      const vendorResponse = await apiClient.get(
+        `/api/vendors/${selectedVendor}`,
+        { tenantId: user.tenantId }
       );
 
-      if (response.ok) {
-        console.log('✅ Vendor assigned successfully');
+      if (!vendorResponse.success || !vendorResponse.vendor) {
+        throw new Error('Failed to fetch vendor details');
+      }
+
+      console.log('✅ Vendor details fetched:', vendorResponse.vendor);
+      
+      // Close the modal
+      setShowVendorAssignModal(false);
+      setSelectedVendor('');
+      setCurrentEmployeeForAssignment(null);
+      
+      // Retry invoice generation with the vendor info
+      if (currentTimesheetForRetry) {
+        console.log('🔄 Retrying invoice generation with selected vendor...');
+        const timesheetToRetry = currentTimesheetForRetry;
+        setCurrentTimesheetForRetry(null);
         
-        setShowVendorAssignModal(false);
-        setSelectedVendor('');
-        setCurrentEmployeeForAssignment(null);
-        
-        if (currentTimesheetForRetry) {
-          console.log('🔄 Retrying invoice generation after vendor assignment...');
-          const timesheetToRetry = currentTimesheetForRetry;
-          setCurrentTimesheetForRetry(null);
-          
-          await generateInvoice(timesheetToRetry);
-        }
-      } else {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to assign vendor');
+        // Pass vendor info directly to invoice generation
+        await generateInvoice(timesheetToRetry, vendorResponse.vendor);
       }
     } catch (error) {
-      console.error('❌ Error assigning vendor:', error);
+      console.error('❌ Error processing vendor assignment:', error);
       showModal({
         type: 'error',
         title: 'Assignment Failed',
-        message: `Failed to assign vendor: ${error.message}`
+        message: `Failed to process vendor: ${error.message}`
       });
     } finally {
       setAssigningVendor(false);
@@ -873,7 +858,7 @@ const TimesheetSummary = () => {
     });
   };
   
-  const generateInvoice = async (timesheet) => {
+  const generateInvoice = async (timesheet, providedVendor = null) => {
 
     setGeneratingInvoiceId(timesheet.id);
     setInvoiceError("");
@@ -976,10 +961,20 @@ const TimesheetSummary = () => {
         });
         
         // ============================================================
-        // STEP 3: Validate vendor/client assignment from Employee API data
+        // STEP 3: Validate vendor/client assignment
         // ============================================================
+        // If vendor was provided from assignment modal, use it directly
+        if (providedVendor && providedVendor.id) {
+          vendorClientInfo = providedVendor;
+          vendorClientType = 'Vendor';
+          console.log('✅ Using provided vendor from assignment:', {
+            id: vendorClientInfo.id,
+            name: vendorClientInfo.name || vendorClientInfo.vendorName,
+            email: vendorClientInfo.email
+          });
+        }
         // Check for vendor assignment (prioritize nested vendor object with email)
-        if (employeeData.vendor && employeeData.vendor.id) {
+        else if (employeeData.vendor && employeeData.vendor.id) {
           vendorClientInfo = employeeData.vendor;
           vendorClientType = 'Vendor';
           console.log('✅ Found vendor from employee API:', {

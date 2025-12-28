@@ -8,6 +8,7 @@ import PermissionGuard from '../common/PermissionGuard';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
 import { API_BASE, apiFetch } from '@/config/api';
+import { decryptApiResponse } from '@/utils/encryption';
 import {
   COUNTRY_OPTIONS,
   STATES_BY_COUNTRY,
@@ -46,10 +47,14 @@ const EmployeeForm = () => {
     department: "",
     startDate: "",
     clientId: "",
+    vendorId: "",
+    implPartnerId: "",
     client: "",
     clientType: "internal",
     approver: "",
     hourlyRate: "",
+    salaryAmount: "",
+    salaryType: "hourly",
     overtimeRate: "",
     enableOvertime: false,
     overtimeMultiplier: 1.5,
@@ -66,6 +71,10 @@ const EmployeeForm = () => {
   const [clients, setClients] = useState([]);
   const [clientsLoading, setClientsLoading] = useState(false);
   const [clientsError, setClientsError] = useState("");
+  const [vendors, setVendors] = useState([]);
+  const [vendorsLoading, setVendorsLoading] = useState(false);
+  const [implPartners, setImplPartners] = useState([]);
+  const [implPartnersLoading, setImplPartnersLoading] = useState(false);
   const [approvers, setApprovers] = useState([]);
   const [approversLoading, setApproversLoading] = useState(false);
   const [approversError, setApproversError] = useState("");
@@ -197,6 +206,73 @@ const EmployeeForm = () => {
 
     fetchEmployee();
   }, [isMounted, isEditMode, id, user?.tenantId]);
+
+  // Fetch vendors from API
+  useEffect(() => {
+    if (!isMounted) return;
+    const fetchVendors = async () => {
+      if (!user?.tenantId) return;
+      try {
+        setVendorsLoading(true);
+        console.log('🔍 Fetching vendors from API...');
+        
+        const resp = await fetch(
+          `${API_BASE}/api/vendors?tenantId=${user.tenantId}`,
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("token")}`}}
+        );
+        
+        if (resp.ok) {
+          const rawData = await resp.json();
+          console.log('📦 Raw vendors response:', rawData);
+          
+          // Decrypt the response if encrypted
+          const data = decryptApiResponse(rawData);
+          console.log('🔓 Decrypted vendors data:', data);
+          
+          setVendors(data.vendors || []);
+        }
+      } catch (e) {
+        console.error("❌ Failed to fetch vendors:", e);
+      } finally {
+        setVendorsLoading(false);
+      }
+    };
+    fetchVendors();
+  }, [isMounted, user?.tenantId]);
+
+  // Fetch implementation partners from API
+  useEffect(() => {
+    if (!isMounted) return;
+    const fetchImplPartners = async () => {
+      if (!user?.tenantId) return;
+      try {
+        setImplPartnersLoading(true);
+        console.log('🔍 Fetching implementation partners from API...');
+        
+        const resp = await fetch(
+          `${API_BASE}/api/implementation-partners?tenantId=${user.tenantId}`,
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("token")}`}}
+        );
+        
+        if (resp.ok) {
+          const data = await resp.json();
+          console.log('✅ Implementation partners data received:', data);
+          setImplPartners(data.implementationPartners || []);
+        }
+      } catch (e) {
+        console.error("❌ Failed to fetch implementation partners:", e);
+      } finally {
+        setImplPartnersLoading(false);
+      }
+    };
+    fetchImplPartners();
+  }, [isMounted, user?.tenantId]);
 
   // Fetch approvers (users with admin or approver role) from API
   useEffect(() => {
@@ -406,29 +482,26 @@ const EmployeeForm = () => {
     setLoading(true);
 
     try {
-      // Calculate overtime rate if overtime is enabled
-      let overtimeRate = null;
-      if (formData.enableOvertime && formData.hourlyRate) {
-        overtimeRate =
-          parseFloat(formData.hourlyRate) *
-          parseFloat(formData.overtimeMultiplier);
-      }
-
       // Prepare employee data for backend
+      // Note: Only include fields that exist in the database schema
       const employeeData = {
         tenantId: user.tenantId,
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        email: formData.email,
+        firstName: formData.firstName.trim(),
+        lastName: formData.lastName.trim(),
+        email: formData.email.trim(),
         phone: formData.phone || null,
-        title: formData.position,
+        title: formData.position || null,
         department: formData.department || null,
-        startDate: formData.startDate,
+        startDate: formData.startDate || null,
+        endDate: null,
+        // clientId, vendorId, implPartnerId removed - not in database schema
         hourlyRate: formData.hourlyRate
           ? parseFloat(formData.hourlyRate)
           : null,
-        salaryType:
-          formData.clientType === "Subcontractor" ? "subcontractor" : "hourly",
+        salaryAmount: formData.salaryAmount
+          ? parseFloat(formData.salaryAmount)
+          : null,
+        salaryType: formData.salaryType || "hourly",
         status: formData.status || "active",
         contactInfo: JSON.stringify({
           address: formData.address,
@@ -436,15 +509,10 @@ const EmployeeForm = () => {
           state: formData.state,
           zip: formData.zip,
           country: formData.country}),
-        // Additional fields
-        overtimeRate: overtimeRate,
-        enableOvertime: formData.enableOvertime || false,
-        overtimeMultiplier: formData.overtimeMultiplier || 1.5,
-        approver: formData.approver,
-        notes: formData.notes,
-        clientId: formData.clientId,
         role: 'employee' // Add default role
       };
+      
+      console.log('📤 Sending employee data:', employeeData);
 
       // Make API call to create employee
       const response = await apiFetch(
@@ -459,7 +527,9 @@ const EmployeeForm = () => {
       );
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
+        const rawError = await response.json().catch(() => ({}));
+        const errorData = decryptApiResponse(rawError);
+        console.error('❌ Employee creation failed:', errorData);
         throw new Error(
           errorData.details ||
             errorData.error ||
@@ -467,7 +537,9 @@ const EmployeeForm = () => {
         );
       }
 
-      await response.json(); // Consume the response
+      const rawData = await response.json();
+      const data = decryptApiResponse(rawData);
+      console.log('✅ Employee created:', data);
 
       toast.success("Employee created successfully!");
 
@@ -815,6 +887,64 @@ const EmployeeForm = () => {
                                 Automatically set based on selected client
                               </small>
                             </div>
+                          </div>
+                        </div>
+
+                        <div className="col-lg-6">
+                          <div className="form-group">
+                            <label className="form-label" htmlFor="vendorId">
+                              Vendor
+                            </label>
+                            <select
+                              className="form-select rounded-lg border-slate-300 bg-white shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+                              id="vendorId"
+                              name="vendorId"
+                              value={formData.vendorId}
+                              onChange={handleChange}
+                            >
+                              <option value="">-- Unassigned --</option>
+                              {vendors.map((vendor) => (
+                                <option key={vendor.id} value={vendor.id}>
+                                  {vendor.name}
+                                </option>
+                              ))}
+                            </select>
+                            {vendorsLoading && (
+                              <div className="form-note mt-1">
+                                <small className="text-soft">
+                                  Loading vendors…
+                                </small>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="col-lg-6">
+                          <div className="form-group">
+                            <label className="form-label" htmlFor="implPartnerId">
+                              Implementation Partner
+                            </label>
+                            <select
+                              className="form-select rounded-lg border-slate-300 bg-white shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+                              id="implPartnerId"
+                              name="implPartnerId"
+                              value={formData.implPartnerId}
+                              onChange={handleChange}
+                            >
+                              <option value="">-- Unassigned --</option>
+                              {implPartners.map((partner) => (
+                                <option key={partner.id} value={partner.id}>
+                                  {partner.name}
+                                </option>
+                              ))}
+                            </select>
+                            {implPartnersLoading && (
+                              <div className="form-note mt-1">
+                                <small className="text-soft">
+                                  Loading implementation partners…
+                                </small>
+                              </div>
+                            )}
                           </div>
                         </div>
 

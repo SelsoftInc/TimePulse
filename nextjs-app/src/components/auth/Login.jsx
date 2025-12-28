@@ -33,7 +33,7 @@ const Login = () => {
     // Check if OAuth is configured by checking environment variables
     const checkOAuthConfig = async () => {
       try {
-        const response = await fetch('/api/auth/providers');
+        const response = await fetch('googleAuth/providers');
         const providers = await response.json();
         const hasGoogle = providers && providers.google;
         setIsOAuthConfigured(hasGoogle);

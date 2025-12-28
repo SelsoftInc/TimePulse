@@ -36,7 +36,7 @@ Option 3 - Clean restart (if still issues):
 
 AFTER RESTART:
 --------------
-1. Test NextAuth API: https://goggly-casteless-torri.ngrok-free.dev/api/auth/providers
+1. Test NextAuth API: https://goggly-casteless-torri.ngrok-free.dev/api/googleAuth/providers
    Should return JSON (not 404)
 
 2. Test OAuth page: https://goggly-casteless-torri.ngrok-free.dev/test-oauth

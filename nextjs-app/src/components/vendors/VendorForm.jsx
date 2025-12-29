@@ -342,7 +342,7 @@ const VendorForm = ({
       <div className="nk-conten bg-slate-50">
         <div className="container-fluid px-4 py-6 sm:px-6 lg:px-8">
           <form onSubmit={handleSubmit}>
-            <div className="nk-block-head">
+            {/* <div className="nk-block-head">
               <div className="mb-6 rounded-xl border border-slate-200 bg-indigo-50 p-5 shadow-sm">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div>
@@ -352,11 +352,11 @@ const VendorForm = ({
                     <p className="mt-1 text-sm text-slate-600">
                       Create a new vendor record
                     </p>
-                    {/* <p className="nk-block-subtitle">Create a new vendor record</p> */}
+                    <p className="nk-block-subtitle">Create a new vendor record</p>
                   </div>
                 </div>
               </div>
-            </div>
+            </div> */}
 
             <div className="nk-block">
   <div className="mx-auto max-w-7xl">

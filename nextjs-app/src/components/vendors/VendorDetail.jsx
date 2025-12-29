@@ -110,207 +110,288 @@ const VendorDetail = () => {
   }
 
   return (
-    <div className="nk-conten">
-      <div className="container-flui">
-        <div className="nk-block-head">
-          <div className="nk-block-between">
+    <div className="nk-content min-h-screen bg-slate-50">
+      <div className="container-fluid">
+        {/* Header */}
+        <div className="mb-6 rounded-xl border border-slate-200 bg-indigo-50 p-5 shadow-sm">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div className="nk-block-head-content">
-              <h3 className="nk-block-title">Vendor Details</h3>
-              <p className="nk-block-subtitle">Viewing details for vendor</p>
+              <h3 className="nk-block-title">{vendor.name || 'Vendor Details'}</h3>
+              <div className="nk-block-des text-soft">
+                <p>Viewing details for vendor</p>
+              </div>
             </div>
-            <div className="nk-block-head-content">
-              <Link href={`/${subdomain}/vendors`} className="btn btn-outline-light">
-                <i className="fas fa-arrow-left mr-1"></i> Back to Vendors
-              </Link>
+            <div className="nk-block-head-content flex items-center gap-3">
               <PermissionGuard requiredPermission={PERMISSIONS.EDIT_VENDOR}>
-                <Link href={`/${subdomain}/vendors/edit/${id}`} className="btn btn-primary ml-2">
-                  <i className="fas fa-edit mr-1"></i> Edit Vendor
+                <Link href={`/${subdomain}/vendors/edit/${id}`} className="btn btn-primary">
+                  <em className="icon ni ni-edit"></em>
+                  <span>Edit Vendor</span>
                 </Link>
               </PermissionGuard>
+              <Link href={`/${subdomain}/vendors`} className="btn btn-outline-light">
+                <em className="icon ni ni-arrow-left"></em>
+                <span>Back</span>
+              </Link>
             </div>
           </div>
         </div>
 
-        <div className="nk-block">
-          <div className="card card-bordered">
-            <div className="card-aside-wrap">
-              <div className="card-content">
-                <div className="card-inne">
-                  <div className="nk-block">
-                    <div className="nk-block-head">
-                      <h5 className="title">Vendor Information</h5>
-                    </div>
-                    <div className="profile-ud-list">
-                      <div className="profile-ud-item">
-                        <div className="profile-ud-label">Vendor Name</div>
-                        <div className="profile-ud-value">{vendor.name}</div>
-                      </div>
-                      <div className="profile-ud-item">
-                        <div className="profile-ud-label">Contact Person</div>
-                        <div className="profile-ud-value">{vendor.contactPerson}</div>
-                      </div>
-                      <div className="profile-ud-item">
-                        <div className="profile-ud-label">Email</div>
-                        <div className="profile-ud-value">{vendor.email}</div>
-                      </div>
-                      <div className="profile-ud-item">
-                        <div className="profile-ud-label">Phone</div>
-                        <div className="profile-ud-value">{vendor.phone}</div>
-                      </div>
-                      <div className="profile-ud-item">
-                        <div className="profile-ud-label">Status</div>
-                        <div className="profile-ud-value">
-                          <span className={`badge badge-${vendor.status === 'active' ? 'success' : 'warning'}`}>
-                            {vendor.status === 'active' ? 'Active' : 'Inactive'}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="profile-ud-item">
-                        <div className="profile-ud-label">Category</div>
-                        <div className="profile-ud-value">{vendor.category}</div>
-                      </div>
-                      <div className="profile-ud-item">
-                        <div className="profile-ud-label">Website</div>
-                        <div className="profile-ud-value">
-                          {vendor.website}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="nk-block">
-                    <div className="nk-block-head">
-                      <h5 className="title">Address</h5>
-                    </div>
-                    <div className="profile-ud-list">
-                      <div className="profile-ud-item">
-                        <div className="profile-ud-label">Address</div>
-                        <div className="profile-ud-value">{vendor.address}</div>
-                      </div>
-                      <div className="profile-ud-item">
-                        <div className="profile-ud-label">City</div>
-                        <div className="profile-ud-value">{vendor.city}</div>
-                      </div>
-                      <div className="profile-ud-item">
-                        <div className="profile-ud-label">State</div>
-                        <div className="profile-ud-value">{vendor.state}</div>
-                      </div>
-                      <div className="profile-ud-item">
-                        <div className="profile-ud-label">{getPostalLabel(vendor.country)}</div>
-                        <div className="profile-ud-value">{vendor.zip}</div>
-                      </div>
-                      <div className="profile-ud-item">
-                        <div className="profile-ud-label">Country</div>
-                        <div className="profile-ud-value">{vendor.country}</div>
-                      </div>
-                      {vendor.taxId && (
-                        <div className="profile-ud-item">
-                          <div className="profile-ud-label">{TAX_ID_LABELS[vendor.country] || 'Tax ID'}</div>
-                          <div className="profile-ud-value">{vendor.taxId}</div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="nk-block">
-                    <div className="nk-block-head">
-                      <h5 className="title">Contract Details</h5>
-                    </div>
-                    <div className="profile-ud-list">
-                      <div className="profile-ud-item">
-                        <div className="profile-ud-label">Contract Start</div>
-                        <div className="profile-ud-value">{new Date(vendor.contractStart).toLocaleDateString()}</div>
-                      </div>
-                      <div className="profile-ud-item">
-                        <div className="profile-ud-label">Contract End</div>
-                        <div className="profile-ud-value">{new Date(vendor.contractEnd).toLocaleDateString()}</div>
-                      </div>
-                      <div className="profile-ud-item">
-                        <div className="profile-ud-label">Payment Term</div>
-                        <div className="profile-ud-value">{vendor.paymentTerms ? `Net ${vendor.paymentTerms}` : '—'}</div>
-                      </div>
-                      <div className="profile-ud-item">
-                        <div className="profile-ud-label">Total Spent</div>
-                        <div className="profile-ud-value">{vendor.totalSpent}</div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Subcontractor Employees from this Vendor */}
-                  <div className="nk-block">
-                    <div className="nk-block-head">
-                      <h5 className="title">Subcontractor Employees</h5>
-                      <p className="text-muted">Employees provided by this vendor</p>
-                    </div>
-                    
-                    {vendorEmployees.length > 0 ? (
-                      <div className="card">
-                        <div className="card-inner p-0">
-                          <table className="table table-employees">
-                            <thead>
-                              <tr>
-                                <th>Name</th>
-                                <th>Position</th>
-                                <th>Department</th>
-                                <th>Client</th>
-                                <th>Status</th>
-                                {checkPermission(PERMISSIONS.MANAGE_SETTINGS) && (
-                                  <th>Hourly Rate</th>
-                                )}
-                                <th>Actions</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {vendorEmployees.map(employee => (
-                                <tr key={employee.id}>
-                                  <td>
-                                    <Link href={`/${subdomain}/employees/${employee.id}`} className="employee-name fw-medium">
-                                      {employee.name}
-                                    </Link>
-                                  </td>
-                                  <td>{employee.position}</td>
-                                  <td>{employee.department}</td>
-                                  <td>{employee.client}</td>
-                                  <td>
-                                    <span className={`badge badge-${employee.status === 'active' ? 'success' : 'warning'}`}>
-                                      {employee.status === 'active' ? 'Active' : 'Inactive'}
-                                    </span>
-                                  </td>
-                                  {checkPermission(PERMISSIONS.MANAGE_SETTINGS) && (
-                                    <td>${employee.hourlyRate}</td>
-                                  )}
-                                  <td>
-                                    <Link href={`/${subdomain}/employees/${employee.id}`} className="btn btn-sm btn-outline-primary">
-                                      <i className="fas fa-eye mr-1"></i> View
-                                    </Link>
-                                  </td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="alert alert-info">
-                        No subcontractor employees from this vendor.
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Notes */}
-                  <div className="nk-block">
-                    <div className="nk-block-head">
-                      <h5 className="title">Notes</h5>
-                    </div>
-                    <div className="card card-bordered">
-                      <div className="card-inne">
-                        <p>{vendor.notes || 'No notes available.'}</p>
-                      </div>
-                    </div>
-                  </div>
+        {/* Main Content Grid */}
+        <div className="mx-auto max-w-7xl">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            
+            {/* Vendor Information */}
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              <h2 className="mb-6 text-sm font-semibold uppercase tracking-wide text-slate-700">
+                Vendor Information
+              </h2>
+              <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                <div>
+                  <label className="mb-1 block text-xs font-semibold text-slate-600">
+                    Vendor Name
+                  </label>
+                  <p className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900">
+                    {vendor.name || 'N/A'}
+                  </p>
+                </div>
+                
+                <div>
+                  <label className="mb-1 block text-xs font-semibold text-slate-600">
+                    Contact Person
+                  </label>
+                  <p className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900">
+                    {vendor.contactPerson || 'N/A'}
+                  </p>
+                </div>
+                
+                <div>
+                  <label className="mb-1 block text-xs font-semibold text-slate-600">
+                    Email
+                  </label>
+                  <p className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900">
+                    {vendor.email || 'N/A'}
+                  </p>
+                </div>
+                
+                <div>
+                  <label className="mb-1 block text-xs font-semibold text-slate-600">
+                    Phone
+                  </label>
+                  <p className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900">
+                    {vendor.phone || 'N/A'}
+                  </p>
+                </div>
+                
+                <div>
+                  <label className="mb-1 block text-xs font-semibold text-slate-600">
+                    Vendor Type
+                  </label>
+                  <p className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900">
+                    {vendor.category || 'N/A'}
+                  </p>
+                </div>
+                
+                <div>
+                  <label className="mb-1 block text-xs font-semibold text-slate-600">
+                    Status
+                  </label>
+                  <p className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900">
+                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
+                      vendor.status === 'active' 
+                        ? 'bg-green-100 text-green-800' 
+                        : 'bg-yellow-100 text-yellow-800'
+                    }`}>
+                      <span className={`w-2 h-2 mr-2 rounded-full ${
+                        vendor.status === 'active' ? 'bg-green-500' : 'bg-yellow-500'
+                      }`}></span>
+                      {vendor.status === 'active' ? 'Active' : 'Inactive'}
+                    </span>
+                  </p>
                 </div>
               </div>
             </div>
+                  
+            {/* Address Information */}
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              <h2 className="mb-6 text-sm font-semibold uppercase tracking-wide text-slate-700">
+                Address Information
+              </h2>
+              <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
+                <div className="md:col-span-3">
+                  <label className="mb-1 block text-xs font-semibold text-slate-600">
+                    Address
+                  </label>
+                  <p className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900">
+                    {vendor.address || '—'}
+                  </p>
+                </div>
+                
+                <div>
+                  <label className="mb-1 block text-xs font-semibold text-slate-600">
+                    City
+                  </label>
+                  <p className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900">
+                    {vendor.city || '—'}
+                  </p>
+                </div>
+                
+                <div>
+                  <label className="mb-1 block text-xs font-semibold text-slate-600">
+                    State
+                  </label>
+                  <p className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900">
+                    {vendor.state || '—'}
+                  </p>
+                </div>
+                
+                <div>
+                  <label className="mb-1 block text-xs font-semibold text-slate-600">
+                    {getPostalLabel(vendor.country)}
+                  </label>
+                  <p className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900">
+                    {vendor.zip || '—'}
+                  </p>
+                </div>
+                
+                <div className="md:col-span-3">
+                  <label className="mb-1 block text-xs font-semibold text-slate-600">
+                    Country
+                  </label>
+                  <p className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900">
+                    {vendor.country || 'United States'}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Tax & Payment Information */}
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              <h2 className="mb-6 text-sm font-semibold uppercase tracking-wide text-slate-700">
+                Tax & Payment Information
+              </h2>
+              <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                <div>
+                  <label className="mb-1 block text-xs font-semibold text-slate-600">
+                    Tax ID
+                  </label>
+                  <p className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900">
+                    {vendor.taxId || '—'}
+                  </p>
+                </div>
+                
+                <div>
+                  <label className="mb-1 block text-xs font-semibold text-slate-600">
+                    Payment Terms
+                  </label>
+                  <p className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900">
+                    {vendor.paymentTerms ? `Net ${vendor.paymentTerms}` : '—'}
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            {/* Contract Details */}
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              <h2 className="mb-6 text-sm font-semibold uppercase tracking-wide text-slate-700">
+                Contract Details
+              </h2>
+              <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                <div>
+                  <label className="mb-1 block text-xs font-semibold text-slate-600">
+                    Contract Start
+                  </label>
+                  <p className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900">
+                    {vendor.contractStart ? new Date(vendor.contractStart).toLocaleDateString() : '—'}
+                  </p>
+                </div>
+                
+                <div>
+                  <label className="mb-1 block text-xs font-semibold text-slate-600">
+                    Contract End
+                  </label>
+                  <p className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900">
+                    {vendor.contractEnd ? new Date(vendor.contractEnd).toLocaleDateString() : '—'}
+                  </p>
+                </div>
+                
+                <div>
+                  <label className="mb-1 block text-xs font-semibold text-slate-600">
+                    Total Spent
+                  </label>
+                  <p className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900">
+                    {vendor.totalSpent || '$0.00'}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Notes */}
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm lg:col-span-2">
+              <h2 className="mb-6 text-sm font-semibold uppercase tracking-wide text-slate-700">
+                Notes
+              </h2>
+              <div>
+                <p className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900">
+                  {vendor.notes || 'No notes available'}
+                </p>
+              </div>
+            </div>
+            
+            {/* Subcontractor Employees */}
+            {vendorEmployees.length > 0 && (
+              <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm lg:col-span-2">
+                <h2 className="mb-6 text-sm font-semibold uppercase tracking-wide text-slate-700">
+                  Subcontractor Employees
+                </h2>
+                <p className="mb-4 text-xs text-slate-500">Employees provided by this vendor</p>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-slate-50">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600">Name</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600">Position</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600">Department</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600">Client</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600">Status</th>
+                        {checkPermission(PERMISSIONS.MANAGE_SETTINGS) && (
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600">Hourly Rate</th>
+                        )}
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-200">
+                      {vendorEmployees.map(employee => (
+                        <tr key={employee.id} className="hover:bg-slate-50">
+                          <td className="px-4 py-3">
+                            <Link href={`/${subdomain}/employees/${employee.id}`} className="text-sm font-medium text-blue-600 hover:underline">
+                              {employee.name}
+                            </Link>
+                          </td>
+                          <td className="px-4 py-3 text-sm text-slate-900">{employee.position}</td>
+                          <td className="px-4 py-3 text-sm text-slate-900">{employee.department}</td>
+                          <td className="px-4 py-3 text-sm text-slate-900">{employee.client}</td>
+                          <td className="px-4 py-3">
+                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                              employee.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                            }`}>
+                              {employee.status === 'active' ? 'Active' : 'Inactive'}
+                            </span>
+                          </td>
+                          {checkPermission(PERMISSIONS.MANAGE_SETTINGS) && (
+                            <td className="px-4 py-3 text-sm text-slate-900">${employee.hourlyRate}</td>
+                          )}
+                          <td className="px-4 py-3">
+                            <Link href={`/${subdomain}/employees/${employee.id}`} className="btn btn-sm btn-outline-primary">
+                              View
+                            </Link>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

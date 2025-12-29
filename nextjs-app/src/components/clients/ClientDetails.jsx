@@ -229,181 +229,251 @@ const ClientDetails = () => {
   }
 
   return (
-    <div className="nk-conten">
+    <div className="nk-content min-h-screen bg-slate-50">
       <div className="container-fluid">
         <div className="nk-content-inner">
-          <div className="nk-content-body">
-            {/* Tenant Info Banner */}
-            {tenantInfo && (
-              <div className="tenant-banner">
-                <span>Workspace: {tenantInfo.name}</span>
-              </div>
-            )}
-            
-            {/* Client Header */}
-            <div className="nk-block-head nk-block-head-sm">
-              <div className="nk-block-between">
-                <div className="nk-block-head-content">
-                  <h3 className="nk-block-title page-title">Client Details</h3>
-                  <div className="nk-block-des text-soft">
-                    <p>Details for {client?.name || 'Client'}</p>
-                  </div>
+          <div className="nk-content-body py-6">
+            {/* Header */}
+            <div className="mb-6 rounded-xl border border-slate-200 bg-indigo-50 p-5 shadow-sm">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <h1 className="text-xl font-semibold text-slate-900">
+                    {client?.name || 'Client Details'}
+                  </h1>
+                  <p className="mt-1 text-sm text-slate-600">
+                    Details for {client?.name || 'Client'}
+                  </p>
                 </div>
-                <div className="nk-block-head-content">
-                  <div className="toggle-wrap nk-block-tools-toggle">
-                    <div className="toggle-expand-content expanded">
-                      <ul className="nk-block-tools g-3">
-                        <li className="nk-block-tools-opt">
-                          <Link href={`/${tenantInfo?.subdomain || subdomain}/clients`} className="btn btn-outline-light">
-                            <em className="icon ni ni-arrow-left"></em>
-                            <span>Back</span>
-                          </Link>
-                        </li>
-                        <li className="nk-block-tools-opt">
-                          <Link href={`/${tenantInfo?.subdomain || subdomain}/clients/edit/${client?.id}`} className="btn btn-primary">
-                            <em className="icon ni ni-edit"></em>
-                            <span>Edit Client</span>
-                          </Link>
-                        </li>
-                      </ul>
-                    </div>
-                  </div>
+                <div className="flex items-center gap-3">
+                  <Link href={`/${tenantInfo?.subdomain || subdomain}/clients/edit/${client?.id}`} className="btn btn-primary">
+                    <em className="icon ni ni-edit"></em>
+                    <span>Edit Client</span>
+                  </Link>
+                  <Link href={`/${tenantInfo?.subdomain || subdomain}/clients`} className="btn btn-outline-light">
+                    <em className="icon ni ni-arrow-left"></em>
+                    <span>Back</span>
+                  </Link>
                 </div>
               </div>
             </div>
 
-            {/* Client Details Card */}
-            <div className="nk-block">
-              <div className="card card-bordered">
-                <div className="card-inner">
-                  <div className="row g-4">
-                    <div className="col-lg-6">
-                      <div className="client-detail-item">
-                        <span className="detail-label">Client Type:</span>
-                        <span className="detail-value">
-                          <span className={`badge badge-dim rounded-pill ${client?.clientType === 'internal' ? 'bg-outline-primary' : 'bg-outline-warning'}`}>
-                            {client?.clientType === 'internal' ? 'Internal' : 'External'}
-                          </span>
-                        </span>
-                      </div>
-                    </div>
-                    <div className="col-lg-6">
-                      <div className="client-detail-item">
-                        <span className="detail-label">Contact Person:</span>
-                        <span className="detail-value">{client?.contactPerson}</span>
-                      </div>
-                    </div>
-                    <div className="col-lg-6">
-                      <div className="client-detail-item">
-                        <span className="detail-label">Email:</span>
-                        <span className="detail-value">{client?.email}</span>
-                      </div>
-                    </div>
-                    <div className="col-lg-6">
-                      <div className="client-detail-item">
-                        <span className="detail-label">Phone Number:</span>
-                        <span className="detail-value">{client?.phone}</span>
-                      </div>
-                    </div>
-                    <div className="col-lg-6">
-                      <div className="client-detail-item">
-                        <span className="detail-label">Status:</span>
-                        <span className="detail-value">
-                          <span className={`badge ${client?.status === 'active' ? 'badge-success' : 'badge-warning'}`}>
-                            {(client?.status || '').charAt(0).toUpperCase() + (client?.status || '').slice(1)}
-                          </span>
-                        </span>
-                      </div>
-                    </div>
-                    <div className="col-12">
-                      <div className="client-detail-item">
-                        <span className="detail-label">Address:</span>
-                        <span className="detail-value client-address">
-                          {client?.billingAddress ? [
-                            client.billingAddress.line1,
-                            [client.billingAddress.city, client.billingAddress.state].filter(Boolean).join(', '),
-                            client.billingAddress.zip
-                          ].filter(Boolean).join(' '): ''}
-                        </span>
-                      </div>
-                    </div>
+            {/* Main Content Grid */}
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+              
+              {/* Client Information */}
+              <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
+                <header className="rounded-t-xl border-b border-slate-200 bg-slate-50 px-6 py-4">
+                  <h4 className="text-sm font-semibold text-slate-900">
+                    Client Information
+                  </h4>
+                </header>
+                <div className="p-6 grid grid-cols-1 gap-5 sm:grid-cols-2">
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-slate-700">
+                      Client Name
+                    </label>
+                    <p className="rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900">
+                      {client?.name || 'N/A'}
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-slate-700">
+                      Contact Person
+                    </label>
+                    <p className="rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900">
+                      {client?.contactPerson || 'N/A'}
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-slate-700">
+                      Email Address
+                    </label>
+                    <p className="rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900">
+                      {client?.email || 'N/A'}
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-slate-700">
+                      Phone Number
+                    </label>
+                    <p className="rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900">
+                      {client?.phone || 'N/A'}
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-slate-700">
+                      Status
+                    </label>
+                    <p className="rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900">
+                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
+                        client?.status === 'active' 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-yellow-100 text-yellow-800'
+                      }`}>
+                        <span className={`w-2 h-2 mr-2 rounded-full ${
+                          client?.status === 'active' ? 'bg-green-500' : 'bg-yellow-500'
+                        }`}></span>
+                        {(client?.status || '').charAt(0).toUpperCase() + (client?.status || '').slice(1)}
+                      </span>
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-slate-700">
+                      Client Type
+                    </label>
+                    <p className="rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900">
+                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
+                        client?.clientType === 'internal' 
+                          ? 'bg-blue-100 text-blue-800' 
+                          : 'bg-purple-100 text-purple-800'
+                      }`}>
+                        {client?.clientType === 'internal' ? 'Internal' : 'External'}
+                      </span>
+                    </p>
                   </div>
                 </div>
-              </div>
-            </div>
+              </section>
 
-            {/* Billing & Payment Information */}
-            <div className="card card-bordered mt-4">
-              <div className="card-inner">
-                <h5 className="card-title mb-4">
-                  <em className="icon ni ni-credit-card mr-2"></em>
-                  Billing & Payment Information
-                </h5>
-                <div className="row g-4">
-                  <div className="col-lg-6">
-                    <div className="client-detail-item">
-                      <span className="detail-label">Payment Term:</span>
-                      <span className="detail-value">
-                        <span className="badge badge-dim badge-outline-info">
-                          {client?.paymentTerms === 0 ? 'Due upon receipt' : `Net ${client?.paymentTerms}`}
-                        </span>
-                      </span>
+              {/* Address Information */}
+              <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
+                <header className="rounded-t-xl border-b border-slate-200 bg-slate-50 px-6 py-4">
+                  <h4 className="text-sm font-semibold text-slate-900">
+                    Address Information
+                  </h4>
+                </header>
+                <div className="p-6 grid grid-cols-1 gap-5">
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-slate-700">
+                      Address
+                    </label>
+                    <p className="rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900">
+                      {client?.billingAddress?.line1 || '—'}
+                    </p>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
+                    <div>
+                      <label className="mb-1 block text-sm font-medium text-slate-700">
+                        City
+                      </label>
+                      <p className="rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900">
+                        {client?.billingAddress?.city || '—'}
+                      </p>
+                    </div>
+                    
+                    <div>
+                      <label className="mb-1 block text-sm font-medium text-slate-700">
+                        State
+                      </label>
+                      <p className="rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900">
+                        {client?.billingAddress?.state || '—'}
+                      </p>
+                    </div>
+                    
+                    <div>
+                      <label className="mb-1 block text-sm font-medium text-slate-700">
+                        {getPostalLabel(client?.billingAddress?.country)}
+                      </label>
+                      <p className="rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900">
+                        {client?.billingAddress?.zip || '—'}
+                      </p>
                     </div>
                   </div>
-                  <div className="col-lg-6">
-                    <div className="client-detail-item">
-                      <span className="detail-label">Payment Method:</span>
-                      <span className="detail-value">
-                        <span className="badge badge-dim badge-outline-success">
-                          {client?.paymentMethod || '—'}
-                        </span>
-                      </span>
-                    </div>
+                  
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-slate-700">
+                      Country
+                    </label>
+                    <p className="rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900">
+                      {client?.billingAddress?.country || 'United States'}
+                    </p>
                   </div>
-                  <div className="col-lg-6">
-                    <div className="client-detail-item">
-                      <span className="detail-label">Currency:</span>
-                      <span className="detail-value">
-                        <span className="badge badge-dim badge-outline-primary">
-                          {client?.currency || 'USD'}
-                        </span>
-                      </span>
-                    </div>
+                </div>
+              </section>
+              
+              {/* Billing & Payment Information */}
+              <section className="rounded-xl border border-slate-200 bg-white shadow-sm lg:col-span-2">
+                <header className="rounded-t-xl border-b border-slate-200 bg-slate-50 px-6 py-4">
+                  <h4 className="text-sm font-semibold text-slate-900">
+                    Billing & Payment Information
+                  </h4>
+                </header>
+                <div className="p-6 grid grid-cols-1 gap-5 sm:grid-cols-3">
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-slate-700">
+                      Payment Terms
+                    </label>
+                    <p className="rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900">
+                      {client?.paymentTerms === 0 ? 'Due upon receipt' : `Net ${client?.paymentTerms}`}
+                    </p>
                   </div>
+                  
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-slate-700">
+                      Payment Method
+                    </label>
+                    <p className="rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900">
+                      {client?.paymentMethod || '—'}
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-slate-700">
+                      Currency
+                    </label>
+                    <p className="rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900">
+                      {client?.currency || 'USD'}
+                    </p>
+                  </div>
+                  
                   {(client?.taxId || client?.vatNumber) && (
-                    <div className="col-lg-6">
-                      <div className="client-detail-item">
-                        <span className="detail-label">{TAX_ID_LABELS[client?.country] || 'Tax ID'}:</span>
-                        <span className="detail-value">{client?.taxId || client?.vatNumber}</span>
-                      </div>
+                    <div>
+                      <label className="mb-1 block text-sm font-medium text-slate-700">
+                        {TAX_ID_LABELS[client?.country] || 'Tax ID'}
+                      </label>
+                      <p className="rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900">
+                        {client?.taxId || client?.vatNumber}
+                      </p>
                     </div>
                   )}
+                  
                   {client?.bankDetails && (
-                    <div className="col-12">
-                      <div className="client-detail-item">
-                        <span className="detail-label">Bank Details:</span>
-                        <span className="detail-value">{client?.bankDetails}</span>
-                      </div>
+                    <div className="sm:col-span-3">
+                      <label className="mb-1 block text-sm font-medium text-slate-700">
+                        Bank Details
+                      </label>
+                      <p className="rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900">
+                        {client?.bankDetails}
+                      </p>
                     </div>
                   )}
-                  <div className="col-12">
-                    <div className="client-detail-item">
-                      <span className="detail-label">Billing Address:</span>
-                      <span className="detail-value client-address">
-                        {client?.billingAddress ? [
-                          client.billingAddress.line1,
-                          [client.billingAddress.city, client.billingAddress.state].filter(Boolean).join(', '),
-                          client.billingAddress.zip
-                        ].filter(Boolean).join(' ') : '—'}
-                      </span>
-                    </div>
-                  </div>
                 </div>
-              </div>
+              </section>
+              
+              {/* Notes */}
+              {client?.notes && (
+                <section className="rounded-xl border border-slate-200 bg-white shadow-sm lg:col-span-2">
+                  <header className="rounded-t-xl border-b border-slate-200 bg-slate-50 px-6 py-4">
+                    <h4 className="text-sm font-semibold text-slate-900">
+                      Notes
+                    </h4>
+                  </header>
+                  <div className="p-6">
+                    <p className="rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900">
+                      {client?.notes || 'No notes available'}
+                    </p>
+                  </div>
+                </section>
+              )}
             </div>
 
             {/* Employee List */}
-            <div className="nk-block mt-4">
+            <div className="nk-block mt-6">
               <div className="card card-bordered card-stretch">
                 <div className="card-inner-group">
                   <div className="card-inner position-relative">

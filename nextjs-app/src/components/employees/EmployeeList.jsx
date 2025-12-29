@@ -1051,7 +1051,7 @@ const EmployeeList = () => {
               <i className="fas fa-eye mr-1"></i> View Details
             </Link>
             <PermissionGuard requiredPermission={PERMISSIONS.EDIT_EMPLOYEE}>
-              <button
+              {/* <button
                 type="button"
                 className="dropdown-item"
                 onClick={() => {
@@ -1060,8 +1060,8 @@ const EmployeeList = () => {
                 }}
               >
                 <i className="fas fa-users mr-1"></i> Assign End Client
-              </button>
-              <button
+              </button> */}
+              {/* <button
                 type="button"
                 className="dropdown-item"
                 onClick={() => {
@@ -1070,8 +1070,8 @@ const EmployeeList = () => {
                 }}
               >
                 <i className="fas fa-truck mr-1"></i> Assign Vendor
-              </button>
-              <button
+              </button> */}
+              {/* <button
                 type="button"
                 className="dropdown-item"
                 onClick={() => {
@@ -1080,7 +1080,7 @@ const EmployeeList = () => {
                 }}
               >
                 <i className="fas fa-handshake mr-1"></i> Assign Impl Partner
-              </button>
+              </button> */}
               <Link href={`/${subdomain}/employees/${employee.id}/edit`}
                 className="dropdown-item"
                 onClick={() => setOpenMenuFor(null)}

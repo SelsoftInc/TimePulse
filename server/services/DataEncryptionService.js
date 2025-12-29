@@ -135,17 +135,34 @@ class DataEncryptionService {
     
     const decrypted = { ...clientData };
     
+    // Decrypt client name field
     if (decrypted.clientName) {
       decrypted.clientName = this.decryptField(decrypted.clientName);
     }
+    
+    // Decrypt name field
     if (decrypted.name) {
       decrypted.name = this.decryptField(decrypted.name);
     }
+    
+    // Decrypt legal name field
+    if (decrypted.legalName) {
+      decrypted.legalName = this.decryptField(decrypted.legalName);
+    }
+    
+    // Decrypt contact person field
+    if (decrypted.contactPerson) {
+      decrypted.contactPerson = this.decryptField(decrypted.contactPerson);
+    }
+    
+    // Decrypt email field
     if (decrypted.email) {
       decrypted.email = this.decryptField(decrypted.email);
     }
-    if (decrypted.legalName) {
-      decrypted.legalName = this.decryptField(decrypted.legalName);
+    
+    // Decrypt phone field
+    if (decrypted.phone) {
+      decrypted.phone = this.decryptField(decrypted.phone);
     }
     
     return decrypted;
@@ -164,14 +181,54 @@ class DataEncryptionService {
     
     const decrypted = { ...vendorData };
     
+    // Decrypt vendor name field
     if (decrypted.name) {
       decrypted.name = this.decryptField(decrypted.name);
     }
+    
+    // Decrypt vendorName field
     if (decrypted.vendorName) {
       decrypted.vendorName = this.decryptField(decrypted.vendorName);
     }
+    
+    // Decrypt contact person field
+    if (decrypted.contactPerson) {
+      decrypted.contactPerson = this.decryptField(decrypted.contactPerson);
+    }
+    
+    // Decrypt email field
     if (decrypted.email) {
       decrypted.email = this.decryptField(decrypted.email);
+    }
+    
+    // Decrypt phone field
+    if (decrypted.phone) {
+      decrypted.phone = this.decryptField(decrypted.phone);
+    }
+    
+    // Decrypt address field
+    if (decrypted.address) {
+      decrypted.address = this.decryptField(decrypted.address);
+    }
+    
+    // Decrypt city field
+    if (decrypted.city) {
+      decrypted.city = this.decryptField(decrypted.city);
+    }
+    
+    // Decrypt state field
+    if (decrypted.state) {
+      decrypted.state = this.decryptField(decrypted.state);
+    }
+    
+    // Decrypt zip field
+    if (decrypted.zip) {
+      decrypted.zip = this.decryptField(decrypted.zip);
+    }
+    
+    // Decrypt country field
+    if (decrypted.country) {
+      decrypted.country = this.decryptField(decrypted.country);
     }
     
     return decrypted;
@@ -187,12 +244,88 @@ class DataEncryptionService {
   
   static decryptImplementationPartnerData(partnerData) {
     if (!partnerData) return partnerData;
-    return partnerData;
+    
+    const decrypted = { ...partnerData };
+    
+    // Decrypt name field
+    if (decrypted.name) {
+      decrypted.name = this.decryptField(decrypted.name);
+    }
+    
+    // Decrypt legalName field
+    if (decrypted.legalName) {
+      decrypted.legalName = this.decryptField(decrypted.legalName);
+    }
+    
+    // Decrypt contactPerson field
+    if (decrypted.contactPerson) {
+      decrypted.contactPerson = this.decryptField(decrypted.contactPerson);
+    }
+    
+    // Decrypt email field
+    if (decrypted.email) {
+      decrypted.email = this.decryptField(decrypted.email);
+    }
+    
+    // Decrypt phone field
+    if (decrypted.phone) {
+      decrypted.phone = this.decryptField(decrypted.phone);
+    }
+    
+    // Decrypt specialization field
+    if (decrypted.specialization) {
+      decrypted.specialization = this.decryptField(decrypted.specialization);
+    }
+    
+    // Decrypt notes field
+    if (decrypted.notes) {
+      decrypted.notes = this.decryptField(decrypted.notes);
+    }
+    
+    return decrypted;
   }
 
   static encryptImplementationPartnerData(partnerData) {
     if (!partnerData) return partnerData;
-    return partnerData;
+    
+    const encrypted = { ...partnerData };
+    
+    // Encrypt name field
+    if (encrypted.name) {
+      encrypted.name = this.encryptField(encrypted.name);
+    }
+    
+    // Encrypt legalName field
+    if (encrypted.legalName) {
+      encrypted.legalName = this.encryptField(encrypted.legalName);
+    }
+    
+    // Encrypt contactPerson field
+    if (encrypted.contactPerson) {
+      encrypted.contactPerson = this.encryptField(encrypted.contactPerson);
+    }
+    
+    // Encrypt email field
+    if (encrypted.email) {
+      encrypted.email = this.encryptField(encrypted.email);
+    }
+    
+    // Encrypt phone field
+    if (encrypted.phone) {
+      encrypted.phone = this.encryptField(encrypted.phone);
+    }
+    
+    // Encrypt specialization field
+    if (encrypted.specialization) {
+      encrypted.specialization = this.encryptField(encrypted.specialization);
+    }
+    
+    // Encrypt notes field
+    if (encrypted.notes) {
+      encrypted.notes = this.encryptField(encrypted.notes);
+    }
+    
+    return encrypted;
   }
 
   // ==================== EMPLOYMENT TYPE MODULE ====================

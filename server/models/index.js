@@ -362,8 +362,42 @@ models.Employee = sequelize.define(
         key: "id",
       },
     },
-    // Note: clientId, vendorId, implPartnerId, employmentTypeId fields
-    // are not in the current database schema. Removed from model.
+    clientId: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      field: "client_id",
+      references: {
+        model: "clients",
+        key: "id",
+      },
+    },
+    vendorId: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      field: "vendor_id",
+      references: {
+        model: "vendors",
+        key: "id",
+      },
+    },
+    implPartnerId: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      field: "impl_partner_id",
+      references: {
+        model: "implementation_partners",
+        key: "id",
+      },
+    },
+    employmentTypeId: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      field: "employment_type_id",
+      references: {
+        model: "employment_types",
+        key: "id",
+      },
+    },
     startDate: {
       type: DataTypes.DATEONLY,
       field: "start_date",
@@ -395,8 +429,18 @@ models.Employee = sequelize.define(
     status: {
       type: DataTypes.ENUM("active", "inactive", "terminated"),
       defaultValue: "active",
+    },
+    approverId: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      field: "approver_id",
+      references: {
+        model: "users",
+        key: "id",
+      },
+      comment: "User who approves this employee's timesheets and leave requests"
     }
-    // Note: overtime_rate, enable_overtime, overtime_multiplier, approver, and notes fields
+    // Note: overtime_rate, enable_overtime, overtime_multiplier, and notes fields
     // are defined in migration but not yet applied to database. Removed from model until migration runs.
   },
   {
@@ -1402,15 +1446,17 @@ const getTenantBySubdomain = async (subdomain) => {
 // =============================================
 
 // Employee associations (set up after all models are defined)
-// Note: clientId, vendorId, implPartnerId, employmentTypeId columns don't exist in database schema
-// These associations are commented out until the migration is applied
-// models.Employee.belongsTo(models.Client, { foreignKey: "clientId", as: "client" });
-// models.Employee.belongsTo(models.Vendor, { foreignKey: "vendorId", as: "vendor" });
-// models.Employee.belongsTo(models.ImplementationPartner, { foreignKey: "implPartnerId", as: "implPartner" });
-// models.Employee.belongsTo(models.EmploymentType, { foreignKey: "employmentTypeId", as: "employmentType" });
+models.Employee.belongsTo(models.Client, { foreignKey: "clientId", as: "client" });
+models.Employee.belongsTo(models.Vendor, { foreignKey: "vendorId", as: "vendor" });
+if (models.ImplementationPartner) {
+  models.Employee.belongsTo(models.ImplementationPartner, { foreignKey: "implPartnerId", as: "implPartner" });
+}
+if (models.EmploymentType) {
+  models.Employee.belongsTo(models.EmploymentType, { foreignKey: "employmentTypeId", as: "employmentType" });
+}
 
 // Client associations
-// models.Client.hasMany(models.Employee, { foreignKey: "clientId", as: "employees" });
+models.Client.hasMany(models.Employee, { foreignKey: "clientId", as: "employees" });
 
 // EmploymentType associations
 models.EmploymentType.belongsTo(models.Tenant, {

@@ -25,8 +25,8 @@ router.get('/pending', async (req, res) => {
       });
     }
 
-    // Fetch pending users using Sequelize model field names
-    const pendingUsers = await models.User.findAll({
+    // Fetch pending users with their selected approver information
+    const pendingUsersRaw = await models.User.findAll({
       where: {
         tenantId: tenantId,
         approvalStatus: 'pending'
@@ -40,12 +40,40 @@ router.get('/pending', async (req, res) => {
         'department',
         'title',
         'authProvider',
-        ['created_at', 'createdAt'],  // Map database column
+        ['created_at', 'createdAt'],
         'approvalStatus'
       ],
-      order: [['created_at', 'DESC']],  // Use database column name
-      raw: true
+      order: [['created_at', 'DESC']]
     });
+
+    // Enrich with approver information from Employee table
+    const pendingUsers = await Promise.all(pendingUsersRaw.map(async (user) => {
+      const plainUser = user.get({ plain: true });
+      
+      // Find employee record to get approverId
+      const employee = await models.Employee.findOne({
+        where: {
+          userId: user.id,
+          tenantId: tenantId
+        },
+        attributes: ['approverId']
+      });
+
+      if (employee && employee.approverId) {
+        // Fetch approver details
+        const approver = await models.User.findByPk(employee.approverId, {
+          attributes: ['id', 'firstName', 'lastName', 'email']
+        });
+        
+        if (approver) {
+          plainUser.approverId = approver.id;
+          plainUser.approverName = `${approver.firstName} ${approver.lastName}`;
+          plainUser.approverEmail = approver.email;
+        }
+      }
+
+      return plainUser;
+    }));
 
     console.log('[User Approvals] Found pending users:', pendingUsers.length);
     if (pendingUsers.length > 0) {

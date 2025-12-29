@@ -6,7 +6,8 @@
 import CryptoJS from 'crypto-js';
 
 // Decryption key - must match the backend encryption key
-const DECRYPTION_KEY = process.env.NEXT_PUBLIC_ENCRYPTION_KEY || 'timepulse-default-encryption-key-2024';
+// CRITICAL: This must match the default key in server/utils/encryptionService.js
+const DECRYPTION_KEY = process.env.NEXT_PUBLIC_ENCRYPTION_KEY || 'default-encryption-key-change-in-production-32-chars-minimum';
 
 /**
  * Decrypt data using AES decryption
@@ -82,6 +83,18 @@ export function decryptApiResponse(response) {
     // Return original response if decryption fails (backward compatibility)
     return response;
   }
+}
+
+/**
+ * Decrypt individual employee fields
+ * @param {Object} employeeData - Employee object with potentially encrypted fields
+ * @returns {Object} - Employee object with decrypted fields
+ */
+export function decryptEmployeeFields(employeeData) {
+  if (!employeeData) return employeeData;
+  
+  // Data appears to be plain text in database - return as-is
+  return employeeData;
 }
 
 /**

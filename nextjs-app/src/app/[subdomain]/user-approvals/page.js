@@ -228,6 +228,15 @@ export default function UserApprovalsPage() {
                     </div>
                   )}
 
+                  {pendingUser.approverName && (
+                    <div className="info-row">
+                      <span className="info-label">Selected Approver:</span>
+                      <span className="info-value">
+                        <i className="fas fa-user-check"></i> {pendingUser.approverName}
+                      </span>
+                    </div>
+                  )}
+
                   <div className="info-row">
                     <span className="info-label">Auth Provider:</span>
                     <span className="info-value">

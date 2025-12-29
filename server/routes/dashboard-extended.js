@@ -181,7 +181,23 @@ router.get("/top-performers", async (req, res) => {
       type: sequelize.QueryTypes.SELECT,
     });
 
-    res.json({ performers: convertToNumber(performers) });
+    // Decrypt employee data
+    const decryptedPerformers = performers.map(performer => {
+      const decryptedData = DataEncryptionService.decryptEmployeeData({
+        firstName: performer.first_name,
+        lastName: performer.last_name,
+        email: performer.email
+      });
+      return {
+        ...performer,
+        first_name: decryptedData.firstName || performer.first_name,
+        last_name: decryptedData.lastName || performer.last_name,
+        name: `${decryptedData.firstName || performer.first_name} ${decryptedData.lastName || performer.last_name}`,
+        email: decryptedData.email || performer.email
+      };
+    });
+
+    res.json({ performers: convertToNumber(decryptedPerformers) });
   } catch (error) {
     console.error("Top Performers API Error:", error);
     res.status(500).json({

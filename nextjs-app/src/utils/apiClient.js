@@ -126,7 +126,7 @@ export const apiClient = {
   /**
    * PUT request with automatic fallback
    */
-  async put(endpoint, data = {}) {
+  async put(endpoint, data = {}, params = {}) {
     // If already in static mode, use static data immediately
     if (isStaticMode()) {
       console.log(`📦 Static Mode: PUT ${endpoint}`);
@@ -136,8 +136,16 @@ export const apiClient = {
     // Try real API first
     try {
       const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+      const url = new URL(`${API_BASE}${endpoint}`);
       
-      const response = await fetch(`${API_BASE}${endpoint}`, {
+      // Add query parameters
+      Object.keys(params).forEach(key => {
+        if (params[key] !== undefined && params[key] !== null) {
+          url.searchParams.append(key, params[key]);
+        }
+      });
+      
+      const response = await fetch(url.toString(), {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

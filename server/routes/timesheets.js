@@ -124,23 +124,39 @@ router.get("/", async (req, res, next) => {
     // Transform data for frontend
     const transformedTimesheets = await Promise.all(decryptedTimesheets.map(async (ts) => {
       // Get employee name - decrypt employee data if present
-      let employeeName = ts.employeeName || "Unknown";
+      let employeeName = ts.employeeName || null;
       
-      // If no stored name, try to get from Employee or User
-      if (!employeeName || employeeName === "Unknown") {
-        if (ts.employee) {
-          // Decrypt employee data
-          const employeeObj = ts.employee.get ? ts.employee.get({ plain: true }) : ts.employee;
-          const decryptedEmployee = DataEncryptionService.decryptEmployeeData(employeeObj);
-          employeeName = `${decryptedEmployee.firstName} ${decryptedEmployee.lastName}`;
-          console.log('👤 Decrypted employee name:', employeeName);
+      console.log(`📋 Processing timesheet ${ts.id}:`);
+      console.log(`   - Stored employeeName: ${ts.employeeName}`);
+      console.log(`   - Has employee association: ${!!ts.employee}`);
+      console.log(`   - employeeId: ${ts.employeeId}`);
+      
+      // Priority 1: Try to get from stored employeeName field (if not encrypted)
+      if (employeeName && !employeeName.includes(':')) {
+        console.log(`   ✅ Using stored employeeName: ${employeeName}`);
+      }
+      // Priority 2: Try to get from Employee association
+      else if (ts.employee) {
+        const employeeObj = ts.employee.get ? ts.employee.get({ plain: true }) : ts.employee;
+        const decryptedEmployee = DataEncryptionService.decryptEmployeeData(employeeObj);
+        employeeName = `${decryptedEmployee.firstName || ''} ${decryptedEmployee.lastName || ''}`.trim();
+        console.log(`   ✅ Decrypted employee from association: ${employeeName}`);
+      }
+      // Priority 3: Try to get user directly if employee record doesn't exist
+      else if (ts.employeeId) {
+        const user = await models.User.findByPk(ts.employeeId);
+        if (user) {
+          employeeName = `${user.firstName || ''} ${user.lastName || ''}`.trim();
+          console.log(`   ✅ Found user by employeeId: ${employeeName}`);
         } else {
-          // Try to get user directly if employee record doesn't exist
-          const user = await models.User.findByPk(ts.employeeId);
-          if (user) {
-            employeeName = `${user.firstName} ${user.lastName}`;
-          }
+          console.log(`   ⚠️ No user found for employeeId: ${ts.employeeId}`);
         }
+      }
+      
+      // Fallback to Unknown if still not found
+      if (!employeeName || employeeName === '') {
+        employeeName = "Unknown Employee";
+        console.log(`   ❌ Using fallback: ${employeeName}`);
       }
 
       // Decrypt client data if present
@@ -581,24 +597,40 @@ router.get("/pending-approval", async (req, res, next) => {
       let employeeName = "Unknown Employee";
       let employeeEmail = "N/A";
       let department = "N/A";
+      let decryptedEmployee = null; // Declare outside scope for later use
 
-      if (ts.employee) {
-        // Decrypt employee data
-        const decryptedEmployee = DataEncryptionService.decryptEmployeeData(ts.employee);
-        
+      console.log(`📋 Processing pending timesheet ${ts.id}:`);
+      console.log(`   - Stored employeeName: ${ts.employeeName}`);
+      console.log(`   - Has employee association: ${!!ts.employee}`);
+      console.log(`   - employeeId: ${ts.employeeId}`);
+
+      // Priority 1: Try to get from stored employeeName (if not encrypted)
+      if (ts.employeeName && !ts.employeeName.includes(':')) {
+        employeeName = ts.employeeName;
+        console.log(`   ✅ Using stored employeeName: ${employeeName}`);
+      }
+      // Priority 2: Try Employee association
+      else if (ts.employee) {
+        decryptedEmployee = DataEncryptionService.decryptEmployeeData(ts.employee);
         employeeName = `${decryptedEmployee.firstName || ""} ${decryptedEmployee.lastName || ""}`.trim() || "Unknown Employee";
         employeeEmail = decryptedEmployee.email || "N/A";
         department = decryptedEmployee.department || "N/A";
-      } else if (ts.employeeName) {
-        // Fallback to stored employeeName if no employee association
-        employeeName = ts.employeeName;
-      } else {
-        // Try to get user directly if employee record doesn't exist
+        console.log(`   ✅ Decrypted employee from association: ${employeeName}`);
+      }
+      // Priority 3: Try User table
+      else if (ts.employeeId) {
         const user = await models.User.findByPk(ts.employeeId);
         if (user) {
           employeeName = `${user.firstName} ${user.lastName}`;
           employeeEmail = user.email;
+          console.log(`   ✅ Found user by employeeId: ${employeeName}`);
+        } else {
+          console.log(`   ⚠️ No user found for employeeId: ${ts.employeeId}`);
         }
+      }
+      
+      if (employeeName === "Unknown Employee") {
+        console.log(`   ❌ Using fallback: Unknown Employee`);
       }
 
       return {
@@ -642,6 +674,14 @@ router.get("/pending-approval", async (req, res, next) => {
               role: ts.reviewer.role,
             }
           : null,
+        Employee: ts.employee && decryptedEmployee ? {
+          id: ts.employee.id,
+          firstName: decryptedEmployee.firstName,
+          lastName: decryptedEmployee.lastName,
+          email: decryptedEmployee.email,
+          department: decryptedEmployee.department,
+          title: ts.employee.title
+        } : null,
       };
     }));
 
@@ -2162,10 +2202,18 @@ router.post("/:timesheetId/generate-invoice", async (req, res) => {
       });
     }
 
+    // Decrypt employee data first
+    const decryptedEmployee = DataEncryptionService.decryptEmployeeData({
+      firstName: employee.firstName,
+      lastName: employee.lastName,
+      email: employee.email,
+      phone: employee.phone
+    });
+    
     // Log employee and vendor data for debugging
-    console.log('📋 Employee data:', {
+    console.log('📋 Employee data (decrypted):', {
       id: employee.id,
-      name: `${employee.firstName} ${employee.lastName}`,
+      name: `${decryptedEmployee.firstName} ${decryptedEmployee.lastName}`,
       vendorId: employee.vendorId,
       hasVendor: !!employee.vendor,
       vendorData: employee.vendor ? {
@@ -2205,6 +2253,7 @@ router.post("/:timesheetId/generate-invoice", async (req, res) => {
         employee.vendorId = employeeWithVendor.vendorId;
         console.log('✅ Vendor found after re-fetch');
       } else {
+        console.error('❌ FINAL ERROR: No vendor found for employee');
         return res.status(400).json({
           success: false,
           message: "Employee must be associated with a vendor to generate invoice",
@@ -2214,15 +2263,23 @@ router.post("/:timesheetId/generate-invoice", async (req, res) => {
 
     const vendor = employee.vendor;
     
-    // Log vendor data before decryption
-    console.log('🔍 Vendor data (encrypted):', {
-      id: vendor.id,
+    // Decrypt vendor data
+    const decryptedVendor = DataEncryptionService.decryptVendorData({
       name: vendor.name,
       email: vendor.email,
       contactPerson: vendor.contactPerson
     });
     
-    if (!vendor.email) {
+    // Log vendor data after decryption
+    console.log('🔍 Vendor data (decrypted):', {
+      id: vendor.id,
+      name: decryptedVendor.name,
+      email: decryptedVendor.email,
+      contactPerson: decryptedVendor.contactPerson
+    });
+    
+    if (!decryptedVendor.email) {
+      console.error('❌ Vendor email missing after decryption');
       return res.status(400).json({
         success: false,
         message: "Vendor email is required to send invoice",
@@ -2306,19 +2363,14 @@ router.post("/:timesheetId/generate-invoice", async (req, res) => {
 
     console.log('📄 Generated invoice link:', invoiceLink);
 
-    // Decrypt vendor data before sending to frontend
-    const DataEncryptionService = require('../services/DataEncryptionService');
-    const vendorPlainObject = vendor.toJSON ? vendor.toJSON() : vendor;
-    const decryptedVendor = DataEncryptionService.decryptVendorData(vendorPlainObject);
-    
-    console.log('🔓 Decrypted vendor data:', {
-      id: decryptedVendor.id,
-      name: decryptedVendor.name,
-      email: decryptedVendor.email,
-      contactPerson: decryptedVendor.contactPerson
+    // Return success response with decrypted vendor email
+    console.log('✅ Invoice created successfully:', {
+      invoiceId: invoice.id,
+      invoiceNumber: invoice.invoiceNumber,
+      totalAmount: invoice.totalAmount,
+      vendorEmail: decryptedVendor.email
     });
     
-    // Return success response
     res.json({
       success: true,
       message: "Invoice generated successfully",

@@ -263,10 +263,17 @@ router.post("/request", async (req, res) => {
       leaveRequest: decryptedLeaveRequest,
     });
   } catch (error) {
-    console.error("Error submitting leave request:", error);
+    console.error("❌ Error submitting leave request:", error);
+    console.error("Error name:", error.name);
+    console.error("Error message:", error.message);
+    console.error("Error stack:", error.stack);
+    if (error.original) {
+      console.error("Database error:", error.original);
+    }
     res.status(500).json({
       error: "Failed to submit leave request",
       details: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 });

@@ -7,7 +7,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { API_BASE } from '@/config/api';
 import { PERMISSIONS } from '@/utils/roles';
 import PermissionGuard from '../common/PermissionGuard';
-import './Employees.css';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 const EmployeeDetail = () => {
@@ -258,463 +257,334 @@ const EmployeeDetail = () => {
   }
 
   return (
-    <div className="nk-content">
-      <div className="container-fluid">
-        <div className="nk-block-head">
-          <div className="nk-block-between">
-            <div className="nk-block-head-content">
-              <h3 className="nk-block-title">Employee Details</h3>
-              <p className="nk-block-subtitle">Viewing details for {employee.name}</p>
-            </div>
-            <div className="nk-block-head-content">
-              <Link href={`/${subdomain}/employees`} className="btn btn-outline-light">
-                <i className="fas fa-arrow-left mr-1"></i> Back to Employees
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <div className="flex items-center space-x-4">
+              <Link 
+                href={`/${subdomain}/employees`}
+                className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              >
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                Back to Employees
               </Link>
-              {canEditBasics && !isEditing && (
-                <button className="btn btn-primary ml-2" onClick={handleStartEdit}>
-                  <i className="fas fa-edit mr-1"></i> Edit
-                </button>
-              )}
-              {isEditing && (
-                <div className="d-inline-flex ml-2">
-                  <button className="btn btn-success mr-2" onClick={handleSave} disabled={updateEmployeeMutation.isLoading}>
-                    {updateEmployeeMutation.isLoading ? 'Saving...' : 'Save'}
-                  </button>
-                  <button className="btn btn-outline-light" onClick={handleCancelEdit} disabled={updateEmployeeMutation.isLoading}>
-                    Cancel
-                  </button>
-                </div>
-              )}
             </div>
+            <h1 className="mt-4 text-3xl font-bold text-gray-900 dark:text-white">{employee.name}</h1>
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{employee.position} • {employee.department}</p>
+          </div>
+          <div className="flex items-center space-x-3">
+            {canEditBasics && !isEditing && (
+              <button 
+                onClick={handleStartEdit}
+                className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors"
+              >
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+                Edit Details
+              </button>
+            )}
+            {isEditing && (
+              <>
+                <button 
+                  onClick={handleSave}
+                  disabled={updateEmployeeMutation.isLoading}
+                  className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg text-sm font-medium text-white bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {updateEmployeeMutation.isLoading ? 'Saving...' : 'Save Changes'}
+                </button>
+                <button 
+                  onClick={handleCancelEdit}
+                  disabled={updateEmployeeMutation.isLoading}
+                  className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  Cancel
+                </button>
+              </>
+            )}
           </div>
         </div>
 
-        <div className="nk-block">
-          <div className="card card-bordered">
-            <div className="card-aside-wrap">
-              <div className="card-content">
-                <div className="card-inner">
-                  <div className="nk-block">
-                    <div className="nk-block-head">
-                      <h5 className="title">Personal Information</h5>
-                    </div>
-                    <div className="profile-ud-list">
-                      <div className="profile-ud-item">
-                        <div className="profile-ud-label">Full Name</div>
-                        <div className="profile-ud-value">{employee.name}</div>
-                      </div>
-                      <div className="profile-ud-item">
-                        <div className="profile-ud-label">Email</div>
-                        <div className="profile-ud-value">{employee.email}</div>
-                      </div>
-                      <div className="profile-ud-item">
-                        <div className="profile-ud-label">Phone</div>
-                        <div className="profile-ud-value">{employee.phone}</div>
-                      </div>
-                      <div className="profile-ud-item">
-                        <div className="profile-ud-label">Status</div>
-                        <div className="profile-ud-value">
-                          <span className={`badge badge-${employee.status === 'active' ? 'success' : 'warning'}`}>
-                            {employee.status === 'active' ? 'Active' : 'Inactive'}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="nk-block">
-                    <div className="nk-block-head">
-                      <h5 className="title">Work Information</h5>
-                    </div>
-                    <div className="profile-ud-list">
-                      <div className="profile-ud-item">
-                        <div className="profile-ud-label">Position</div>
-                        <div className="profile-ud-value">{employee.position}</div>
-                      </div>
-                      <div className="profile-ud-item">
-                        <div className="profile-ud-label">Department</div>
-                        <div className="profile-ud-value">{employee.department}</div>
-                      </div>
-                      <div className="profile-ud-item">
-                        <div className="profile-ud-label">End Client</div>
-                        <div className="profile-ud-value">
-                          {!isEditing && (
-                            <>{employee.client || <span className="text-muted">Not assigned</span>}</>
-                          )}
-                          {isEditing && (
-                            <div className="d-flex align-items-center">
-                              <select
-                                name="clientId"
-                                className="form-control"
-                                value={formValues.clientId || ''}
-                                onChange={handleChange}
-                              >
-                                <option value="">-- Select End Client --</option>
-                                {clientsData.map(c => (
-                                  <option key={c.id} value={c.id}>{c.name}</option>
-                                ))}
-                              </select>
-                              <button
-                                type="button"
-                                className="btn btn-sm btn-outline-light ml-2"
-                                onClick={() => setFormValues(prev => ({ ...prev, clientId: '' }))}
-                                title="Clear end client"
-                              >
-                                Clear
-                              </button>
-                            </div>
-                          )}
-                          {isEditing && (
-                            <small className="text-muted d-block mt-1">Choose "-- Select End Client --" or click Clear to unassign.</small>
-                          )}
-                        </div>
-                      </div>
-                      <div className="profile-ud-item">
-                        <div className="profile-ud-label">Employment Type</div>
-                        <div className="profile-ud-value">
-                          <span className={`badge badge-${employee.employmentType === 'W2' ? 'primary' : 'info'}`}>
-                            {employee.employmentType}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="profile-ud-item">
-                        <div className="profile-ud-label">Vendor</div>
-                        <div className="profile-ud-value">
-                          {!isEditing && (
-                            <>
-                              {employee.vendor ? (
-                                <Link href={`/${subdomain}/vendors/${employee.vendorId}`}>
-                                  {employee.vendor}
-                                </Link>
-                              ) : (
-                                <span className="text-muted">No vendor assigned</span>
-                              )}
-                            </>
-                          )}
-                          {isEditing && (
-                            <div className="d-flex align-items-center">
-                              <select
-                                name="vendorId"
-                                className="form-control"
-                                value={formValues.vendorId || ''}
-                                onChange={handleChange}
-                              >
-                                <option value="">-- Select Vendor --</option>
-                                {vendorsData.map(v => (
-                                  <option key={v.id} value={v.id}>{v.name}</option>
-                                ))}
-                              </select>
-                              <button
-                                type="button"
-                                className="btn btn-sm btn-outline-light ml-2"
-                                onClick={() => setFormValues(prev => ({ ...prev, vendorId: '' }))}
-                                title="Clear vendor"
-                              >
-                                Clear
-                              </button>
-                            </div>
-                          )}
-                          {isEditing && (
-                            <small className="text-muted d-block mt-1">Choose "-- Select Vendor --" or click Clear to unassign.</small>
-                          )}
-                        </div>
-                      </div>
-                      <div className="profile-ud-item">
-                        <div className="profile-ud-label">Impl Partner</div>
-                        <div className="profile-ud-value">
-                          {!isEditing && (
-                            <>
-                              {employee.implPartner ? (
-                                <Link href={`/${subdomain}/vendors/${employee.implPartnerId}`}>
-                                  {employee.implPartner}
-                                </Link>
-                              ) : (
-                                <span className="text-muted">No impl partner assigned</span>
-                              )}
-                            </>
-                          )}
-                          {isEditing && (
-                            <div className="d-flex align-items-center">
-                              <select
-                                name="implPartnerId"
-                                className="form-control"
-                                value={formValues.implPartnerId || ''}
-                                onChange={handleChange}
-                              >
-                                <option value="">-- Select Impl Partner --</option>
-                                {vendorsData.map(v => (
-                                  <option key={v.id} value={v.id}>{v.name}</option>
-                                ))}
-                              </select>
-                              <button
-                                type="button"
-                                className="btn btn-sm btn-outline-light ml-2"
-                                onClick={() => setFormValues(prev => ({ ...prev, implPartnerId: '' }))}
-                                title="Clear implementation partner"
-                              >
-                                Clear
-                              </button>
-                            </div>
-                          )}
-                          {isEditing && (
-                            <small className="text-muted d-block mt-1">Choose "-- Select Impl Partner --" or click Clear to unassign.</small>
-                          )}
-                        </div>
-                      </div>
-                      <div className="profile-ud-item">
-                        <div className="profile-ud-label">Join Date</div>
-                        <div className="profile-ud-value">
-                          {!isEditing && (
-                            <>{employee.joinDate ? new Date(employee.joinDate).toLocaleDateString() : '—'}</>
-                          )}
-                          {isEditing && (
-                            <input
-                              type="date"
-                              name="joinDate"
-                              className="form-control"
-                              value={formValues.joinDate || ''}
-                              onChange={handleChange}
-                            />
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="nk-block">
-                    <div className="nk-block-head">
-                      <h5 className="title">Address</h5>
-                    </div>
-                    <div className="profile-ud-list">
-                      <div className="profile-ud-item">
-                        <div className="profile-ud-label">Address</div>
-                        <div className="profile-ud-value">{employee.address}</div>
-                      </div>
-                      <div className="profile-ud-item">
-                        <div className="profile-ud-label">City</div>
-                        <div className="profile-ud-value">{employee.city}</div>
-                      </div>
-                      <div className="profile-ud-item">
-                        <div className="profile-ud-label">State</div>
-                        <div className="profile-ud-value">{employee.state}</div>
-                      </div>
-                      <div className="profile-ud-item">
-                        <div className="profile-ud-label">ZIP Code</div>
-                        <div className="profile-ud-value">{employee.zip}</div>
-                      </div>
-                      <div className="profile-ud-item">
-                        <div className="profile-ud-label">Country</div>
-                        <div className="profile-ud-value">{employee.country}</div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* SOW Details - Only visible to Admin */}
-                  {checkPermission(PERMISSIONS.MANAGE_SETTINGS) && (
-                    <div className="nk-block">
-                      <div className="nk-block-head">
-                        <h5 className="title">Statement of Work (SOW) Details</h5>
-                        <p className="text-muted">This information is only visible to administrators</p>
-                      </div>
-                      <div className="profile-ud-list">
-                        <div className="profile-ud-item">
-                          <div className="profile-ud-label">Hourly Rate</div>
-                          <div className="profile-ud-value">${employee.hourlyRate}</div>
-                        </div>
-                        <div className="profile-ud-item">
-                          <div className="profile-ud-label">Overtime Enabled</div>
-                          <div className="profile-ud-value">
-                            {employee.enableOvertime ? (
-                              <span className="badge badge-success">Yes</span>
-                            ) : (
-                              <span className="badge badge-light">No</span>
-                            )}
-                          </div>
-                        </div>
-                        {employee.enableOvertime && (
-                          <>
-                            <div className="profile-ud-item">
-                              <div className="profile-ud-label">Overtime Multiplier</div>
-                              <div className="profile-ud-value">{employee.overtimeMultiplier}x</div>
-                            </div>
-                            <div className="profile-ud-item">
-                              <div className="profile-ud-label">Overtime Rate</div>
-                              <div className="profile-ud-value">${employee.overtimeRate}</div>
-                            </div>
-                          </>
-                        )}
-                        <div className="profile-ud-item">
-                          <div className="profile-ud-label">Approval Workflow</div>
-                          <div className="profile-ud-value">
-                            {employee.approvalWorkflow === 'auto' && 'Auto-approve'}
-                            {employee.approvalWorkflow === 'manual' && 'Manual approval'}
-                            {employee.approvalWorkflow === 'manager' && 'Manager approval'}
-                            {employee.approvalWorkflow === 'client' && 'Client approval'}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* SOW Document */}
-                      <div className="nk-block-head mt-4">
-                        <h6 className="title">SOW Document</h6>
-                      </div>
-                      {employee.sowDocument ? (
-                        <div className="document-preview mb-4">
-                          <div className="document-preview-header">
-                            <span className="document-name">{employee.sowDocument?.name || 'Untitled'}</span>
-                            {typeof employee.sowDocument?.size === 'number' && (
-                              <span className="document-size">{Math.round(employee.sowDocument.size / 1024)} KB</span>
-                            )}
-                          </div>
-                          <div className="document-preview-content">
-                            <div className="document-icon">
-                              <i className="fas fa-file-pdf"></i>
-                              {employee.sowDocument?.uploadDate && (
-                                <span>Uploaded on {new Date(employee.sowDocument.uploadDate).toLocaleDateString()}</span>
-                              )}
-                            </div>
-                            {employee.sowDocument?.url ? (
-                              <a href={employee.sowDocument.url} className="btn btn-sm btn-outline-primary mt-2">
-                                <i className="fas fa-download mr-1"></i> Download
-                              </a>
-                            ) : (
-                              <span className="text-muted d-block mt-2">No download available</span>
-                            )}
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="text-muted mb-4">No SOW document uploaded.</div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* End Client Details */}
-                  {employee.endClient && (
-                    <div className="nk-block">
-                      <div className="nk-block-head">
-                        <h5 className="title">End Client Details</h5>
-                      </div>
-                      <div className="card card-bordered">
-                        <div className="card-inner">
-                          <div className="profile-ud-list">
-                            <div className="profile-ud-item">
-                              <div className="profile-ud-label">Client Name</div>
-                              <div className="profile-ud-value">{employee.endClient.name}</div>
-                            </div>
-                            <div className="profile-ud-item">
-                              <div className="profile-ud-label">Location</div>
-                              <div className="profile-ud-value">{employee.endClient.location}</div>
-                            </div>
-                          </div>
-                          
-                          {employee.endClient.hiringManager && (
-                            <>
-                              <div className="nk-divider divider md"></div>
-                              
-                              <div className="nk-block-head">
-                                <h6 className="title">Hiring Manager</h6>
-                              </div>
-                              <div className="profile-ud-list">
-                                <div className="profile-ud-item">
-                                  <div className="profile-ud-label">Name</div>
-                                  <div className="profile-ud-value">{employee.endClient.hiringManager.name}</div>
-                                </div>
-                                <div className="profile-ud-item">
-                                  <div className="profile-ud-label">Email</div>
-                                  <div className="profile-ud-value">
-                                    <a href={`mailto:${employee.endClient.hiringManager.email}`}>
-                                      {employee.endClient.hiringManager.email}
-                                    </a>
-                                  </div>
-                                </div>
-                                <div className="profile-ud-item">
-                                  <div className="profile-ud-label">Phone</div>
-                                  <div className="profile-ud-value">
-                                    <a href={`tel:${employee.endClient.hiringManager.phone}`}>
-                                      {employee.endClient.hiringManager.phone}
-                                    </a>
-                                  </div>
-                                </div>
-                              </div>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {/* Timesheet Settings */}
-                  <div className="nk-block">
-                    <div className="nk-block-head nk-block-between">
-                      <div>
-                        <h5 className="title">Timesheet Settings</h5>
-                      </div>
-                      <div>
-                        <PermissionGuard requiredPermission={PERMISSIONS.EDIT_EMPLOYEE}>
-                          <Link href={`/${subdomain}/employees/${id}/settings`} className="btn btn-sm btn-primary">
-                            <i className="fas fa-cog mr-1"></i> Configure Settings
-                          </Link>
-                        </PermissionGuard>
-                      </div>
-                    </div>
-                    <div className="card card-bordered">
-                      <div className="card-inner">
-                        <div className="row">
-                          <div className="col-md-6">
-                            <div className="profile-ud-list">
-                              <div className="profile-ud-item">
-                                <div className="profile-ud-label">Client</div>
-                                <div className="profile-ud-value">
-                                  {employee.client || 'Not assigned'}
-                                </div>
-                              </div>
-                              <div className="profile-ud-item">
-                                <div className="profile-ud-label">Client Type</div>
-                                <div className="profile-ud-value">
-                                  <span className={`badge badge-${employee.clientType === 'internal' ? 'primary' : 'warning'}`}>
-                                    {employee.clientType === 'internal' ? 'Internal' : 'External'}
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                          <div className="col-md-6">
-                            <div className="profile-ud-list">
-                              <div className="profile-ud-item">
-                                <div className="profile-ud-label">Timesheet Approver</div>
-                                <div className="profile-ud-value">
-                                  {employee.approver || 'Not assigned'}
-                                </div>
-                              </div>
-                              <div className="profile-ud-item">
-                                <div className="profile-ud-label">Approval Workflow</div>
-                                <div className="profile-ud-value">
-                                  {employee.approvalWorkflow || 'Manager Approval'}
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Notes */}
-                  <div className="nk-block">
-                    <div className="nk-block-head">
-                      <h5 className="title">Notes</h5>
-                    </div>
-                    <div className="card card-bordered">
-                      <div className="card-inner">
-                        <p>{employee.notes || 'No notes available.'}</p>
-                      </div>
-                    </div>
+        {/* Main Content Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Left Column - Main Info */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Personal Information Card */}
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Personal Information</h2>
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Full Name</label>
+                  <p className="mt-1 text-base text-gray-900 dark:text-white">{employee.name}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Email</label>
+                  <p className="mt-1 text-base text-gray-900 dark:text-white">{employee.email}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Phone</label>
+                  <p className="mt-1 text-base text-gray-900 dark:text-white">{employee.phone}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Status</label>
+                  <div className="mt-1">
+                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                      employee.status === 'active' 
+                        ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' 
+                        : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
+                    }`}>
+                      <span className={`w-2 h-2 mr-2 rounded-full ${
+                        employee.status === 'active' ? 'bg-green-500' : 'bg-yellow-500'
+                      }`}></span>
+                      {employee.status === 'active' ? 'Active' : 'Inactive'}
+                    </span>
                   </div>
                 </div>
               </div>
             </div>
+                  
+            {/* Work Information Card */}
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Work Information</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Position</label>
+                  <p className="mt-1 text-base text-gray-900 dark:text-white">{employee.position}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Department</label>
+                  <p className="mt-1 text-base text-gray-900 dark:text-white">{employee.department}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Employment Type</label>
+                  <div className="mt-1">
+                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                      employee.employmentType === 'W2' 
+                        ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400' 
+                        : 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400'
+                    }`}>
+                      {employee.employmentType}
+                    </span>
+                  </div>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Join Date</label>
+                  {!isEditing ? (
+                    <p className="mt-1 text-base text-gray-900 dark:text-white">
+                      {employee.joinDate ? new Date(employee.joinDate).toLocaleDateString() : '—'}
+                    </p>
+                  ) : (
+                    <input
+                      type="date"
+                      name="joinDate"
+                      className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      value={formValues.joinDate || ''}
+                      onChange={handleChange}
+                    />
+                  )}
+                </div>
+                <div className="md:col-span-2">
+                  <label className="text-sm font-medium text-gray-500 dark:text-gray-400">End Client</label>
+                  {!isEditing ? (
+                    <p className="mt-1 text-base text-gray-900 dark:text-white">
+                      {employee.client || <span className="text-gray-400">Not assigned</span>}
+                    </p>
+                  ) : (
+                    <div className="mt-1">
+                      <div className="flex items-center space-x-2">
+                        <select
+                          name="clientId"
+                          className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          value={formValues.clientId || ''}
+                          onChange={handleChange}
+                        >
+                          <option value="">-- Select End Client --</option>
+                          {clientsData.map(c => (
+                            <option key={c.id} value={c.id}>{c.name}</option>
+                          ))}
+                        </select>
+                        <button
+                          type="button"
+                          className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                          onClick={() => setFormValues(prev => ({ ...prev, clientId: '' }))}
+                          title="Clear end client"
+                        >
+                          Clear
+                        </button>
+                      </div>
+                      <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Choose "-- Select End Client --" or click Clear to unassign.</p>
+                    </div>
+                  )}
+                </div>
+                <div className="md:col-span-2">
+                  <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Vendor</label>
+                  {!isEditing ? (
+                    <p className="mt-1 text-base text-gray-900 dark:text-white">
+                      {employee.vendor && employee.vendor !== 'Not assigned' ? (
+                        <Link href={`/${subdomain}/vendors/${employee.vendorId}`} className="text-blue-600 dark:text-blue-400 hover:underline">
+                          {employee.vendor}
+                        </Link>
+                      ) : (
+                        <span className="text-gray-400">No vendor assigned</span>
+                      )}
+                    </p>
+                  ) : (
+                    <div className="mt-1">
+                      <div className="flex items-center space-x-2">
+                        <select
+                          name="vendorId"
+                          className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          value={formValues.vendorId || ''}
+                          onChange={handleChange}
+                        >
+                          <option value="">-- Select Vendor --</option>
+                          {vendorsData.map(v => (
+                            <option key={v.id} value={v.id}>{v.name}</option>
+                          ))}
+                        </select>
+                        <button
+                          type="button"
+                          className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                          onClick={() => setFormValues(prev => ({ ...prev, vendorId: '' }))}
+                          title="Clear vendor"
+                        >
+                          Clear
+                        </button>
+                      </div>
+                      <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Choose "-- Select Vendor --" or click Clear to unassign.</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Address Card */}
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Address</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="md:col-span-2">
+                  <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Street Address</label>
+                  <p className="mt-1 text-base text-gray-900 dark:text-white">{employee.address || '—'}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-500 dark:text-gray-400">City</label>
+                  <p className="mt-1 text-base text-gray-900 dark:text-white">{employee.city || '—'}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-500 dark:text-gray-400">State</label>
+                  <p className="mt-1 text-base text-gray-900 dark:text-white">{employee.state || '—'}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-500 dark:text-gray-400">ZIP Code</label>
+                  <p className="mt-1 text-base text-gray-900 dark:text-white">{employee.zip || '—'}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Country</label>
+                  <p className="mt-1 text-base text-gray-900 dark:text-white">{employee.country || '—'}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column - Additional Info */}
+          <div className="space-y-6">
+            {/* Status Card */}
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Quick Info</h2>
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Employee ID</label>
+                  <p className="mt-1 text-base text-gray-900 dark:text-white">{employee.employeeId || 'N/A'}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Hourly Rate</label>
+                  <p className="mt-1 text-base text-gray-900 dark:text-white">${employee.hourlyRate || '0.00'}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Salary</label>
+                  <p className="mt-1 text-base text-gray-900 dark:text-white">${employee.salaryAmount || '0.00'}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* SOW Details - Admin Only */}
+            {checkPermission(PERMISSIONS.MANAGE_SETTINGS) && (
+              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">SOW Details</h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Administrator only</p>
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Hourly Rate</label>
+                    <p className="mt-1 text-base text-gray-900 dark:text-white">${employee.hourlyRate}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Overtime Enabled</label>
+                    <div className="mt-1">
+                      {employee.enableOvertime ? (
+                        <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">Yes</span>
+                      ) : (
+                        <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-400">No</span>
+                      )}
+                    </div>
+                  </div>
+                  {employee.enableOvertime && (
+                    <>
+                      <div>
+                        <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Overtime Multiplier</label>
+                        <p className="mt-1 text-base text-gray-900 dark:text-white">{employee.overtimeMultiplier}x</p>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Overtime Rate</label>
+                        <p className="mt-1 text-base text-gray-900 dark:text-white">${employee.overtimeRate}</p>
+                      </div>
+                    </>
+                  )}
+                  <div>
+                    <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Approval Workflow</label>
+                    <p className="mt-1 text-base text-gray-900 dark:text-white">
+                      {employee.approvalWorkflow === 'auto' && 'Auto-approve'}
+                      {employee.approvalWorkflow === 'manual' && 'Manual approval'}
+                      {employee.approvalWorkflow === 'manager' && 'Manager approval'}
+                      {employee.approvalWorkflow === 'client' && 'Client approval'}
+                    </p>
+                  </div>
+                </div>
+
+                {employee.sowDocument && (
+                  <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">SOW Document</h3>
+                    <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                        </svg>
+                        <div>
+                          <p className="text-sm font-medium text-gray-900 dark:text-white">{employee.sowDocument?.name || 'Untitled'}</p>
+                          {employee.sowDocument?.uploadDate && (
+                            <p className="text-xs text-gray-500 dark:text-gray-400">Uploaded {new Date(employee.sowDocument.uploadDate).toLocaleDateString()}</p>
+                          )}
+                        </div>
+                      </div>
+                      {employee.sowDocument?.url && (
+                        <a href={employee.sowDocument.url} className="inline-flex items-center px-3 py-1.5 border border-transparent rounded-lg text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors">
+                          <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                          </svg>
+                          Download
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
+
       </div>
     </div>
   );

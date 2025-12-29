@@ -1551,7 +1551,9 @@ const InvoicePDFPreviewModal = ({ invoice, onClose, onUpdate, show }) => {
               <i className="fas fa-times"></i>
               Cancel
             </button>
-            <button className="btn-preview" onClick={handlePreview}>
+            <button className="btn-preview" 
+            onClick={handlePreview}
+            >
               <i className="fas fa-eye"></i>
               Preview Invoice PDF
             </button>

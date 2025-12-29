@@ -20,8 +20,11 @@ export default function OnboardingPage() {
     lastName: '',
     role: '',
     phoneNumber: '',
-    department: ''
+    department: '',
+    approverId: ''
   });
+  const [approvers, setApprovers] = useState([]);
+  const [loadingApprovers, setLoadingApprovers] = useState(false);
 
   useEffect(() => {
     // Get email and googleId from URL params
@@ -48,6 +51,45 @@ export default function OnboardingPage() {
     }
   }, [searchParams, router]);
 
+  // Fetch approvers when email is set
+  useEffect(() => {
+    const fetchApprovers = async () => {
+      if (!email) return;
+      
+      setLoadingApprovers(true);
+      try {
+        // Get tenant by email domain
+        const emailDomain = email.split('@')[1];
+        
+        console.log('[Onboarding] Fetching approvers for domain:', emailDomain);
+        
+        const response = await fetch(
+          `${API_BASE}/api/oauth/approvers?emailDomain=${emailDomain}`,
+          {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          }
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+          setApprovers(data.approvers || []);
+          console.log('[Onboarding] Fetched approvers:', data.approvers?.length, data.approvers);
+        } else {
+          console.error('[Onboarding] Failed to fetch approvers:', response.status);
+        }
+      } catch (error) {
+        console.error('[Onboarding] Error fetching approvers:', error);
+      } finally {
+        setLoadingApprovers(false);
+      }
+    };
+
+    fetchApprovers();
+  }, [email]);
+
   const handleChange = (e) => {
     setFormData({
       ...formData,
@@ -67,6 +109,13 @@ export default function OnboardingPage() {
       return;
     }
 
+    // Validate approver selection for employee role
+    if (formData.role === 'employee' && !formData.approverId) {
+      setError('Please select an approver');
+      setLoading(false);
+      return;
+    }
+
     try {
       const response = await fetch(`${API_BASE}/api/oauth/register`, {
         method: 'POST',
@@ -80,7 +129,8 @@ export default function OnboardingPage() {
           lastName: formData.lastName,
           role: formData.role,
           phoneNumber: formData.phoneNumber,
-          department: formData.department
+          department: formData.department,
+          approverId: formData.approverId || null
         })
       });
 
@@ -278,6 +328,51 @@ export default function OnboardingPage() {
               <option value="employee">Employee - Submit timesheets</option>
             </select>
           </div>
+
+          {/* Approver Dropdown - Show only for employee role */}
+          {formData.role === 'employee' && (
+            <div className="form-group">
+              <label htmlFor="approverId">
+                Select Approver *
+                {loadingApprovers && (
+                  <span style={{ marginLeft: '8px', fontSize: '12px', color: '#6b7280' }}>
+                    <i className="fas fa-spinner fa-spin"></i> Loading...
+                  </span>
+                )}
+              </label>
+              <select
+                id="approverId"
+                name="approverId"
+                value={formData.approverId}
+                onChange={handleChange}
+                required
+                className="form-control"
+                disabled={loadingApprovers || approvers.length === 0}
+                style={{ 
+                  padding: '12px 16px',
+                  borderRadius: '8px',
+                  border: '1px solid #e5e7eb',
+                  fontSize: '14px'
+                }}
+              >
+                <option value="">Select an approver</option>
+                {approvers.map((approver) => (
+                  <option key={approver.id} value={approver.id}>
+                    {approver.firstName} {approver.lastName} ({approver.role})
+                  </option>
+                ))}
+              </select>
+              {approvers.length === 0 && !loadingApprovers && (
+                <p style={{ 
+                  marginTop: '8px', 
+                  fontSize: '12px', 
+                  color: '#ef4444' 
+                }}>
+                  No approvers available. Please contact your administrator.
+                </p>
+              )}
+            </div>
+          )}
 
           {/* <div className="info-message" style={{
             padding: '12px 16px',

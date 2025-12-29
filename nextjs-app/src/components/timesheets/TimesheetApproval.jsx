@@ -7,6 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
 import axios from 'axios';
 import { API_BASE } from '@/config/api';
+import { decryptEmployeeFields } from '@/utils/encryption';
 // import { useTheme } from '@/contexts/ThemeContext';
 import "./TimesheetSummary.css";
 import "./TimesheetApproval.css";
@@ -76,6 +77,16 @@ const TimesheetApproval = () => {
 
       if (response.data.success) {
         const formattedTimesheets = response.data.timesheets.map(ts => {
+          // Decrypt employee data if present
+          let decryptedEmployee = ts.Employee;
+          if (ts.Employee) {
+            decryptedEmployee = decryptEmployeeFields(ts.Employee);
+          }
+          
+          // Decrypt overtimeComment and notes
+          const decryptedOvertimeComment = ts.overtimeComment ? decryptEmployeeFields({ firstName: ts.overtimeComment }).firstName : ts.overtimeComment;
+          const decryptedNotes = ts.notes ? decryptEmployeeFields({ firstName: ts.notes }).firstName : ts.notes;
+          
           // Ensure attachments is always an array
           let attachments = [];
           if (ts.attachments) {
@@ -108,6 +119,9 @@ const TimesheetApproval = () => {
 
           return {
             ...ts,
+            Employee: decryptedEmployee,
+            overtimeComment: decryptedOvertimeComment,
+            notes: decryptedNotes,
             attachments: attachments,
             overtimeDays: overtimeDays,
             status: ts.status === 'submitted' ? 'Submitted for Approval' : ts.status

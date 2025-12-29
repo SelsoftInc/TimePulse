@@ -245,10 +245,29 @@ export default function PendingApprovalPage() {
             width: '100%',
             padding: '14px',
             fontSize: '16px',
-            fontWeight: '600'
+            fontWeight: '600',
+            marginTop: '8px',
+            backgroundColor: '#007bff',
+            color: '#ffffff',
+            border: 'none',
+            borderRadius: '8px',
+            cursor: 'pointer',
+            transition: 'all 0.3s ease',
+            zIndex: 10,
+            position: 'relative'
+          }}
+          onMouseEnter={(e) => {
+            e.target.style.backgroundColor = '#0056b3';
+            e.target.style.transform = 'translateY(-2px)';
+            e.target.style.boxShadow = '0 4px 12px rgba(0, 123, 255, 0.3)';
+          }}
+          onMouseLeave={(e) => {
+            e.target.style.backgroundColor = '#007bff';
+            e.target.style.transform = 'translateY(0)';
+            e.target.style.boxShadow = 'none';
           }}
         >
-          Back to Login
+          Back to Sign In
         </button>
 
         <p style={{

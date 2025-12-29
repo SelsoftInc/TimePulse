@@ -415,11 +415,11 @@ const EmployeeList = () => {
             emp.id === assignTarget.id 
               ? {
                   ...emp,
-                  vendorId: data.employee.vendorId,
-                  vendor: data.employee.vendor ? {
-                    id: data.employee.vendor.id,
-                    name: data.employee.vendor.name,
-                    category: data.employee.vendor.category
+                  vendorId: cData.employee.vendorId,
+                  vendor: cData.employee.vendor ? {
+                    id: cData.employee.vendor.id,
+                    name: cData.employee.vendor.name,
+                    category: cData.employee.vendor.category
                   } : null
                 }
               : emp

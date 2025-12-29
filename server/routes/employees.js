@@ -29,7 +29,6 @@ router.get("/", async (req, res) => {
     
     const allEmployees = await Employee.findAll({
       where: whereClause,
-      // Basic attributes only - vendor/client columns don't exist yet
       attributes: [
         "id",
         "tenantId",
@@ -49,13 +48,28 @@ router.get("/", async (req, res) => {
         "salaryType",
         "contactInfo",
         "status",
+        "clientId",
+        "vendorId",
+        "implPartnerId",
+        "employmentTypeId",
       ],
-      // Include user data only - we'll fetch vendor/client separately to avoid association issues
       include: [
         {
           model: User,
           as: "user",
           attributes: ["role"],
+          required: false,
+        },
+        {
+          model: Client,
+          as: "client",
+          attributes: ["id", "clientName", "legalName", "email"],
+          required: false,
+        },
+        {
+          model: Vendor,
+          as: "vendor",
+          attributes: ["id", "name", "email"],
           required: false,
         },
       ],
@@ -91,8 +105,51 @@ router.get("/", async (req, res) => {
     });
 
     // Transform the decrypted data to match frontend expectations
-    // Note: vendor/client columns don't exist yet, so we set them to null/"Not assigned"
     const transformedEmployees = decryptedRawEmployees.map((emp) => {
+      // Decrypt client data if it exists
+      let clientName = "Not assigned";
+      let clientObject = null;
+      if (emp.client) {
+        const decryptedClient = DataEncryptionService.decryptClientData(emp.client);
+        clientName = decryptedClient.clientName || decryptedClient.legalName || "Not assigned";
+        clientObject = {
+          id: decryptedClient.id,
+          clientName: decryptedClient.clientName,
+          name: decryptedClient.clientName,
+          email: decryptedClient.email,
+          legalName: decryptedClient.legalName
+        };
+      }
+      
+      // Decrypt vendor data if it exists
+      let vendorName = "Not assigned";
+      let vendorObject = null;
+      if (emp.vendor) {
+        const decryptedVendor = DataEncryptionService.decryptVendorData(emp.vendor);
+        vendorName = decryptedVendor.name || "Not assigned";
+        
+        // CRITICAL: Only create vendorObject if we have a valid ID
+        // This ensures the frontend vendor detection (vendor && vendor.id) works correctly
+        if (decryptedVendor.id) {
+          vendorObject = {
+            id: decryptedVendor.id,
+            name: decryptedVendor.name || "Unknown Vendor",
+            vendorName: decryptedVendor.name || "Unknown Vendor",
+            email: decryptedVendor.email || null
+          };
+          
+          // Log if vendor is missing email (critical for invoice generation)
+          if (!decryptedVendor.email) {
+            console.warn(`⚠️ Vendor ${decryptedVendor.id} (${decryptedVendor.name}) is missing email address for employee ${emp.firstName} ${emp.lastName}`);
+          }
+        } else {
+          console.warn(`⚠️ Vendor data exists but missing ID for employee ${emp.firstName} ${emp.lastName}:`, decryptedVendor);
+        }
+      } else if (emp.vendorId) {
+        // Employee has vendorId but vendor association is null - database inconsistency
+        console.warn(`⚠️ Employee ${emp.firstName} ${emp.lastName} has vendorId ${emp.vendorId} but vendor association is NULL`);
+      }
+      
       return {
         id: emp.id,
         name: `${emp.firstName} ${emp.lastName}`,
@@ -106,15 +163,14 @@ router.get("/", async (req, res) => {
         joinDate: emp.startDate || null,
         hourlyRate: emp.hourlyRate || null,
         role: emp.user?.role || null,
-        // Vendor/client columns don't exist yet - set to defaults
-        client: "Not assigned",
-        clientId: null,
+        client: clientObject,
+        clientId: emp.clientId || null,
         employmentType: "W2",
-        vendor: "Not assigned",
-        vendorId: null,
+        vendor: vendorObject,
+        vendorId: emp.vendorId || null,
         implPartner: "Not assigned",
-        implPartnerId: null,
-        endClient: "Not assigned",
+        implPartnerId: emp.implPartnerId || null,
+        endClient: clientName,
         employeeId: emp.employeeId,
         salaryAmount: emp.salaryAmount,
         contactInfo: emp.contactInfo,
@@ -122,6 +178,26 @@ router.get("/", async (req, res) => {
     });
 
     console.log('✅ Sending', transformedEmployees.length, 'employees to frontend');
+    
+    // Log sample employee to verify decryption and vendor/client structure
+    if (transformedEmployees.length > 0) {
+      console.log('📋 Sample employee data:', {
+        firstName: transformedEmployees[0].firstName,
+        lastName: transformedEmployees[0].lastName,
+        email: transformedEmployees[0].email,
+        vendor: transformedEmployees[0].vendor,
+        vendorId: transformedEmployees[0].vendorId,
+        client: transformedEmployees[0].client,
+        clientId: transformedEmployees[0].clientId
+      });
+    }
+    
+    // Log all employees with vendor assignments
+    const employeesWithVendors = transformedEmployees.filter(e => e.vendorId);
+    console.log(`📊 Employees with vendors: ${employeesWithVendors.length}/${transformedEmployees.length}`);
+    employeesWithVendors.forEach(emp => {
+      console.log(`   - ${emp.firstName} ${emp.lastName}: Vendor=${emp.vendor?.name || 'N/A'} (ID: ${emp.vendorId})`);
+    });
 
     // Data is already decrypted, just use it directly
     const decryptedEmployees = transformedEmployees;
@@ -152,7 +228,6 @@ router.get("/:id", async (req, res) => {
         id,
         tenantId,
       },
-      // Basic attributes only - vendor/client columns don't exist yet
       attributes: [
         "id",
         "tenantId",
@@ -172,8 +247,11 @@ router.get("/:id", async (req, res) => {
         "salaryType",
         "contactInfo",
         "status",
+        "clientId",
+        "vendorId",
+        "implPartnerId",
+        "employmentTypeId",
       ],
-      // Only include User association - we'll fetch vendor/client separately
       include: [
         {
           model: User,
@@ -187,6 +265,18 @@ router.get("/:id", async (req, res) => {
             "department",
             "title",
           ],
+          required: false,
+        },
+        {
+          model: Client,
+          as: "client",
+          attributes: ["id", "clientName", "legalName"],
+          required: false,
+        },
+        {
+          model: Vendor,
+          as: "vendor",
+          attributes: ["id", "name"],
           required: false,
         },
       ],
@@ -207,41 +297,56 @@ router.get("/:id", async (req, res) => {
       lastName: employee.lastName
     });
 
+    // Decrypt employee data first
+    const decryptedEmp = DataEncryptionService.decryptEmployeeData(employee.toJSON ? employee.toJSON() : employee);
+    
+    // Decrypt client name if it exists
+    let clientName = "Not assigned";
+    if (decryptedEmp.client) {
+      const decryptedClient = DataEncryptionService.decryptClientData(decryptedEmp.client);
+      clientName = decryptedClient.clientName || decryptedClient.legalName || "Not assigned";
+    }
+    
+    // Decrypt vendor name if it exists
+    let vendorName = "Not assigned";
+    if (decryptedEmp.vendor) {
+      const decryptedVendor = DataEncryptionService.decryptVendorData(decryptedEmp.vendor);
+      vendorName = decryptedVendor.name || "Not assigned";
+    }
+    
     // Transform the data
-    // Note: vendor/client columns don't exist yet, so we set them to null/"Not assigned"
     const transformedEmployee = {
-      id: employee.id,
-      name: employee.user
-        ? `${employee.user.firstName} ${employee.user.lastName}`
-        : `${employee.firstName || ""} ${employee.lastName || ""}`.trim() ||
+      id: decryptedEmp.id,
+      name: decryptedEmp.user
+        ? `${decryptedEmp.user.firstName} ${decryptedEmp.user.lastName}`
+        : `${decryptedEmp.firstName || ""} ${decryptedEmp.lastName || ""}`.trim() ||
           "N/A",
-      firstName: employee.user?.firstName || employee.firstName || "",
-      lastName: employee.user?.lastName || employee.lastName || "",
-      position: employee.user?.title || employee.title || "N/A",
-      email: employee.user?.email || employee.email || "",
-      phone: employee.phone || "N/A",
-      status: employee.status || "active",
-      department: employee.user?.department || employee.department || "N/A",
-      joinDate: employee.startDate || new Date().toISOString(),
-      hourlyRate: employee.hourlyRate || 0,
-      // Vendor/client columns don't exist yet - set to defaults
-      client: "Not assigned",
-      clientId: null,
+      firstName: decryptedEmp.user?.firstName || decryptedEmp.firstName || "",
+      lastName: decryptedEmp.user?.lastName || decryptedEmp.lastName || "",
+      position: decryptedEmp.user?.title || decryptedEmp.title || "N/A",
+      email: decryptedEmp.user?.email || decryptedEmp.email || "",
+      phone: decryptedEmp.phone || "N/A",
+      status: decryptedEmp.status || "active",
+      department: decryptedEmp.user?.department || decryptedEmp.department || "N/A",
+      joinDate: decryptedEmp.startDate || new Date().toISOString(),
+      hourlyRate: decryptedEmp.hourlyRate || 0,
+      client: clientName,
+      clientId: decryptedEmp.clientId || null,
       employmentType: "W2",
-      vendor: "Not assigned",
-      vendorId: null,
+      vendor: vendorName,
+      vendorId: decryptedEmp.vendorId || null,
       implPartner: "Not assigned",
-      implPartnerId: null,
-      endClient: "Not assigned",
+      implPartnerId: decryptedEmp.implPartnerId || null,
+      endClient: clientName,
       // Additional detailed fields
-      employeeId: employee.employeeId,
-      salaryAmount: employee.salaryAmount,
-      contactInfo: employee.contactInfo,
-      user: employee.user,
+      employeeId: decryptedEmp.employeeId,
+      salaryAmount: decryptedEmp.salaryAmount,
+      contactInfo: decryptedEmp.contactInfo,
+      user: decryptedEmp.user,
     };
     
-    // Decrypt employee data before sending to frontend
-    const decryptedEmployee = DataEncryptionService.decryptEmployeeData(transformedEmployee);
+    // Data is already decrypted
+    const decryptedEmployee = transformedEmployee;
     
     const responseData = {
       success: true,
@@ -401,6 +506,12 @@ router.put("/:id", async (req, res) => {
     const { tenantId } = req.query;
     let updateData = req.body;
     
+    console.log('📝 Updating employee:', {
+      id,
+      tenantId,
+      updateData
+    });
+    
     // Encrypt employee data before updating in database
     updateData = DataEncryptionService.encryptEmployeeData(updateData);
 
@@ -409,11 +520,24 @@ router.put("/:id", async (req, res) => {
     });
 
     if (!employee) {
-      return res.status(404).json(encryptAuthResponse({ error: "Employee not found" }));
+      console.error('❌ Employee not found:', { id, tenantId });
+      return res.status(404).json({ success: false, error: "Employee not found" });
     }
+
+    console.log('📋 Current employee data:', {
+      id: employee.id,
+      vendorId: employee.vendorId,
+      clientId: employee.clientId
+    });
 
     // Update employee record
     await employee.update(updateData);
+    
+    console.log('✅ Employee updated in database:', {
+      id: employee.id,
+      vendorId: employee.vendorId,
+      clientId: employee.clientId
+    });
 
     // If firstName or lastName changed, also update the linked User record
     if ((updateData.firstName || updateData.lastName) && employee.userId) {
@@ -426,7 +550,7 @@ router.put("/:id", async (req, res) => {
       }
     }
 
-    // Fetch updated employee - basic attributes only
+    // Fetch updated employee with associations
     const updatedEmployee = await Employee.findOne({
       where: { id, tenantId },
       attributes: [
@@ -448,12 +572,28 @@ router.put("/:id", async (req, res) => {
         "salaryType",
         "contactInfo",
         "status",
+        "clientId",
+        "vendorId",
+        "implPartnerId",
+        "employmentTypeId",
       ],
       include: [
         {
           model: User,
           as: "user",
           attributes: ["role"],
+          required: false,
+        },
+        {
+          model: Client,
+          as: "client",
+          attributes: ["id", "clientName", "legalName"],
+          required: false,
+        },
+        {
+          model: Vendor,
+          as: "vendor",
+          attributes: ["id", "name", "email"],
           required: false,
         },
       ],
@@ -467,29 +607,70 @@ router.put("/:id", async (req, res) => {
       updatedEmployee.toJSON ? updatedEmployee.toJSON() : updatedEmployee
     );
 
-    // Add default vendor/client values (columns don't exist yet)
+    // Decrypt client and vendor data if they exist
+    let clientObject = null;
+    if (decryptedEmployee.client) {
+      const decryptedClient = DataEncryptionService.decryptClientData(decryptedEmployee.client);
+      clientObject = {
+        id: decryptedClient.id,
+        name: decryptedClient.clientName || decryptedClient.legalName,
+        clientName: decryptedClient.clientName,
+        legalName: decryptedClient.legalName
+      };
+    }
+    
+    let vendorObject = null;
+    if (decryptedEmployee.vendor) {
+      const decryptedVendor = DataEncryptionService.decryptVendorData(decryptedEmployee.vendor);
+      
+      // CRITICAL: Only create vendorObject if we have a valid ID
+      // This ensures the frontend vendor detection (vendor && vendor.id) works correctly
+      if (decryptedVendor.id) {
+        vendorObject = {
+          id: decryptedVendor.id,
+          name: decryptedVendor.name || "Unknown Vendor",
+          vendorName: decryptedVendor.name || "Unknown Vendor",
+          email: decryptedVendor.email || null
+        };
+        
+        // Log if vendor is missing email (critical for invoice generation)
+        if (!decryptedVendor.email) {
+          console.warn(`⚠️ PUT /employees/:id - Vendor ${decryptedVendor.id} (${decryptedVendor.name}) is missing email address`);
+        }
+      } else {
+        console.warn(`⚠️ PUT /employees/:id - Vendor data exists but missing ID:`, decryptedVendor);
+      }
+    }
+    
     const enrichedEmployee = {
       ...decryptedEmployee,
-      vendor: "Not assigned",
-      vendorId: null,
-      client: "Not assigned",
-      clientId: null,
+      vendor: vendorObject,
+      vendorId: decryptedEmployee.vendorId || null,
+      client: clientObject,
+      clientId: decryptedEmployee.clientId || null,
       implPartner: "Not assigned",
-      implPartnerId: null
+      implPartnerId: decryptedEmployee.implPartnerId || null
     };
 
+    console.log('✅ Employee updated successfully:', {
+      id: enrichedEmployee.id,
+      vendorId: enrichedEmployee.vendorId,
+      vendor: enrichedEmployee.vendor
+    });
+    
     const responseData = {
       success: true,
       message: "Employee updated successfully",
       employee: enrichedEmployee,
     };
-    res.json(encryptAuthResponse(responseData));
+    res.json(responseData);
   } catch (error) {
-    console.error("Error updating employee:", error);
-    res.status(500).json(encryptAuthResponse({
+    console.error("❌ Error updating employee:", error);
+    res.status(500).json({
+      success: false,
       error: "Failed to update employee",
       details: error.message,
-    }));
+    });
   }
 });
 

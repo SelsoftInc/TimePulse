@@ -10,11 +10,11 @@ const path = require('path');
 async function runMigration() {
   try {
     console.log('🔄 Starting database migration...');
-    console.log('📋 Migration: Add employee_id, vendor_id, approved_by, approved_at to invoices table');
+    console.log('📋 Migration: Add approver_id column to employees table');
     console.log('');
 
     // Read the migration SQL file
-    const migrationPath = path.join(__dirname, 'migrations', 'add_employee_vendor_to_invoices.sql');
+    const migrationPath = path.join(__dirname, 'migrations', 'add-employee-approver-field.sql');
     
     if (!fs.existsSync(migrationPath)) {
       throw new Error(`Migration file not found: ${migrationPath}`);
@@ -101,7 +101,7 @@ async function runMigration() {
 console.log('');
 console.log('═══════════════════════════════════════════════════════');
 console.log('  TimePulse Database Migration');
-console.log('  Invoice Table Updates');
+console.log('  Add approver_id to employees table');
 console.log('═══════════════════════════════════════════════════════');
 console.log('');
 

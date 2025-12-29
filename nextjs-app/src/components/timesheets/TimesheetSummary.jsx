@@ -15,6 +15,7 @@ import {
   uploadAndProcessTimesheet,
   transformTimesheetToInvoice} from '@/services/engineService';
 import { apiClient } from '@/utils/apiClient';
+import { decryptEmployeeFields } from '@/utils/encryption';
 import "./TimesheetSummary.css";
 import "../common/Pagination.css";
 
@@ -395,10 +396,35 @@ const TimesheetSummary = () => {
       return false;
     }
 
-    // Date range filter (basic implementation)
+    // Date range filter
     if (filters.dateRange.from || filters.dateRange.to) {
-      // For now, we'll skip complex date filtering since weekRange is in a specific format
-      // In a real app, you'd parse the date properly
+      // Parse the week range to get the start date
+      // Format is like "Nov 23, 2025 To Nov 29, 2025"
+      const weekRangeParts = timesheet.weekRange.split(' To ');
+      if (weekRangeParts.length === 2) {
+        const weekStartStr = weekRangeParts[0].trim();
+        const weekEndStr = weekRangeParts[1].trim();
+        
+        // Parse dates
+        const weekStart = new Date(weekStartStr);
+        const weekEnd = new Date(weekEndStr);
+        
+        // Apply from filter
+        if (filters.dateRange.from) {
+          const fromDate = new Date(filters.dateRange.from);
+          if (weekEnd < fromDate) {
+            return false;
+          }
+        }
+        
+        // Apply to filter
+        if (filters.dateRange.to) {
+          const toDate = new Date(filters.dateRange.to);
+          if (weekStart > toDate) {
+            return false;
+          }
+        }
+      }
     }
 
     return true;
@@ -722,9 +748,24 @@ const TimesheetSummary = () => {
     setAssigningVendor(true);
 
     try {
-      // Since vendorId doesn't exist in employee schema anymore,
-      // we'll fetch the vendor details and pass it directly to invoice generation
-      console.log('📤 Using selected vendor for invoice generation:', selectedVendor);
+      console.log('📤 Assigning vendor to employee:', {
+        employeeId: currentEmployeeForAssignment.id,
+        vendorId: selectedVendor
+      });
+
+      // Update the employee record with the vendorId
+      const updateResponse = await apiClient.put(
+        `/api/employees/${currentEmployeeForAssignment.id}?tenantId=${user.tenantId}`,
+        {
+          vendorId: selectedVendor
+        }
+      );
+
+      if (!updateResponse.success) {
+        throw new Error('Failed to update employee with vendor');
+      }
+
+      console.log('✅ Employee updated with vendor successfully');
 
       // Fetch the selected vendor details
       const vendorResponse = await apiClient.get(
@@ -745,7 +786,7 @@ const TimesheetSummary = () => {
       
       // Retry invoice generation with the vendor info
       if (currentTimesheetForRetry) {
-        console.log('🔄 Retrying invoice generation with selected vendor...');
+        console.log('🔄 Retrying invoice generation after vendor assignment...');
         const timesheetToRetry = currentTimesheetForRetry;
         setCurrentTimesheetForRetry(null);
         
@@ -757,7 +798,7 @@ const TimesheetSummary = () => {
       showModal({
         type: 'error',
         title: 'Assignment Failed',
-        message: `Failed to process vendor: ${error.message}`
+        message: `Failed to assign vendor: ${error.message}`
       });
     } finally {
       setAssigningVendor(false);
@@ -923,8 +964,11 @@ const TimesheetSummary = () => {
           throw new Error('Failed to fetch employees from Employee API');
         }
         
-        // Find the employee by email or name
-        const allEmployees = employeesResponse.employees;
+        // CRITICAL: Decrypt ALL employees BEFORE searching
+        // This is necessary because the search compares plain text from timesheet
+        // with encrypted data from database
+        const allEmployees = employeesResponse.employees.map(emp => decryptEmployeeFields(emp));
+        console.log('🔓 Decrypted all employees for search');
         console.log('🔍 Searching for employee with email:', employeeEmail, 'or name:', employeeName);
         
         if (employeeEmail) {
@@ -932,18 +976,30 @@ const TimesheetSummary = () => {
             emp.email && emp.email.toLowerCase() === employeeEmail.toLowerCase()
           );
           console.log('🔍 Searched by email:', employeeEmail, 'Found:', !!employeeData);
+          if (employeeData) {
+            console.log('✅ Match found - Email:', employeeData.email);
+          }
         }
         
         // If not found by email, try by name
         if (!employeeData && employeeName) {
           employeeData = allEmployees.find(emp => {
             const empFullName = `${emp.firstName || ''} ${emp.lastName || ''}`.trim();
+            console.log('🔍 Comparing:', empFullName, 'with', employeeName);
             return empFullName.toLowerCase() === employeeName.toLowerCase();
           });
           console.log('🔍 Searched by name:', employeeName, 'Found:', !!employeeData);
+          if (employeeData) {
+            console.log('✅ Match found - Name:', `${employeeData.firstName} ${employeeData.lastName}`);
+          }
         }
         
         if (!employeeData) {
+          console.error('❌ Employee not found after decryption');
+          console.error('Available employees:', allEmployees.map(e => ({
+            name: `${e.firstName} ${e.lastName}`,
+            email: e.email
+          })));
           throw new Error(`Employee not found in Employee API with email: ${employeeEmail} or name: ${employeeName}`);
         }
         
@@ -960,11 +1016,37 @@ const TimesheetSummary = () => {
           clientId: employeeData.clientId
         });
         
+        // CRITICAL DEBUG: Log detailed vendor structure
+        console.log('🔍 VENDOR DETECTION DEBUG:');
+        console.log('  - employeeData.vendor:', employeeData.vendor);
+        console.log('  - employeeData.vendorObject:', employeeData.vendorObject);
+        console.log('  - employeeData.vendorId:', employeeData.vendorId);
+        if (employeeData.vendor) {
+          console.log('  - vendor.id:', employeeData.vendor.id);
+          console.log('  - vendor.name:', employeeData.vendor.name);
+          console.log('  - vendor.email:', employeeData.vendor.email);
+          console.log('  - vendor type:', typeof employeeData.vendor);
+          console.log('  - vendor keys:', Object.keys(employeeData.vendor));
+        }
+        console.log('  - employeeData.client:', employeeData.client);
+        console.log('  - employeeData.clientObject:', employeeData.clientObject);
+        console.log('  - employeeData.clientId:', employeeData.clientId);
+        if (employeeData.client) {
+          console.log('  - client.id:', employeeData.client.id);
+          console.log('  - client.name:', employeeData.client.name);
+          console.log('  - client.email:', employeeData.client.email);
+          console.log('  - client type:', typeof employeeData.client);
+          console.log('  - client keys:', Object.keys(employeeData.client));
+        }
+        
         // ============================================================
         // STEP 3: Validate vendor/client assignment
         // ============================================================
+        console.log('🔍 STEP 3: Starting vendor/client validation checks...');
+        
         // If vendor was provided from assignment modal, use it directly
         if (providedVendor && providedVendor.id) {
+          console.log('📌 Check 1: providedVendor - HAS DATA');
           vendorClientInfo = providedVendor;
           vendorClientType = 'Vendor';
           console.log('✅ Using provided vendor from assignment:', {
@@ -973,8 +1055,20 @@ const TimesheetSummary = () => {
             email: vendorClientInfo.email
           });
         }
-        // Check for vendor assignment (prioritize nested vendor object with email)
+        // Check for vendorObject (new field with full vendor data including email)
+        else if (employeeData.vendorObject && employeeData.vendorObject.id) {
+          console.log('📌 Check 2: employeeData.vendorObject - HAS DATA');
+          vendorClientInfo = employeeData.vendorObject;
+          vendorClientType = 'Vendor';
+          console.log('✅ Found vendorObject from employee API:', {
+            id: vendorClientInfo.id,
+            name: vendorClientInfo.name || vendorClientInfo.vendorName,
+            email: vendorClientInfo.email
+          });
+        }
+        // Check for vendor assignment (legacy nested vendor object)
         else if (employeeData.vendor && employeeData.vendor.id) {
+          console.log('📌 Check 3: employeeData.vendor - HAS DATA');
           vendorClientInfo = employeeData.vendor;
           vendorClientType = 'Vendor';
           console.log('✅ Found vendor from employee API:', {
@@ -982,9 +1076,21 @@ const TimesheetSummary = () => {
             name: vendorClientInfo.name || vendorClientInfo.vendorName,
             email: vendorClientInfo.email
           });
-        } 
-        // Check for client assignment (prioritize nested client object with email)
+        }
+        // Check for clientObject (new field with full client data including email)
+        else if (employeeData.clientObject && employeeData.clientObject.id) {
+          console.log('📌 Check 4: employeeData.clientObject - HAS DATA');
+          vendorClientInfo = employeeData.clientObject;
+          vendorClientType = 'Client';
+          console.log('✅ Found clientObject from employee API:', {
+            id: vendorClientInfo.id,
+            name: vendorClientInfo.name || vendorClientInfo.clientName,
+            email: vendorClientInfo.email
+          });
+        }
+        // Check for client assignment (legacy nested client object)
         else if (employeeData.client && employeeData.client.id) {
+          console.log('📌 Check 5: employeeData.client - HAS DATA');
           vendorClientInfo = employeeData.client;
           vendorClientType = 'Client';
           console.log('✅ Found client from employee API - RAW:', employeeData.client);
@@ -997,6 +1103,12 @@ const TimesheetSummary = () => {
         }
         // No vendor or client found
         else {
+          console.log('📌 All checks (1-5) FAILED - NO VENDOR/CLIENT FOUND');
+          console.log('📌 Check 1 result: providedVendor =', providedVendor, 'has id?', providedVendor?.id);
+          console.log('📌 Check 2 result: vendorObject =', employeeData.vendorObject, 'has id?', employeeData.vendorObject?.id);
+          console.log('📌 Check 3 result: vendor =', employeeData.vendor, 'has id?', employeeData.vendor?.id);
+          console.log('📌 Check 4 result: clientObject =', employeeData.clientObject, 'has id?', employeeData.clientObject?.id);
+          console.log('📌 Check 5 result: client =', employeeData.client, 'has id?', employeeData.client?.id);
           console.error('❌ No vendor or client assigned to employee');
           console.error('Employee data:', employeeData);
           console.log('🔄 Preparing to show vendor assignment modal...');
@@ -1005,7 +1117,19 @@ const TimesheetSummary = () => {
           closeModal();
           
           // Store employee and timesheet for retry after vendor assignment
-          setCurrentEmployeeForAssignment(employeeData);
+          // Ensure employee data is decrypted before storing
+          const decryptedEmployeeForModal = {
+            id: employeeData.id,
+            firstName: employeeData.firstName,
+            lastName: employeeData.lastName,
+            email: employeeData.email,
+            vendor: employeeData.vendorObject || employeeData.vendor,
+            client: employeeData.clientObject || employeeData.client,
+            vendorId: employeeData.vendorId,
+            clientId: employeeData.clientId
+          };
+          console.log('🔓 Decrypted employee for modal:', decryptedEmployeeForModal);
+          setCurrentEmployeeForAssignment(decryptedEmployeeForModal);
           setCurrentTimesheetForRetry(timesheet);
           
           console.log('📋 Fetching vendors list...');
@@ -1014,7 +1138,7 @@ const TimesheetSummary = () => {
           
           console.log('✅ Vendors fetched, showing modal...');
           console.log('📋 Vendors list:', vendorsList);
-          console.log('👤 Employee for assignment:', employeeData);
+          console.log('👤 Employee for assignment:', decryptedEmployeeForModal);
           
           // Show vendor assignment modal
           setTimeout(() => {
@@ -1109,11 +1233,24 @@ const TimesheetSummary = () => {
         email: vendorClientInfo.email
       });
 
+      // Prepare invoice generation payload with all required data
+      const invoicePayload = {
+        tenantId: user.tenantId,
+        userId: user.id,
+        employeeId: employeeId,
+        employeeName: `${employeeData.firstName} ${employeeData.lastName}`,
+        employeeEmail: employeeData.email,
+        vendorClientType: vendorClientType,
+        vendorClientId: vendorClientInfo.id,
+        vendorClientName: vendorClientInfo.name || vendorClientInfo.vendorName || vendorClientInfo.clientName,
+        vendorClientEmail: vendorClientInfo.email
+      };
+
+      console.log('📤 Invoice generation payload:', invoicePayload);
+
       const response = await axios.post(
         `${API_BASE}/api/timesheets/${timesheet.id}/generate-invoice`,
-        {
-          tenantId: user.tenantId,
-          userId: user.id}
+        invoicePayload
       );
 
       console.log('✅ Invoice generated:', response.data);

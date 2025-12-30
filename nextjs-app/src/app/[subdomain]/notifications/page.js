@@ -338,7 +338,7 @@ export default function NotificationsPage() {
           </div>
         </div>
 
-        <div className="filter-group">
+        {/* <div className="filter-group">
           <label>Category:</label>
           <select value={category} onChange={(e) => setCategory(e.target.value)}>
             <option value="all">All Categories</option>
@@ -349,7 +349,7 @@ export default function NotificationsPage() {
             <option value="system">System</option>
             <option value="general">General</option>
           </select>
-        </div>
+        </div> */}
       </div>
 
       <div className="notifications-list">

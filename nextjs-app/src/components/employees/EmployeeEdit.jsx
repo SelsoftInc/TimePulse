@@ -43,6 +43,10 @@ const EmployeeEdit = () => {
   const [approvers, setApprovers] = useState([]);
   const tenantId = user?.tenantId;
 
+  // UI-only state for separated phone input
+  const [countryCode, setCountryCode] = useState('+1');
+  const [phoneNumber, setPhoneNumber] = useState('');
+
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -120,7 +124,7 @@ const EmployeeEdit = () => {
           contactInfo: contactInfo
         });
         
-        setFormData({
+        const employeeData = {
           firstName: emp.firstName || '',
           lastName: emp.lastName || '',
           email: emp.email || '',
@@ -146,7 +150,69 @@ const EmployeeEdit = () => {
           state: contactInfo.state || '',
           zip: contactInfo.zip || '',
           country: contactInfo.country || 'United States'
-        });
+        };
+        
+        setFormData(employeeData);
+        
+        // Split phone into country code and phone number for UI
+        if (employeeData.phone) {
+          // Get the expected country code for the selected country
+          const expectedCode = getCountryCode(employeeData.country);
+          
+          // Remove all non-digit characters except the leading +
+          const cleanPhone = employeeData.phone.replace(/[^\d+]/g, '');
+          
+          // Check if phone starts with +
+          if (cleanPhone.startsWith('+')) {
+            // Try to match country codes of different lengths (1, 2, or 3 digits)
+            // Most country codes are 1-3 digits
+            let extractedCode = null;
+            
+            // Try 1 digit (e.g., +1 for US/Canada)
+            if (cleanPhone.length > 1) {
+              const code1 = cleanPhone.substring(0, 2); // +X
+              if (code1 === expectedCode) {
+                extractedCode = code1;
+              }
+            }
+            
+            // Try 2 digits (e.g., +91 for India, +44 for UK)
+            if (!extractedCode && cleanPhone.length > 2) {
+              const code2 = cleanPhone.substring(0, 3); // +XX
+              if (code2 === expectedCode) {
+                extractedCode = code2;
+              }
+            }
+            
+            // Try 3 digits (e.g., +971 for UAE)
+            if (!extractedCode && cleanPhone.length > 3) {
+              const code3 = cleanPhone.substring(0, 4); // +XXX
+              if (code3 === expectedCode) {
+                extractedCode = code3;
+              }
+            }
+            
+            // If we found a matching code, use it
+            if (extractedCode) {
+              setCountryCode(extractedCode);
+              const phoneOnly = cleanPhone.substring(extractedCode.length);
+              setPhoneNumber(phoneOnly);
+            } else {
+              // No match found, use expected code and extract remaining digits
+              setCountryCode(expectedCode);
+              const phoneOnly = cleanPhone.substring(1).replace(/^\d{1,3}/, ''); // Remove potential country code digits
+              setPhoneNumber(phoneOnly || cleanPhone.substring(1));
+            }
+          } else {
+            // No + prefix, use expected country code
+            setCountryCode(expectedCode);
+            setPhoneNumber(cleanPhone);
+          }
+        } else {
+          const defaultCode = getCountryCode(employeeData.country);
+          setCountryCode(defaultCode);
+          setPhoneNumber('');
+        }
       } catch (e) {
         setError(e.message);
       } finally {
@@ -223,17 +289,81 @@ const EmployeeEdit = () => {
     fetchData();
   }, [isMounted, tenantId]);
 
+  // Get expected phone number length for a country
+  const getPhoneNumberLength = (country) => {
+    const lengthMap = {
+      'United States': 10,
+      'Canada': 10,
+      'United Kingdom': 10,
+      'India': 10,
+      'Australia': 9,
+      'Germany': 10,
+      'France': 9,
+      'Japan': 10,
+      'China': 11,
+      'Brazil': 11,
+      'Mexico': 10,
+      'South Africa': 9,
+      'United Arab Emirates': 9,
+      'Singapore': 8,
+      'Italy': 10,
+      'Spain': 9,
+      'Russia': 10
+    };
+    return lengthMap[country] || 10;
+  };
+
+  // UI-only: Handle phone number input change
+  const handlePhoneNumberChange = (e) => {
+    const value = e.target.value;
+    const maxLength = getPhoneNumberLength(formData.country);
+    const digitsOnly = value.replace(/\D/g, '').slice(0, maxLength);
+    setPhoneNumber(digitsOnly);
+    const combinedPhone = digitsOnly ? `${countryCode}${digitsOnly}` : countryCode;
+    setFormData(prev => ({ ...prev, phone: combinedPhone }));
+    if (errors.phone) {
+      setErrors((prev) => ({ ...prev, phone: "" }));
+    }
+  };
+
+  // UI-only: Handle phone blur for validation
+  const handlePhoneBlur = () => {
+    const combinedPhone = phoneNumber ? `${countryCode}${phoneNumber}` : '';
+    if (!combinedPhone || !phoneNumber) {
+      setErrors((prev) => ({ ...prev, phone: "" }));
+      return;
+    }
+    
+    const expectedLength = getPhoneNumberLength(formData.country);
+    if (phoneNumber.length !== expectedLength) {
+      setErrors((prev) => ({
+        ...prev,
+        phone: `Phone number must be ${expectedLength} digits for ${formData.country}`
+      }));
+      return;
+    }
+    
+    const validation = validatePhoneNumber(combinedPhone);
+    setErrors((prev) => ({
+      ...prev,
+      phone: validation.isValid ? "" : validation.message
+    }));
+  };
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     let processedValue = type === 'checkbox' ? checked : value;
     let updates = { [name]: processedValue };
 
     if (name === 'country') {
-      const countryCode = getCountryCode(value);
-      if (!formData.phone || /^\+\d{0,3}$/.test(formData.phone)) {
-        updates.phone = countryCode;
-      }
+      const newCountryCode = getCountryCode(value);
+      setCountryCode(newCountryCode);
+      const combinedPhone = phoneNumber ? `${newCountryCode}${phoneNumber}` : newCountryCode;
+      updates.phone = combinedPhone;
       updates.state = '';
+      if (errors.phone) {
+        setErrors((prev) => ({ ...prev, phone: "" }));
+      }
     }
 
     if (name === 'phone') {
@@ -253,6 +383,19 @@ const EmployeeEdit = () => {
     if (name === 'zip') {
       processedValue = formatPostalInput(value, formData.country);
       updates.zip = processedValue;
+    }
+
+    // Restrict hourly rate to 3 digits maximum (0-999)
+    if (name === 'hourlyRate') {
+      const numValue = parseFloat(value);
+      if (value === "" || (numValue >= 0 && numValue <= 999)) {
+        processedValue = value;
+      } else if (numValue > 999) {
+        processedValue = "999";
+      } else {
+        processedValue = formData.hourlyRate;
+      }
+      updates.hourlyRate = processedValue;
     }
 
     setFormData({ ...formData, ...updates });
@@ -295,6 +438,30 @@ const EmployeeEdit = () => {
         ...prev,
         lastName: validation.isValid ? '' : validation.message
       }));
+    } else if (name === 'hourlyRate') {
+      if (!value) {
+        setErrors((prev) => ({ ...prev, hourlyRate: "" }));
+        return;
+      }
+      const rate = parseFloat(value);
+      if (isNaN(rate)) {
+        setErrors((prev) => ({
+          ...prev,
+          hourlyRate: "Please enter a valid hourly rate"
+        }));
+      } else if (rate < 0) {
+        setErrors((prev) => ({
+          ...prev,
+          hourlyRate: "Hourly rate cannot be negative"
+        }));
+      } else if (rate > 999) {
+        setErrors((prev) => ({
+          ...prev,
+          hourlyRate: "Hourly rate cannot exceed 3 digits (max $999)"
+        }));
+      } else {
+        setErrors((prev) => ({ ...prev, hourlyRate: "" }));
+      }
     }
   };
 
@@ -311,6 +478,18 @@ const EmployeeEdit = () => {
     if (!emailValidation.isValid) newErrors.email = emailValidation.message;
     if (!firstNameValidation.isValid) newErrors.firstName = firstNameValidation.message;
     if (!lastNameValidation.isValid) newErrors.lastName = lastNameValidation.message;
+    
+    // Validate hourly rate (UI-level validation)
+    if (formData.hourlyRate) {
+      const rate = parseFloat(formData.hourlyRate);
+      if (isNaN(rate)) {
+        newErrors.hourlyRate = "Please enter a valid hourly rate";
+      } else if (rate < 0) {
+        newErrors.hourlyRate = "Hourly rate cannot be negative";
+      } else if (rate > 999) {
+        newErrors.hourlyRate = "Hourly rate cannot exceed 3 digits (max $999)";
+      }
+    }
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -487,22 +666,116 @@ const EmployeeEdit = () => {
 
                   <div>
                     <label className="mb-1 block text-xs font-semibold text-slate-600">
-                      Phone
+                      Phone Number
                     </label>
-                    <input
-                      type="tel"
-                      name="phone"
-                      value={formData.phone}
-                      onChange={handleChange}
-                      onBlur={handleBlur}
-                      maxLength="16"
-                      className={`w-full rounded-xl border px-4 py-2.5 text-sm shadow-sm ${
-                        errors.phone ? 'border-red-500 bg-red-50' : 'border-slate-200'
-                      }`}
-                    />
+                    <div className="flex items-stretch gap-2">
+                      <input
+                        type="text"
+                        className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-center text-sm font-semibold text-slate-700 shadow-sm"
+                        style={{ width: '70px', minWidth: '70px', flexShrink: 0 }}
+                        value={countryCode}
+                        readOnly
+                        maxLength="4"
+                        title="Country code (auto-filled based on selected country)"
+                      />
+                      <input
+                        type="tel"
+                        className={`flex-1 rounded-xl border px-4 py-2.5 text-sm shadow-sm focus:border-sky-500 focus:ring-2 focus:ring-sky-200 ${
+                          errors.phone ? 'border-red-500 bg-red-50' : 'border-slate-200'
+                        }`}
+                        style={{ minWidth: 0 }}
+                        id="phoneNumber"
+                        value={phoneNumber}
+                        onChange={handlePhoneNumberChange}
+                        onBlur={handlePhoneBlur}
+                        placeholder="Enter phone number"
+                        maxLength="15"
+                      />
+                    </div>
+                    <p className="mt-1 text-xs text-slate-500">
+                      Country code updates automatically based on selected country
+                    </p>
                     {errors.phone && (
                       <p className="mt-1 text-xs text-red-600">{errors.phone}</p>
                     )}
+                  </div>
+
+                  {/* Address Fields */}
+                  <div className="md:col-span-2">
+                    <label className="mb-1 block text-xs font-semibold text-slate-600">
+                      Address
+                    </label>
+                    <input
+                      name="address"
+                      value={formData.address}
+                      onChange={handleChange}
+                      className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm shadow-sm focus:border-sky-500 focus:ring-2 focus:ring-sky-200"
+                      placeholder="Enter street address"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-xs font-semibold text-slate-600">
+                      City
+                    </label>
+                    <input
+                      name="city"
+                      value={formData.city}
+                      onChange={handleChange}
+                      className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm shadow-sm focus:border-sky-500 focus:ring-2 focus:ring-sky-200"
+                      placeholder="Enter city"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-xs font-semibold text-slate-600">
+                      State/Province
+                    </label>
+                    <input
+                      name="state"
+                      value={formData.state}
+                      onChange={handleChange}
+                      className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm shadow-sm focus:border-sky-500 focus:ring-2 focus:ring-sky-200"
+                      placeholder="Select state"
+                    />
+                  </div>
+
+                  {formData.country !== "United Arab Emirates" && (
+                    <div>
+                      <label className="mb-1 block text-xs font-semibold text-slate-600">
+                        {getPostalLabel(formData.country)}
+                      </label>
+                      <input
+                        type="text"
+                        name="zip"
+                        value={formData.zip}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                        placeholder={getPostalPlaceholder(formData.country)}
+                        className={`w-full rounded-xl border px-4 py-2.5 text-sm shadow-sm focus:border-sky-500 focus:ring-2 focus:ring-sky-200 ${
+                          errors.zip ? 'border-red-500 bg-red-50' : 'border-slate-200'
+                        }`}
+                      />
+                      {errors.zip && (
+                        <p className="mt-1 text-xs text-red-600">{errors.zip}</p>
+                      )}
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="mb-1 block text-xs font-semibold text-slate-600">
+                      Country *
+                    </label>
+                    <select
+                      name="country"
+                      value={formData.country}
+                      onChange={handleChange}
+                      className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm shadow-sm focus:border-sky-500 focus:ring-2 focus:ring-sky-200"
+                    >
+                      {COUNTRY_OPTIONS.map(c => (
+                        <option key={c} value={c}>{c}</option>
+                      ))}
+                    </select>
                   </div>
                 </div>
               </div>
@@ -539,14 +812,16 @@ const EmployeeEdit = () => {
 
                   <div>
                     <label className="mb-1 block text-xs font-semibold text-slate-600">
-                      Start Date
+                      Start Date *
                     </label>
                     <input
                       type="date"
                       name="startDate"
                       value={formData.startDate}
                       onChange={handleChange}
-                      className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm shadow-sm"
+                      min="1990-01-01"
+                      max="2026-12-31"
+                      className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm shadow-sm focus:border-sky-500 focus:ring-2 focus:ring-sky-200"
                     />
                   </div>
 
@@ -635,18 +910,28 @@ const EmployeeEdit = () => {
                 <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
                   <div>
                     <label className="mb-1 block text-xs font-semibold text-slate-600">
-                      Hourly Rate ($)
+                      Hourly Rate ($) *
                     </label>
                     <input
                       type="number"
                       name="hourlyRate"
                       value={formData.hourlyRate}
                       onChange={handleChange}
+                      onBlur={handleBlur}
                       min="0"
+                      max="999"
                       step="0.01"
-                      placeholder="0.00"
-                      className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm shadow-sm"
+                      placeholder="Enter hourly rate"
+                      className={`w-full rounded-xl border px-4 py-2.5 text-sm shadow-sm focus:border-sky-500 focus:ring-2 focus:ring-sky-200 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${
+                        errors.hourlyRate ? 'border-red-500 bg-red-50' : 'border-slate-200'
+                      }`}
                     />
+                    <p className="mt-1 text-xs text-slate-500">
+                      This information is only visible to administrators
+                    </p>
+                    {errors.hourlyRate && (
+                      <p className="mt-1 text-xs text-red-600">{errors.hourlyRate}</p>
+                    )}
                   </div>
 
                   <div>
@@ -724,90 +1009,6 @@ const EmployeeEdit = () => {
                       </div>
                     </div>
                   )}
-                </div>
-              </div>
-
-              {/* Address Information */}
-              <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm lg:col-span-2">
-                <h2 className="mb-6 text-sm font-semibold uppercase tracking-wide text-slate-700">
-                  Address Information
-                </h2>
-                <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
-                  <div className="md:col-span-3">
-                    <label className="mb-1 block text-xs font-semibold text-slate-600">
-                      Address
-                    </label>
-                    <input
-                      name="address"
-                      value={formData.address}
-                      onChange={handleChange}
-                      className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm shadow-sm"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="mb-1 block text-xs font-semibold text-slate-600">
-                      City
-                    </label>
-                    <input
-                      name="city"
-                      value={formData.city}
-                      onChange={handleChange}
-                      className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm shadow-sm"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="mb-1 block text-xs font-semibold text-slate-600">
-                      State
-                    </label>
-                    <input
-                      name="state"
-                      value={formData.state}
-                      onChange={handleChange}
-                      className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm shadow-sm"
-                    />
-                  </div>
-
-                  {formData.country !== "United Arab Emirates" && (
-                    <div>
-                      <label className="mb-1 block text-xs font-semibold text-slate-600">
-                        {getPostalLabel(formData.country)}
-                      </label>
-                      <input
-                        type="text"
-                        name="zip"
-                        value={formData.zip}
-                        onChange={handleChange}
-                        onBlur={handleBlur}
-                        placeholder={getPostalPlaceholder(formData.country)}
-                        className={`w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm shadow-sm ${
-                          errors.zip ? 'border-red-500' : ''
-                        }`}
-                      />
-                      {errors.zip && (
-                        <p className="mt-1 text-xs text-red-600">{errors.zip}</p>
-                      )}
-                    </div>
-                  )}
-
-                  <div className="md:col-span-3">
-                    <label className="mb-1 block text-xs font-semibold text-slate-600">
-                      Country *
-                    </label>
-                    <select
-                      name="country"
-                      value={formData.country}
-                      onChange={handleChange}
-                      className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm shadow-sm"
-                    >
-                      {COUNTRY_OPTIONS.map((country) => (
-                        <option key={country} value={country}>
-                          {country}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
                 </div>
               </div>
 

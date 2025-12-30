@@ -46,13 +46,17 @@ const Login = () => {
     checkOAuthConfig();
   }, [searchParams]);
 
-  // Load saved email only (NOT password for security)
+  // Load saved credentials if Remember Me was checked
   useEffect(() => {
     const savedEmail = localStorage.getItem("rememberedEmail");
-    if (savedEmail) {
+    const savedPassword = localStorage.getItem("rememberedPassword");
+    const wasRemembered = localStorage.getItem("rememberMeChecked") === "true";
+    
+    if (wasRemembered && savedEmail && savedPassword) {
       setFormData({
         email: savedEmail,
-        password: ""});
+        password: savedPassword
+      });
       setRememberMe(true);
     }
   }, []);
@@ -90,11 +94,15 @@ const Login = () => {
       setError("Session expired, please login again");
     }
 
-    // Handle remember me functionality - store ONLY email (NOT password for security)
+    // Handle remember me functionality - store credentials if checked
     if (rememberMe) {
       localStorage.setItem("rememberedEmail", formData.email);
+      localStorage.setItem("rememberedPassword", formData.password);
+      localStorage.setItem("rememberMeChecked", "true");
     } else {
       localStorage.removeItem("rememberedEmail");
+      localStorage.removeItem("rememberedPassword");
+      localStorage.removeItem("rememberMeChecked");
     }
 
     const persistAuth = (token, userInfo, tenantInfo) => {

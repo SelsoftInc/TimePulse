@@ -302,365 +302,341 @@ const ImplementationPartnerForm = ({
       <div className="container-fluid">
         <div className="nk-content-inner">
           <div className="nk-content-body py-6">
+            {/* Header */}
             <div className="mb-6 rounded-xl border border-slate-200 bg-indigo-50 p-5 shadow-sm">
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div>
                   <h1 className="text-xl font-semibold text-slate-900">
                     {mode === "create" ? "Add New Implementation Partner" : "Edit Implementation Partner"}
                   </h1>
                   <p className="mt-1 text-sm text-slate-600">
-                    Create and manage implementation partner details
+                    {mode === "create" ? "Create and manage implementation partner details" : "Implementation Partner Details"}
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="nk-block nk-block-lg">
-              <div className="mx-auto w-full max-w-8xl">
-                <div className="rounded-3xl border border-slate-200 bg-white shadow-sm">
-                  <div className="p-6 md:p-8">
+            {error && (
+              <div className="alert alert-danger mb-6" role="alert">
+                {error}
+              </div>
+            )}
 
-                    {error && (
-                      <div className="alert alert-danger" role="alert">
-                        {error}
-                      </div>
-                    )}
+            <form onSubmit={handleSubmit}>
+              {/* Main Content Grid */}
+              <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
 
-                    <form onSubmit={handleSubmit} className="space-y-8">
+                {/* ================= BASIC INFORMATION ================= */}
+                <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
+                  <header className="rounded-t-xl border-b border-slate-200 bg-slate-50 px-6 py-4">
+                    <h4 className="text-sm font-semibold text-slate-900">
+                      Basic Information
+                    </h4>
+                  </header>
+                  <div className="p-6 grid grid-cols-1 gap-5 sm:grid-cols-2">
 
-                     <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+                    <div>
+                      <label className="mb-1 block text-sm font-medium text-slate-700">
+                        Implementation Partner Name <span className="text-danger">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        name="name"
+                        value={formData.name}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                        maxLength={255}
+                        required
+                        className={`form-control rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500 ${
+                          errors.name ? "is-invalid" : ""
+                        }`}
+                      />
+                      {errors.name && <div className="invalid-feedback">{errors.name}</div>}
+                    </div>
 
-  {/* ================= BASIC INFORMATION ================= */}
-  <section className="rounded-2xl border border-slate-200 bg-slate-50 px-6 py-7 space-y-6">
-    <div>
-      <h3 className="text-sm font-semibold text-slate-900">
-        Basic Information
-      </h3>
-      <p className="mt-1 text-xs text-slate-500">
-        High-level details about the partner
-      </p>
-    </div>
+                    <div>
+                      <label className="mb-1 block text-sm font-medium text-slate-700">
+                        Legal Name
+                      </label>
+                      <input
+                        type="text"
+                        name="legalName"
+                        value={formData.legalName}
+                        onChange={handleChange}
+                        maxLength={255}
+                        className="form-control rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500"
+                      />
+                    </div>
 
-    <div className="grid grid-cols-1 gap-x-6 gap-y-6 md:grid-cols-2">
+                    <div>
+                      <label className="mb-1 block text-sm font-medium text-slate-700">
+                        Contact Person
+                      </label>
+                      <input
+                        type="text"
+                        name="contactPerson"
+                        value={formData.contactPerson}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                        maxLength={255}
+                        className={`form-control rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500 ${
+                          errors.contactPerson ? "is-invalid" : ""
+                        }`}
+                      />
+                      {errors.contactPerson && <div className="invalid-feedback">{errors.contactPerson}</div>}
+                    </div>
 
-      <div className="space-y-2">
-        <label className="form-label text-sm font-medium text-slate-700">
-          Implementation Partner Name <span className="text-danger">*</span>
-        </label>
-        <input
-          type="text"
-          name="name"
-          value={formData.name}
-          onChange={handleChange}
-          onBlur={handleBlur}
-          maxLength={255}
-          required
-          className={`form-control mt-2 rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500 ${
-            errors.name ? "is-invalid" : ""
-          }`}
-        />
-        {errors.name && <div className="invalid-feedback">{errors.name}</div>}
-      </div>
-
-      <div className="space-y-2">
-        <label className="form-label text-sm font-medium text-slate-700">
-          Legal Name
-        </label>
-        <input
-          type="text"
-          name="legalName"
-          value={formData.legalName}
-          onChange={handleChange}
-          maxLength={255}
-          className="form-control mt-2 rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500"
-        />
-      </div>
-
-      <div className="space-y-2">
-        <label className="form-label text-sm font-medium text-slate-700">
-          Contact Person
-        </label>
-        <input
-          type="text"
-          name="contactPerson"
-          value={formData.contactPerson}
-          onChange={handleChange}
-          maxLength={255}
-          className="form-control mt-2 rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500"
-        />
-      </div>
-
-      <div className="space-y-2">
-        <label className="form-label text-sm font-medium text-slate-700">
-          Specialization
-        </label>
-        <input
-          type="text"
-          name="specialization"
-          value={formData.specialization}
-          onChange={handleChange}
-          maxLength={255}
-          placeholder="Cloud Migration, Analytics, Security"
-          className="form-control mt-2 rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500"
-        />
-      </div>
-
-    </div>
-  </section>
-
-  {/* ================= CONTACT INFORMATION ================= */}
-  <section className="rounded-2xl border border-slate-200 bg-white px-6 py-7 space-y-6">
-    <div>
-      <h3 className="text-sm font-semibold text-slate-900">
-        Contact Information
-      </h3>
-      <p className="mt-1 text-xs text-slate-500">
-        How to reach the primary contact
-      </p>
-    </div>
-
-    <div className="grid grid-cols-1 gap-x-6 gap-y-6 md:grid-cols-2">
-
-      <div className="space-y-2">
-        <label className="form-label text-sm font-medium text-slate-700">
-          Email
-        </label>
-        <input
-          type="email"
-          name="email"
-          value={formData.email}
-          onChange={handleChange}
-          onBlur={handleBlur}
-          maxLength={255}
-          className={`form-control mt-2 rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500 ${
-            errors.email ? "is-invalid" : ""
-          }`}
-        />
-        {errors.email && <div className="invalid-feedback">{errors.email}</div>}
-      </div>
-
-      <div className="space-y-2">
-        <label className="form-label text-sm font-medium text-slate-700">
-          Phone
-        </label>
-        <input
-          type="tel"
-          name="phone"
-          value={formData.phone}
-          onChange={handleChange}
-          onBlur={handleBlur}
-          maxLength={14}
-          placeholder="(555) 123-4567"
-          className={`form-control mt-2 rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500 ${
-            errors.phone ? "is-invalid" : ""
-          }`}
-        />
-        {errors.phone && <div className="invalid-feedback">{errors.phone}</div>}
-      </div>
-
-    </div>
-  </section>
-
-  {/* ================= ADDRESS ================= */}
-  <section className="rounded-2xl border border-slate-200 bg-slate-50 px-6 py-7 space-y-6">
-    <div>
-      <h3 className="text-sm font-semibold text-slate-900">
-        Address
-      </h3>
-      <p className="mt-1 text-xs text-slate-500">
-        Location details
-      </p>
-    </div>
-
-    <div className="grid grid-cols-1 gap-x-6 gap-y-6 md:grid-cols-2">
-
-      <div className="space-y-2 md:col-span-2">
-        <label className="form-label text-sm font-medium text-slate-700">
-          Address
-        </label>
-        <input
-          type="text"
-          name="address"
-          value={formData.address}
-          onChange={handleChange}
-          maxLength={255}
-          className="form-control mt-2 rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500"
-        />
-      </div>
-
-      <div className="space-y-2">
-        <label className="form-label text-sm font-medium text-slate-700">
-          City
-        </label>
-        <input
-          type="text"
-          name="city"
-          value={formData.city}
-          onChange={handleChange}
-          maxLength={100}
-          className="form-control mt-2 rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500"
-        />
-      </div>
-
-      <div className="space-y-2">
-        <label className="form-label text-sm font-medium text-slate-700">
-          State / Province
-        </label>
-        <select
-          name="state"
-          value={formData.state}
-          onChange={handleChange}
-          className="form-control mt-2 rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500"
-        >
-          <option value="">Select</option>
-          {STATES_BY_COUNTRY[formData.country]?.map(state => (
-            <option key={state} value={state}>{state}</option>
-          ))}
-        </select>
-      </div>
-
-      {formData.country !== "United Arab Emirates" && (
-        <div className="space-y-2">
-          <label className="form-label text-sm font-medium text-slate-700">
-            {getPostalLabel(formData.country)}
-          </label>
-          <input
-            type="text"
-            name="zip"
-            value={formData.zip}
-            onChange={handleChange}
-            onBlur={handleBlur}
-            placeholder={getPostalPlaceholder(formData.country)}
-            className={`form-control mt-2 rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500 ${
-              errors.zip ? "is-invalid" : ""
-            }`}
-          />
-          {errors.zip && <div className="invalid-feedback">{errors.zip}</div>}
-        </div>
-      )}
-
-      <div className="space-y-2">
-        <label className="form-label text-sm font-medium text-slate-700">
-          Country
-        </label>
-        <select
-          name="country"
-          value={formData.country}
-          onChange={handleChange}
-          className="form-control mt-2 rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500"
-        >
-          {COUNTRY_OPTIONS.map(country => (
-            <option key={country} value={country}>{country}</option>
-          ))}
-        </select>
-      </div>
-
-    </div>
-  </section>
-
-  {/* ================= ADDITIONAL INFORMATION ================= */}
-  <section className="rounded-2xl border border-slate-200 bg-white px-6 py-7 space-y-6">
-    <div>
-      <h3 className="text-sm font-semibold text-slate-900">
-        Additional Information
-      </h3>
-    </div>
-
-    <div className="grid grid-cols-1 gap-x-6 gap-y-6 md:grid-cols-2">
-
-      <div className="space-y-2">
-        <label className="form-label text-sm font-medium text-slate-700">
-          Status
-        </label>
-        <select
-          name="status"
-          value={formData.status}
-          onChange={handleChange}
-          className="form-control mt-2 rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500"
-        >
-          <option value="active">Active</option>
-          <option value="inactive">Inactive</option>
-          <option value="pending">Pending</option>
-        </select>
-      </div>
-
-      <div className="space-y-2 md:col-span-2">
-        <label className="form-label text-sm font-medium text-slate-700">
-          Notes
-        </label>
-        <textarea
-          rows="4"
-          name="notes"
-          value={formData.notes}
-          onChange={handleChange}
-          placeholder="Additional notes about this implementation partner..."
-          className="form-control mt-2 rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500"
-        />
-      </div>
-
-    </div>
-  </section>
-
-</div>
-
-
-          {/* ================= ACTIONS ================= */}
-          <div className="flex flex-wrap justify-end gap-2 pt-2">
-            <button
-              type="button"
-              onClick={handleCancel}
-              disabled={loading}
-              className="inline-flex items-center justify-center gap-2
-    rounded-xl px-6 py-3
-    bg-slate-400 
-    text-sm font-semibold text-white
-    shadow-md transition-all"
-            >
-              Cancel
-            </button>
-
-            <PermissionGuard
-              requiredPermission={
-                mode === "create"
-                  ? PERMISSIONS.CREATE_IMPLEMENTATION_PARTNER
-                  : PERMISSIONS.EDIT_IMPLEMENTATION_PARTNER
-              }
-            >
-              <button
-                type="submit"
-                disabled={loading}
-                className="inline-flex items-center justify-center gap-2
-    rounded-xl px-6 py-3
-    bg-sky-800 hover:bg-sky-900
-    text-sm font-semibold text-white
-    shadow-md transition-all"
-              >
-                {loading ? (
-                  <>
-                    <span
-                      className="spinner-border spinner-border-sm me-2"
-                      role="status"
-                      aria-hidden="true"
-                    ></span>
-                    {mode === "create" ? "Creating..." : "Updating..."}
-                  </>
-                ) : (
-                  submitLabel ||
-                  (mode === "create"
-                    ? "Add Implementation Partner"
-                    : "Update Implementation Partner")
-                )}
-              </button>
-            </PermissionGuard>
-          </div>
-
-                    </form>
+                    <div>
+                      <label className="mb-1 block text-sm font-medium text-slate-700">
+                        Specialization
+                      </label>
+                      <input
+                        type="text"
+                        name="specialization"
+                        value={formData.specialization}
+                        onChange={handleChange}
+                        maxLength={255}
+                        placeholder="Cloud Migration, Analytics, Security"
+                        className="form-control rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500"
+                      />
+                    </div>
                   </div>
-                </div>
+                </section>
+
+                {/* ================= CONTACT INFORMATION ================= */}
+                <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
+                  <header className="rounded-t-xl border-b border-slate-200 bg-slate-50 px-6 py-4">
+                    <h4 className="text-sm font-semibold text-slate-900">
+                      Contact Information
+                    </h4>
+                  </header>
+                  <div className="p-6 grid grid-cols-1 gap-5 sm:grid-cols-2">
+                    <div>
+                      <label className="mb-1 block text-sm font-medium text-slate-700">
+                        Email
+                      </label>
+                      <input
+                        type="email"
+                        name="email"
+                        value={formData.email}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                        maxLength={255}
+                        className={`form-control rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500 ${
+                          errors.email ? "is-invalid" : ""
+                        }`}
+                      />
+                      {errors.email && <div className="invalid-feedback">{errors.email}</div>}
+                    </div>
+
+                    <div>
+                      <label className="mb-1 block text-sm font-medium text-slate-700">
+                        Phone
+                      </label>
+                      <input
+                        type="tel"
+                        name="phone"
+                        value={formData.phone}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                        maxLength={14}
+                        placeholder="(555) 123-4567"
+                        className={`form-control rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500 ${
+                          errors.phone ? "is-invalid" : ""
+                        }`}
+                      />
+                      {errors.phone && <div className="invalid-feedback">{errors.phone}</div>}
+                    </div>
+                  </div>
+                </section>
+
+                {/* ================= ADDRESS ================= */}
+                <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
+                  <header className="rounded-t-xl border-b border-slate-200 bg-slate-50 px-6 py-4">
+                    <h4 className="text-sm font-semibold text-slate-900">
+                      Address
+                    </h4>
+                  </header>
+                  <div className="p-6 grid grid-cols-1 gap-5">
+                    <div>
+                      <label className="mb-1 block text-sm font-medium text-slate-700">
+                        Address
+                      </label>
+                      <input
+                        type="text"
+                        name="address"
+                        value={formData.address}
+                        onChange={handleChange}
+                        maxLength={255}
+                        className="form-control rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
+                      <div>
+                        <label className="mb-1 block text-sm font-medium text-slate-700">
+                          City
+                        </label>
+                        <input
+                          type="text"
+                          name="city"
+                          value={formData.city}
+                          onChange={handleChange}
+                          maxLength={100}
+                          className="form-control rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="mb-1 block text-sm font-medium text-slate-700">
+                          State / Province
+                        </label>
+                        <select
+                          name="state"
+                          value={formData.state}
+                          onChange={handleChange}
+                          className="form-control rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500"
+                        >
+                          <option value="">Select</option>
+                          {STATES_BY_COUNTRY[formData.country]?.map(state => (
+                            <option key={state} value={state}>{state}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="mb-1 block text-sm font-medium text-slate-700">
+                          {getPostalLabel(formData.country)}
+                        </label>
+                        {formData.country !== "United Arab Emirates" ? (
+                          <>
+                            <input
+                              type="text"
+                              name="zip"
+                              value={formData.zip}
+                              onChange={handleChange}
+                              onBlur={handleBlur}
+                              placeholder={getPostalPlaceholder(formData.country)}
+                              className={`form-control rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500 ${
+                                errors.zip ? "is-invalid" : ""
+                              }`}
+                            />
+                            {errors.zip && <div className="invalid-feedback">{errors.zip}</div>}
+                          </>
+                        ) : (
+                          <input
+                            type="text"
+                            name="zip"
+                            value=""
+                            disabled
+                            className="form-control rounded-lg border-slate-300 bg-slate-100"
+                          />
+                        )}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="mb-1 block text-sm font-medium text-slate-700">
+                        Country
+                      </label>
+                      <select
+                        name="country"
+                        value={formData.country}
+                        onChange={handleChange}
+                        className="form-control rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500"
+                      >
+                        {COUNTRY_OPTIONS.map(country => (
+                          <option key={country} value={country}>{country}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                </section>
+
+                {/* ================= ADDITIONAL INFORMATION ================= */}
+                <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
+                  <header className="rounded-t-xl border-b border-slate-200 bg-slate-50 px-6 py-4">
+                    <h4 className="text-sm font-semibold text-slate-900">
+                      Additional Information
+                    </h4>
+                  </header>
+                  <div className="p-6 grid grid-cols-1 gap-5">
+                    <div>
+                      <label className="mb-1 block text-sm font-medium text-slate-700">
+                        Status
+                      </label>
+                      <select
+                        name="status"
+                        value={formData.status}
+                        onChange={handleChange}
+                        className="form-control rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500"
+                      >
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                        <option value="pending">Pending</option>
+                      </select>
+                    </div>
+
+                    <div className="sm:col-span-2">
+                      <label className="mb-1 block text-sm font-medium text-slate-700">
+                        Notes
+                      </label>
+                      <textarea
+                        rows="4"
+                        name="notes"
+                        value={formData.notes}
+                        onChange={handleChange}
+                        placeholder="Additional notes about this implementation partner..."
+                        className="form-control rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500"
+                      />
+                    </div>
+                  </div>
+                </section>
               </div>
 
-            </div>
 
+              {/* ================= ACTIONS ================= */}
+              <div className="mt-6 flex flex-wrap justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={handleCancel}
+                  disabled={loading}
+                  className="btn btn-outline-light"
+                >
+                  Cancel
+                </button>
+
+                <PermissionGuard
+                  requiredPermission={
+                    mode === "create"
+                      ? PERMISSIONS.CREATE_IMPLEMENTATION_PARTNER
+                      : PERMISSIONS.EDIT_IMPLEMENTATION_PARTNER
+                  }
+                >
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="btn btn-primary"
+                  >
+                    {loading ? (
+                      <>
+                        <span
+                          className="spinner-border spinner-border-sm me-2"
+                          role="status"
+                          aria-hidden="true"
+                        ></span>
+                        {mode === "create" ? "Creating..." : "Updating..."}
+                      </>
+                    ) : (
+                      submitLabel ||
+                      (mode === "create"
+                        ? "Add Implementation Partner"
+                        : "Update Implementation Partner")
+                    )}
+                  </button>
+                </PermissionGuard>
+              </div>
+            </form>
           </div>
         </div>
       </div>

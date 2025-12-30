@@ -87,23 +87,31 @@ router.post('/', async (req, res) => {
   try {
     const { tenantId, address, city, state, zip, country, ...payloadData } = req.body;
     let payload = payloadData;
-    if (!tenantId) return res.status(400).json({ error: 'Tenant ID is required' });
-
-    console.log('📥 Creating implementation partner with data:', { tenantId, ...payloadData });
+    
+    console.log('📥 Creating implementation partner with data:', { tenantId, ...payloadData, address, city, state, zip, country });
+    
+    if (!tenantId) {
+      console.error('❌ Tenant ID is missing');
+      return res.status(400).json({ error: 'Tenant ID is required' });
+    }
 
     const errors = validateImplementationPartnerPayload(payload);
     if (Object.keys(errors).length > 0) {
+      console.error('❌ Validation failed:', errors);
       return res.status(400).json({ error: 'Validation failed', details: errors });
     }
 
     // Encrypt implementation partner data before saving to database
+    console.log('🔐 Encrypting implementation partner data...');
     payload = DataEncryptionService.encryptImplementationPartnerData(payload);
+    console.log('✅ Encryption complete');
 
     // Check for duplicate name within tenant (using encrypted name)
     const existingPartner = await ImplementationPartner.findOne({
       where: { tenantId, name: payload.name }
     });
     if (existingPartner) {
+      console.warn('⚠️ Duplicate implementation partner name detected');
       return res.status(400).json({ error: 'Implementation Partner with this name already exists' });
     }
 
@@ -116,13 +124,14 @@ router.post('/', async (req, res) => {
       country: country || ''
     };
 
+    console.log('💾 Creating implementation partner in database...');
     const implementationPartner = await ImplementationPartner.create({
       ...payload,
       address: addressObj,
       tenantId
     });
 
-    console.log('✅ Implementation partner created:', implementationPartner.id);
+    console.log('✅ Implementation partner created successfully with ID:', implementationPartner.id);
 
     // Decrypt implementation partner data for response
     const decryptedPartner = DataEncryptionService.decryptImplementationPartnerData(
@@ -140,8 +149,24 @@ router.post('/', async (req, res) => {
 
     res.status(201).json({ success: true, implementationPartner: decryptedPartner });
   } catch (err) {
-    console.error('Error creating implementation partner:', err);
-    res.status(500).json({ error: 'Failed to create implementation partner', details: err.message });
+    console.error('❌ Error creating implementation partner:', err);
+    console.error('Error stack:', err.stack);
+    
+    // Provide more specific error messages
+    let errorMessage = 'Failed to create implementation partner';
+    if (err.name === 'SequelizeValidationError') {
+      errorMessage = 'Validation error: ' + err.errors.map(e => e.message).join(', ');
+    } else if (err.name === 'SequelizeUniqueConstraintError') {
+      errorMessage = 'Implementation Partner with this information already exists';
+    } else if (err.message) {
+      errorMessage = err.message;
+    }
+    
+    res.status(500).json({ 
+      error: errorMessage, 
+      details: err.message,
+      validationErrors: err.errors ? err.errors.map(e => ({ field: e.path, message: e.message })) : undefined
+    });
   }
 });
 

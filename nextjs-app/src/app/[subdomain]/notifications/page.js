@@ -406,8 +406,9 @@ export default function NotificationsPage() {
                 </div>
               </div>
 
-              {/* View Button for Approval Notifications */}
-              {notification.category === 'approval' && (
+              {/* View Button - Only for User Registration Approval Notifications */}
+              {notification.category === 'approval' && 
+               notification.title?.includes('User Registration') && (
                 <button
                   className="notification-view-btn"
                   onClick={(e) => {

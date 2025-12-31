@@ -150,16 +150,78 @@ export default function NotificationsPage() {
       await markAsRead(notification.id);
     }
 
-    // Check if this is a user approval notification
+    // Check if this is an account request notification (new user registration)
+    const accountRequestId = notification.metadata?.accountRequestId;
+    const pendingUserEmail = notification.metadata?.pendingUserEmail;
+    
+    // Check if this is an OAuth user approval notification
     const userId = notification.metadata?.userId || notification.metadata?.pendingUserId;
+    
+    console.log('[Notification Click] Account Request ID:', accountRequestId);
+    console.log('[Notification Click] Pending User Email:', pendingUserEmail);
     console.log('[Notification Click] User ID:', userId);
     
-    if (notification.category === 'approval' && userId) {
-      console.log('[Notification Click] Opening approval modal for user:', userId);
-      // Fetch user details
+    if (notification.category === 'approval' && accountRequestId) {
+      console.log('[Notification Click] Opening approval modal for account request:', accountRequestId);
+      // Fetch account request details
+      await fetchAccountRequestDetails(accountRequestId, notification);
+    } else if (notification.category === 'approval' && userId) {
+      console.log('[Notification Click] Opening approval modal for OAuth user:', userId);
+      // Fetch OAuth user details
       await fetchPendingUserDetails(userId, notification);
     } else {
-      console.log('[Notification Click] Not an approval notification or missing userId');
+      console.log('[Notification Click] Not an approval notification or missing required IDs');
+    }
+  };
+
+  const fetchAccountRequestDetails = async (accountRequestId, notification) => {
+    console.log('[fetchAccountRequestDetails] Starting fetch for accountRequestId:', accountRequestId);
+    
+    try {
+      const url = `${API_BASE}/api/account-request/${accountRequestId}`;
+      console.log('[fetchAccountRequestDetails] Fetching from:', url);
+      
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      console.log('[fetchAccountRequestDetails] Response status:', response.status);
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('[fetchAccountRequestDetails] Response data:', data);
+        
+        if (data.success && data.request) {
+          // Transform account request to match the expected format
+          const transformedRequest = {
+            id: data.request.id,
+            firstName: data.request.firstName,
+            lastName: data.request.lastName,
+            email: data.request.email,
+            role: data.request.requestedRole,
+            status: data.request.status,
+            createdAt: data.request.createdAt,
+            isAccountRequest: true // Flag to identify this as account request
+          };
+          
+          setPendingUserDetails(transformedRequest);
+          setSelectedNotification(notification);
+          setShowApprovalModal(true);
+          console.log('[fetchAccountRequestDetails] Modal should open now');
+        } else {
+          console.error('[fetchAccountRequestDetails] Request not found');
+          alert('Account request not found or already processed');
+        }
+      } else {
+        const errorData = await response.json();
+        console.error('[fetchAccountRequestDetails] API error:', errorData);
+        alert(`Failed to fetch account request details: ${errorData.message || 'Server error'}`);
+      }
+    } catch (error) {
+      console.error('[fetchAccountRequestDetails] Fetch error:', error);
+      alert('Failed to fetch account request details: ' + error.message);
     }
   };
 
@@ -211,20 +273,26 @@ export default function NotificationsPage() {
 
     setApprovalLoading(true);
     try {
-      const response = await fetch(
-        `${API_BASE}/api/user-approvals/approve/${pendingUserDetails.id}`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          },
-          body: JSON.stringify({
-            tenantId: user.tenantId,
-            adminId: user.id
-          })
-        }
-      );
+      // Check if this is an account request or OAuth user
+      const isAccountRequest = pendingUserDetails.isAccountRequest;
+      const endpoint = isAccountRequest 
+        ? `${API_BASE}/api/account-request/approve/${pendingUserDetails.id}`
+        : `${API_BASE}/api/user-approvals/approve/${pendingUserDetails.id}`;
+      
+      console.log('[handleApproveUser] Approving:', isAccountRequest ? 'Account Request' : 'OAuth User');
+      console.log('[handleApproveUser] Endpoint:', endpoint);
+      
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          tenantId: user.tenantId,
+          adminId: user.id
+        })
+      });
 
       if (response.ok) {
         alert('User approved successfully! Email notification sent.');
@@ -259,21 +327,27 @@ export default function NotificationsPage() {
 
     setApprovalLoading(true);
     try {
-      const response = await fetch(
-        `${API_BASE}/api/user-approvals/reject/${pendingUserDetails.id}`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          },
-          body: JSON.stringify({
-            tenantId: user.tenantId,
-            adminId: user.id,
-            reason: rejectionReason
-          })
-        }
-      );
+      // Check if this is an account request or OAuth user
+      const isAccountRequest = pendingUserDetails.isAccountRequest;
+      const endpoint = isAccountRequest 
+        ? `${API_BASE}/api/account-request/reject/${pendingUserDetails.id}`
+        : `${API_BASE}/api/user-approvals/reject/${pendingUserDetails.id}`;
+      
+      console.log('[handleRejectUser] Rejecting:', isAccountRequest ? 'Account Request' : 'OAuth User');
+      console.log('[handleRejectUser] Endpoint:', endpoint);
+      
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          tenantId: user.tenantId,
+          adminId: user.id,
+          reason: rejectionReason
+        })
+      });
 
       if (response.ok) {
         alert('User rejected successfully! Email notification sent.');

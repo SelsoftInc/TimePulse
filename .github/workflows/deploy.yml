@@ -15,8 +15,7 @@ jobs:
           cd /home/ubuntu/timepulse_deploy/TimePulse
 
           # Reset to remote state (discard local changes)
-          git fetch origin deploy
-          git reset --hard origin/deploy
+          git pull
 
           export PATH=$PATH:/usr/local/bin
           pm2 reload timepulse-frontend

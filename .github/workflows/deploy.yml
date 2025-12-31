@@ -14,7 +14,7 @@ jobs:
           # Navigate to the application directory
           cd /home/ubuntu/timepulse_deploy/TimePulse
 
-          # Reset to remote state (discard local changes)
+        
           git pull
 
           export PATH=$PATH:/usr/local/bin

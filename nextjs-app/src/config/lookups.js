@@ -1,14 +1,14 @@
 // Centralized lookups for countries, states, tax ID labels/placeholders and payment terms
 
 export const COUNTRY_OPTIONS = [
-  'United States',
-  'India',
-  'Canada',
-  'United Kingdom',
-  'Australia',
-  'Germany',
-  'Singapore',
-  'United Arab Emirates'
+  { value: 'United States', label: 'United States' },
+  { value: 'India', label: 'India' },
+  { value: 'Canada', label: 'Canada' },
+  { value: 'United Kingdom', label: 'United Kingdom' },
+  { value: 'Australia', label: 'Australia' },
+  { value: 'Germany', label: 'Germany' },
+  { value: 'Singapore', label: 'Singapore' },
+  { value: 'United Arab Emirates', label: 'United Arab Emirates' }
 ];
 
 // Country code mapping for phone numbers (E.164 format)
@@ -26,6 +26,23 @@ export const COUNTRY_CODES = {
 // Get country code for a given country name
 export const getCountryCode = (country) => {
   return COUNTRY_CODES[country] || '+1';
+};
+
+// Country-specific phone number max lengths (without country code)
+export const PHONE_MAX_LENGTHS = {
+  'United States': 10,
+  'India': 10,
+  'Canada': 10,
+  'United Kingdom': 10,
+  'Australia': 9,
+  'Germany': 11,
+  'Singapore': 8,
+  'United Arab Emirates': 9
+};
+
+// Get max phone length for a country
+export const getPhoneMaxLength = (country) => {
+  return PHONE_MAX_LENGTHS[country] || 15;
 };
 
 export const STATES_BY_COUNTRY = {

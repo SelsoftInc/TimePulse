@@ -46,13 +46,17 @@ const Login = () => {
     checkOAuthConfig();
   }, [searchParams]);
 
-  // Load saved email only (NOT password for security)
+  // Load saved credentials if Remember Me was checked
   useEffect(() => {
     const savedEmail = localStorage.getItem("rememberedEmail");
-    if (savedEmail) {
+    const savedPassword = localStorage.getItem("rememberedPassword");
+    const wasRemembered = localStorage.getItem("rememberMeChecked") === "true";
+    
+    if (wasRemembered && savedEmail && savedPassword) {
       setFormData({
         email: savedEmail,
-        password: ""});
+        password: savedPassword
+      });
       setRememberMe(true);
     }
   }, []);
@@ -90,11 +94,15 @@ const Login = () => {
       setError("Session expired, please login again");
     }
 
-    // Handle remember me functionality - store ONLY email (NOT password for security)
+    // Handle remember me functionality - store credentials if checked
     if (rememberMe) {
       localStorage.setItem("rememberedEmail", formData.email);
+      localStorage.setItem("rememberedPassword", formData.password);
+      localStorage.setItem("rememberMeChecked", "true");
     } else {
       localStorage.removeItem("rememberedEmail");
+      localStorage.removeItem("rememberedPassword");
+      localStorage.removeItem("rememberMeChecked");
     }
 
     const persistAuth = (token, userInfo, tenantInfo) => {
@@ -519,6 +527,17 @@ const Login = () => {
           Sign in with Google
         </button>
         )}
+
+        {/* Create Account Link */}
+        <div className="text-center mt-6 pt-4 border-t border-white/10">
+          <p className="text-white/90 mb-3 text-base">Don't have an account?</p>
+          <Link 
+            href="/create-account" 
+            className="inline-block px-6 py-3 bg-gradient-to-r from-purple-500 to-blue-500 text-white font-semibold rounded-lg hover:from-purple-600 hover:to-blue-600 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
+          >
+            Create Account →
+          </Link>
+        </div>
       </div>
     </div>
   );

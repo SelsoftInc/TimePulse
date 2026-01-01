@@ -132,6 +132,11 @@ export const AuthProvider = ({ children }) => {
   // Logout function
   const logout = () => {
     if (typeof window !== 'undefined') {
+      // Save Remember Me credentials before clearing
+      const rememberedEmail = localStorage.getItem('rememberedEmail');
+      const rememberedPassword = localStorage.getItem('rememberedPassword');
+      const rememberMeChecked = localStorage.getItem('rememberMeChecked');
+      
       // Clear all localStorage items
       localStorage.removeItem('token');
       localStorage.removeItem('user');
@@ -140,6 +145,13 @@ export const AuthProvider = ({ children }) => {
       localStorage.removeItem('currentTenant');
       localStorage.removeItem('tenants');
       localStorage.removeItem('staticMode');
+      
+      // Restore Remember Me credentials if they existed
+      if (rememberMeChecked === 'true' && rememberedEmail && rememberedPassword) {
+        localStorage.setItem('rememberedEmail', rememberedEmail);
+        localStorage.setItem('rememberedPassword', rememberedPassword);
+        localStorage.setItem('rememberMeChecked', rememberMeChecked);
+      }
       
       // Clear all sessionStorage items
       sessionStorage.clear();

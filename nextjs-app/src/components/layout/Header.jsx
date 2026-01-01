@@ -160,9 +160,11 @@ const Header = ({ toggleSidebar }) => {
     // Clear all authentication data
     logout();
     
-    // Clear Remember Me data
-    localStorage.removeItem('rememberedEmail');
-    localStorage.removeItem('rememberedPassword');
+    // DO NOT clear Remember Me data - keep credentials saved for next login
+    // Only clear them if user unchecks "Remember Me" on next login
+    // localStorage.removeItem('rememberedEmail');
+    // localStorage.removeItem('rememberedPassword');
+    // localStorage.removeItem('rememberMeChecked');
     
     // Clear session storage
     sessionStorage.clear();

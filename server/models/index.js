@@ -695,6 +695,11 @@ models.EmploymentType = EmploymentTypeModel(sequelize);
 const NotificationModel = require("./Notification");
 models.Notification = NotificationModel(sequelize);
 
+// ACCOUNT REQUEST MODEL
+// =============================================
+const AccountRequestModel = require("./AccountRequest");
+models.AccountRequest = AccountRequestModel(sequelize);
+
 // =============================================
 // VENDOR MODEL
 // =============================================

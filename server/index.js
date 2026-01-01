@@ -172,6 +172,8 @@ console.log('📍 Loading settings routes...');
 app.use("/api/settings", settingsRoutes);
 console.log('📍 Loading search routes...');
 app.use("/api/search", require("./routes/search"));
+console.log('📍 Loading account-request routes...');
+app.use("/api/account-request", require("./routes/accountRequest-new"));
 console.log('✅ All routes loaded successfully');
 
 // Error handling middleware

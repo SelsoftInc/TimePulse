@@ -94,8 +94,14 @@ router.get('/approvers', async (req, res) => {
         status: 'active',
         approvalStatus: 'approved'
       },
-      attributes: ['id', 'firstName', 'lastName', 'email', 'role'],
-      order: [['firstName', 'ASC']],
+      attributes: [
+        ['id', 'id'],
+        ['first_name', 'firstName'],
+        ['last_name', 'lastName'],
+        ['email', 'email'],
+        ['role', 'role']
+      ],
+      order: [[sequelize.col('first_name'), 'ASC']],
       raw: true
     });
 

@@ -157,17 +157,13 @@ const Header = ({ toggleSidebar }) => {
 
   // Handle logout
   const handleLogout = () => {
-    // Clear all authentication data
+    // Clear all authentication data (logout function now preserves Remember Me credentials)
     logout();
-    
-    // Clear Remember Me data
-    localStorage.removeItem('rememberedEmail');
-    localStorage.removeItem('rememberedPassword');
     
     // Clear session storage
     sessionStorage.clear();
     
-    // Clear static mode flag
+    // Clear static mode flag (but preserve Remember Me credentials)
     localStorage.removeItem('staticMode');
     
     // Redirect to login

@@ -132,7 +132,7 @@ export const AuthProvider = ({ children }) => {
   // Logout function
   const logout = () => {
     if (typeof window !== 'undefined') {
-      // Clear all localStorage items
+      // Clear authentication localStorage items (but NOT Remember Me credentials)
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       localStorage.removeItem('userInfo');
@@ -145,7 +145,7 @@ export const AuthProvider = ({ children }) => {
       sessionStorage.clear();
     }
     
-    // Clear all cookies
+    // Clear authentication cookies (but NOT Remember Me cookies)
     Cookies.remove('token');
     Cookies.remove('user');
 

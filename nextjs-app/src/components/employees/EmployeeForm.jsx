@@ -14,7 +14,8 @@ import {
   STATES_BY_COUNTRY,
   getPostalLabel,
   getPostalPlaceholder,
-  getCountryCode
+  getCountryCode,
+  parsePhoneNumber
 } from '../../config/lookups';
 import {
   validatePhoneNumber,
@@ -216,30 +217,10 @@ const EmployeeForm = () => {
   useEffect(() => {
     if (!isMounted) return;
     
-    if (formData.phone && formData.phone.length > 0) {
-      // Extract country code (e.g., +1, +91, +44)
-      const match = formData.phone.match(/^(\+\d{1,4})(.*)$/);
-      if (match) {
-        const extractedCode = match[1];
-        const extractedNumber = match[2].replace(/\D/g, '');
-        
-        // Only update if the extracted code is a valid country code
-        if (extractedCode.length >= 2 && extractedCode.length <= 4) {
-          setCountryCode(extractedCode);
-          setPhoneNumber(extractedNumber);
-        }
-      } else {
-        // If no country code, use default based on country
-        const defaultCode = getCountryCode(formData.country);
-        setCountryCode(defaultCode);
-        setPhoneNumber(formData.phone.replace(/\D/g, ''));
-      }
-    } else {
-      // Set default country code based on selected country
-      const defaultCode = getCountryCode(formData.country);
-      setCountryCode(defaultCode);
-      setPhoneNumber('');
-    }
+    // Use intelligent phone parsing that matches against known country codes
+    const parsed = parsePhoneNumber(formData.phone, formData.country);
+    setCountryCode(parsed.countryCode);
+    setPhoneNumber(parsed.phoneNumber);
   }, [isMounted, isEditMode]);
 
   // Fetch vendors from API

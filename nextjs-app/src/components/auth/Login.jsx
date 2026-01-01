@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { signIn } from 'next-auth/react';
 import { useSearchParams } from 'next/navigation';
+import Cookies from 'js-cookie';
 import "./Auth.css";
 import { API_BASE } from '@/config/api';
 import { validateStaticCredentials, getStaticSession, STATIC_ADMIN } from '@/utils/staticAuth';
@@ -46,14 +47,22 @@ const Login = () => {
     checkOAuthConfig();
   }, [searchParams]);
 
-  // Load saved email only (NOT password for security)
+  // Load saved credentials if Remember Me was previously enabled
   useEffect(() => {
-    const savedEmail = localStorage.getItem("rememberedEmail");
-    if (savedEmail) {
-      setFormData({
-        email: savedEmail,
-        password: ""});
-      setRememberMe(true);
+    // Check cookies first (more persistent), then fallback to localStorage
+    const rememberMeEnabled = Cookies.get('rememberMeEnabled') || localStorage.getItem('rememberMeEnabled');
+    
+    if (rememberMeEnabled === 'true') {
+      const savedEmail = Cookies.get('rememberedEmail') || localStorage.getItem('rememberedEmail');
+      const savedPassword = Cookies.get('rememberedPassword') || localStorage.getItem('rememberedPassword');
+      
+      if (savedEmail && savedPassword) {
+        setFormData({
+          email: savedEmail,
+          password: savedPassword
+        });
+        setRememberMe(true);
+      }
     }
   }, []);
 
@@ -90,11 +99,26 @@ const Login = () => {
       setError("Session expired, please login again");
     }
 
-    // Handle remember me functionality - store ONLY email (NOT password for security)
+    // Handle remember me functionality - store credentials in both cookies and localStorage
     if (rememberMe) {
-      localStorage.setItem("rememberedEmail", formData.email);
+      // Store in cookies (expires in 30 days)
+      Cookies.set('rememberMeEnabled', 'true', { expires: 30, sameSite: 'strict' });
+      Cookies.set('rememberedEmail', formData.email, { expires: 30, sameSite: 'strict' });
+      Cookies.set('rememberedPassword', formData.password, { expires: 30, sameSite: 'strict' });
+      
+      // Also store in localStorage as backup
+      localStorage.setItem('rememberMeEnabled', 'true');
+      localStorage.setItem('rememberedEmail', formData.email);
+      localStorage.setItem('rememberedPassword', formData.password);
     } else {
-      localStorage.removeItem("rememberedEmail");
+      // Clear all remembered credentials from both cookies and localStorage
+      Cookies.remove('rememberMeEnabled');
+      Cookies.remove('rememberedEmail');
+      Cookies.remove('rememberedPassword');
+      
+      localStorage.removeItem('rememberMeEnabled');
+      localStorage.removeItem('rememberedEmail');
+      localStorage.removeItem('rememberedPassword');
     }
 
     const persistAuth = (token, userInfo, tenantInfo) => {

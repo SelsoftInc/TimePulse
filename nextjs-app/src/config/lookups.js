@@ -28,6 +28,65 @@ export const getCountryCode = (country) => {
   return COUNTRY_CODES[country] || '+1';
 };
 
+// Get tax ID label for a given country
+export const getTaxIdLabel = (country) => {
+  return TAX_ID_LABELS[country] || 'Tax ID';
+};
+
+// Get tax ID placeholder for a given country
+export const getTaxIdPlaceholder = (country) => {
+  return TAX_ID_PLACEHOLDERS[country] || 'Enter Tax ID';
+};
+
+// Helper to parse phone number and extract country code intelligently
+// Tries to match against known country codes first
+export const parsePhoneNumber = (phoneString, fallbackCountry = 'United States') => {
+  if (!phoneString || phoneString.length === 0) {
+    return {
+      countryCode: getCountryCode(fallbackCountry),
+      phoneNumber: ''
+    };
+  }
+
+  // Remove all non-digit characters except +
+  const cleaned = phoneString.replace(/[^\d+]/g, '');
+  
+  // If doesn't start with +, use fallback country code
+  if (!cleaned.startsWith('+')) {
+    return {
+      countryCode: getCountryCode(fallbackCountry),
+      phoneNumber: cleaned
+    };
+  }
+
+  // Try to match against known country codes (longest first to avoid +1 matching +91)
+  const knownCodes = Object.values(COUNTRY_CODES).sort((a, b) => b.length - a.length);
+  
+  for (const code of knownCodes) {
+    if (cleaned.startsWith(code)) {
+      return {
+        countryCode: code,
+        phoneNumber: cleaned.substring(code.length)
+      };
+    }
+  }
+
+  // Fallback: try to extract 1-3 digits after +
+  const match = cleaned.match(/^(\+\d{1,3})(\d*)$/);
+  if (match) {
+    return {
+      countryCode: match[1],
+      phoneNumber: match[2]
+    };
+  }
+
+  // Last resort: use fallback country
+  return {
+    countryCode: getCountryCode(fallbackCountry),
+    phoneNumber: cleaned.replace(/\D/g, '')
+  };
+};
+
 export const STATES_BY_COUNTRY = {
   'United States': [
     'Alabama','Alaska','Arizona','Arkansas','California','Colorado','Connecticut','Delaware','District of Columbia','Florida','Georgia','Hawaii','Idaho','Illinois','Indiana','Iowa','Kansas','Kentucky','Louisiana','Maine','Maryland','Massachusetts','Michigan','Minnesota','Mississippi','Missouri','Montana','Nebraska','Nevada','New Hampshire','New Jersey','New Mexico','New York','North Carolina','North Dakota','Ohio','Oklahoma','Oregon','Pennsylvania','Rhode Island','South Carolina','South Dakota','Tennessee','Texas','Utah','Vermont','Virginia','Washington','West Virginia','Wisconsin','Wyoming'

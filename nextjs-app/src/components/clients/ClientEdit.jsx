@@ -94,7 +94,7 @@ const ClientEdit = () => {
     <PermissionGuard requiredPermission={PERMISSIONS.EDIT_CLIENT}>
       <div className="nk-content">
         <div className="container-fluid">
-          <div className="nk-block-head nk-block-head-sm">
+          {/* <div className="nk-block-head nk-block-head-sm">
             <div className="nk-block-between">
               <div className="nk-block-head-content">
                 <h3 className="nk-block-title">Edit Client</h3>
@@ -109,7 +109,7 @@ const ClientEdit = () => {
                 </Link>
               </div>
             </div>
-          </div>
+          </div> */}
           <ClientForm
             mode="edit"
             initialData={initialClient}

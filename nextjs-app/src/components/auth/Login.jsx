@@ -543,6 +543,19 @@ const Login = () => {
           Sign in with Google
         </button>
         )}
+
+        {/* Create Account Link */}
+        <div className="text-center mt-6">
+          <p className="text-sm !text-white/80 mb-3">
+            Don't have an account?
+          </p>
+          <Link
+            href="/create-account"
+            className="inline-block px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 font-semibold"
+          >
+            Create Account
+          </Link>
+        </div>
       </div>
     </div>
   );

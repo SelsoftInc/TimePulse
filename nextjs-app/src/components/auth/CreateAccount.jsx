@@ -94,8 +94,15 @@ const CreateAccount = () => {
     setFormData(prev => ({ ...prev, [name]: value }));
     setError('');
 
+    if (name === 'country') {
+      // Re-validate phone number when country changes
+      if (formData.phone) {
+        const validation = validatePhoneNumber(formData.phone, value);
+        setPhoneError(validation.error || '');
+      }
+    }
+
     if (name === 'phone') {
-      const maxLength = getPhoneMaxLength(formData.country);
       const validation = validatePhoneNumber(value, formData.country);
       setPhoneError(validation.error || '');
     }
@@ -331,8 +338,8 @@ const CreateAccount = () => {
                 className="w-full px-4 py-3 bg-white border-2 border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
               >
                 {COUNTRY_OPTIONS.map(country => (
-                  <option key={country.value} value={country.value}>
-                    {country.label}
+                  <option key={country} value={country}>
+                    {country}
                   </option>
                 ))}
               </select>

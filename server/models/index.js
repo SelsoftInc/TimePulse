@@ -696,6 +696,12 @@ const NotificationModel = require("./Notification");
 models.Notification = NotificationModel(sequelize);
 
 // =============================================
+// ACCOUNT REQUEST MODEL
+// =============================================
+const AccountRequestModel = require("./AccountRequest");
+models.AccountRequest = AccountRequestModel(sequelize);
+
+// =============================================
 // VENDOR MODEL
 // =============================================
 models.Vendor = sequelize.define(
@@ -1485,6 +1491,34 @@ models.User.hasMany(models.Notification, {
 models.Tenant.hasMany(models.Notification, {
   foreignKey: "tenantId",
   as: "notifications",
+});
+
+// =============================================
+// ACCOUNT REQUEST ASSOCIATIONS
+// =============================================
+models.Tenant.hasMany(models.AccountRequest, {
+  foreignKey: "tenantId",
+  as: "accountRequests",
+});
+models.AccountRequest.belongsTo(models.Tenant, {
+  foreignKey: "tenantId",
+  as: "tenant",
+});
+models.AccountRequest.belongsTo(models.User, {
+  foreignKey: "requestedApproverId",
+  as: "requestedApprover",
+});
+models.AccountRequest.belongsTo(models.User, {
+  foreignKey: "approvedBy",
+  as: "approver",
+});
+models.AccountRequest.belongsTo(models.User, {
+  foreignKey: "rejectedBy",
+  as: "rejector",
+});
+models.AccountRequest.belongsTo(models.User, {
+  foreignKey: "userId",
+  as: "user",
 });
 
 module.exports = {

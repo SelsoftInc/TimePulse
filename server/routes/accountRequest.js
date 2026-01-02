@@ -8,9 +8,9 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const { body, validationResult } = require('express-validator');
+const { models } = require('../models');
 
-module.exports = (models) => {
-  const { AccountRequest, User, Tenant, Employee } = models;
+const { AccountRequest, User, Tenant, Employee } = models;
 
   // =============================================
   // GET ROLES - Fetch available roles
@@ -184,23 +184,80 @@ module.exports = (models) => {
 
         console.log('✅ Account request created:', accountRequest.id);
 
-        // Create notifications for all admins and approvers
+        // Create notification for the selected approver only
         try {
-          const adminsAndApprovers = await User.findAll({
-            where: {
-              role: ['admin', 'approver'],
-              status: 'active',
-              approvalStatus: 'approved',
-            },
-            attributes: ['id', 'firstName', 'lastName', 'email'],
-          });
+          if (requestedApproverId) {
+            // Notify only the selected approver
+            const selectedApprover = await User.findByPk(requestedApproverId, {
+              attributes: ['id', 'firstName', 'lastName', 'email', 'tenantId'],
+            });
 
-          // Log notification for each admin/approver
-          adminsAndApprovers.forEach((user) => {
-            console.log(`📬 Notification: New account request from ${firstName} ${lastName} (${email}) for ${user.email}`);
-          });
+            if (selectedApprover) {
+              // Create notification in database
+              const { Notification } = models;
+              await Notification.create({
+                userId: selectedApprover.id,
+                tenantId: selectedApprover.tenantId,
+                type: 'account_request',
+                title: 'New Account Request',
+                message: `${firstName} ${lastName} has requested an account with role: ${requestedRole}`,
+                metadata: {
+                  accountRequestId: accountRequest.id,
+                  requesterEmail: email,
+                  requesterName: `${firstName} ${lastName}`,
+                  requestedRole: requestedRole,
+                },
+                priority: 'high',
+                readAt: null,
+              });
 
-          console.log(`✅ Notified ${adminsAndApprovers.length} admins/approvers`);
+              console.log(`📬 Notification created for selected approver: ${selectedApprover.firstName} ${selectedApprover.lastName} (${selectedApprover.email})`);
+              
+              // Send WebSocket notification if available
+              if (global.wsService) {
+                global.wsService.sendNotification(selectedApprover.id, {
+                  type: 'account_request',
+                  title: 'New Account Request',
+                  message: `${firstName} ${lastName} has requested an account`,
+                  accountRequestId: accountRequest.id,
+                });
+                console.log(`🔔 WebSocket notification sent to approver`);
+              }
+            } else {
+              console.log('⚠️ Selected approver not found');
+            }
+          } else {
+            // If no specific approver selected, notify all admins
+            const admins = await User.findAll({
+              where: {
+                role: 'admin',
+                status: 'active',
+                approvalStatus: 'approved',
+              },
+              attributes: ['id', 'firstName', 'lastName', 'email', 'tenantId'],
+            });
+
+            const { Notification } = models;
+            for (const admin of admins) {
+              await Notification.create({
+                userId: admin.id,
+                tenantId: admin.tenantId,
+                type: 'account_request',
+                title: 'New Account Request',
+                message: `${firstName} ${lastName} has requested an account with role: ${requestedRole}`,
+                metadata: {
+                  accountRequestId: accountRequest.id,
+                  requesterEmail: email,
+                  requesterName: `${firstName} ${lastName}`,
+                  requestedRole: requestedRole,
+                },
+                priority: 'high',
+                readAt: null,
+              });
+            }
+
+            console.log(`✅ Notified ${admins.length} admin(s)`);
+          }
         } catch (notifError) {
           console.error('⚠️ Error creating notifications:', notifError);
           // Don't fail the request if notifications fail
@@ -232,37 +289,114 @@ module.exports = (models) => {
   );
 
   // =============================================
+  // GET ACCOUNT REQUEST BY ID
+  // =============================================
+  router.get('/:id', async (req, res) => {
+    try {
+      const { id } = req.params;
+      console.log('🔍 [Account Request] Fetching request by ID:', id);
+
+      const accountRequest = await AccountRequest.findByPk(id);
+
+      if (!accountRequest) {
+        console.log('❌ [Account Request] Request not found:', id);
+        return res.status(404).json({
+          success: false,
+          message: 'Account request not found',
+        });
+      }
+
+      console.log('✅ [Account Request] Found request:', {
+        id: accountRequest.id,
+        email: accountRequest.email,
+        status: accountRequest.status,
+      });
+
+      res.json({
+        success: true,
+        request: {
+          id: accountRequest.id,
+          firstName: accountRequest.firstName,
+          lastName: accountRequest.lastName,
+          email: accountRequest.email,
+          phone: accountRequest.phone,
+          countryCode: accountRequest.countryCode,
+          requestedRole: accountRequest.requestedRole,
+          companyName: accountRequest.companyName,
+          department: accountRequest.department,
+          status: accountRequest.status,
+          createdAt: accountRequest.createdAt,
+          approvedAt: accountRequest.approvedAt,
+          rejectedAt: accountRequest.rejectedAt,
+          rejectionReason: accountRequest.rejectionReason,
+        },
+      });
+    } catch (error) {
+      console.error('❌ Error fetching account request:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch account request',
+        error: error.message,
+      });
+    }
+  });
+
+  // =============================================
   // CHECK REQUEST STATUS
   // =============================================
   router.get('/status/:email', async (req, res) => {
     try {
       const { email } = req.params;
+      console.log('🔍 [Account Request] Checking status for:', email);
 
       const accountRequest = await AccountRequest.findOne({
         where: { email },
-        include: [
-          {
-            model: User,
-            as: 'approver',
-            attributes: ['id', 'firstName', 'lastName', 'email'],
-          },
-          {
-            model: User,
-            as: 'requestedApprover',
-            attributes: ['id', 'firstName', 'lastName', 'email'],
-          },
-        ],
-        order: [['createdAt', 'DESC']],
+        order: [['created_at', 'DESC']], // Fixed: Use snake_case for database column
       });
 
       if (!accountRequest) {
+        console.log('❌ [Account Request] No request found for:', email);
         return res.status(404).json({
           success: false,
           message: 'No account request found for this email',
         });
       }
 
-      console.log('🔍 Account request status:', accountRequest.status);
+      console.log('✅ [Account Request] Found request:', {
+        id: accountRequest.id,
+        status: accountRequest.status,
+        requestedRole: accountRequest.requestedRole,
+      });
+
+      // Fetch approver details if requestedApproverId exists
+      let approverName = null;
+      if (accountRequest.requestedApproverId) {
+        try {
+          const approver = await User.findByPk(accountRequest.requestedApproverId, {
+            attributes: ['id', 'firstName', 'lastName', 'email'],
+          });
+          if (approver) {
+            approverName = `${approver.firstName} ${approver.lastName}`;
+          }
+        } catch (err) {
+          console.error('⚠️ Error fetching approver:', err);
+        }
+      }
+
+      // Fetch approved by details if approvedBy exists
+      let approvedByName = null;
+      if (accountRequest.approvedBy) {
+        try {
+          const approvedBy = await User.findByPk(accountRequest.approvedBy, {
+            attributes: ['id', 'firstName', 'lastName', 'email'],
+          });
+          if (approvedBy) {
+            approvedByName = `${approvedBy.firstName} ${approvedBy.lastName}`;
+          }
+        } catch (err) {
+          console.error('⚠️ Error fetching approved by user:', err);
+        }
+      }
 
       res.json({
         success: true,
@@ -273,12 +407,8 @@ module.exports = (models) => {
           email: accountRequest.email,
           status: accountRequest.status,
           requestedRole: accountRequest.requestedRole,
-          approverName: accountRequest.requestedApprover
-            ? `${accountRequest.requestedApprover.firstName} ${accountRequest.requestedApprover.lastName}`
-            : null,
-          approvedBy: accountRequest.approver
-            ? `${accountRequest.approver.firstName} ${accountRequest.approver.lastName}`
-            : null,
+          approverName: approverName,
+          approvedBy: approvedByName,
           approvedAt: accountRequest.approvedAt,
           rejectedAt: accountRequest.rejectedAt,
           rejectionReason: accountRequest.rejectionReason,
@@ -287,9 +417,11 @@ module.exports = (models) => {
       });
     } catch (error) {
       console.error('❌ Error checking request status:', error);
+      console.error('❌ Error stack:', error.stack); // Added detailed error logging
       res.status(500).json({
         success: false,
         message: 'Failed to check request status',
+        error: error.message,
       });
     }
   });
@@ -299,41 +431,65 @@ module.exports = (models) => {
   // =============================================
   router.get('/pending', async (req, res) => {
     try {
-      // This would normally require authentication
-      // For now, we'll return all pending requests
+      console.log('📋 [Account Request] Fetching pending requests...');
+      
       const pendingRequests = await AccountRequest.findAll({
         where: { status: 'pending' },
-        include: [
-          {
-            model: User,
-            as: 'requestedApprover',
-            attributes: ['id', 'firstName', 'lastName', 'email'],
-          },
-          {
-            model: Tenant,
-            as: 'tenant',
-            attributes: ['id', 'tenantName', 'subdomain'],
-          },
-        ],
         order: [['createdAt', 'DESC']],
       });
 
-      const formattedRequests = pendingRequests.map((request) => ({
-        id: request.id,
-        name: `${request.firstName} ${request.lastName}`,
-        email: request.email,
-        phone: `${request.countryCode} ${request.phone}`,
-        requestedRole: request.requestedRole,
-        department: request.department,
-        companyName: request.companyName,
-        approverName: request.requestedApprover
-          ? `${request.requestedApprover.firstName} ${request.requestedApprover.lastName}`
-          : 'Not specified',
-        tenantName: request.tenant?.tenantName || 'Not assigned',
-        createdAt: request.createdAt,
-      }));
+      console.log(`✅ Found ${pendingRequests.length} pending requests`);
 
-      console.log('📋 Pending requests:', formattedRequests.length);
+      // Fetch related data separately to avoid association errors
+      const formattedRequests = await Promise.all(
+        pendingRequests.map(async (request) => {
+          let approverName = 'Not specified';
+          let tenantName = 'Not assigned';
+
+          // Fetch approver details if exists
+          if (request.requestedApproverId) {
+            try {
+              const approver = await User.findByPk(request.requestedApproverId, {
+                attributes: ['firstName', 'lastName'],
+              });
+              if (approver) {
+                approverName = `${approver.firstName} ${approver.lastName}`;
+              }
+            } catch (err) {
+              console.error('⚠️ Error fetching approver:', err);
+            }
+          }
+
+          // Fetch tenant details if exists
+          if (request.tenantId) {
+            try {
+              const tenant = await Tenant.findByPk(request.tenantId, {
+                attributes: ['tenantName'],
+              });
+              if (tenant) {
+                tenantName = tenant.tenantName;
+              }
+            } catch (err) {
+              console.error('⚠️ Error fetching tenant:', err);
+            }
+          }
+
+          return {
+            id: request.id,
+            name: `${request.firstName} ${request.lastName}`,
+            firstName: request.firstName,
+            lastName: request.lastName,
+            email: request.email,
+            phone: `${request.countryCode} ${request.phone}`,
+            requestedRole: request.requestedRole,
+            department: request.department,
+            companyName: request.companyName,
+            approverName: approverName,
+            tenantName: tenantName,
+            createdAt: request.createdAt,
+          };
+        })
+      );
 
       res.json({
         success: true,
@@ -502,5 +658,4 @@ module.exports = (models) => {
     }
   });
 
-  return router;
-};
+module.exports = router;

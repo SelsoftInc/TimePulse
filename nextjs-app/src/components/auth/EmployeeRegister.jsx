@@ -19,7 +19,7 @@ const EmployeeRegister = () => {
     city: '',
     state: '',
     zip: '',
-    country: 'United States',
+    country: 'United States ',
     agreeTerms: false
   });
   const [loading, setLoading] = useState(false);

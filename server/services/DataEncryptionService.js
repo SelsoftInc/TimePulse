@@ -174,6 +174,16 @@ class DataEncryptionService {
     return clientData;
   }
 
+  /**
+   * Decrypt multiple clients
+   * @param {Array} clients - Array of encrypted clients
+   * @returns {Array} Array of decrypted clients
+   */
+  static decryptClients(clients) {
+    if (!Array.isArray(clients)) return clients;
+    return clients.map(client => this.decryptClientData(client));
+  }
+
   // ==================== VENDOR MODULE ====================
   
   static decryptVendorData(vendorData) {

@@ -65,7 +65,7 @@ const EmployeeEdit = () => {
     status: 'active',
     overtimeRate: '',
     enableOvertime: false,
-    overtimeMultiplier: 1.5,
+    overtimeMultiplier: 1,
     approver: '',
     notes: '',
     address: '',
@@ -142,7 +142,7 @@ const EmployeeEdit = () => {
           status: emp.status || 'active',
           overtimeRate: emp.overtimeRate || '',
           enableOvertime: emp.enableOvertime || false,
-          overtimeMultiplier: emp.overtimeMultiplier || 1.5,
+          overtimeMultiplier: emp.overtimeMultiplier || 1,
           approver: emp.approver || '',
           notes: emp.notes || '',
           address: contactInfo.address || '',
@@ -523,7 +523,7 @@ const EmployeeEdit = () => {
         status: formData.status,
         overtimeRate: formData.overtimeRate ? parseFloat(formData.overtimeRate) : null,
         enableOvertime: formData.enableOvertime,
-        overtimeMultiplier: formData.overtimeMultiplier ? parseFloat(formData.overtimeMultiplier) : 1.5,
+        overtimeMultiplier: formData.overtimeMultiplier ? parseFloat(formData.overtimeMultiplier) : 1,
         approver: formData.approver || null,
         notes: formData.notes || null,
         contactInfo: JSON.stringify({
@@ -960,8 +960,8 @@ const EmployeeEdit = () => {
                       value={formData.overtimeMultiplier}
                       onChange={handleChange}
                       min="1"
-                      step="0.1"
-                      placeholder="1.5"
+                      step="1"
+                      placeholder="1"
                       className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm shadow-sm"
                     />
                   </div>

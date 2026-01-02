@@ -58,7 +58,7 @@ const EmployeeForm = () => {
     salaryType: "hourly",
     overtimeRate: "",
     enableOvertime: false,
-    overtimeMultiplier: 1.5,
+    overtimeMultiplier: 1,
     status: "active",
     address: "",
     city: "",
@@ -193,7 +193,7 @@ const EmployeeForm = () => {
           hourlyRate: employee.hourlyRate || "",
           overtimeRate: employee.overtimeRate || "",
           enableOvertime: employee.enableOvertime || false,
-          overtimeMultiplier: employee.overtimeMultiplier || 1.5,
+          overtimeMultiplier: employee.overtimeMultiplier || 1,
           status: employee.status || "active",
           address: employee.address || "",
           city: employee.city || "",
@@ -1335,9 +1335,9 @@ const EmployeeForm = () => {
                                   name="overtimeMultiplier"
                                   value={formData.overtimeMultiplier}
                                   onChange={handleChange}
-                                  placeholder="1.5"
+                                  placeholder="1"
                                   min="1"
-                                  step="0.1"
+                                  step="1"
                                 />
                                 <small className="text-muted">
                                   Standard rate × multiplier = overtime rate

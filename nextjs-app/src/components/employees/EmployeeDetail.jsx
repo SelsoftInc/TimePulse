@@ -511,7 +511,7 @@ const EmployeeDetail = () => {
                     Overtime Multiplier
                   </label>
                   <p className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900">
-                    {employee.overtimeMultiplier || '1.5'}
+                    {employee.overtimeMultiplier || '1'}
                   </p>
                 </div>
                 

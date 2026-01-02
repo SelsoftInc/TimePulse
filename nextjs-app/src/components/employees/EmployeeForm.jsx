@@ -1210,7 +1210,7 @@ const EmployeeForm = () => {
                         <div className="col-lg-6">
                           <div className="form-group">
                             <label className="form-label" htmlFor="implPartnerId">
-                              Implementation Partner
+                              Implementation Partner 
                             </label>
                             <select
                               className="form-select rounded-lg border-slate-300 bg-white shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"

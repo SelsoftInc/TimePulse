@@ -14,16 +14,16 @@ import { apiFetch } from '@/config/api';
 import {
   COUNTRY_OPTIONS,
   STATES_BY_COUNTRY,
-  TAX_ID_LABELS,
-  TAX_ID_PLACEHOLDERS,
   PAYMENT_TERMS_OPTIONS,
   fetchPaymentTerms,
   getPostalLabel,
   getPostalPlaceholder,
-  validateCountryTaxId
+  getCountryCode,
+  getTaxIdLabel,
+  getTaxIdPlaceholder,
+  parsePhoneNumber
 } from '../../config/lookups';
 import {
-  getCountryCode,
   getPhonePlaceholder,
   validatePhoneForCountry,
   formatPhoneWithCountryCode,
@@ -44,6 +44,10 @@ const ClientForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({ phone: '', taxId: '' });
   const [paymentTermsOptions, setPaymentTermsOptions] = useState(PAYMENT_TERMS_OPTIONS);
+  
+  // UI-only state for separated country code and phone number
+  const [countryCode, setCountryCode] = useState("+1");
+  const [phoneNumber, setPhoneNumber] = useState("");
 
   // Hydration fix: Set mounted state on client
   useEffect(() => {
@@ -81,15 +85,13 @@ const ClientForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
   useEffect(() => {
     if (initialData) {
       const country = initialData.billingAddress?.country || 'United States';
-      const countryCode = getCountryCode(country);
-      setPhoneCountryCode(countryCode);
       
       setFormData(prev => ({
         ...prev,
         name: initialData.name || prev.name,
         contactPerson: initialData.contactPerson || prev.contactPerson,
         email: initialData.email || prev.email,
-        phone: initialData.phone ? extractPhoneNumber(initialData.phone, country) : prev.phone,
+        phone: initialData.phone || prev.phone,
         address: initialData.billingAddress?.line1 || prev.address,
         city: initialData.billingAddress?.city || prev.city,
         state: initialData.billingAddress?.state || prev.state,
@@ -109,6 +111,17 @@ const ClientForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
         currency: initialData.currency || prev.currency}));
     }
   }, [initialData]);
+
+  // UI-only: Split phone into country code and phone number when formData.phone changes
+  // This only runs on initial load or when editing an existing client
+  useEffect(() => {
+    if (!isMounted) return;
+    
+    // Use intelligent phone parsing that matches against known country codes
+    const parsed = parsePhoneNumber(formData.phone, formData.country);
+    setCountryCode(parsed.countryCode);
+    setPhoneNumber(parsed.phoneNumber);
+  }, [isMounted, initialData]);
 
   // Helper function to convert payment terms code to integer
   const convertPaymentTermsToInteger = (code) => {
@@ -197,24 +210,93 @@ const ClientForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
     };
   }, [addressInputRef]);
 
+  // Get expected phone number length for a country
+  const getPhoneNumberLength = (country) => {
+    const lengthMap = {
+      'United States': 10,
+      'Canada': 10,
+      'United Kingdom': 10,
+      'India': 10,
+      'Australia': 9,
+      'Germany': 10,
+      'France': 9,
+      'Japan': 10,
+      'China': 11,
+      'Brazil': 11,
+      'Mexico': 10,
+      'South Africa': 9,
+      'United Arab Emirates': 9,
+      'Singapore': 8,
+      'Italy': 10,
+      'Spain': 9,
+      'Russia': 10
+    };
+    return lengthMap[country] || 10;
+  };
+
+  // UI-only: Handle phone number input change
+  const handlePhoneNumberChange = (e) => {
+    const value = e.target.value;
+    // Only allow digits with country-specific max length
+    const maxLength = getPhoneNumberLength(formData.country);
+    const digitsOnly = value.replace(/\D/g, '').slice(0, maxLength);
+    setPhoneNumber(digitsOnly);
+    // Combine with country code and update formData.phone
+    const combinedPhone = digitsOnly ? `${countryCode}${digitsOnly}` : countryCode;
+    setFormData(prev => ({ ...prev, phone: combinedPhone }));
+    // Clear phone validation errors
+    if (errors.phone) {
+      setErrors((prev) => ({ ...prev, phone: "" }));
+    }
+  };
+
+  // UI-only: Handle phone blur for validation
+  const handlePhoneBlur = () => {
+    const combinedPhone = phoneNumber ? `${countryCode}${phoneNumber}` : '';
+    if (!combinedPhone || !phoneNumber) {
+      setErrors((prev) => ({ ...prev, phone: "" }));
+      return;
+    }
+    
+    // Country-specific length validation
+    const expectedLength = getPhoneNumberLength(formData.country);
+    if (phoneNumber.length !== expectedLength) {
+      setErrors((prev) => ({
+        ...prev,
+        phone: `Phone number must be ${expectedLength} digits for ${formData.country}`
+      }));
+      return;
+    }
+    
+    // General phone validation
+    const validation = validatePhoneNumber(combinedPhone);
+    setErrors((prev) => ({
+      ...prev,
+      phone: validation.isValid ? "" : validation.message
+    }));
+  };
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     let processedValue = value;
     let updates = { [name]: type === 'checkbox' ? checked : processedValue };
     
-    // Auto-prefill country code when country changes
+    // Auto-update country code when country is selected
     if (name === 'country') {
-      const countryCode = getCountryCode(value);
-      setPhoneCountryCode(countryCode);
-      // Only prefill if phone is empty or just has a country code
-      if (!formData.phone || /^\+\d{0,3}$/.test(formData.phone)) {
-        updates.phone = countryCode;
-      }
+      const newCountryCode = getCountryCode(value);
+      setCountryCode(newCountryCode);
+      // Update phone with new country code
+      const combinedPhone = phoneNumber ? `${newCountryCode}${phoneNumber}` : newCountryCode;
+      updates.phone = combinedPhone;
       // Reset state when country changes to avoid stale values
       updates.state = '';
+      // Clear any phone validation errors when country changes
+      if (errors.phone) {
+        setErrors((prev) => ({ ...prev, phone: "" }));
+      }
     }
     
-    // Format phone number as user types - E.164 only
+    // Format phone number as user types - E.164 only (kept for backward compatibility)
     if (name === 'phone') {
       const trimmed = String(value || '');
       // Only allow + followed by digits (E.164 format)
@@ -251,7 +333,11 @@ const ClientForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
   const handleBlur = (e) => {
     const { name, value } = e.target;
     if (name === 'phone') {
-      const validation = validatePhoneForCountry(value, formData.country);
+      if (!value) {
+        setErrors(prev => ({ ...prev, phone: '' }));
+        return;
+      }
+      const validation = validatePhoneNumber(value);
       setErrors(prev => ({ ...prev, phone: validation.isValid ? '' : validation.message }));
     } else if (name === 'zip') {
       const validation = validateZipCode(value, formData.country);
@@ -510,19 +596,30 @@ const ClientForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
           <label className="mb-1 block text-sm font-medium text-slate-700">
             Phone Number <span className="text-red-500">*</span>
           </label>
-          <input
-            type="tel"
-            name="phone"
-            value={formData.phone}
-            onChange={handleChange}
-            onBlur={handleBlur}
-            maxLength={16}
-            placeholder="+1 555-123-4567"
-            className={`w-full rounded-lg border border-slate-300 px-3 py-2 text-sm
-                       focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 ${
-                         errors.phone ? 'border-red-500' : ''
-                       }`}
-          />
+          <div className="flex items-stretch gap-2">
+            <input
+              type="text"
+              className="w-[70px] min-w-[70px] shrink-0 rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-center text-sm font-semibold text-slate-700 shadow-sm"
+              value={countryCode}
+              readOnly
+              maxLength="4"
+              title="Country code (auto-filled based on selected country)"
+            />
+            <input
+              type="tel"
+              className={`flex-1 min-w-0 rounded-lg border px-3 py-2 text-sm shadow-sm transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 ${
+                errors.phone ? 'border-red-500 bg-red-50' : 'border-slate-300'
+              }`}
+              value={phoneNumber}
+              onChange={handlePhoneNumberChange}
+              onBlur={handlePhoneBlur}
+              placeholder="Enter phone number"
+              maxLength="15"
+            />
+          </div>
+          <small className="mt-1 block text-xs text-slate-500">
+            Country code updates automatically based on selected country
+          </small>
           {errors.phone && (
             <p className="mt-1 text-xs text-red-500">{errors.phone}</p>
           )}

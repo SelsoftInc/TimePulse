@@ -1,14 +1,14 @@
 // Centralized lookups for countries, states, tax ID labels/placeholders and payment terms
 
 export const COUNTRY_OPTIONS = [
-  { value: 'United States', label: 'United States' },
-  { value: 'India', label: 'India' },
-  { value: 'Canada', label: 'Canada' },
-  { value: 'United Kingdom', label: 'United Kingdom' },
-  { value: 'Australia', label: 'Australia' },
-  { value: 'Germany', label: 'Germany' },
-  { value: 'Singapore', label: 'Singapore' },
-  { value: 'United Arab Emirates', label: 'United Arab Emirates' }
+  'United States',
+  'India',
+  'Canada',
+  'United Kingdom',
+  'Australia',
+  'Germany',
+  'Singapore',
+  'United Arab Emirates'
 ];
 
 // Country code mapping for phone numbers (E.164 format)
@@ -28,21 +28,63 @@ export const getCountryCode = (country) => {
   return COUNTRY_CODES[country] || '+1';
 };
 
-// Country-specific phone number max lengths (without country code)
-export const PHONE_MAX_LENGTHS = {
-  'United States': 10,
-  'India': 10,
-  'Canada': 10,
-  'United Kingdom': 10,
-  'Australia': 9,
-  'Germany': 11,
-  'Singapore': 8,
-  'United Arab Emirates': 9
+// Get tax ID label for a given country
+export const getTaxIdLabel = (country) => {
+  return TAX_ID_LABELS[country] || 'Tax ID';
 };
 
-// Get max phone length for a country
-export const getPhoneMaxLength = (country) => {
-  return PHONE_MAX_LENGTHS[country] || 15;
+// Get tax ID placeholder for a given country
+export const getTaxIdPlaceholder = (country) => {
+  return TAX_ID_PLACEHOLDERS[country] || 'Enter Tax ID';
+};
+
+// Helper to parse phone number and extract country code intelligently
+// Tries to match against known country codes first
+export const parsePhoneNumber = (phoneString, fallbackCountry = 'United States') => {
+  if (!phoneString || phoneString.length === 0) {
+    return {
+      countryCode: getCountryCode(fallbackCountry),
+      phoneNumber: ''
+    };
+  }
+
+  // Remove all non-digit characters except +
+  const cleaned = phoneString.replace(/[^\d+]/g, '');
+  
+  // If doesn't start with +, use fallback country code
+  if (!cleaned.startsWith('+')) {
+    return {
+      countryCode: getCountryCode(fallbackCountry),
+      phoneNumber: cleaned
+    };
+  }
+
+  // Try to match against known country codes (longest first to avoid +1 matching +91)
+  const knownCodes = Object.values(COUNTRY_CODES).sort((a, b) => b.length - a.length);
+  
+  for (const code of knownCodes) {
+    if (cleaned.startsWith(code)) {
+      return {
+        countryCode: code,
+        phoneNumber: cleaned.substring(code.length)
+      };
+    }
+  }
+
+  // Fallback: try to extract 1-3 digits after +
+  const match = cleaned.match(/^(\+\d{1,3})(\d*)$/);
+  if (match) {
+    return {
+      countryCode: match[1],
+      phoneNumber: match[2]
+    };
+  }
+
+  // Last resort: use fallback country
+  return {
+    countryCode: getCountryCode(fallbackCountry),
+    phoneNumber: cleaned.replace(/\D/g, '')
+  };
 };
 
 export const STATES_BY_COUNTRY = {

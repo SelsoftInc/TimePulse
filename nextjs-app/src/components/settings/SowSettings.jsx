@@ -10,7 +10,7 @@ const SowSettings = () => {
       { role: 'Project Manager', rate: 150 },
       { role: 'QA Engineer', rate: 95 }
     ],
-    overtimeMultiplier: 1.5,
+    overtimeMultiplier: 1,
     enableOvertime: true,
     approvalWorkflow: 'manual',
     requireClientApproval: true,

@@ -8,7 +8,10 @@ import {
   STATES_BY_COUNTRY,
   getPostalLabel,
   getPostalPlaceholder,
-  getCountryCode
+  getCountryCode,
+  getTaxIdLabel,
+  getTaxIdPlaceholder,
+  parsePhoneNumber
 } from '../../config/lookups';
 import { PERMISSIONS } from '@/utils/roles';
 import PermissionGuard from '../common/PermissionGuard';
@@ -36,6 +39,14 @@ const ImplementationPartnerForm = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [errors, setErrors] = useState({});
+  
+  // Hydration fix: Track if component is mounted on client
+  const [isMounted, setIsMounted] = useState(false);
+  
+  // UI-only state for separated country code and phone number
+  const [countryCode, setCountryCode] = useState("+1");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  
   const [formData, setFormData] = useState({
     name: "",
     legalName: "",
@@ -51,6 +62,11 @@ const ImplementationPartnerForm = ({
     status: "active",
     notes: ""
   });
+
+  // Hydration fix: Set mounted state on client
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   useEffect(() => {
     if (mode === "edit" && initialData) {
@@ -72,21 +88,102 @@ const ImplementationPartnerForm = ({
     }
   }, [mode, initialData]);
 
+  // UI-only: Split phone into country code and phone number when formData.phone changes
+  // This only runs on initial load or when editing an existing implementation partner
+  useEffect(() => {
+    if (!isMounted) return;
+    
+    // Use intelligent phone parsing that matches against known country codes
+    const parsed = parsePhoneNumber(formData.phone, formData.country);
+    setCountryCode(parsed.countryCode);
+    setPhoneNumber(parsed.phoneNumber);
+  }, [isMounted, initialData]);
+
+  // Get expected phone number length for a country
+  const getPhoneNumberLength = (country) => {
+    const lengthMap = {
+      'United States': 10,
+      'Canada': 10,
+      'United Kingdom': 10,
+      'India': 10,
+      'Australia': 9,
+      'Germany': 10,
+      'France': 9,
+      'Japan': 10,
+      'China': 11,
+      'Brazil': 11,
+      'Mexico': 10,
+      'South Africa': 9,
+      'United Arab Emirates': 9,
+      'Singapore': 8,
+      'Italy': 10,
+      'Spain': 9,
+      'Russia': 10
+    };
+    return lengthMap[country] || 10;
+  };
+
+  // UI-only: Handle phone number input change
+  const handlePhoneNumberChange = (e) => {
+    const value = e.target.value;
+    // Only allow digits with country-specific max length
+    const maxLength = getPhoneNumberLength(formData.country);
+    const digitsOnly = value.replace(/\D/g, '').slice(0, maxLength);
+    setPhoneNumber(digitsOnly);
+    // Combine with country code and update formData.phone
+    const combinedPhone = digitsOnly ? `${countryCode}${digitsOnly}` : countryCode;
+    setFormData(prev => ({ ...prev, phone: combinedPhone }));
+    // Clear phone validation errors
+    if (errors.phone) {
+      setErrors((prev) => ({ ...prev, phone: "" }));
+    }
+  };
+
+  // UI-only: Handle phone blur for validation
+  const handlePhoneBlur = () => {
+    const combinedPhone = phoneNumber ? `${countryCode}${phoneNumber}` : '';
+    if (!combinedPhone || !phoneNumber) {
+      setErrors((prev) => ({ ...prev, phone: "" }));
+      return;
+    }
+    
+    // Country-specific length validation
+    const expectedLength = getPhoneNumberLength(formData.country);
+    if (phoneNumber.length !== expectedLength) {
+      setErrors((prev) => ({
+        ...prev,
+        phone: `Phone number must be ${expectedLength} digits for ${formData.country}`
+      }));
+      return;
+    }
+    
+    // General phone validation
+    const validation = validatePhoneNumber(combinedPhone);
+    setErrors((prev) => ({
+      ...prev,
+      phone: validation.isValid ? "" : validation.message
+    }));
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     let processedValue = value;
     let updates = { [name]: processedValue };
 
-    // Auto-prefill country code when country is selected
+    // Auto-update country code when country is selected
     if (name === "country") {
-      const countryCode = getCountryCode(value);
-      // Only prefill if phone is empty or just has a country code
-      if (!formData.phone || /^\+\d{0,3}$/.test(formData.phone)) {
-        updates.phone = countryCode;
+      const newCountryCode = getCountryCode(value);
+      setCountryCode(newCountryCode);
+      // Update phone with new country code
+      const combinedPhone = phoneNumber ? `${newCountryCode}${phoneNumber}` : newCountryCode;
+      updates.phone = combinedPhone;
+      // Clear any phone validation errors when country changes
+      if (errors.phone) {
+        setErrors((prev) => ({ ...prev, phone: "" }));
       }
     }
 
-    // Format phone number as user types - E.164 only
+    // Format phone number as user types - E.164 only (kept for backward compatibility)
     if (name === "phone") {
       const trimmed = String(value || '');
       // Only allow + followed by digits (E.164 format)
@@ -433,18 +530,30 @@ const ImplementationPartnerForm = ({
                       <label className="mb-1 block text-sm font-medium text-slate-700">
                         Phone
                       </label>
-                      <input
-                        type="tel"
-                        name="phone"
-                        value={formData.phone}
-                        onChange={handleChange}
-                        onBlur={handleBlur}
-                        maxLength={14}
-                        placeholder="(555) 123-4567"
-                        className={`form-control rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500 ${
-                          errors.phone ? "is-invalid" : ""
-                        }`}
-                      />
+                      <div className="flex items-stretch gap-2">
+                        <input
+                          type="text"
+                          className="w-[70px] min-w-[70px] shrink-0 rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-center text-sm font-semibold text-slate-700 shadow-sm"
+                          value={countryCode}
+                          readOnly
+                          maxLength="4"
+                          title="Country code (auto-filled based on selected country)"
+                        />
+                        <input
+                          type="tel"
+                          className={`flex-1 min-w-0 form-control rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500 ${
+                            errors.phone ? "is-invalid" : ""
+                          }`}
+                          value={phoneNumber}
+                          onChange={handlePhoneNumberChange}
+                          onBlur={handlePhoneBlur}
+                          placeholder="Enter phone number"
+                          maxLength="15"
+                        />
+                      </div>
+                      <small className="mt-1 block text-xs text-slate-500">
+                        Country code updates automatically based on selected country
+                      </small>
                       {errors.phone && <div className="invalid-feedback">{errors.phone}</div>}
                     </div>
                   </div>

@@ -4,79 +4,27 @@
 
 // --- Phone ---
 // Accepts:
-// - Phone number with or without country code
-// - If country provided, validates based on country-specific rules
-export const validatePhoneNumber = (phone, country) => {
+// - E.164: +[country][number] (max 15 digits)
+// Server-side should normalize to E.164.
+export const validatePhoneNumber = (phone) => {
   if (!phone || typeof phone !== 'string') {
-    return { isValid: false, error: 'Phone number is required' };
+    return { isValid: false, message: 'Phone number is required' };
   }
 
   const cleaned = phone.replace(/[\s\-\(\)]/g, '');
   
-  // If already in E.164 format
+  // E.164 format ONLY: +[country code][subscriber number] (up to 15 digits total)
   const e164Pattern = /^\+[1-9]\d{1,14}$/;
+  
   if (e164Pattern.test(cleaned)) {
-    return { isValid: true };
+    return { isValid: true, message: 'Valid phone number' };
   }
   
-  // Validate digits only (for input without country code)
-  const digitsOnly = cleaned.replace(/\D/g, '');
-  
-  if (!digitsOnly || digitsOnly.length === 0) {
-    return { isValid: false, error: 'Phone number must contain digits' };
-  }
-  
-  // Country-specific validation
-  if (country) {
-    const minLength = getPhoneMinLength(country);
-    const maxLength = getPhoneMaxLength(country);
-    
-    if (digitsOnly.length < minLength) {
-      return { isValid: false, error: `Phone number must be at least ${minLength} digits` };
-    }
-    
-    if (digitsOnly.length > maxLength) {
-      return { isValid: false, error: `Phone number must be at most ${maxLength} digits` };
-    }
-  } else {
-    // Generic validation without country
-    if (digitsOnly.length < 7 || digitsOnly.length > 15) {
-      return { isValid: false, error: 'Phone number must be between 7 and 15 digits' };
-    }
-  }
-  
-  return { isValid: true };
+  return { 
+    isValid: false, 
+    message: 'Phone must be in E.164 format (e.g., +15551234567 for US, +442079460958 for UK, +919874563210 for India)' 
+  };
 };
-
-// Helper function to get minimum phone length
-function getPhoneMinLength(country) {
-  const minLengths = {
-    'United States': 10,
-    'India': 10,
-    'Canada': 10,
-    'United Kingdom': 10,
-    'Australia': 9,
-    'Germany': 10,
-    'Singapore': 8,
-    'United Arab Emirates': 9
-  };
-  return minLengths[country] || 7;
-}
-
-// Helper function to get maximum phone length
-function getPhoneMaxLength(country) {
-  const maxLengths = {
-    'United States': 10,
-    'India': 10,
-    'Canada': 10,
-    'United Kingdom': 11,
-    'Australia': 9,
-    'Germany': 11,
-    'Singapore': 8,
-    'United Arab Emirates': 9
-  };
-  return maxLengths[country] || 15;
-}
 
 // Format phone number for display (XXX) XXX-XXXX
 export const formatPhoneNumber = (phone) => {

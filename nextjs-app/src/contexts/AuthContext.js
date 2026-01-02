@@ -132,12 +132,7 @@ export const AuthProvider = ({ children }) => {
   // Logout function
   const logout = () => {
     if (typeof window !== 'undefined') {
-      // Save Remember Me credentials before clearing
-      const rememberedEmail = localStorage.getItem('rememberedEmail');
-      const rememberedPassword = localStorage.getItem('rememberedPassword');
-      const rememberMeChecked = localStorage.getItem('rememberMeChecked');
-      
-      // Clear all localStorage items
+      // Clear authentication localStorage items (but NOT Remember Me credentials)
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       localStorage.removeItem('userInfo');
@@ -146,18 +141,11 @@ export const AuthProvider = ({ children }) => {
       localStorage.removeItem('tenants');
       localStorage.removeItem('staticMode');
       
-      // Restore Remember Me credentials if they existed
-      if (rememberMeChecked === 'true' && rememberedEmail && rememberedPassword) {
-        localStorage.setItem('rememberedEmail', rememberedEmail);
-        localStorage.setItem('rememberedPassword', rememberedPassword);
-        localStorage.setItem('rememberMeChecked', rememberMeChecked);
-      }
-      
       // Clear all sessionStorage items
       sessionStorage.clear();
     }
     
-    // Clear all cookies
+    // Clear authentication cookies (but NOT Remember Me cookies)
     Cookies.remove('token');
     Cookies.remove('user');
 

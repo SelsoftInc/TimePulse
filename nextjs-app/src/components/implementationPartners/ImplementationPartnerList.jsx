@@ -44,10 +44,16 @@ const ImplementationPartnerList = () => {
   const [openMenuId, setOpenMenuId] = useState(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState(null);
+  const [isMounted, setIsMounted] = useState(false);
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
+
+  // Hydration fix: Track if component is mounted on client
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const fetchImplementationPartners = async () => {
     try {
@@ -86,8 +92,10 @@ const ImplementationPartnerList = () => {
   };
 
   useEffect(() => {
-    fetchImplementationPartners();
-  }, [user?.tenantId, toast]);
+    if (isMounted) {
+      fetchImplementationPartners();
+    }
+  }, [user?.tenantId, isMounted]);
 
   const handleDelete = async (id) => {
     try {
@@ -196,7 +204,7 @@ const ImplementationPartnerList = () => {
 
   // Close menu when clicking outside
   useEffect(() => {
-    if (!openMenuId) return; // Only add listener when menu is open
+    if (!isMounted || !openMenuId) return; // Only add listener when mounted and menu is open
 
     const handleClickOutside = (event) => {
       // Check if click is outside dropdown menu and action button
@@ -219,7 +227,7 @@ const ImplementationPartnerList = () => {
       clearTimeout(timeoutId);
       document.removeEventListener("click", handleClickOutside, true);
     };
-  }, [openMenuId]);
+  }, [openMenuId, isMounted]);
 
   // Pagination calculations
   const totalPages = Math.ceil(implementationPartners.length / itemsPerPage);

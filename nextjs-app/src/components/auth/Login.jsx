@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { signIn } from 'next-auth/react';
 import { useSearchParams } from 'next/navigation';
+import Cookies from 'js-cookie';
 import "./Auth.css";
 import { API_BASE } from '@/config/api';
 import { validateStaticCredentials, getStaticSession, STATIC_ADMIN } from '@/utils/staticAuth';
@@ -46,18 +47,22 @@ const Login = () => {
     checkOAuthConfig();
   }, [searchParams]);
 
-  // Load saved credentials if Remember Me was checked
+  // Load saved credentials if Remember Me was previously enabled
   useEffect(() => {
-    const savedEmail = localStorage.getItem("rememberedEmail");
-    const savedPassword = localStorage.getItem("rememberedPassword");
-    const wasRemembered = localStorage.getItem("rememberMeChecked") === "true";
+    // Check cookies first (more persistent), then fallback to localStorage
+    const rememberMeEnabled = Cookies.get('rememberMeEnabled') || localStorage.getItem('rememberMeEnabled');
     
-    if (wasRemembered && savedEmail && savedPassword) {
-      setFormData({
-        email: savedEmail,
-        password: savedPassword
-      });
-      setRememberMe(true);
+    if (rememberMeEnabled === 'true') {
+      const savedEmail = Cookies.get('rememberedEmail') || localStorage.getItem('rememberedEmail');
+      const savedPassword = Cookies.get('rememberedPassword') || localStorage.getItem('rememberedPassword');
+      
+      if (savedEmail && savedPassword) {
+        setFormData({
+          email: savedEmail,
+          password: savedPassword
+        });
+        setRememberMe(true);
+      }
     }
   }, []);
 
@@ -94,15 +99,26 @@ const Login = () => {
       setError("Session expired, please login again");
     }
 
-    // Handle remember me functionality - store credentials if checked
+    // Handle remember me functionality - store credentials in both cookies and localStorage
     if (rememberMe) {
-      localStorage.setItem("rememberedEmail", formData.email);
-      localStorage.setItem("rememberedPassword", formData.password);
-      localStorage.setItem("rememberMeChecked", "true");
+      // Store in cookies (expires in 30 days)
+      Cookies.set('rememberMeEnabled', 'true', { expires: 30, sameSite: 'strict' });
+      Cookies.set('rememberedEmail', formData.email, { expires: 30, sameSite: 'strict' });
+      Cookies.set('rememberedPassword', formData.password, { expires: 30, sameSite: 'strict' });
+      
+      // Also store in localStorage as backup
+      localStorage.setItem('rememberMeEnabled', 'true');
+      localStorage.setItem('rememberedEmail', formData.email);
+      localStorage.setItem('rememberedPassword', formData.password);
     } else {
-      localStorage.removeItem("rememberedEmail");
-      localStorage.removeItem("rememberedPassword");
-      localStorage.removeItem("rememberMeChecked");
+      // Clear all remembered credentials from both cookies and localStorage
+      Cookies.remove('rememberMeEnabled');
+      Cookies.remove('rememberedEmail');
+      Cookies.remove('rememberedPassword');
+      
+      localStorage.removeItem('rememberMeEnabled');
+      localStorage.removeItem('rememberedEmail');
+      localStorage.removeItem('rememberedPassword');
     }
 
     const persistAuth = (token, userInfo, tenantInfo) => {
@@ -527,17 +543,6 @@ const Login = () => {
           Sign in with Google
         </button>
         )}
-
-        {/* Create Account Link */}
-        <div className="text-center mt-6 pt-4 border-t border-white/10">
-          <p className="text-white/90 mb-3 text-base">Don't have an account?</p>
-          <Link 
-            href="/create-account" 
-            className="inline-block px-6 py-3 bg-gradient-to-r from-purple-500 to-blue-500 text-white font-semibold rounded-lg hover:from-purple-600 hover:to-blue-600 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
-          >
-            Create Account →
-          </Link>
-        </div>
       </div>
     </div>
   );

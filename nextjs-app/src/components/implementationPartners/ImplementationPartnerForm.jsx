@@ -39,6 +39,7 @@ const ImplementationPartnerForm = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [errors, setErrors] = useState({});
+  const [validationTouched, setValidationTouched] = useState({});
   
   // Hydration fix: Track if component is mounted on client
   const [isMounted, setIsMounted] = useState(false);
@@ -89,15 +90,18 @@ const ImplementationPartnerForm = ({
   }, [mode, initialData]);
 
   // UI-only: Split phone into country code and phone number when formData.phone changes
-  // This only runs on initial load or when editing an existing implementation partner
+  // This only runs on initial load or when editing an existing partner
   useEffect(() => {
     if (!isMounted) return;
     
-    // Use intelligent phone parsing that matches against known country codes
-    const parsed = parsePhoneNumber(formData.phone, formData.country);
-    setCountryCode(parsed.countryCode);
-    setPhoneNumber(parsed.phoneNumber);
-  }, [isMounted, initialData]);
+    // Only parse if we have a phone number
+    if (formData.phone && formData.phone.length > 0) {
+      // Use intelligent phone parsing that matches against known country codes
+      const parsed = parsePhoneNumber(formData.phone, formData.country);
+      setCountryCode(parsed.countryCode);
+      setPhoneNumber(parsed.phoneNumber);
+    }
+  }, [isMounted, formData.phone, formData.country]);
 
   // Get expected phone number length for a country
   const getPhoneNumberLength = (country) => {
@@ -141,24 +145,20 @@ const ImplementationPartnerForm = ({
 
   // UI-only: Handle phone blur for validation
   const handlePhoneBlur = () => {
-    const combinedPhone = phoneNumber ? `${countryCode}${phoneNumber}` : '';
-    if (!combinedPhone || !phoneNumber) {
+    // Mark field as touched
+    setValidationTouched((prev) => ({ ...prev, phone: true }));
+    
+    // Allow empty (optional field)
+    if (!phoneNumber || phoneNumber.trim() === '') {
       setErrors((prev) => ({ ...prev, phone: "" }));
       return;
     }
     
-    // Country-specific length validation
-    const expectedLength = getPhoneNumberLength(formData.country);
-    if (phoneNumber.length !== expectedLength) {
-      setErrors((prev) => ({
-        ...prev,
-        phone: `Phone number must be ${expectedLength} digits for ${formData.country}`
-      }));
-      return;
-    }
+    // Build combined phone for validation
+    const combinedPhone = `${countryCode}${phoneNumber}`;
     
-    // General phone validation
-    const validation = validatePhoneNumber(combinedPhone);
+    // Use the validation utility which handles all country-specific rules
+    const validation = validatePhoneNumber(combinedPhone, formData.country);
     setErrors((prev) => ({
       ...prev,
       phone: validation.isValid ? "" : validation.message
@@ -174,13 +174,13 @@ const ImplementationPartnerForm = ({
     if (name === "country") {
       const newCountryCode = getCountryCode(value);
       setCountryCode(newCountryCode);
-      // Update phone with new country code
+      // Keep existing phone number, just update country code
       const combinedPhone = phoneNumber ? `${newCountryCode}${phoneNumber}` : newCountryCode;
       updates.phone = combinedPhone;
-      // Clear any phone validation errors when country changes
-      if (errors.phone) {
-        setErrors((prev) => ({ ...prev, phone: "" }));
-      }
+      // Reset state when country changes
+      updates.state = "";
+      // Clear validation errors when country changes
+      setErrors((prev) => ({ ...prev, phone: "" }));
     }
 
     // Format phone number as user types - E.164 only (kept for backward compatibility)
@@ -222,6 +222,17 @@ const ImplementationPartnerForm = ({
 
   const handleBlur = (e) => {
     const { name, value } = e.target;
+
+    if (name === "phone") {
+      // Phone validation handled by handlePhoneBlur
+      return;
+    } else if (name === "zip") {
+      setValidationTouched((prev) => ({ ...prev, zip: true }));
+    }
+
+    // Mark field as touched
+    setValidationTouched((prev) => ({ ...prev, [name]: true }));
+
     let validation = null;
 
     switch (name) {
@@ -231,16 +242,6 @@ const ImplementationPartnerForm = ({
       case "email":
         if (value) {
           validation = validateEmail(value);
-        }
-        break;
-      case "phone":
-        if (value) {
-          validation = validatePhoneNumber(value);
-        }
-        break;
-      case "zip":
-        if (value) {
-          validation = validateZipCode(value, formData.country);
         }
         break;
       case "contactPerson":
@@ -291,8 +292,9 @@ const ImplementationPartnerForm = ({
       if (!emailValidation.isValid) newErrors.email = emailValidation.message;
     }
 
+    // Phone is optional
     if (formData.phone) {
-      const phoneValidation = validatePhoneNumber(formData.phone);
+      const phoneValidation = validatePhoneNumber(formData.phone, formData.country);
       if (!phoneValidation.isValid) newErrors.phone = phoneValidation.message;
     }
 
@@ -308,7 +310,21 @@ const ImplementationPartnerForm = ({
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!validateForm()) {
+    // Mark all fields as touched on submit
+    setValidationTouched({
+      phone: true,
+      zip: true,
+      email: true,
+      name: true,
+      contactPerson: true
+    });
+
+    // Validate form fields - only validate phone if it has a value beyond country code
+    const phoneValidation = (formData.phone && formData.phone !== countryCode)
+      ? validatePhoneNumber(formData.phone, formData.country)
+      : { isValid: true, message: 'Valid' };
+
+    if (!validateForm() || !phoneValidation.isValid) {
       toast.error("Please fix the errors before submitting");
       return;
     }
@@ -319,6 +335,7 @@ const ImplementationPartnerForm = ({
     try {
       const payload = {
         ...formData,
+        phone: formData.phone || null,
         tenantId: user.tenantId
       };
 
@@ -448,7 +465,9 @@ const ImplementationPartnerForm = ({
                           errors.name ? "is-invalid" : ""
                         }`}
                       />
-                      {errors.name && <div className="invalid-feedback">{errors.name}</div>}
+                      {validationTouched.name && errors.name && (
+                        <p className="mt-1 text-xs text-red-600">{errors.name}</p>
+                      )}
                     </div>
 
                     <div>
@@ -480,7 +499,9 @@ const ImplementationPartnerForm = ({
                           errors.contactPerson ? "is-invalid" : ""
                         }`}
                       />
-                      {errors.contactPerson && <div className="invalid-feedback">{errors.contactPerson}</div>}
+                      {validationTouched.contactPerson && errors.contactPerson && (
+                        <p className="mt-1 text-xs text-red-600">{errors.contactPerson}</p>
+                      )}
                     </div>
 
                     <div>

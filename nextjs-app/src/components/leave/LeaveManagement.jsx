@@ -475,39 +475,7 @@ const LeaveManagement = () => {
       className="w-full"
     >
       <div className="max-w-7xl mx-auto space-y-6">
-        <div
-          className="
-            rounded-3xl
-            bg-[#7cbdf2]
-            dark:bg-gradient-to-br dark:from-[#0f1a25] dark:via-[#121f33] dark:to-[#162a45]
-            shadow-sm dark:shadow-[0_8px_24px_rgba(0,0,0,0.6)]
-            backdrop-blur-md
-            border border-transparent dark:border-white/5
-          "
-        >
-          <div className="px-6 py-4">
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-[1fr_auto] md:items-center">
-              <div className="relative pl-5">
-                <span className="absolute left-0 top-2 h-10 w-1 rounded-full bg-purple-900 dark:bg-indigo-400" />
-                <h1
-                  className="
-                    text-[2rem]
-                    font-bold
-                    text-white
-                    leading-[1.15]
-                    tracking-tight
-                    drop-shadow-[0_2px_8px_rgba(0,0,0,0.18)]
-                  "
-                >
-                  Leave Management
-                </h1>
-                <p className="mt-0 text-sm text-white/80 dark:text-slate-300">
-                  Apply for leave and track your requests
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
+        
 
         <div className="space-y-6">
           {/* Employee Sections - Only show for non-owners */}

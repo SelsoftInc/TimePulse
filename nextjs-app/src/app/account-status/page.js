@@ -85,7 +85,11 @@ export default function AccountStatusPage() {
         return {
           title: 'Account Approved!',
           message: 'Your account has been approved',
-          description: `Approved by ${status.approvedBy || 'Administrator'} on ${new Date(status.approvedAt).toLocaleDateString()}. You should receive an email with your login credentials shortly.`,
+          description: `Approved by ${status.approvedBy || 'Administrator'} on ${status.approvedAt ? new Date(status.approvedAt).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+          }) : 'recently'}. You should receive an email with your login credentials shortly.`,
           color: 'text-green-500',
         };
       case 'rejected':
@@ -198,7 +202,13 @@ export default function AccountStatusPage() {
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-gray-600 font-semibold">Submitted:</span>
-                <span className="text-gray-900 font-bold">{new Date(status.createdAt).toLocaleDateString()}</span>
+                <span className="text-gray-900 font-bold">
+                  {status.createdAt ? new Date(status.createdAt).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric'
+                  }) : 'N/A'}
+                </span>
               </div>
               {status.approverName && (
                 <div className="flex justify-between items-center">

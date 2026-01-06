@@ -38,6 +38,7 @@ const EmployeeForm = () => {
   const [loading, setLoading] = useState(false);
   const [employeeLoading, setEmployeeLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const [validationTouched, setValidationTouched] = useState({});
   const isEditMode = !!id; // Determine if we're in edit mode
   const [formData, setFormData] = useState({
     firstName: "",
@@ -217,11 +218,14 @@ const EmployeeForm = () => {
   useEffect(() => {
     if (!isMounted) return;
     
-    // Use intelligent phone parsing that matches against known country codes
-    const parsed = parsePhoneNumber(formData.phone, formData.country);
-    setCountryCode(parsed.countryCode);
-    setPhoneNumber(parsed.phoneNumber);
-  }, [isMounted, isEditMode]);
+    // Only parse if we have a phone number
+    if (formData.phone && formData.phone.length > 0) {
+      // Use intelligent phone parsing that matches against known country codes
+      const parsed = parsePhoneNumber(formData.phone, formData.country);
+      setCountryCode(parsed.countryCode);
+      setPhoneNumber(parsed.phoneNumber);
+    }
+  }, [isMounted, formData.phone, formData.country]);
 
   // Fetch vendors from API
   useEffect(() => {
@@ -381,24 +385,20 @@ const EmployeeForm = () => {
 
   // UI-only: Handle phone blur for validation
   const handlePhoneBlur = () => {
-    const combinedPhone = phoneNumber ? `${countryCode}${phoneNumber}` : '';
-    if (!combinedPhone || !phoneNumber) {
+    // Mark field as touched
+    setValidationTouched((prev) => ({ ...prev, phone: true }));
+    
+    // Allow empty (optional field)
+    if (!phoneNumber || phoneNumber.trim() === '') {
       setErrors((prev) => ({ ...prev, phone: "" }));
       return;
     }
     
-    // Country-specific length validation
-    const expectedLength = getPhoneNumberLength(formData.country);
-    if (phoneNumber.length !== expectedLength) {
-      setErrors((prev) => ({
-        ...prev,
-        phone: `Phone number must be ${expectedLength} digits for ${formData.country}`
-      }));
-      return;
-    }
+    // Build combined phone for validation
+    const combinedPhone = `${countryCode}${phoneNumber}`;
     
-    // General phone validation
-    const validation = validatePhoneNumber(combinedPhone);
+    // Use the validation utility which handles all country-specific rules
+    const validation = validatePhoneNumber(combinedPhone, formData.country);
     setErrors((prev) => ({
       ...prev,
       phone: validation.isValid ? "" : validation.message
@@ -414,13 +414,11 @@ const EmployeeForm = () => {
     if (name === "country") {
       const newCountryCode = getCountryCode(value);
       setCountryCode(newCountryCode);
-      // Update phone with new country code
+      // Keep existing phone number, just update country code
       const combinedPhone = phoneNumber ? `${newCountryCode}${phoneNumber}` : newCountryCode;
       updates.phone = combinedPhone;
-      // Clear any phone validation errors when country changes
-      if (errors.phone) {
-        setErrors((prev) => ({ ...prev, phone: "" }));
-      }
+      // Clear validation errors when country changes
+      setErrors((prev) => ({ ...prev, phone: "" }));
     }
 
     // Format phone number as user types - E.164 only
@@ -476,15 +474,10 @@ const EmployeeForm = () => {
     const { name, value } = e.target;
 
     if (name === "phone") {
-      if (!value) {
-        setErrors((prev) => ({ ...prev, phone: "" }));
-        return;
-      }
-      const validation = validatePhoneNumber(value);
-      setErrors((prev) => ({
-        ...prev,
-        phone: validation.isValid ? "" : validation.message}));
+      // Phone validation handled by handlePhoneBlur
+      return;
     } else if (name === "zip") {
+      setValidationTouched((prev) => ({ ...prev, zip: true }));
       if (!value) {
         setErrors((prev) => ({ ...prev, zip: "" }));
         return;
@@ -494,21 +487,25 @@ const EmployeeForm = () => {
         ...prev,
         zip: validation.isValid ? "" : validation.message}));
     } else if (name === "email") {
+      setValidationTouched((prev) => ({ ...prev, email: true }));
       const validation = validateEmail(value);
       setErrors((prev) => ({
         ...prev,
         email: validation.isValid ? "" : validation.message}));
     } else if (name === "firstName") {
+      setValidationTouched((prev) => ({ ...prev, firstName: true }));
       const validation = validateName(value, "First Name");
       setErrors((prev) => ({
         ...prev,
         firstName: validation.isValid ? "" : validation.message}));
     } else if (name === "lastName") {
+      setValidationTouched((prev) => ({ ...prev, lastName: true }));
       const validation = validateName(value, "Last Name");
       setErrors((prev) => ({
         ...prev,
         lastName: validation.isValid ? "" : validation.message}));
     } else if (name === "hourlyRate") {
+      setValidationTouched((prev) => ({ ...prev, hourlyRate: true }));
       if (!value) {
         setErrors((prev) => ({ ...prev, hourlyRate: "" }));
         return;
@@ -568,9 +565,19 @@ const EmployeeForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validate form fields
-    const phoneValidation = formData.phone
-      ? validatePhoneNumber(formData.phone)
+    // Mark all fields as touched on submit
+    setValidationTouched({
+      phone: true,
+      zip: true,
+      email: true,
+      firstName: true,
+      lastName: true,
+      hourlyRate: true
+    });
+
+    // Validate form fields - only validate phone if it has a value beyond country code
+    const phoneValidation = (formData.phone && formData.phone !== countryCode)
+      ? validatePhoneNumber(formData.phone, formData.country)
       : { isValid: true, message: 'Valid' };
     const zipValidation = formData.zip
       ? validateZipCode(formData.zip, formData.country)
@@ -762,7 +769,7 @@ const EmployeeForm = () => {
                               placeholder="Enter first name"
                               required
                             />
-                            {errors.firstName && (
+                            {validationTouched.firstName && errors.firstName && (
                               <div className="mt-1">
                                 <small className="text-danger">
                                   {errors.firstName}
@@ -788,7 +795,7 @@ const EmployeeForm = () => {
                               placeholder="Enter last name"
                               required
                             />
-                            {errors.lastName && (
+                            {validationTouched.lastName && errors.lastName && (
                               <div className="mt-1">
                                 <small className="text-danger">
                                   {errors.lastName}
@@ -814,7 +821,7 @@ const EmployeeForm = () => {
                               placeholder="Enter email address"
                               required
                             />
-                            {errors.email && (
+                            {validationTouched.email && errors.email && (
                               <div className="mt-1">
                                 <small className="text-danger">
                                   {errors.email}
@@ -854,7 +861,7 @@ const EmployeeForm = () => {
                             <small className="text-muted d-block mt-1">
                               Country code updates automatically based on selected country
                             </small>
-                            {errors.phone && (
+                            {validationTouched.phone && errors.phone && (
                               <div className="mt-1">
                                 <small className="text-danger">
                                   {errors.phone}

@@ -70,15 +70,19 @@ const ModernDashboard = () => {
       const [mainData, recentActivity, topPerformers, revenueByClient, monthlyTrend] = await Promise.all([
         fetch(`${API_BASE}/api/dashboard?${queryParams}`, { headers }).then(r => r.json()),
         fetch(recentActivityUrl, { headers }).then(async r => {
-          const text = await r.text();
           console.log('📡 Recent Activity Response Status:', r.status);
-          console.log('📡 Recent Activity Response Text:', text);
-          try {
-            return JSON.parse(text);
-          } catch (e) {
-            console.error('❌ Failed to parse Recent Activity response:', e);
+          if (!r.ok) {
+            console.error('❌ Recent Activity API error:', r.status, r.statusText);
             return { activities: [] };
           }
+          const data = await r.json();
+          console.log('📡 Recent Activity Response Data:', data);
+          console.log('📊 Activities array:', data.activities);
+          console.log('📊 Activities count:', data.activities?.length || 0);
+          return data;
+        }).catch(err => {
+          console.error('❌ Recent Activity fetch error:', err);
+          return { activities: [] };
         }),
         fetch(`${API_BASE}/api/dashboard-extended/top-performers?${queryParams}&limit=5`, { headers }).then(r => r.json()),
         fetch(`${API_BASE}/api/dashboard-extended/revenue-by-client?${queryParams}&limit=5`, { headers }).then(r => r.json()),

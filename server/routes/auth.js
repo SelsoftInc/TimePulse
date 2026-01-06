@@ -50,7 +50,40 @@ router.post('/login', async (req, res) => {
     }
 
     if (!user) {
-      console.log('[Auth Login] User not found:', email);
+      console.log('[Auth Login] User not found, checking for account request:', email);
+      
+      // Check if there's a pending or rejected account request
+      try {
+        const accountRequest = await models.AccountRequest.findOne({
+          where: { email: email.toLowerCase() }
+        });
+        
+        if (accountRequest) {
+          console.log('[Auth Login] Account request found:', accountRequest.status);
+          
+          if (accountRequest.status === 'rejected') {
+            return res.status(403).json({
+              success: false,
+              message: 'Your account request was rejected',
+              accountStatus: 'rejected',
+              redirectTo: `/account-status?email=${encodeURIComponent(email)}`,
+              rejectionReason: accountRequest.rejectionReason
+            });
+          }
+          
+          if (accountRequest.status === 'pending') {
+            return res.status(403).json({
+              success: false,
+              message: 'Your account request is pending approval',
+              accountStatus: 'pending',
+              redirectTo: `/account-status?email=${encodeURIComponent(email)}`
+            });
+          }
+        }
+      } catch (requestError) {
+        console.error('[Auth Login] Error checking account request:', requestError.message);
+      }
+      
       return res.status(401).json({
         success: false,
         message: 'Invalid credentials'

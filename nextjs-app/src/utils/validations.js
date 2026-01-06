@@ -6,14 +6,38 @@
 // Validates phone number based on country-specific digit counts
 // Accepts digits only (without country code prefix)
 export const validatePhoneNumber = (phone, country = 'United States') => {
+  // Phone is optional - if empty, it's valid
   if (!phone || typeof phone !== 'string') {
-    return { isValid: false, error: 'Phone number is required' };
+    return { isValid: true, message: 'Valid' };
   }
 
   // Remove all non-digit characters
-  const cleaned = phone.replace(/\D/g, '');
+  let cleaned = phone.replace(/\D/g, '');
   
-  // Country-specific validation rules
+  // If phone is just country code (1-3 digits), treat as empty/valid
+  if (cleaned.length <= 3) {
+    return { isValid: true, message: 'Valid' };
+  }
+  
+  // Country code mapping - strip these prefixes before validation
+  const countryCodes = {
+    'United States': '1',
+    'Canada': '1',
+    'India': '91',
+    'United Kingdom': '44',
+    'Australia': '61',
+    'Germany': '49',
+    'Singapore': '65',
+    'United Arab Emirates': '971'
+  };
+  
+  // Strip country code if present
+  const countryCode = countryCodes[country];
+  if (countryCode && cleaned.startsWith(countryCode)) {
+    cleaned = cleaned.substring(countryCode.length);
+  }
+  
+  // Country-specific validation rules (for national number only, without country code)
   const phoneRules = {
     'United States': { length: 10, format: 'XXX-XXX-XXXX' },
     'India': { length: 10, format: 'XXXXXXXXXX' },
@@ -32,21 +56,21 @@ export const validatePhoneNumber = (phone, country = 'United States') => {
     if (cleaned.length < 7 || cleaned.length > 15) {
       return { 
         isValid: false, 
-        error: 'Phone number must be between 7 and 15 digits' 
+        message: 'Phone number must be between 7 and 15 digits' 
       };
     }
-    return { isValid: true, error: '' };
+    return { isValid: true, message: 'Valid' };
   }
 
   // Validate exact length for known countries
   if (cleaned.length !== rule.length) {
     return { 
       isValid: false, 
-      error: `Phone number must be exactly ${rule.length} digits for ${country}` 
+      message: `Phone number must be exactly ${rule.length} digits for ${country}` 
     };
   }
 
-  return { isValid: true, error: '' };
+  return { isValid: true, message: 'Valid' };
 };
 
 // Format phone number for display (XXX) XXX-XXXX

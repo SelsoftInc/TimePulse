@@ -466,7 +466,8 @@ const EmployeeEdit = () => {
   };
 
   const handleUpdate = async () => {
-    const phoneValidation = formData.phone ? validatePhoneNumber(formData.phone) : { isValid: true };
+    // Validate fields
+    const phoneValidation = validatePhoneNumber(formData.phone, formData.country);
     const zipValidation = formData.zip ? validateZipCode(formData.zip, formData.country) : { isValid: true };
     const emailValidation = validateEmail(formData.email);
     const firstNameValidation = validateName(formData.firstName, 'First Name');

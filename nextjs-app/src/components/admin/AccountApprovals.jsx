@@ -238,7 +238,11 @@ const AccountApprovals = () => {
                     <div>
                       <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Requested</p>
                       <p className="text-sm font-medium text-gray-900 dark:text-white">
-                        {new Date(request.createdAt).toLocaleDateString()}
+                        {request.createdAt ? new Date(request.createdAt).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric'
+                        }) : 'N/A'}
                       </p>
                     </div>
                   </div>

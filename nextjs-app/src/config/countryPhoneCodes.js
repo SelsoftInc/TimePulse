@@ -117,6 +117,11 @@ export const formatPhoneWithCountryCode = (phone, country) => {
   const digits = phone.replace(/\D/g, '');
   const countryCodeDigits = countryCode.replace(/\D/g, '');
   
+  // If phone is just country code or incomplete, return empty string
+  if (digits === countryCodeDigits || digits.length < 10) {
+    return '';
+  }
+  
   // If already has country code, return as is
   if (digits.startsWith(countryCodeDigits)) {
     return `${countryCode}${digits.substring(countryCodeDigits.length)}`;

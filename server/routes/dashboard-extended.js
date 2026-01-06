@@ -48,53 +48,41 @@ router.get("/recent-activity", async (req, res) => {
         SELECT 
           t.id,
           'timesheet' AS activity_type,
-          COALESCE(e.first_name || ' ' || e.last_name, 'Unknown') AS employee_name,
+          COALESCE(u.first_name || ' ' || u.last_name, 'Unknown') AS employee_name,
           t.status,
-          t.created_at,
+          t.updated_at AS created_at,
           t.total_hours,
           c.client_name AS client_name
         FROM timesheets t
         LEFT JOIN employees e ON e.id = t.employee_id
+        LEFT JOIN users u ON u.id = e.user_id
         LEFT JOIN clients c ON c.id = t.client_id
         WHERE t.tenant_id = '${tenantId}'
-        ORDER BY t.created_at DESC
+          AND t.status IN ('submitted', 'approved', 'rejected')
+        ORDER BY t.updated_at DESC
         LIMIT ${limit}
       ),
       leave_activity AS (
         SELECT 
           lr.id,
           'leave' AS activity_type,
-          lr.employee_name,
+          COALESCE(u.first_name || ' ' || u.last_name, 'Unknown') AS employee_name,
           lr.status,
           lr.created_at,
-          NULL::numeric AS total_hours,
+          lr.total_days AS total_hours,
           lr.leave_type AS client_name
         FROM leave_requests lr
+        LEFT JOIN employees e ON e.id = lr.employee_id
+        LEFT JOIN users u ON u.id = e.user_id
         WHERE lr.tenant_id = '${tenantId}'
+          AND lr.status IN ('pending', 'approved', 'rejected')
         ORDER BY lr.created_at DESC
-        LIMIT ${limit}
-      ),
-      login_activity AS (
-        SELECT 
-          u.id,
-          'login' AS activity_type,
-          COALESCE(u.first_name || ' ' || u.last_name, u.email) AS employee_name,
-          'logged in' AS status,
-          u.last_login AS created_at,
-          NULL::numeric AS total_hours,
-          NULL AS client_name
-        FROM users u
-        WHERE u.tenant_id = '${tenantId}'
-          AND u.last_login IS NOT NULL
-        ORDER BY u.last_login DESC
         LIMIT ${limit}
       ),
       combined AS (
         SELECT * FROM timesheet_activity
         UNION ALL
         SELECT * FROM leave_activity
-        UNION ALL
-        SELECT * FROM login_activity
       )
       SELECT * FROM combined
       ORDER BY created_at DESC

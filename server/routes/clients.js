@@ -9,8 +9,12 @@ const { Client, Tenant } = models;
 
 // Simple validators
 function validatePhone(phone) {
-  if (phone == null || phone === '') return 'Phone is required';
+  // Phone is OPTIONAL - return empty string if not provided
+  if (phone == null || phone === '') return '';
   const s = String(phone).trim();
+  // If phone is just a country code (e.g., '+1'), treat as empty
+  if (s.match(/^\+\d{1,3}$/)) return '';
+  
   if (s.startsWith('+')) {
     const digits = s.slice(1).replace(/\D/g, '');
     if (digits.length < 10) return 'Phone must have at least 10 digits';
@@ -46,8 +50,11 @@ function validateClientPayload(payload) {
     const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(payload.email));
     if (!emailOk) errors.email = 'Email is invalid';
   }
-  const phoneMsg = validatePhone(payload.phone);
-  if (phoneMsg) errors.phone = phoneMsg;
+  // Phone is OPTIONAL - only validate if provided and not empty
+  if (payload.phone) {
+    const phoneMsg = validatePhone(payload.phone);
+    if (phoneMsg) errors.phone = phoneMsg;
+  }
   // Tax ID is optional - only validate if provided
   if (payload.taxId) {
     const taxMsg = validateTaxId(payload.taxId);
@@ -82,7 +89,8 @@ function validateClientUpdatePayload(payload) {
     }
   }
   
-  if (payload.phone !== undefined) {
+  // Phone is OPTIONAL - only validate if provided and not empty
+  if (payload.phone !== undefined && payload.phone) {
     const phoneMsg = validatePhone(payload.phone);
     if (phoneMsg) errors.phone = phoneMsg;
   }
@@ -106,16 +114,25 @@ try {
 
 function toE164(raw, defaultCountry = 'US') {
   if (!raw) return '';
+  const s = String(raw).trim();
+  
+  // If phone is just a country code (e.g., '+1', '+91'), treat as empty
+  if (s.match(/^\+\d{1,3}$/)) return '';
+  
   if (!libPhone) {
-    const s = String(raw);
-    if (s.trim().startsWith('+')) return '+' + s.replace(/\D/g, '').slice(0, 15);
+    if (s.startsWith('+')) {
+      const digits = s.replace(/\D/g, '');
+      // Need at least 10 digits for valid phone
+      if (digits.length < 10) return '';
+      return '+' + digits.slice(0, 15);
+    }
     const d = s.replace(/\D/g, '');
-    if (!d) return '';
+    if (!d || d.length < 10) return '';
     return `+1${d}`;
   }
   try {
     const { parsePhoneNumberFromString } = libPhone;
-    const phone = parsePhoneNumberFromString(String(raw), defaultCountry);
+    const phone = parsePhoneNumberFromString(s, defaultCountry);
     if (phone && phone.isValid()) return phone.number; // E.164
   } catch (e) {
     // ignore

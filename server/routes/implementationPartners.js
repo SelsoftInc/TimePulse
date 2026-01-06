@@ -6,12 +6,37 @@ const { encryptAuthResponse } = require('../utils/encryption');
 
 const { ImplementationPartner } = models;
 
+// Phone validator - OPTIONAL field
+function validatePhone(phone) {
+  // Phone is OPTIONAL - return empty string if not provided
+  if (phone == null || phone === '') return '';
+  const s = String(phone).trim();
+  // If phone is just a country code (e.g., '+1'), treat as empty
+  if (s.match(/^\+\d{1,3}$/)) return '';
+  
+  if (s.startsWith('+')) {
+    const digits = s.slice(1).replace(/\D/g, '');
+    if (digits.length < 10) return 'Phone must have at least 10 digits';
+    if (digits.length > 15) return 'Phone must have no more than 15 digits';
+    return '';
+  }
+  const digits = s.replace(/\D/g, '');
+  if (digits.length < 10) return 'Phone must have at least 10 digits';
+  if (digits.length > 15) return 'Phone must have no more than 15 digits';
+  return '';
+}
+
 // Basic validators
 function validateImplementationPartnerPayload(payload) {
   const errors = {};
   if (!payload.name) errors.name = 'Implementation Partner name is required';
   if (payload.email && !/.+@.+\..+/.test(String(payload.email))) {
     errors.email = 'Email is invalid';
+  }
+  // Phone is OPTIONAL - only validate if provided
+  if (payload.phone) {
+    const phoneMsg = validatePhone(payload.phone);
+    if (phoneMsg) errors.phone = phoneMsg;
   }
   return errors;
 }

@@ -3,27 +3,74 @@
  */
 
 // --- Phone ---
-// Accepts:
-// - E.164: +[country][number] (max 15 digits)
-// Server-side should normalize to E.164.
-export const validatePhoneNumber = (phone) => {
+// Validates phone number based on country-specific digit counts
+// Accepts digits only (without country code prefix)
+export const validatePhoneNumber = (phone, country = 'United States') => {
+  // Phone is optional - if empty, it's valid
   if (!phone || typeof phone !== 'string') {
-    return { isValid: false, message: 'Phone number is required' };
+    return { isValid: true, message: 'Valid' };
   }
 
-  const cleaned = phone.replace(/[\s\-\(\)]/g, '');
+  // Remove all non-digit characters
+  let cleaned = phone.replace(/\D/g, '');
   
-  // E.164 format ONLY: +[country code][subscriber number] (up to 15 digits total)
-  const e164Pattern = /^\+[1-9]\d{1,14}$/;
-  
-  if (e164Pattern.test(cleaned)) {
-    return { isValid: true, message: 'Valid phone number' };
+  // If phone is just country code (1-3 digits), treat as empty/valid
+  if (cleaned.length <= 3) {
+    return { isValid: true, message: 'Valid' };
   }
   
-  return { 
-    isValid: false, 
-    message: 'Phone must be in E.164 format (e.g., +15551234567 for US, +442079460958 for UK, +919874563210 for India)' 
+  // Country code mapping - strip these prefixes before validation
+  const countryCodes = {
+    'United States': '1',
+    'Canada': '1',
+    'India': '91',
+    'United Kingdom': '44',
+    'Australia': '61',
+    'Germany': '49',
+    'Singapore': '65',
+    'United Arab Emirates': '971'
   };
+  
+  // Strip country code if present
+  const countryCode = countryCodes[country];
+  if (countryCode && cleaned.startsWith(countryCode)) {
+    cleaned = cleaned.substring(countryCode.length);
+  }
+  
+  // Country-specific validation rules (for national number only, without country code)
+  const phoneRules = {
+    'United States': { length: 10, format: 'XXX-XXX-XXXX' },
+    'India': { length: 10, format: 'XXXXXXXXXX' },
+    'Canada': { length: 10, format: 'XXX-XXX-XXXX' },
+    'United Kingdom': { length: 10, format: 'XXXXXXXXXX' },
+    'Australia': { length: 9, format: 'XXX XXX XXX' },
+    'Germany': { length: 11, format: 'XXXXXXXXXXX' },
+    'Singapore': { length: 8, format: 'XXXX XXXX' },
+    'United Arab Emirates': { length: 9, format: 'XX XXX XXXX' }
+  };
+
+  const rule = phoneRules[country];
+  
+  if (!rule) {
+    // Default validation for unknown countries
+    if (cleaned.length < 7 || cleaned.length > 15) {
+      return { 
+        isValid: false, 
+        message: 'Phone number must be between 7 and 15 digits' 
+      };
+    }
+    return { isValid: true, message: 'Valid' };
+  }
+
+  // Validate exact length for known countries
+  if (cleaned.length !== rule.length) {
+    return { 
+      isValid: false, 
+      message: `Phone number must be exactly ${rule.length} digits for ${country}` 
+    };
+  }
+
+  return { isValid: true, message: 'Valid' };
 };
 
 // Format phone number for display (XXX) XXX-XXXX

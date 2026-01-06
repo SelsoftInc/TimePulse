@@ -32,7 +32,7 @@ module.exports = (sequelize) => {
       comment: 'Year for which this balance applies'
     },
     leaveType: {
-      type: DataTypes.ENUM('vacation', 'sick', 'personal', 'unpaid', 'other'),
+      type: DataTypes.ENUM('sick', 'casual', 'earned', 'vacation', 'personal', 'unpaid', 'other'),
       allowNull: false,
       field: 'leave_type'
     },

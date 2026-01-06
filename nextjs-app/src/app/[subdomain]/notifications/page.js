@@ -17,6 +17,10 @@ export default function NotificationsPage() {
   const [approvalLoading, setApprovalLoading] = useState(false);
   const [rejectionReason, setRejectionReason] = useState('');
   const [showRejectInput, setShowRejectInput] = useState(false);
+  const [accountRequestDetails, setAccountRequestDetails] = useState(null);
+  const [showAccountRequestModal, setShowAccountRequestModal] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
 
   useEffect(() => {
     fetchNotifications();
@@ -128,7 +132,9 @@ export default function NotificationsPage() {
   };
 
   const formatDate = (date) => {
+    if (!date) return 'N/A';
     const d = new Date(date);
+    if (isNaN(d.getTime())) return 'Invalid Date';
     return d.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
@@ -148,6 +154,14 @@ export default function NotificationsPage() {
     // Mark as read if unread
     if (!notification.read_at && !notification.readAt) {
       await markAsRead(notification.id);
+    }
+
+    // Check if this is an account request notification
+    const accountRequestId = notification.metadata?.accountRequestId;
+    if (accountRequestId) {
+      console.log('[Notification Click] Opening account request modal for:', accountRequestId);
+      await fetchAccountRequestDetails(accountRequestId, notification);
+      return;
     }
 
     // Check if this is a user approval notification
@@ -227,10 +241,11 @@ export default function NotificationsPage() {
       );
 
       if (response.ok) {
-        alert('User approved successfully! Email notification sent.');
         setShowApprovalModal(false);
         setPendingUserDetails(null);
         setSelectedNotification(null);
+        setSuccessMessage('User approved successfully!');
+        setShowSuccessModal(true);
         fetchNotifications(); // Refresh notifications
       } else {
         const data = await response.json();
@@ -276,12 +291,13 @@ export default function NotificationsPage() {
       );
 
       if (response.ok) {
-        alert('User rejected successfully! Email notification sent.');
         setShowApprovalModal(false);
         setPendingUserDetails(null);
         setSelectedNotification(null);
         setRejectionReason('');
         setShowRejectInput(false);
+        setSuccessMessage('User rejected successfully!');
+        setShowSuccessModal(true);
         fetchNotifications(); // Refresh notifications
       } else {
         const data = await response.json();
@@ -295,9 +311,140 @@ export default function NotificationsPage() {
     }
   };
 
+  const fetchAccountRequestDetails = async (accountRequestId, notification) => {
+    console.log('[fetchAccountRequestDetails] Starting fetch for requestId:', accountRequestId);
+    
+    try {
+      const url = `${API_BASE}/api/account-request/${accountRequestId}`;
+      console.log('[fetchAccountRequestDetails] Fetching from:', url);
+      
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      console.log('[fetchAccountRequestDetails] Response status:', response.status);
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('[fetchAccountRequestDetails] Response data:', data);
+        
+        if (data.success && data.request) {
+          setAccountRequestDetails(data.request);
+          setSelectedNotification(notification);
+          setShowAccountRequestModal(true);
+          console.log('[fetchAccountRequestDetails] Modal should open now');
+        } else {
+          console.error('[fetchAccountRequestDetails] Request not found');
+          alert('Account request not found or already processed');
+        }
+      } else {
+        const errorData = await response.json();
+        console.error('[fetchAccountRequestDetails] API error:', errorData);
+        alert(`Failed to fetch request details: ${errorData.message || 'Server error'}`);
+      }
+    } catch (error) {
+      console.error('[fetchAccountRequestDetails] Fetch error:', error);
+      alert('Failed to fetch request details: ' + error.message);
+    }
+  };
+
+  const handleApproveAccountRequest = async () => {
+    if (!accountRequestDetails || !user) return;
+
+    setApprovalLoading(true);
+    try {
+      const response = await fetch(
+        `${API_BASE}/api/account-request/approve/${accountRequestDetails.id}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          },
+          body: JSON.stringify({
+            approverId: user.id
+          })
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        setShowAccountRequestModal(false);
+        setAccountRequestDetails(null);
+        setSelectedNotification(null);
+        setSuccessMessage('Account approved successfully!');
+        setShowSuccessModal(true);
+        fetchNotifications();
+      } else {
+        const data = await response.json();
+        alert(`Failed to approve request: ${data.message}`);
+      }
+    } catch (error) {
+      console.error('Error approving account request:', error);
+      alert('Failed to approve account request');
+    } finally {
+      setApprovalLoading(false);
+    }
+  };
+
+  const handleRejectAccountRequest = async () => {
+    if (!accountRequestDetails || !user) return;
+
+    if (!showRejectInput) {
+      setShowRejectInput(true);
+      return;
+    }
+
+    if (!rejectionReason.trim()) {
+      alert('Please provide a rejection reason');
+      return;
+    }
+
+    setApprovalLoading(true);
+    try {
+      const response = await fetch(
+        `${API_BASE}/api/account-request/reject/${accountRequestDetails.id}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          },
+          body: JSON.stringify({
+            rejectedBy: user.id,
+            reason: rejectionReason
+          })
+        }
+      );
+
+      if (response.ok) {
+        setShowAccountRequestModal(false);
+        setAccountRequestDetails(null);
+        setSelectedNotification(null);
+        setRejectionReason('');
+        setShowRejectInput(false);
+        setSuccessMessage('Account request rejected successfully!');
+        setShowSuccessModal(true);
+        fetchNotifications();
+      } else {
+        const data = await response.json();
+        alert(`Failed to reject request: ${data.message}`);
+      }
+    } catch (error) {
+      console.error('Error rejecting account request:', error);
+      alert('Failed to reject account request');
+    } finally {
+      setApprovalLoading(false);
+    }
+  };
+
   const closeModal = () => {
     setShowApprovalModal(false);
     setPendingUserDetails(null);
+    setShowAccountRequestModal(false);
+    setAccountRequestDetails(null);
     setSelectedNotification(null);
     setRejectionReason('');
     setShowRejectInput(false);
@@ -406,9 +553,9 @@ export default function NotificationsPage() {
                 </div>
               </div>
 
-              {/* View Button - Only for User Registration Approval Notifications */}
-              {notification.category === 'approval' && 
-               notification.title?.includes('User Registration') && (
+              {/* View Button - For Account Request and User Registration Approval Notifications */}
+              {((notification.title?.includes('Account Request') && notification.metadata?.accountRequestId) ||
+                (notification.category === 'approval' && notification.title?.includes('User Registration'))) && (
                 <button
                   className="notification-view-btn"
                   onClick={(e) => {
@@ -423,6 +570,113 @@ export default function NotificationsPage() {
           ))
         )}
       </div>
+
+      {/* Account Request Approval Modal */}
+      {showAccountRequestModal && accountRequestDetails && (
+        <div className="modal-overlay" onClick={closeModal}>
+          <div className="approval-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Account Request Approval</h2>
+              <button className="modal-close-btn" onClick={closeModal}>
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+
+            <div className="modal-body">
+              <div className="user-details-section">
+                <h3>Request Information</h3>
+                <div className="user-detail-row">
+                  <span className="detail-label">Name:</span>
+                  <span className="detail-value">
+                    {accountRequestDetails.firstName} {accountRequestDetails.lastName}
+                  </span>
+                </div>
+                <div className="user-detail-row">
+                  <span className="detail-label">Email:</span>
+                  <span className="detail-value">{accountRequestDetails.email}</span>
+                </div>
+                <div className="user-detail-row">
+                  <span className="detail-label">Phone:</span>
+                  <span className="detail-value">
+                    {accountRequestDetails.countryCode} {accountRequestDetails.phone}
+                  </span>
+                </div>
+                <div className="user-detail-row">
+                  <span className="detail-label">Requested Role:</span>
+                  <span className="detail-value role-badge">
+                    {accountRequestDetails.requestedRole?.charAt(0).toUpperCase() + accountRequestDetails.requestedRole?.slice(1) || 'N/A'}
+                  </span>
+                </div>
+                {accountRequestDetails.companyName && (
+                  <div className="user-detail-row">
+                    <span className="detail-label">Company:</span>
+                    <span className="detail-value">{accountRequestDetails.companyName}</span>
+                  </div>
+                )}
+                {accountRequestDetails.department && (
+                  <div className="user-detail-row">
+                    <span className="detail-label">Department:</span>
+                    <span className="detail-value">{accountRequestDetails.department}</span>
+                  </div>
+                )}
+                <div className="user-detail-row">
+                  <span className="detail-label">Request Date:</span>
+                  <span className="detail-value">
+                    {formatDate(accountRequestDetails.createdAt)}
+                  </span>
+                </div>
+              </div>
+
+              {showRejectInput && (
+                <div className="rejection-reason-section">
+                  <label htmlFor="rejectionReason">Rejection Reason:</label>
+                  <textarea
+                    id="rejectionReason"
+                    value={rejectionReason}
+                    onChange={(e) => setRejectionReason(e.target.value)}
+                    placeholder="Please provide a reason for rejection..."
+                    rows="4"
+                  />
+                </div>
+              )}
+            </div>
+
+            <div className="modal-footer">
+              <button
+                className="btn-approve"
+                onClick={handleApproveAccountRequest}
+                disabled={approvalLoading}
+              >
+                {approvalLoading ? (
+                  <><i className="fas fa-spinner fa-spin"></i> Processing...</>
+                ) : (
+                  <><i className="fas fa-check"></i> Approve Request</>
+                )}
+              </button>
+              <button
+                className="btn-reject"
+                onClick={handleRejectAccountRequest}
+                disabled={approvalLoading}
+              >
+                {approvalLoading ? (
+                  <><i className="fas fa-spinner fa-spin"></i> Processing...</>
+                ) : showRejectInput ? (
+                  <><i className="fas fa-paper-plane"></i> Confirm Rejection</>
+                ) : (
+                  <><i className="fas fa-times"></i> Reject Request</>
+                )}
+              </button>
+              <button
+                className="btn-cancel"
+                onClick={closeModal}
+                disabled={approvalLoading}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* User Approval Modal */}
       {showApprovalModal && pendingUserDetails && (
@@ -527,6 +781,26 @@ export default function NotificationsPage() {
                 disabled={approvalLoading}
               >
                 Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Success Modal */}
+      {showSuccessModal && (
+        <div className="modal-overlay" onClick={() => setShowSuccessModal(false)}>
+          <div className="success-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="success-modal-content">
+              <div className="success-icon">
+                <i className="fas fa-check-circle"></i>
+              </div>
+              <h2>{successMessage}</h2>
+              <button
+                className="btn-success-ok"
+                onClick={() => setShowSuccessModal(false)}
+              >
+                OK
               </button>
             </div>
           </div>

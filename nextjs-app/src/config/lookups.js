@@ -28,6 +28,23 @@ export const getCountryCode = (country) => {
   return COUNTRY_CODES[country] || '+1';
 };
 
+// Phone number max length by country
+export const PHONE_MAX_LENGTH = {
+  'United States': 10,
+  'India': 10,
+  'Canada': 10,
+  'United Kingdom': 10,
+  'Australia': 9,
+  'Germany': 11,
+  'Singapore': 8,
+  'United Arab Emirates': 9
+};
+
+// Get phone max length for a given country
+export const getPhoneMaxLength = (country) => {
+  return PHONE_MAX_LENGTH[country] || 15;
+};
+
 // Get tax ID label for a given country
 export const getTaxIdLabel = (country) => {
   return TAX_ID_LABELS[country] || 'Tax ID';

@@ -117,6 +117,14 @@
   border-left: 3px solid #ef4444;
 }
 
+.leave-card-modern.casual-card {
+  border-left: 3px solid #3b82f6;
+}
+
+.leave-card-modern.earned-card {
+  border-left: 3px solid #f59e0b;
+}
+
 /* Card title styling */
 .leave-card-modern h6 {
   font-size: 14px;
@@ -185,6 +193,14 @@
 
 .leave-card-modern .text-danger {
   color: #ef4444 !important;
+}
+
+.leave-card-modern .text-info {
+  color: #3b82f6 !important;
+}
+
+.leave-card-modern .text-warning {
+  color: #f59e0b !important;
 }
 
 .leave-card-modern i {

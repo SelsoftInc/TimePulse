@@ -43,6 +43,7 @@ const VendorForm = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [errors, setErrors] = useState({});
+  const [validationTouched, setValidationTouched] = useState({});
   const [paymentTermsOptions, setPaymentTermsOptions] = useState(
     PAYMENT_TERMS_OPTIONS
   );
@@ -116,24 +117,20 @@ const VendorForm = ({
 
   // UI-only: Handle phone blur for validation
   const handlePhoneBlur = () => {
-    const combinedPhone = phoneNumber ? `${countryCode}${phoneNumber}` : '';
-    if (!combinedPhone || !phoneNumber) {
+    // Mark field as touched
+    setValidationTouched((prev) => ({ ...prev, phone: true }));
+    
+    // Allow empty (optional field)
+    if (!phoneNumber || phoneNumber.trim() === '') {
       setErrors((prev) => ({ ...prev, phone: "" }));
       return;
     }
     
-    // Country-specific length validation
-    const expectedLength = getPhoneNumberLength(formData.country);
-    if (phoneNumber.length !== expectedLength) {
-      setErrors((prev) => ({
-        ...prev,
-        phone: `Phone number must be ${expectedLength} digits for ${formData.country}`
-      }));
-      return;
-    }
+    // Build combined phone for validation
+    const combinedPhone = `${countryCode}${phoneNumber}`;
     
-    // General phone validation
-    const validation = validatePhoneNumber(combinedPhone);
+    // Use the validation utility which handles all country-specific rules
+    const validation = validatePhoneNumber(combinedPhone, formData.country);
     setErrors((prev) => ({
       ...prev,
       phone: validation.isValid ? "" : validation.message
@@ -149,15 +146,13 @@ const VendorForm = ({
     if (name === "country") {
       const newCountryCode = getCountryCode(value);
       setCountryCode(newCountryCode);
-      // Update phone with new country code
+      // Keep existing phone number, just update country code
       const combinedPhone = phoneNumber ? `${newCountryCode}${phoneNumber}` : newCountryCode;
       updates.phone = combinedPhone;
       // Reset state when country changes
       updates.state = "";
-      // Clear any phone validation errors when country changes
-      if (errors.phone) {
-        setErrors((prev) => ({ ...prev, phone: "" }));
-      }
+      // Clear validation errors when country changes
+      setErrors((prev) => ({ ...prev, phone: "" }));
     }
 
     // Format phone number as user types - E.164 only (kept for backward compatibility)
@@ -197,30 +192,28 @@ const VendorForm = ({
     const { name, value } = e.target;
 
     if (name === "phone") {
-      if (!value) {
-        setErrors((prev) => ({ ...prev, phone: "" }));
-        return;
-      }
-      const validation = validatePhoneNumber(value);
-      setErrors((prev) => ({
-        ...prev,
-        phone: validation.isValid ? "" : validation.message}));
+      // Phone validation handled by handlePhoneBlur
+      return;
     } else if (name === "zip") {
+      setValidationTouched((prev) => ({ ...prev, zip: true }));
       const validation = validateZipCode(value, formData.country);
       setErrors((prev) => ({
         ...prev,
         zip: validation.isValid ? "" : validation.message}));
     } else if (name === "email") {
+      setValidationTouched((prev) => ({ ...prev, email: true }));
       const validation = validateEmail(value);
       setErrors((prev) => ({
         ...prev,
         email: validation.isValid ? "" : validation.message}));
     } else if (name === "name") {
+      setValidationTouched((prev) => ({ ...prev, name: true }));
       const validation = validateName(value, "Vendor Name");
       setErrors((prev) => ({
         ...prev,
         name: validation.isValid ? "" : validation.message}));
     } else if (name === "contactPerson") {
+      setValidationTouched((prev) => ({ ...prev, contactPerson: true }));
       const validation = validateName(value, "Contact Person", { requireAtLeastTwoWords: true });
       setErrors((prev) => ({
         ...prev,
@@ -277,17 +270,31 @@ const VendorForm = ({
   useEffect(() => {
     if (!isMounted) return;
     
-    // Use intelligent phone parsing that matches against known country codes
-    const parsed = parsePhoneNumber(formData.phone, formData.country);
-    setCountryCode(parsed.countryCode);
-    setPhoneNumber(parsed.phoneNumber);
-  }, [isMounted, initialData]);
+    // Only parse if we have a phone number
+    if (formData.phone && formData.phone.length > 0) {
+      // Use intelligent phone parsing that matches against known country codes
+      const parsed = parsePhoneNumber(formData.phone, formData.country);
+      setCountryCode(parsed.countryCode);
+      setPhoneNumber(parsed.phoneNumber);
+    }
+  }, [isMounted, formData.phone, formData.country]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validate form fields
-    const phoneValidation = validatePhoneNumber(formData.phone);
+    // Mark all fields as touched on submit
+    setValidationTouched({
+      phone: true,
+      zip: true,
+      email: true,
+      name: true,
+      contactPerson: true
+    });
+
+    // Validate form fields - only validate phone if it has a value beyond country code
+    const phoneValidation = (formData.phone && formData.phone !== countryCode)
+      ? validatePhoneNumber(formData.phone, formData.country)
+      : { isValid: true, message: 'Valid' };
     const zipValidation = formData.zip
       ? validateZipCode(formData.zip, formData.country)
       : { isValid: true, message: 'Valid' };
@@ -334,12 +341,15 @@ const VendorForm = ({
     try {
       setError("");
       setLoading(true);
-      // Country-specific tax id validation
-      const taxErr = validateCountryTaxId(formData.country, formData.taxId);
-      if (taxErr) {
-        setError(taxErr);
-        setLoading(false);
-        return;
+      // Country-specific tax id validation (optional)
+      if (formData.taxId) {
+        const taxErr = validateCountryTaxId(formData.country, formData.taxId);
+        if (taxErr) {
+          setError(taxErr);
+          toast.error(taxErr);
+          setLoading(false);
+          return;
+        }
       }
       if (!user?.tenantId) {
         setError("No tenant information available");
@@ -348,7 +358,7 @@ const VendorForm = ({
       }
 
       if (onSubmitOverride) {
-        // Build payload similar to create for editor convenience
+        // Build payload for edit mode
         const payload = {
           tenantId: user.tenantId,
           name: formData.name.trim(),
@@ -483,7 +493,7 @@ const VendorForm = ({
                 errors.name ? 'border-red-500 bg-red-50' : 'border-slate-200'
               }`}
             />
-            {errors.name && (
+            {validationTouched.name && errors.name && (
               <p className="mt-1 text-xs text-red-600">{errors.name}</p>
             )}
           </div>
@@ -502,7 +512,7 @@ const VendorForm = ({
                 errors.contactPerson ? 'border-red-500 bg-red-50' : 'border-slate-200'
               }`}
             />
-            {errors.contactPerson && (
+            {validationTouched.contactPerson && errors.contactPerson && (
               <p className="mt-1 text-xs text-red-600">{errors.contactPerson}</p>
             )}
           </div>
@@ -522,7 +532,7 @@ const VendorForm = ({
                 errors.email ? 'border-red-500 bg-red-50' : 'border-slate-200'
               }`}
             />
-            {errors.email && (
+            {validationTouched.email && errors.email && (
               <p className="mt-1 text-xs text-red-600">{errors.email}</p>
             )}
           </div>
@@ -556,7 +566,7 @@ const VendorForm = ({
             <small className="mt-1 block text-xs text-slate-500">
               Country code updates automatically based on selected country
             </small>
-            {errors.phone && (
+            {validationTouched.phone && errors.phone && (
               <p className="mt-1 text-xs text-red-600">{errors.phone}</p>
             )}
           </div>
@@ -658,7 +668,7 @@ const VendorForm = ({
                   errors.zip ? 'border-red-500' : ''
                 }`}
               />
-              {errors.zip && (
+              {validationTouched.zip && errors.zip && (
                 <p className="mt-1 text-xs text-red-600">{errors.zip}</p>
               )}
             </div>

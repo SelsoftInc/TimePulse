@@ -19,7 +19,7 @@ const EmployerSettings = () => {
   const { checkPermission, isEmployee } = useAuth();
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState(
-    checkPermission(PERMISSIONS.MANAGE_SETTINGS) ? "company" : "company"
+    checkPermission(PERMISSIONS.MANAGE_SETTINGS) ? "company" : "security"
   );
 
   // Handle tab parameter from URL
@@ -122,6 +122,38 @@ const EmployerSettings = () => {
     }
   };
 
+  // For employees, show only ProfileSettings without sidebar
+  if (isEmployee && !checkPermission(PERMISSIONS.MANAGE_SETTINGS)) {
+    return (
+      <div className="employer-settings-container employee-profile-view">
+        <div className="settings-header">
+          <div>
+            <h1 className="nk-block-title">Profile Settings</h1>
+            <p className="nk-block-subtitle">Manage your personal profile and account settings</p>
+          </div>
+          <button onClick={handleSettingsLogout} className="btn-logout">
+            <i className="fas fa-sign-out-alt mr-1"></i> Logout
+          </button>
+        </div>
+
+        <div className="employer-settings-content full-width">
+          <ProfileSettings />
+        </div>
+
+        <ConfirmDialog
+          open={showLogoutConfirm}
+          title="Log out"
+          message="Are you sure you want to log out?"
+          confirmLabel="Log out"
+          cancelLabel="Cancel"
+          onConfirm={handleLogout}
+          onCancel={() => setShowLogoutConfirm(false)}
+        />
+      </div>
+    );
+  }
+
+  // For admins/managers, show full settings with sidebar
   return (
     <div className="employer-settings-container">
       <div className="settings-header">

@@ -27,7 +27,7 @@ module.exports = (sequelize) => {
       }
     },
     leaveType: {
-      type: DataTypes.ENUM('vacation', 'sick', 'personal', 'unpaid', 'other'),
+      type: DataTypes.ENUM('sick', 'casual', 'earned', 'vacation', 'personal', 'unpaid', 'other'),
       allowNull: false,
       field: 'leave_type',
       comment: 'Type of leave requested'

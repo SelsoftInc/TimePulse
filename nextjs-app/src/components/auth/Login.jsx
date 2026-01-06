@@ -225,6 +225,17 @@ const Login = () => {
           return;
         }
 
+        // Check if account is rejected or pending
+        if (!response.ok && (response.status === 403) && data.accountStatus) {
+          console.log('[Login] Account status:', data.accountStatus);
+          
+          if (data.accountStatus === 'rejected' || data.accountStatus === 'pending') {
+            const email = formData.email === "test" ? "pushban@selsoftinc.com" : formData.email;
+            window.location.href = `/account-status?email=${encodeURIComponent(email)}`;
+            return;
+          }
+        }
+
         if (response.ok && data.success) {
           // Check if user must change password (temporary password)
           if (data.user.mustChangePassword) {
@@ -290,6 +301,16 @@ const Login = () => {
         
         // Decrypt the response if encrypted
         const data = decryptAuthResponse(rawData);
+
+        // Check if account is rejected or pending
+        if (!response.ok && (response.status === 403) && data.accountStatus) {
+          console.log('[Login] Account status:', data.accountStatus);
+          
+          if (data.accountStatus === 'rejected' || data.accountStatus === 'pending') {
+            window.location.href = `/account-status?email=${encodeURIComponent(formData.email)}`;
+            return;
+          }
+        }
 
         if (response.ok && data.success) {
           // Check if user must change password (temporary password)
@@ -543,6 +564,19 @@ const Login = () => {
           Sign in with Google
         </button>
         )}
+
+        {/* Create Account Link */}
+        <div className="text-center mt-6">
+          <p className="text-sm !text-white/80 mb-3">
+            Don't have an account?
+          </p>
+          <Link
+            href="/create-account"
+            className="inline-block px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 font-semibold"
+          >
+            Create Account
+          </Link>
+        </div>
       </div>
     </div>
   );

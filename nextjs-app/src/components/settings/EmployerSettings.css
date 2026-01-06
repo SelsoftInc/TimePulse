@@ -128,6 +128,13 @@
   color: var(--text-color);
 }
 
+/* Employee profile view - full width without sidebar */
+.employee-profile-view .employer-settings-content.full-width {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
 .btn-logout {
   padding: 6px 12px;
   font: 1em monospace;

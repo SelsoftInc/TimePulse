@@ -508,7 +508,7 @@ const Login = () => {
               />
               <label htmlFor="remember" className='!text-white/80'>Remember Me</label>
             </div>
-            <Link href="/forgot-password" className="forgot-link">
+            <Link href="/forgot-password" className="forgot-link !text-white/80">
               Forgot Password?
             </Link>
           </div>
@@ -572,8 +572,8 @@ const Login = () => {
           </p>
           <Link
             href="/create-account"
-            className="inline-block px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 font-semibold"
-          >
+            className='btn-primary-ice btn-block'
+            >
             Create Account
           </Link>
         </div>

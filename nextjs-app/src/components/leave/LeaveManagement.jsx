@@ -226,6 +226,12 @@ const LeaveManagement = () => {
       return;
     }
 
+    if (!formData.reason || formData.reason.trim() === "") {
+      console.log("❌ Validation failed: Missing reason");
+      toast.error("Reason is required to submit leave request.");
+      return;
+    }
+
     const start = new Date(formData.startDate);
     const end = new Date(formData.endDate);
 
@@ -510,8 +516,9 @@ const LeaveManagement = () => {
                               <option value="" disabled>
                                 Select Leave Type
                               </option>
-                              <option value="vacation">Vacation</option>
                               <option value="sick">Sick Leave</option>
+                              <option value="casual">Casual Leave</option>
+                              <option value="earned">Earned Leave</option>
                             </select>
                           </div>
                         </div>
@@ -596,13 +603,14 @@ const LeaveManagement = () => {
 
                         <div className="md:col-span-2">
                           <div className="form-group">
-                            <label className="form-label">Reason</label>
+                            <label className="form-label">Reason *</label>
                             <textarea
                               className="form-control rounded-lg"
                               name="reason"
                               value={formData.reason}
                               onChange={handleInputChange}
                               rows="2"
+                              required
                             ></textarea>
                           </div>
                         </div>
@@ -670,27 +678,31 @@ const LeaveManagement = () => {
                         <>
                           {/* Calculate totals from database */}
                           {(() => {
-                            const vacationData = leaveData.balance
-                              .vacation || {
-                              total: 0,
-                              used: 0,
-                              pending: 0,
-                              remaining: 0,
-                            };
                             const sickData = leaveData.balance.sick || {
-                              total: 0,
+                              total: 6,
                               used: 0,
                               pending: 0,
-                              remaining: 0,
+                              remaining: 6,
                             };
-                            const totalDays =
-                              vacationData.total + sickData.total;
+                            const casualData = leaveData.balance.casual || {
+                              total: 6,
+                              used: 0,
+                              pending: 0,
+                              remaining: 6,
+                            };
+                            const earnedData = leaveData.balance.earned || {
+                              total: 6,
+                              used: 0,
+                              pending: 0,
+                              remaining: 6,
+                            };
+                            const totalDays = 18;
                             const totalUsed =
-                              vacationData.used + sickData.used;
+                              sickData.used + casualData.used + earnedData.used;
                             const totalPending =
-                              vacationData.pending + sickData.pending;
+                              sickData.pending + casualData.pending + earnedData.pending;
                             const totalRemaining =
-                              vacationData.remaining + sickData.remaining;
+                              sickData.remaining + casualData.remaining + earnedData.remaining;
 
                             return (
                               <>
@@ -706,161 +718,141 @@ const LeaveManagement = () => {
                                         className="text-muted mb-0"
                                         style={{ fontSize: "11.5px" }}
                                       >
-                                        {Math.round(totalRemaining)} of{" "}
-                                        {totalDays} days remaining
+                                        {Math.round(totalRemaining)} of 18 days remaining
                                       </p>
                                     </div>
-                                    {/* <div className="leave-badge-modern total-badge">
-                                        {Math.round(totalRemaining)}
-                                      </div> */}
                                   </div>
                                   <div className="progress">
                                     <div
                                       className="progress-bar bg-success"
                                       style={{
-                                        width: `${
-                                          (totalUsed / totalDays) * 100
-                                        }%`,
+                                        width: `${(totalUsed / 18) * 100}%`,
                                       }}
                                     ></div>
-                                    {/* <div
-                                      className="progress-bar bg-warning"
-                                      style={{
-                                        width: `${
-                                          (totalPending / totalDays) * 100
-                                        }%`,
-                                      }}
-                                    ></div> */}
                                   </div>
                                   <div className="d-flex justify-content-between mt-2" style={{ fontSize: "10.5px" }}>
                                     <small className="text-muted">
                                       <span className="text-success fw-semibold">
                                         {Math.round(totalUsed)}
                                       </span>{" "}
-                                      used
+                                      Used | Total: 18 days
                                     </small>
-                                    <small className="text-muted">
-                                      Total: {totalDays} days
-                                    </small>
+                                    {/* <small className="text-muted">
+                                      Total: 18 days
+                                    </small> */}
                                   </div>
                                 </div>
 
-                                {/* Vacation Leave Card */}
-                                {leaveData.balance.vacation && (
-                                  <div className="leave-card-modern vacation-card mb-3">
-                                    <div className="d-flex justify-content-between align-items-center mb-3">
-                                      <div className="flex-grow-1">
-                                        <h6 className="mb-1 fw-bold text-dark" style={{ fontSize: "14px" }}>
-                                          <i className="fas fa-plane text-primary me-2"></i>
-                                          Vacation
-                                        </h6>
-                                        <p
-                                          className="text-muted mb-0"
-                                          style={{ fontSize: "11.5px" }}
-                                        >
-                                          {Math.round(
-                                            vacationData.remaining
-                                          )}{" "}
-                                          of {vacationData.total} days
-                                          remaining
-                                        </p>
-                                      </div>
-                                      {/* <div className="leave-badge-modern vacation-badge">
-                                          {Math.round(vacationData.remaining)}
-                                        </div> */}
-                                    </div>
-                                    <div className="progress">
-                                      <div
-                                        className="progress-bar bg-primary"
-                                        style={{
-                                          width: `${
-                                            (vacationData.used /
-                                              vacationData.total) *
-                                            100
-                                          }%`,
-                                        }}
-                                      ></div>
-                                      {/* <div
-                                        className="progress-bar bg-warning"
-                                        style={{
-                                          width: `${
-                                            (vacationData.pending /
-                                              vacationData.total) *
-                                            100
-                                          }%`,
-                                        }}
-                                      ></div> */}
-                                    </div>
-                                    <div className="d-flex justify-content-between mt-2" style={{ fontSize: "10.5px" }}>
-                                      <small className="text-muted">
-                                        <span className="text-primary fw-semibold">
-                                          {Math.round(vacationData.used)}
-                                        </span>{" "}
-                                        used
-                                      </small>
-                                      <small className="text-muted">
-                                        Total: {vacationData.total} days
-                                      </small>
-                                    </div>
-                                  </div>
-                                )}
-
                                 {/* Sick Leave Card */}
-                                {leaveData.balance.sick && (
-                                  <div className="leave-card-modern sick-card mb-3">
-                                    <div className="d-flex justify-content-between align-items-center mb-3">
-                                      <div className="flex-grow-1">
-                                        <h6 className="mb-1 fw-bold text-dark" style={{ fontSize: "14px" }}>
-                                          <i className="fas fa-heartbeat text-danger me-2"></i>
-                                          Sick Leave
-                                        </h6>
-                                        <p
-                                          className="text-muted mb-0"
-                                          style={{ fontSize: "11.5px" }}
-                                        >
-                                          {Math.round(sickData.remaining)}{" "}
-                                          of {sickData.total} days remaining
-                                        </p>
-                                      </div>
-                                      {/* <div className="leave-badge-modern sick-badge">
-                                          {Math.round(sickData.remaining)}
-                                        </div> */}
-                                    </div>
-                                    <div className="progress">
-                                      <div
-                                        className="progress-bar bg-danger"
-                                        style={{
-                                          width: `${
-                                            (sickData.used /
-                                              sickData.total) *
-                                            100
-                                          }%`,
-                                        }}
-                                      ></div>
-                                      {/* <div
-                                        className="progress-bar bg-warning"
-                                        style={{
-                                          width: `${
-                                            (sickData.pending /
-                                              sickData.total) *
-                                            100
-                                          }%`,
-                                        }}
-                                      ></div> */}
-                                    </div>
-                                    <div className="d-flex justify-content-between mt-2" style={{ fontSize: "10.5px" }}>
-                                      <small className="text-muted">
-                                        <span className="text-danger fw-semibold">
-                                          {Math.round(sickData.used)}
-                                        </span>{" "}
-                                        used
-                                      </small>
-                                      <small className="text-muted">
-                                        Total: {sickData.total} days
-                                      </small>
+                                <div className="leave-card-modern sick-card mb-3">
+                                  <div className="d-flex justify-content-between align-items-center mb-3">
+                                    <div className="flex-grow-1">
+                                      <h6 className="mb-1 fw-bold text-dark" style={{ fontSize: "14px" }}>
+                                        <i className="fas fa-heartbeat text-danger me-2"></i>
+                                        Sick Leave
+                                      </h6>
+                                      <p
+                                        className="text-muted mb-0"
+                                        style={{ fontSize: "11.5px" }}
+                                      >
+                                        {Math.round(sickData.remaining)} of 6 days remaining
+                                      </p>
                                     </div>
                                   </div>
-                                )}
+                                  <div className="progress">
+                                    <div
+                                      className="progress-bar bg-danger"
+                                      style={{
+                                        width: `${(sickData.used / 6) * 100}%`,
+                                      }}
+                                    ></div>
+                                  </div>
+                                  <div className="d-flex justify-content-between mt-2" style={{ fontSize: "10.5px" }}>
+                                    <small className="text-muted">
+                                      <span className="text-danger fw-semibold">
+                                        {Math.round(sickData.used)}
+                                      </span>{" "}
+                                      Used | Total: 6 days
+                                    </small>
+                                    {/* <small className="text-muted">
+                                      Total: 6 days
+                                    </small> */}
+                                  </div>
+                                </div>
+
+                                {/* Casual Leave Card */}
+                                <div className="leave-card-modern casual-card mb-3">
+                                  <div className="d-flex justify-content-between align-items-center mb-3">
+                                    <div className="flex-grow-1">
+                                      <h6 className="mb-1 fw-bold text-dark" style={{ fontSize: "14px" }}>
+                                        <i className="fas fa-coffee text-info me-2"></i>
+                                        Casual Leave
+                                      </h6>
+                                      <p
+                                        className="text-muted mb-0"
+                                        style={{ fontSize: "11.5px" }}
+                                      >
+                                        {Math.round(casualData.remaining)} of 6 days remaining
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <div className="progress">
+                                    <div
+                                      className="progress-bar bg-info"
+                                      style={{
+                                        width: `${(casualData.used / 6) * 100}%`,
+                                      }}
+                                    ></div>
+                                  </div>
+                                  <div className="d-flex justify-content-between mt-2" style={{ fontSize: "10.5px" }}>
+                                    <small className="text-muted">
+                                      <span className="text-info fw-semibold">
+                                        {Math.round(casualData.used)}
+                                      </span>{" "}
+                                      Used | Total: 6 days
+                                    </small>
+                                    {/* <small className="text-muted">
+                                      Total: 6 days
+                                    </small> */}
+                                  </div>
+                                </div>
+
+                                {/* Earned Leave Card */}
+                                <div className="leave-card-modern earned-card mb-3">
+                                  <div className="d-flex justify-content-between align-items-center mb-3">
+                                    <div className="flex-grow-1">
+                                      <h6 className="mb-1 fw-bold text-dark" style={{ fontSize: "14px" }}>
+                                        <i className="fas fa-award text-warning me-2"></i>
+                                        Earned Leave
+                                      </h6>
+                                      <p
+                                        className="text-muted mb-0"
+                                        style={{ fontSize: "11.5px" }}
+                                      >
+                                        {Math.round(earnedData.remaining)} of 6 days remaining
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <div className="progress">
+                                    <div
+                                      className="progress-bar bg-warning"
+                                      style={{
+                                        width: `${(earnedData.used / 6) * 100}%`,
+                                      }}
+                                    ></div>
+                                  </div>
+                                  <div className="d-flex justify-content-between mt-2" style={{ fontSize: "10.5px" }}>
+                                    <small className="text-muted">
+                                      <span className="text-warning fw-semibold">
+                                        {Math.round(earnedData.used)}
+                                      </span>{" "}
+                                      Used | Total: 6 days
+                                    </small>
+                                    {/* <small className="text-muted">
+                                      Total: 6 days
+                                    </small> */}
+                                  </div>
+                                </div>
                               </>
                             );
                           })()}

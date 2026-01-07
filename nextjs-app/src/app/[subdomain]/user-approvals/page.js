@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { API_BASE } from '@/config/api';
-import Layout from '@/components/layout/Layout';
+// Layout removed - using direct component structure
 import './UserApprovals.css';
 
 export default function UserApprovalsPage() {
@@ -157,20 +157,17 @@ export default function UserApprovalsPage() {
   // Check if user is admin
   if (user && user.role !== 'admin') {
     return (
-      <Layout>
-        <div className="user-approvals-container">
-          <div className="access-denied">
-            <i className="fas fa-lock"></i>
-            <h2>Access Denied</h2>
-            <p>Only administrators can access this page.</p>
-          </div>
+      <div className="user-approvals-container">
+        <div className="access-denied">
+          <i className="fas fa-lock"></i>
+          <h2>Access Denied</h2>
+          <p>Only administrators can access this page.</p>
         </div>
-      </Layout>
+      </div>
     );
   }
 
   return (
-    <Layout>
       <div className="user-approvals-container">
         <div className="page-header">
           <div>
@@ -334,6 +331,5 @@ export default function UserApprovalsPage() {
           </div>
         )}
       </div>
-    </Layout>
   );
 }

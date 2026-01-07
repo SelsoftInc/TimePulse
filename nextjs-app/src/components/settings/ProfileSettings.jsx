@@ -14,6 +14,8 @@ const ProfileSettings = () => {
     lastName: '',
     email: '',
     phone: '',
+    alternativeMobile: '',
+    panNumber: '',
     department: '',
     position: '',
     employeeId: '',
@@ -78,6 +80,8 @@ const ProfileSettings = () => {
           lastName: userData.lastName || '',
           email: userData.email || '',
           phone: userData.phone || '',
+          alternativeMobile: userData.alternativeMobile || '',
+          panNumber: userData.panNumber || '',
           department: employeeData?.department || '',
           position: employeeData?.position || '',
           employeeId: userData.employeeId || '',
@@ -134,8 +138,62 @@ const ProfileSettings = () => {
     }));
   };
 
+  const validatePAN = (pan) => {
+    const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
+    return panRegex.test(pan);
+  };
+
+  const validatePhone = (phone) => {
+    // Basic phone validation - at least 10 digits
+    const phoneRegex = /^[0-9]{10,}$/;
+    return phoneRegex.test(phone.replace(/[^0-9]/g, ''));
+  };
+
   const handleSave = async () => {
     try {
+      // Validate mandatory fields
+      if (!profileData.firstName || !profileData.firstName.trim()) {
+        toast.error('First Name is required');
+        return;
+      }
+      if (!profileData.lastName || !profileData.lastName.trim()) {
+        toast.error('Last Name is required');
+        return;
+      }
+      if (!profileData.email || !profileData.email.trim()) {
+        toast.error('Email Address is required');
+        return;
+      }
+      if (!profileData.phone || !profileData.phone.trim()) {
+        toast.error('Phone Number is required');
+        return;
+      }
+      if (!validatePhone(profileData.phone)) {
+        toast.error('Please enter a valid phone number');
+        return;
+      }
+      if (!profileData.department || !profileData.department.trim()) {
+        toast.error('Department is required');
+        return;
+      }
+      if (!profileData.position || !profileData.position.trim()) {
+        toast.error('Position is required');
+        return;
+      }
+      if (!profileData.panNumber || !profileData.panNumber.trim()) {
+        toast.error('PAN Number is required');
+        return;
+      }
+      if (!validatePAN(profileData.panNumber)) {
+        toast.error('Please enter a valid PAN number.');
+        return;
+      }
+      // Validate alternative mobile if provided
+      if (profileData.alternativeMobile && profileData.alternativeMobile.trim() && !validatePhone(profileData.alternativeMobile)) {
+        toast.error('Please enter a valid alternative mobile number');
+        return;
+      }
+
       setLoading(true);
       
       const userId = user?.id || JSON.parse(localStorage.getItem('userInfo') || '{}').id;
@@ -151,6 +209,8 @@ const ProfileSettings = () => {
         lastName: profileData.lastName,
         email: profileData.email,
         phone: profileData.phone,
+        alternativeMobile: profileData.alternativeMobile,
+        panNumber: profileData.panNumber,
         department: profileData.department,
         position: profileData.position,
         settings: {
@@ -282,7 +342,7 @@ const ProfileSettings = () => {
         <h4 className="form-section-title">Personal Information</h4>
         <div className="form-row">
           <div className="form-group">
-            <label className="form-label">First Name</label>
+            <label className="form-label">First Name *</label>
             <input
               type="text"
               className="form-control"
@@ -290,10 +350,11 @@ const ProfileSettings = () => {
               value={profileData.firstName}
               onChange={handleInputChange}
               disabled={!isEditing}
+              required
             />
           </div>
           <div className="form-group">
-            <label className="form-label">Last Name</label>
+            <label className="form-label">Last Name *</label>
             <input
               type="text"
               className="form-control"
@@ -301,13 +362,14 @@ const ProfileSettings = () => {
               value={profileData.lastName}
               onChange={handleInputChange}
               disabled={!isEditing}
+              required
             />
           </div>
         </div>
         
         <div className="form-row">
           <div className="form-group">
-            <label className="form-label">Email Address</label>
+            <label className="form-label">Email Address *</label>
             <input
               type="email"
               className="form-control"
@@ -315,10 +377,11 @@ const ProfileSettings = () => {
               value={profileData.email}
               onChange={handleInputChange}
               disabled={!isEditing}
+              required
             />
           </div>
           <div className="form-group">
-            <label className="form-label">Phone Number</label>
+            <label className="form-label">Phone Number *</label>
             <input
               type="tel"
               className="form-control"
@@ -326,7 +389,38 @@ const ProfileSettings = () => {
               value={profileData.phone}
               onChange={handleInputChange}
               disabled={!isEditing}
+              required
             />
+          </div>
+        </div>
+        
+        <div className="form-row">
+          <div className="form-group">
+            <label className="form-label">Alternative Mobile Number</label>
+            <input
+              type="tel"
+              className="form-control"
+              name="alternativeMobile"
+              value={profileData.alternativeMobile}
+              onChange={handleInputChange}
+              disabled={!isEditing}
+            />
+          </div>
+          <div className="form-group">
+            <label className="form-label">PAN Number *</label>
+            <input
+              type="text"
+              className="form-control"
+              name="panNumber"
+              value={profileData.panNumber}
+              onChange={handleInputChange}
+              disabled={!isEditing}
+              placeholder="ABCDE1234F"
+              maxLength="10"
+              style={{ textTransform: 'uppercase' }}
+              required
+            />
+            <small className="form-hint">Format: ABCDE1234F (10 characters)</small>
           </div>
         </div>
       </div>
@@ -347,7 +441,7 @@ const ProfileSettings = () => {
             <small className="form-hint">Employee ID cannot be changed</small>
           </div>
           <div className="form-group">
-            <label className="form-label">Department</label>
+            <label className="form-label">Department *</label>
             <input
               type="text"
               className="form-control"
@@ -355,13 +449,14 @@ const ProfileSettings = () => {
               value={profileData.department}
               onChange={handleInputChange}
               disabled={!isEditing}
+              required
             />
           </div>
         </div>
         
         <div className="form-row">
           <div className="form-group">
-            <label className="form-label">Position</label>
+            <label className="form-label">Position *</label>
             <input
               type="text"
               className="form-control"
@@ -369,6 +464,7 @@ const ProfileSettings = () => {
               value={profileData.position}
               onChange={handleInputChange}
               disabled={!isEditing}
+              required
             />
           </div>
           <div className="form-group">
@@ -386,13 +482,14 @@ const ProfileSettings = () => {
         
         {isEmployee() && (
           <div className="form-group">
-            <label className="form-label">Manager</label>
+            <label className="form-label">Manager *</label>
             <input
               type="text"
               className="form-control"
               name="manager"
               value={profileData.manager}
               disabled
+              required
             />
             <small className="form-hint">Manager assignment is controlled by HR</small>
           </div>

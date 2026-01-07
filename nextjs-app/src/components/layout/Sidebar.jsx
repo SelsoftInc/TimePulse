@@ -5,11 +5,13 @@ import Link from 'next/link';
 import React, { useEffect, useState } from 'react';
 import { PERMISSIONS } from '@/utils/roles';
 import PermissionGuard from '../common/PermissionGuard';
+import { useAuth } from '@/contexts/AuthContext';
 import "./Sidebar.css";
 import WorkspaceSelector from './WorkspaceSelector';
 
 const Sidebar = ({ collapsed, toggleSidebar, mobileVisible = false, isMobile = false, className = "" }) => {
   const { subdomain } = useParams();
+  const { isEmployee, checkPermission } = useAuth();
   const [currentSubdomain, setCurrentSubdomain] = useState("selsoft");
   const pathname = usePathname();
   const currentPath = pathname;
@@ -263,9 +265,13 @@ const Sidebar = ({ collapsed, toggleSidebar, mobileVisible = false, isMobile = f
                 }`}
               >
                 <div className="sidebar-icon">
-                  <i className="fa fa-cog"></i>
+                  <i className={isEmployee && !checkPermission(PERMISSIONS.MANAGE_SETTINGS) ? "fa fa-user-circle" : "fa fa-cog"}></i>
                 </div>
-                {(isMobile || !collapsed) && <span className="sidebar-text">Settings</span>}
+                {(isMobile || !collapsed) && (
+                  <span className="sidebar-text">
+                    {isEmployee && !checkPermission(PERMISSIONS.MANAGE_SETTINGS) ? 'Profile' : 'Settings'}
+                  </span>
+                )}
               </Link>
             </li>
           </PermissionGuard>

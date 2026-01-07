@@ -173,7 +173,7 @@ const HoursChart = ({ regularHours, overtimeHours, leaveHours }) => {
               </div>
               <div className="legend-details">
                 <span className="legend-label">{item.label}</span>
-                <span className="legend-value">{item.value}h</span>
+                <span className="legend-value">{item.value} h</span>
               </div>
               <div className="legend-percentage">
                 {totalHours > 0
@@ -627,7 +627,7 @@ const EmployeeDashboard = () => {
           title="This Week"
           value={`${
             timesheets.find((t) => t.week === "Jul 24, 2025")?.hours || 0
-          }h`}
+          } h`}
           subtitle="Current week progress"
           icon="📊"
           color="#3b82f6"
@@ -635,7 +635,7 @@ const EmployeeDashboard = () => {
         />
         <StatsCard
           title="This Month"
-          value={`${hoursData.regular + hoursData.overtime}h`}
+          value={`${hoursData.regular + hoursData.overtime} h`}
           subtitle="Total hours logged"
           icon="📈"
           color="#10b981"

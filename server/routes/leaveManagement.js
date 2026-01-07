@@ -177,7 +177,7 @@ router.post("/request", async (req, res) => {
         leaveType,
       },
       defaults: {
-        totalDays: leaveType === "vacation" ? 10 : leaveType === "sick" ? 5 : 0, // Vacation: 10, Sick: 5
+        totalDays: leaveType === "sick" ? 6 : leaveType === "casual" ? 6 : leaveType === "earned" ? 6 : 0, // Sick: 6, Casual: 6, Earned: 6
         usedDays: 0,
         pendingDays: totalDays,
         carryForwardDays: 0,
@@ -326,8 +326,9 @@ router.get("/balance", async (req, res) => {
     
     // Initialize leave balances if they don't exist
     const leaveTypes = [
-      { type: 'vacation', total: 10 },
-      { type: 'sick', total: 5 }
+      { type: 'sick', total: 6 },
+      { type: 'casual', total: 6 },
+      { type: 'earned', total: 6 }
     ];
     
     for (const { type, total } of leaveTypes) {

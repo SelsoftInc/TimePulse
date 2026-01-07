@@ -519,7 +519,7 @@ const ModernDashboard = () => {
           ))
         ) : (
           <div className="text-center text-gray-500 dark:text-gray-400 py-4">
-            No client revenue data available
+            No client revenue data available.
           </div>
         )}
           </div>

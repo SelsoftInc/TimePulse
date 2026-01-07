@@ -1,18 +1,18 @@
-# End Clients Actions Dropdown - Final Fix (Replicated from Vendors)
+# Clients Actions Dropdown - Final Fix (Replicated from Vendors)
 
 ## 🎯 Issue Analysis
 
 **Screenshot Analysis:**
-The Actions dropdown button in the End Clients module was not working, while the same Actions button in the Vendors module was functioning correctly.
+The Actions dropdown button in the Clients module was not working, while the same Actions button in the Vendors module was functioning correctly.
 
 **Root Cause:**
-The End Clients module had a different event listener implementation compared to the working Vendors module:
-- **End Clients (Broken)**: Used `click` event with generic `.dropdown` selector
+The Clients module had a different event listener implementation compared to the working Vendors module:
+- **Clients (Broken)**: Used `click` event with generic `.dropdown` selector
 - **Vendors (Working)**: Used `mousedown` event with specific `data-dropdown-id` attribute
 
 ---
 
-## 🔍 Comparison: Vendors vs End Clients
+## 🔍 Comparison: Vendors vs Clients
 
 ### **Vendors Implementation (Working)**
 
@@ -84,7 +84,7 @@ useEffect(() => {
 </button>
 ```
 
-### **End Clients Implementation (Before Fix)**
+### **Clients Implementation (Before Fix)**
 
 **Event Listener (Broken):**
 ```javascript
@@ -359,23 +359,23 @@ export default ClientsList;
 
 ### **1. Event Type**
 - **Vendors**: `mousedown` - Fires before click, captures the event earlier
-- **End Clients (Old)**: `click` - Fires after mousedown, can be too late
+- **Clients (Old)**: `click` - Fires after mousedown, can be too late
 
 ### **2. Targeting Specificity**
 - **Vendors**: `[data-dropdown-id="${openMenuId}"]` - Targets exact dropdown by ID
-- **End Clients (Old)**: `.dropdown` - Generic, could match multiple elements
+- **Clients (Old)**: `.dropdown` - Generic, could match multiple elements
 
 ### **3. Event Listener Dependency**
 - **Vendors**: Depends on `[openMenuId]` - Re-registers when menu opens
-- **End Clients (Old)**: Empty `[]` or conditional - Less responsive
+- **Clients (Old)**: Empty `[]` or conditional - Less responsive
 
 ### **4. Click Detection**
 - **Vendors**: `dropdownEl?.contains(e.target)` - Checks if click is inside specific dropdown
-- **End Clients (Old)**: `e.target.closest('.dropdown')` - Generic parent check
+- **Clients (Old)**: `e.target.closest('.dropdown')` - Generic parent check
 
 ### **5. State Management**
 - **Vendors**: Single `toggleMenu` function, direct `setOpenMenuId(null)` calls
-- **End Clients (Old)**: Extra `closeMenu()` wrapper function (unnecessary)
+- **Clients (Old)**: Extra `closeMenu()` wrapper function (unnecessary)
 
 ---
 
@@ -457,7 +457,7 @@ export default ClientsList;
 - Easier to debug and maintain
 
 ### **4. Consistent Behavior**
-- Same pattern used across Vendors and End Clients
+- Same pattern used across Vendors and Clients
 - Predictable dropdown behavior
 - Easier for developers to understand
 
@@ -470,7 +470,7 @@ export default ClientsList;
 
 ## 🎯 Summary
 
-**Problem:** End Clients Actions dropdown not working
+**Problem:** Clients Actions dropdown not working
 
 **Root Cause:** Different event listener implementation than working Vendors module
 

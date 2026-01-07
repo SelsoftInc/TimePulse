@@ -1,4 +1,4 @@
-# End Clients Payment Terms Fix - "value too long for type character varying(50)"
+# Clients Payment Terms Fix - "value too long for type character varying(50)"
 
 ## 🔍 Error Analysis
 

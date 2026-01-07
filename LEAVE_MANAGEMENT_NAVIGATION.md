@@ -81,7 +81,7 @@ Added "Leave Management" to the left sidebar navigation with proper routing to t
 ├── Invoices (if has permission)
 ├── Employees (if has permission)
 ├── Vendors (if has permission)
-├── End Clients (if has permission)
+├── Clients (if has permission)
 ├── Impl Partners (if has permission)
 ├── Leave Management ⭐ NEW
 ├── Reports (if has permission)

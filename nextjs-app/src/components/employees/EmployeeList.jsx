@@ -818,7 +818,6 @@ const EmployeeList = () => {
                     <div className="nk-tb-col"><span>Name</span></div>
                     <div className="nk-tb-col tb-col-md"><span>Vendor</span></div>
                     <div className="nk-tb-col tb-col-md"><span>Client</span></div>
-                    <div className="nk-tb-col tb-col-md"><span>End Client</span></div>
                     <div className="nk-tb-col"><span>Employment Type</span></div>
                     {checkPermission(PERMISSIONS.MANAGE_SETTINGS) && (
                       <div className="nk-tb-col"><span>Hourly Rate</span></div>
@@ -855,17 +854,6 @@ const EmployeeList = () => {
                           >
                             {employee.client.name}
                           </Link>
-                        ) : (
-                          <span className="tb-sub text-soft">Not assigned</span>
-                        )}
-                      </div>
-                      <div className="nk-tb-col tb-col-md">
-                        {employee.endClient ? (
-                          <div>
-                            <span className="tb-sub">{employee.endClient.name}</span>
-                            <br />
-                            <small className="text-soft">{employee.endClient.location}</small>
-                          </div>
                         ) : (
                           <span className="tb-sub text-soft">Not assigned</span>
                         )}

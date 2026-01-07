@@ -37,7 +37,7 @@ The global search functionality has been successfully implemented with backend A
 Searches static menu items by keywords:
 - Dashboard, Timesheets, Timesheet Approval
 - Invoices, Employees, Vendors
-- End Clients, Implementation Partners
+- Clients, Implementation Partners
 - Leave Management, Reports, Settings
 
 **Example**: Searching "vendor" shows "Vendors" navigation item

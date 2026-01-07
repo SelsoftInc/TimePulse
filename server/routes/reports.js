@@ -49,6 +49,7 @@ router.get("/clients", async (req, res) => {
     console.log(`📊 Found ${decryptedClients.length} clients`);
 
     // Get timesheets using raw query to avoid field mapping issues
+    // Use overlapping date range logic: timesheet overlaps if week_start <= endDate AND week_end >= startDate
     const timesheets = await sequelize.query(
       `SELECT 
         t.id, t.tenant_id, t.employee_id, t.client_id, 
@@ -58,8 +59,8 @@ router.get("/clients", async (req, res) => {
       LEFT JOIN clients c ON t.client_id = c.id
       LEFT JOIN employees e ON t.employee_id = e.id
       WHERE t.tenant_id = :tenantId
-        AND t.week_start >= :startDate
         AND t.week_start <= :endDate
+        AND t.week_end >= :startDate
         AND t.status IN ('draft', 'submitted', 'approved', 'rejected')
       ORDER BY t.week_start DESC`,
       {
@@ -213,6 +214,7 @@ router.get("/employees", async (req, res) => {
     console.log(`📊 Found ${decryptedEmployees.length} employees`);
 
     // Get timesheets using raw query
+    // Use overlapping date range logic: timesheet overlaps if week_start <= endDate AND week_end >= startDate
     const timesheets = await sequelize.query(
       `SELECT 
         t.id, t.employee_id, t.client_id, t.week_start, t.week_end, 
@@ -222,8 +224,8 @@ router.get("/employees", async (req, res) => {
       LEFT JOIN clients c ON t.client_id = c.id
       LEFT JOIN employees e ON t.employee_id = e.id
       WHERE t.tenant_id = :tenantId
-        AND t.week_start >= :startDate
         AND t.week_start <= :endDate
+        AND t.week_end >= :startDate
         AND t.status IN ('draft', 'submitted', 'approved', 'rejected')
       ORDER BY t.week_start DESC`,
       {
@@ -625,16 +627,17 @@ router.get("/analytics", async (req, res) => {
     });
 
     // Get timesheets using raw query
+    // Use overlapping date range logic: timesheet overlaps if week_start <= endDate AND week_end >= startDate
     const timesheets = await sequelize.query(
       `SELECT 
-        t.id, t.employee_id, t.client_id, t.week_start, t.total_hours,
+        t.id, t.employee_id, t.client_id, t.week_start, t.week_end, t.total_hours,
         c.client_name, e.first_name, e.last_name, e.department
       FROM timesheets t
       LEFT JOIN clients c ON t.client_id = c.id
       LEFT JOIN employees e ON t.employee_id = e.id
       WHERE t.tenant_id = :tenantId
-        AND t.week_start >= :startDate
         AND t.week_start <= :endDate
+        AND t.week_end >= :startDate
         AND t.status IN ('draft', 'submitted', 'approved', 'rejected')
       ORDER BY t.week_start ASC`,
       {

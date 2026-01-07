@@ -517,22 +517,22 @@ const ModernDashboard = () => {
 
         {/* 3️⃣ Monthly Revenue Chart - Show in both views but filtered by employee in Employee view */}
         {user?.role === "admin" && (
-          <div className="bg-slate-50 dark:bg-[#1a202c] rounded-2xl shadow-sm p-4 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all duration-200 col-span-1 md:col-span-2 flex flex-col min-h-[170px]">
-      <div className="flex items-center justify-between">
+          <div className="bg-slate-50 dark:bg-[#1a202c] rounded-2xl shadow-sm p-4 pb-5 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all duration-200 col-span-1 md:col-span-2 flex flex-col min-h-[240px]">
+      <div className="flex items-center justify-between mb-3">
         <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-100">
-          {scope === "employee" ? "My Revenue Trend" : "Monthly Revenue Trend"}
+          {scope === "employee" ? "My Revenue" : "Monthly Revenue"}
         </h3>
         <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-300">
           <i className="fas fa-chart-line" aria-hidden />
         </div>
       </div>
 
-      <div className="mt-3 flex-1">
+      <div className="flex-1 min-h-[170px] overflow-hidden">
         <ChartWidget
           type="line"
           data={monthlyRevenueData.revenue}
           labels={monthlyRevenueData.months}
-          height={150}
+          height={170}
           color="#1c398e"
           showValues={true}
         />

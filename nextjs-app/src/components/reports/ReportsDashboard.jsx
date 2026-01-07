@@ -595,19 +595,19 @@ const ReportsDashboard = () => {
                 <div className="nk-tb-list nk-tb-ulist">
                   <div className="nk-tb-item nk-tb-head">
                     <div className="nk-tb-col">
-                      <span className="sub-text">Client Name</span>
+                      <span className="sub-text">CLIENT NAME</span>
                     </div>
                     <div className="nk-tb-col tb-col-md">
-                      <span className="sub-text">Total Hours</span>
+                      <span className="sub-text">TOTAL HOURS</span>
                     </div>
                     <div className="nk-tb-col tb-col-md">
-                      <span className="sub-text">Total Employees</span>
+                      <span className="sub-text">TOTAL EMPLOYEES</span>
                     </div>
                     <div className="nk-tb-col">
-                      <span className="sub-text">Total Billed ($)</span>
+                      <span className="sub-text">TOTAL BILLED ($)</span>
                     </div>
                     <div className="nk-tb-col nk-tb-col-tools text-end">
-                      Actions
+                      <span className="sub-text">ACTIONS</span>
                     </div>
                   </div>
 
@@ -817,41 +817,29 @@ const ReportsDashboard = () => {
                 <div className="nk-tb-list nk-tb-ulist">
                   <div className="nk-tb-item nk-tb-head">
                     <div className="nk-tb-col">
-                      <span className="sub-text">Employee Name</span>
+                      <span className="sub-text">EMPLOYEE NAME</span>
                     </div>
                     <div className="nk-tb-col tb-col-md">
-                      <span className="sub-text">Client</span>
+                      <span className="sub-text">CLIENT</span>
                     </div>
                     <div className="nk-tb-col tb-col-md">
-                      <span className="sub-text">Project</span>
+                      <span className="sub-text">PROJECT</span>
                     </div>
                     <div className="nk-tb-col">
-                      <span className="sub-text">Total Hours</span>
+                      <span className="sub-text">TOTAL HOURS</span>
                     </div>
                     <div className="nk-tb-col tb-col-md">
-                      <span className="sub-text">Utilization %</span>
+                      <span className="sub-text">UTILIZATION %</span>
                     </div>
                     <div className="nk-tb-col nk-tb-col-tools text-end">
-                      Actions
+                      <span className="sub-text">ACTIONS</span>
                     </div>
                   </div>
 
                   {paginatedEmployees.map((employee) => (
                     <div key={employee.id} className="nk-tb-item">
                       <div className="nk-tb-col">
-                        <div className="user-card">
-                          <div className="user-avatar bg-primary">
-                            <span>
-                              {employee.name
-                                .split(" ")
-                                .map((n) => n[0])
-                                .join("")}
-                            </span>
-                          </div>
-                          <div className="user-info">
-                            <span className="tb-lead">{employee.name}</span>
-                          </div>
-                        </div>
+                        <span className="tb-lead">{employee.name}</span>
                       </div>
                       <div className="nk-tb-col tb-col-md">
                         <span>{employee.clientName}</span>
@@ -1074,28 +1062,28 @@ const ReportsDashboard = () => {
               <div className="nk-tb-list nk-tb-orders">
                 <div className="nk-tb-item nk-tb-head">
                   <div className="nk-tb-col">
-                    <span>Invoice ID</span>
+                    <span>INVOICE ID</span>
                   </div>
                   <div className="nk-tb-col tb-col-md">
-                    <span>Client</span>
+                    <span>CLIENT</span>
                   </div>
                   <div className="nk-tb-col tb-col-md">
-                    <span>Month</span>
+                    <span>MONTH</span>
                   </div>
                   <div className="nk-tb-col tb-col-md">
-                    <span>Issue Date</span>
+                    <span>ISSUE DATE</span>
                   </div>
                   <div className="nk-tb-col tb-col-md">
-                    <span>Hours</span>
+                    <span>HOURS</span>
                   </div>
                   <div className="nk-tb-col">
-                    <span>Amount</span>
+                    <span>AMOUNT</span>
                   </div>
                   <div className="nk-tb-col">
-                    <span>Status</span>
+                    <span>STATUS</span>
                   </div>
                   <div className="nk-tb-col nk-tb-col-tools text-end">
-                    <span className="sub-text">Actions</span>
+                    <span className="sub-text">ACTIONS</span>
                   </div>
                 </div>
                 {paginatedInvoices.map((invoice) => (

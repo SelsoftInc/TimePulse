@@ -66,7 +66,7 @@ router.get('/global', async (req, res) => {
       { label: 'Invoices', path: '/invoices', icon: 'fa-file-invoice', keywords: ['invoice', 'billing', 'payment'], roles: ['admin', 'approver'] },
       { label: 'Employees', path: '/employees', icon: 'fa-users', keywords: ['employee', 'staff', 'team', 'people'], roles: ['admin', 'approver'] },
       { label: 'Vendors', path: '/vendors', icon: 'fa-handshake', keywords: ['vendor', 'supplier', 'contractor'], roles: ['admin', 'approver'] },
-      { label: 'End Clients', path: '/clients', icon: 'fa-building', keywords: ['client', 'customer', 'end client'], roles: ['admin', 'approver'] },
+      { label: 'Clients', path: '/clients', icon: 'fa-building', keywords: ['client', 'customer', 'end client'], roles: ['admin', 'approver'] },
       { label: 'Implementation Partners', path: '/impl-partners', icon: 'fa-users-cog', keywords: ['partner', 'implementation', 'impl partner'], roles: ['admin', 'approver'] },
       { label: 'Leave Management', path: '/leave-management', icon: 'fa-calendar-alt', keywords: ['leave', 'vacation', 'time off', 'pto', 'holiday'], roles: ['employee', 'admin', 'approver'] },
       { label: 'Reports', path: '/reports', icon: 'fa-chart-bar', keywords: ['report', 'analytics', 'statistics'], roles: ['admin', 'approver'] },

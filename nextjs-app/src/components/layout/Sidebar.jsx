@@ -187,7 +187,7 @@ const Sidebar = ({ collapsed, toggleSidebar, mobileVisible = false, isMobile = f
                   <i className="fa fa-users"></i>
                 </div>
                 {!collapsed && (
-                  <span className="sidebar-text">End Clients</span>
+                  <span className="sidebar-text">Clients</span>
                 )}
               </Link>
             </li>

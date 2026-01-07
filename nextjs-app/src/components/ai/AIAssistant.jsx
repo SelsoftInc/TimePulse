@@ -65,7 +65,7 @@ const AIAssistant = ({ isOpen, onClose }) => {
       ],
       tips: "Set up proper roles and permissions to ensure employees have access to the right features."},
     clients: {
-      title: "End Clients",
+      title: "Clients",
       description: "Manage your client relationships and project assignments",
       features: [
         "Client profile management",

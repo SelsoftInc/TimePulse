@@ -3,7 +3,7 @@
 
 /**
  * Role definitions
- * - Admin: Can create Employees, Vendors, End Clients and manage all aspects of the system
+ * - Admin: Can create Employees, Vendors, Clients and manage all aspects of the system
  * - Approver: Can approve timesheets and invoices but has limited management capabilities
  * - Employee: Can create and view their own timesheets
  */

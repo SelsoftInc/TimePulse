@@ -194,10 +194,11 @@ const ChartWidget = ({
             <div className="line-labels">
               {labels?.map((label, index) => (
                 <div key={index} className="line-label">
-                  {label}
+                  <span>{label}</span>
                 </div>
               ))}
             </div>
+            <div className="x-axis-label">Monthly Revenue</div>
           </div>
           {showLegend && (
             <div className="chart-legend">
@@ -271,13 +272,14 @@ const ChartWidget = ({
             <div className="line-labels">
               {chartData.map((item, index) => (
                 <div key={index} className="line-label">
-                  {item.label}
+                  <span>{item.label}</span>
                   {showValues && (
                     <span className="line-value">{item.value}</span>
                   )}
                 </div>
               ))}
             </div>
+            <div className="x-axis-label">Monthly Revenue</div>
           </div>
         </div>
       );

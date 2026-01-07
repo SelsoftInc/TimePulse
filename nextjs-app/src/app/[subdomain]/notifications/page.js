@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { API_BASE } from '@/config/api';
-import './notifications.css';
 
 export default function NotificationsPage() {
   const { user } = useAuth();
@@ -21,6 +20,8 @@ export default function NotificationsPage() {
   const [showAccountRequestModal, setShowAccountRequestModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 7;
 
   useEffect(() => {
     fetchNotifications();
@@ -450,202 +451,332 @@ export default function NotificationsPage() {
     setShowRejectInput(false);
   };
 
+  // Pagination calculations
+  const totalPages = Math.ceil(notifications.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentNotifications = notifications.slice(startIndex, endIndex);
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   return (
-    <div className="notifications-page">
-      <div className="notifications-header">
-        <h1>Notifications</h1>
-        <button className="mark-all-btn" onClick={markAllAsRead}>
-          <i className="fas fa-check-double"></i>
-          Mark all as read
-        </button>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
+      {/* Header Card */}
+      <div className="mb-5 rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-500 px-6 py-4 shadow-md">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-white mb-1">Notifications</h1>
+            <p className="text-cyan-50 text-sm">Stay updated with your latest notifications</p>
+          </div>
+          <button 
+            onClick={markAllAsRead}
+            className="flex items-center gap-2 bg-white text-cyan-600 px-5 py-2 rounded-lg font-semibold hover:bg-cyan-50 transition-all duration-200 shadow-sm hover:shadow-md text-sm"
+          >
+            <i className="fas fa-check-double"></i>
+            Mark all as read
+          </button>
+        </div>
       </div>
 
-      <div className="notifications-filters">
-        <div className="filter-group">
-          <label>Status:</label>
-          <div className="filter-buttons">
-            <button 
-              className={filter === 'all' ? 'active' : ''}
-              onClick={() => setFilter('all')}
-            >
-              All
-            </button>
-            <button 
-              className={filter === 'unread' ? 'active' : ''}
-              onClick={() => setFilter('unread')}
-            >
-              Unread
-            </button>
-            <button 
-              className={filter === 'read' ? 'active' : ''}
-              onClick={() => setFilter('read')}
-            >
-              Read
-            </button>
+      {/* Filters Card */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4 mb-4 border border-gray-200 dark:border-gray-700">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Filter by Status:</span>
+            <div className="flex gap-2">
+              <button
+                onClick={() => { setFilter('all'); setCurrentPage(1); }}
+                className={`px-3 py-1.5 rounded-lg font-medium transition-all duration-200 text-sm ${
+                  filter === 'all'
+                    ? 'bg-cyan-600 text-white shadow-sm'
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                }`}
+              >
+                All
+              </button>
+              <button
+                onClick={() => { setFilter('unread'); setCurrentPage(1); }}
+                className={`px-3 py-1.5 rounded-lg font-medium transition-all duration-200 text-sm ${
+                  filter === 'unread'
+                    ? 'bg-cyan-600 text-white shadow-sm'
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                }`}
+              >
+                Unread
+              </button>
+              <button
+                onClick={() => { setFilter('read'); setCurrentPage(1); }}
+                className={`px-3 py-1.5 rounded-lg font-medium transition-all duration-200 text-sm ${
+                  filter === 'read'
+                    ? 'bg-cyan-600 text-white shadow-sm'
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                }`}
+              >
+                Read
+              </button>
+            </div>
+          </div>
+          <div className="text-xs text-gray-500 dark:text-gray-400">
+            {notifications.length > 0 ? (
+              <span>{startIndex + 1}-{Math.min(endIndex, notifications.length)} of {notifications.length} notifications</span>
+            ) : (
+              <span>0 notifications</span>
+            )}
           </div>
         </div>
-
-        {/* <div className="filter-group">
-          <label>Category:</label>
-          <select value={category} onChange={(e) => setCategory(e.target.value)}>
-            <option value="all">All Categories</option>
-            <option value="approval">Approvals</option>
-            <option value="timesheet">Timesheets</option>
-            <option value="leave">Leave</option>
-            <option value="invoice">Invoices</option>
-            <option value="system">System</option>
-            <option value="general">General</option>
-          </select>
-        </div> */}
       </div>
 
-      <div className="notifications-list">
+      {/* Notifications List */}
+      <div className="space-y-3">
         {loading ? (
-          <div className="loading-state">
-            <i className="fas fa-spinner fa-spin"></i>
-            <p>Loading notifications...</p>
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-8 text-center border border-gray-200 dark:border-gray-700">
+            <i className="fas fa-spinner fa-spin text-3xl text-cyan-600 mb-3"></i>
+            <p className="text-gray-600 dark:text-gray-400">Loading notifications...</p>
           </div>
         ) : notifications.length === 0 ? (
-          <div className="empty-state">
-            <i className="fas fa-bell-slash"></i>
-            <h3>No notifications found</h3>
-            <p>You're all caught up!</p>
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-8 text-center border border-gray-200 dark:border-gray-700">
+            <i className="fas fa-bell-slash text-5xl text-gray-300 dark:text-gray-600 mb-3"></i>
+            <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-1">No notifications found</h3>
+            <p className="text-gray-600 dark:text-gray-400 text-sm">You're all caught up!</p>
           </div>
         ) : (
-          notifications.map((notification) => (
-            <div
-              key={notification.id}
-              className={`notification-card ${notification.read_at || notification.readAt ? 'read' : 'unread'} ${notification.priority}`}
-            >
-              <div 
-                className="notification-icon"
-                style={{ background: getNotificationColor(notification.type) }}
+          <>
+            {currentNotifications.map((notification) => (
+              <div
+                key={notification.id}
+                className={`bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4 border transition-all duration-200 hover:shadow-md ${
+                  notification.read_at || notification.readAt
+                    ? 'border-gray-200 dark:border-gray-700'
+                    : 'border-cyan-200 dark:border-cyan-800 bg-cyan-50/30 dark:bg-cyan-900/10'
+                }`}
               >
-                {getNotificationIcon(notification.type)}
-              </div>
-              
-              <div className="notification-body">
-                <div className="notification-header-row">
-                  <h3>{notification.title}</h3>
-                  {!(notification.read_at || notification.readAt) && (
-                    <span className="unread-badge">New</span>
-                  )}
-                </div>
-                
-                <p className="notification-message">{notification.message}</p>
-                
-                <div className="notification-meta">
-                  <span className="notification-date">
-                    <i className="fas fa-clock"></i>
-                    {formatDate(notification.created_at || notification.createdAt)}
-                  </span>
-                  {notification.category && (
-                    <span className="notification-category">
-                      {notification.category}
-                    </span>
-                  )}
-                  {notification.priority === 'high' && (
-                    <span className="priority-badge high">High Priority</span>
-                  )}
-                  {notification.priority === 'urgent' && (
-                    <span className="priority-badge urgent">Urgent</span>
-                  )}
-                </div>
-              </div>
+                <div className="flex items-start gap-3">
+                  {/* Icon */}
+                  <div
+                    className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 text-white"
+                    style={{ background: getNotificationColor(notification.type) }}
+                  >
+                    {getNotificationIcon(notification.type)}
+                  </div>
 
-              {/* View Button - For Account Request and User Registration Approval Notifications */}
-              {((notification.title?.includes('Account Request') && notification.metadata?.accountRequestId) ||
-                (notification.category === 'approval' && notification.title?.includes('User Registration'))) && (
-                <button
-                  className="notification-view-btn"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleNotificationClick(notification);
-                  }}
-                >
-                  <i className="fas fa-eye"></i> View
-                </button>
-              )}
-            </div>
-          ))
+                  {/* Content */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-3 mb-1.5">
+                      <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+                        {notification.title}
+                      </h3>
+                      <div className="flex items-center gap-1.5 flex-shrink-0">
+                        {!(notification.read_at || notification.readAt) && (
+                          <span className="px-2 py-0.5 bg-cyan-600 text-white text-[10px] font-semibold rounded-full">
+                            New
+                          </span>
+                        )}
+                        {notification.priority === 'high' && (
+                          <span className="px-2 py-0.5 bg-amber-500 text-white text-[10px] font-semibold rounded-full">
+                            High Priority
+                          </span>
+                        )}
+                        {notification.priority === 'urgent' && (
+                          <span className="px-2 py-0.5 bg-red-600 text-white text-[10px] font-semibold rounded-full">
+                            Urgent
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    <p className="text-sm text-gray-700 dark:text-gray-300 mb-2 leading-snug">
+                      {notification.message}
+                    </p>
+
+                    <div className="flex items-center gap-3 text-xs">
+                      <span className="flex items-center gap-1.5 text-gray-500 dark:text-gray-400">
+                        <i className="fas fa-clock"></i>
+                        {formatDate(notification.created_at || notification.createdAt)}
+                      </span>
+                      {notification.category && (
+                        <span className="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded text-[10px] font-medium">
+                          {notification.category}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Action Button */}
+                  {((notification.title?.includes('Account Request') && notification.metadata?.accountRequestId) ||
+                    (notification.category === 'approval' && notification.title?.includes('User Registration'))) && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleNotificationClick(notification);
+                      }}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-cyan-600 text-white rounded-lg font-medium hover:bg-cyan-700 transition-colors duration-200 flex-shrink-0 text-sm"
+                    >
+                      <i className="fas fa-eye text-xs"></i>
+                      View
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </>
         )}
       </div>
 
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4 border border-gray-200 dark:border-gray-700">
+          <div className="flex items-center justify-between">
+            <div className="text-xs text-gray-500 dark:text-gray-400">
+              Showing {startIndex + 1} to {Math.min(endIndex, notifications.length)} of {notifications.length} notifications
+            </div>
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+                className={`px-3 py-1.5 rounded-lg font-medium transition-all duration-200 text-sm ${
+                  currentPage === 1
+                    ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                }`}
+              >
+                <i className="fas fa-chevron-left text-xs"></i>
+              </button>
+              
+              {[...Array(totalPages)].map((_, index) => {
+                const page = index + 1;
+                // Show first page, last page, current page, and pages around current
+                if (
+                  page === 1 ||
+                  page === totalPages ||
+                  (page >= currentPage - 1 && page <= currentPage + 1)
+                ) {
+                  return (
+                    <button
+                      key={page}
+                      onClick={() => handlePageChange(page)}
+                      className={`px-3 py-1.5 rounded-lg font-medium transition-all duration-200 text-sm ${
+                        currentPage === page
+                          ? 'bg-cyan-600 text-white shadow-sm'
+                          : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  );
+                } else if (
+                  page === currentPage - 2 ||
+                  page === currentPage + 2
+                ) {
+                  return (
+                    <span key={page} className="px-1 text-gray-400 dark:text-gray-500 text-xs">
+                      ...
+                    </span>
+                  );
+                }
+                return null;
+              })}
+
+              <button
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className={`px-3 py-1.5 rounded-lg font-medium transition-all duration-200 text-sm ${
+                  currentPage === totalPages
+                    ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                }`}
+              >
+                <i className="fas fa-chevron-right text-xs"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Account Request Approval Modal */}
       {showAccountRequestModal && accountRequestDetails && (
-        <div className="modal-overlay" onClick={closeModal}>
-          <div className="approval-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>Account Request Approval</h2>
-              <button className="modal-close-btn" onClick={closeModal}>
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={closeModal}>
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            {/* Modal Header */}
+            <div className="sticky top-0 bg-gradient-to-r from-cyan-600 to-blue-600 text-white px-6 py-4 rounded-t-2xl flex items-center justify-between z-10">
+              <h2 className="text-xl font-bold">Account Request Approval</h2>
+              <button 
+                onClick={closeModal}
+                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/20 transition-colors duration-200"
+              >
                 <i className="fas fa-times"></i>
               </button>
             </div>
 
-            <div className="modal-body">
-              <div className="user-details-section">
-                <h3>Request Information</h3>
-                <div className="user-detail-row">
-                  <span className="detail-label">Name:</span>
-                  <span className="detail-value">
+            {/* Modal Body */}
+            <div className="p-6">
+              <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-4">Request Information</h3>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between py-2 border-b border-gray-200 dark:border-gray-700">
+                  <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Name:</span>
+                  <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
                     {accountRequestDetails.firstName} {accountRequestDetails.lastName}
                   </span>
                 </div>
-                <div className="user-detail-row">
-                  <span className="detail-label">Email:</span>
-                  <span className="detail-value">{accountRequestDetails.email}</span>
+                <div className="flex items-center justify-between py-2 border-b border-gray-200 dark:border-gray-700">
+                  <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Email:</span>
+                  <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{accountRequestDetails.email}</span>
                 </div>
-                <div className="user-detail-row">
-                  <span className="detail-label">Phone:</span>
-                  <span className="detail-value">
+                <div className="flex items-center justify-between py-2 border-b border-gray-200 dark:border-gray-700">
+                  <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Phone:</span>
+                  <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
                     {accountRequestDetails.countryCode} {accountRequestDetails.phone}
                   </span>
                 </div>
-                <div className="user-detail-row">
-                  <span className="detail-label">Requested Role:</span>
-                  <span className="detail-value role-badge">
+                <div className="flex items-center justify-between py-2 border-b border-gray-200 dark:border-gray-700">
+                  <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Requested Role:</span>
+                  <span className="px-3 py-1 bg-cyan-100 dark:bg-cyan-900 text-cyan-800 dark:text-cyan-200 rounded-lg text-xs font-semibold">
                     {accountRequestDetails.requestedRole?.charAt(0).toUpperCase() + accountRequestDetails.requestedRole?.slice(1) || 'N/A'}
                   </span>
                 </div>
                 {accountRequestDetails.companyName && (
-                  <div className="user-detail-row">
-                    <span className="detail-label">Company:</span>
-                    <span className="detail-value">{accountRequestDetails.companyName}</span>
+                  <div className="flex items-center justify-between py-2 border-b border-gray-200 dark:border-gray-700">
+                    <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Company:</span>
+                    <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{accountRequestDetails.companyName}</span>
                   </div>
                 )}
                 {accountRequestDetails.department && (
-                  <div className="user-detail-row">
-                    <span className="detail-label">Department:</span>
-                    <span className="detail-value">{accountRequestDetails.department}</span>
+                  <div className="flex items-center justify-between py-2 border-b border-gray-200 dark:border-gray-700">
+                    <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Department:</span>
+                    <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{accountRequestDetails.department}</span>
                   </div>
                 )}
-                <div className="user-detail-row">
-                  <span className="detail-label">Request Date:</span>
-                  <span className="detail-value">
+                <div className="flex items-center justify-between py-2">
+                  <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Request Date:</span>
+                  <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
                     {formatDate(accountRequestDetails.createdAt)}
                   </span>
                 </div>
               </div>
 
               {showRejectInput && (
-                <div className="rejection-reason-section">
-                  <label htmlFor="rejectionReason">Rejection Reason:</label>
+                <div className="mt-4">
+                  <label htmlFor="rejectionReason" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Rejection Reason:</label>
                   <textarea
                     id="rejectionReason"
                     value={rejectionReason}
                     onChange={(e) => setRejectionReason(e.target.value)}
                     placeholder="Please provide a reason for rejection..."
                     rows="4"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent dark:bg-gray-700 dark:text-white text-sm"
                   />
                 </div>
               )}
             </div>
 
-            <div className="modal-footer">
+            {/* Modal Footer */}
+            <div className="sticky bottom-0 bg-gray-50 dark:bg-gray-900 px-6 py-4 rounded-b-2xl flex gap-3 border-t border-gray-200 dark:border-gray-700">
               <button
-                className="btn-approve"
                 onClick={handleApproveAccountRequest}
                 disabled={approvalLoading}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 text-sm"
               >
                 {approvalLoading ? (
                   <><i className="fas fa-spinner fa-spin"></i> Processing...</>
@@ -654,9 +785,9 @@ export default function NotificationsPage() {
                 )}
               </button>
               <button
-                className="btn-reject"
                 onClick={handleRejectAccountRequest}
                 disabled={approvalLoading}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 text-sm"
               >
                 {approvalLoading ? (
                   <><i className="fas fa-spinner fa-spin"></i> Processing...</>
@@ -667,9 +798,9 @@ export default function NotificationsPage() {
                 )}
               </button>
               <button
-                className="btn-cancel"
                 onClick={closeModal}
                 disabled={approvalLoading}
+                className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 text-sm"
               >
                 Cancel
               </button>
@@ -680,81 +811,88 @@ export default function NotificationsPage() {
 
       {/* User Approval Modal */}
       {showApprovalModal && pendingUserDetails && (
-        <div className="modal-overlay" onClick={closeModal}>
-          <div className="approval-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>User Approval Request</h2>
-              <button className="modal-close-btn" onClick={closeModal}>
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={closeModal}>
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            {/* Modal Header */}
+            <div className="sticky top-0 bg-gradient-to-r from-cyan-600 to-blue-600 text-white px-6 py-4 rounded-t-2xl flex items-center justify-between z-10">
+              <h2 className="text-xl font-bold">User Approval Request</h2>
+              <button 
+                onClick={closeModal}
+                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/20 transition-colors duration-200"
+              >
                 <i className="fas fa-times"></i>
               </button>
             </div>
 
-            <div className="modal-body">
-              <div className="user-details-section">
-                <h3>User Information</h3>
-                <div className="user-detail-row">
-                  <span className="detail-label">Name:</span>
-                  <span className="detail-value">
+            {/* Modal Body */}
+            <div className="p-6">
+              <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-4">User Information</h3>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between py-2 border-b border-gray-200 dark:border-gray-700">
+                  <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Name:</span>
+                  <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
                     {pendingUserDetails.firstName} {pendingUserDetails.lastName}
                   </span>
                 </div>
-                <div className="user-detail-row">
-                  <span className="detail-label">Email:</span>
-                  <span className="detail-value">{pendingUserDetails.email}</span>
+                <div className="flex items-center justify-between py-2 border-b border-gray-200 dark:border-gray-700">
+                  <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Email:</span>
+                  <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{pendingUserDetails.email}</span>
                 </div>
-                <div className="user-detail-row">
-                  <span className="detail-label">Role:</span>
-                  <span className="detail-value role-badge">
+                <div className="flex items-center justify-between py-2 border-b border-gray-200 dark:border-gray-700">
+                  <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Role:</span>
+                  <span className="px-3 py-1 bg-cyan-100 dark:bg-cyan-900 text-cyan-800 dark:text-cyan-200 rounded-lg text-xs font-semibold">
                     {pendingUserDetails.role?.charAt(0).toUpperCase() + pendingUserDetails.role?.slice(1) || 'N/A'}
                   </span>
                 </div>
                 {pendingUserDetails.department && (
-                  <div className="user-detail-row">
-                    <span className="detail-label">Department:</span>
-                    <span className="detail-value">{pendingUserDetails.department}</span>
+                  <div className="flex items-center justify-between py-2 border-b border-gray-200 dark:border-gray-700">
+                    <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Department:</span>
+                    <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{pendingUserDetails.department}</span>
                   </div>
                 )}
                 {pendingUserDetails.title && (
-                  <div className="user-detail-row">
-                    <span className="detail-label">Title:</span>
-                    <span className="detail-value">{pendingUserDetails.title}</span>
+                  <div className="flex items-center justify-between py-2 border-b border-gray-200 dark:border-gray-700">
+                    <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Title:</span>
+                    <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{pendingUserDetails.title}</span>
                   </div>
                 )}
-                <div className="user-detail-row">
-                  <span className="detail-label">Auth Provider:</span>
-                  <span className="detail-value">
+                <div className="flex items-center justify-between py-2 border-b border-gray-200 dark:border-gray-700">
+                  <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Auth Provider:</span>
+                  <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
                     {pendingUserDetails.authProvider === 'google' ? (
                       <span><i className="fab fa-google"></i> Google OAuth</span>
                     ) : pendingUserDetails.authProvider}
                   </span>
                 </div>
-                <div className="user-detail-row">
-                  <span className="detail-label">Registration Date:</span>
-                  <span className="detail-value">
+                <div className="flex items-center justify-between py-2">
+                  <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Registration Date:</span>
+                  <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
                     {formatDate(pendingUserDetails.createdAt)}
                   </span>
                 </div>
               </div>
 
               {showRejectInput && (
-                <div className="rejection-reason-section">
-                  <label htmlFor="rejectionReason">Rejection Reason:</label>
+                <div className="mt-4">
+                  <label htmlFor="rejectionReason" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Rejection Reason:</label>
                   <textarea
                     id="rejectionReason"
                     value={rejectionReason}
                     onChange={(e) => setRejectionReason(e.target.value)}
                     placeholder="Please provide a reason for rejection..."
                     rows="4"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent dark:bg-gray-700 dark:text-white text-sm"
                   />
                 </div>
               )}
             </div>
 
-            <div className="modal-footer">
+            {/* Modal Footer */}
+            <div className="sticky bottom-0 bg-gray-50 dark:bg-gray-900 px-6 py-4 rounded-b-2xl flex gap-3 border-t border-gray-200 dark:border-gray-700">
               <button
-                className="btn-approve"
                 onClick={handleApproveUser}
                 disabled={approvalLoading}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 text-sm"
               >
                 {approvalLoading ? (
                   <><i className="fas fa-spinner fa-spin"></i> Processing...</>
@@ -763,9 +901,9 @@ export default function NotificationsPage() {
                 )}
               </button>
               <button
-                className="btn-reject"
                 onClick={handleRejectUser}
                 disabled={approvalLoading}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 text-sm"
               >
                 {approvalLoading ? (
                   <><i className="fas fa-spinner fa-spin"></i> Processing...</>
@@ -776,9 +914,9 @@ export default function NotificationsPage() {
                 )}
               </button>
               <button
-                className="btn-cancel"
                 onClick={closeModal}
                 disabled={approvalLoading}
+                className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 text-sm"
               >
                 Cancel
               </button>
@@ -789,20 +927,18 @@ export default function NotificationsPage() {
 
       {/* Success Modal */}
       {showSuccessModal && (
-        <div className="modal-overlay" onClick={() => setShowSuccessModal(false)}>
-          <div className="success-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="success-modal-content">
-              <div className="success-icon">
-                <i className="fas fa-check-circle"></i>
-              </div>
-              <h2>{successMessage}</h2>
-              <button
-                className="btn-success-ok"
-                onClick={() => setShowSuccessModal(false)}
-              >
-                OK
-              </button>
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setShowSuccessModal(false)}>
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full p-8 text-center" onClick={(e) => e.stopPropagation()}>
+            <div className="w-20 h-20 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+              <i className="fas fa-check-circle text-5xl text-green-600 dark:text-green-400"></i>
             </div>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-6">{successMessage}</h2>
+            <button
+              onClick={() => setShowSuccessModal(false)}
+              className="w-full px-6 py-3 bg-cyan-600 text-white rounded-lg font-semibold hover:bg-cyan-700 transition-colors duration-200"
+            >
+              OK
+            </button>
           </div>
         </div>
       )}

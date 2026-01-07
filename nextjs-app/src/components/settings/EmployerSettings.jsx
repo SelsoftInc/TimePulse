@@ -34,7 +34,7 @@ const EmployerSettings = () => {
           "security",
           "invoices",
           "billing",
-          "notifications",
+          // "notifications",
         ].includes(tabFromUrl)
       ) {
         setActiveTab(tabFromUrl);
@@ -71,8 +71,8 @@ const EmployerSettings = () => {
         return "Invoice Settings";
       case "billing":
         return "Billing & Subscription";
-      case "notifications":
-        return "Notification Settings";
+      // case "notifications":
+      //   return "Notification Settings";
       default:
         return "Settings";
     }
@@ -90,8 +90,8 @@ const EmployerSettings = () => {
         return "Configure invoice templates and preferences";
       case "billing":
         return "Manage your subscription and billing information";
-      case "notifications":
-        return "Configure your notification preferences";
+      // case "notifications":
+      //   return "Configure your notification preferences";
       default:
         return "Manage your account and system settings";
     }
@@ -109,8 +109,8 @@ const EmployerSettings = () => {
         return <InvoiceSettings />;
       case "billing":
         return <BillingSettings />;
-      case "notifications":
-        return <NotificationSettings />;
+      // case "notifications":
+      //   return <NotificationSettings />;
       // case "integrations":
       //   return <IntegrationSettings />;
       default:
@@ -175,12 +175,12 @@ const EmployerSettings = () => {
             <span>Profile & Account</span>
           </button>
         </li>
-        <li className={activeTab === "notifications" ? "active" : ""}>
+        {/* <li className={activeTab === "notifications" ? "active" : ""}>
           <button onClick={() => setActiveTab("notifications")}>
             <i className="fas fa-bell"></i>
             <span>Notifications</span>
           </button>
-        </li>
+        </li> */}
       </ul>
 
       <div className="employer-settings-content">{renderTabContent()}</div>

@@ -36,9 +36,16 @@ const ModernDashboard = () => {
   );
   const [selectedEmployeeId, setSelectedEmployeeId] = useState(null);
   const [employees, setEmployees] = useState([]);
-  const [dateRange] = useState({
-    start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // 30 days ago
-    end: new Date()});
+  // Set date range to current month for accurate monthly reporting
+  const [dateRange] = useState(() => {
+    const now = new Date();
+    const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const currentMonthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    return {
+      start: currentMonthStart,
+      end: currentMonthEnd
+    };
+  });
   const [lastRefresh, setLastRefresh] = useState(new Date());
   const [autoRefresh, setAutoRefresh] = useState(true);
 
@@ -85,7 +92,7 @@ const ModernDashboard = () => {
           return { activities: [] };
         }),
         fetch(`${API_BASE}/api/dashboard-extended/top-performers?${queryParams}&limit=5`, { headers }).then(r => r.json()),
-        fetch(`${API_BASE}/api/dashboard-extended/revenue-by-client?${queryParams}&limit=5`, { headers }).then(r => r.json()),
+        fetch(`${API_BASE}/api/dashboard-extended/revenue-by-client?${queryParams}&limit=100`, { headers }).then(r => r.json()),
         fetch(`${API_BASE}/api/dashboard-extended/monthly-revenue-trend?tenantId=${tenantId}&scope=${scope}${scope === 'employee' && selectedEmployeeId ? `&employeeId=${selectedEmployeeId}` : ''}`, { headers }).then(r => r.json())
       ]);
 
@@ -197,11 +204,16 @@ const ModernDashboard = () => {
 
   // Dashboard metrics using real-time API data
   const getTotalRevenue = () => {
-    return parseFloat(dashboardData.kpis?.total_revenue || 0);
+    // Display current month revenue as the main total
+    return parseFloat(dashboardData.kpis?.current_month_revenue || 0);
   };
 
-  const getMonthlyRevenue = () => {
-    return parseFloat(dashboardData.kpis?.total_revenue || 0);
+  const getCurrentMonthRevenue = () => {
+    return parseFloat(dashboardData.kpis?.current_month_revenue || 0);
+  };
+
+  const getLastMonthRevenue = () => {
+    return parseFloat(dashboardData.kpis?.last_month_revenue || 0);
   };
 
   const getOutstandingInvoices = () => {
@@ -465,8 +477,8 @@ const ModernDashboard = () => {
 
       <div className="mt-3 grid grid-cols-2 gap-3 text-xs text-gray-600 dark:text-gray-300">
         <div>
-          <div className="text-[11px] text-gray-500 dark:text-gray-400">This Month</div>
-          <div className="font-semibold text-gray-900 dark:text-white">{formatCurrency(getMonthlyRevenue())}</div>
+          <div className="text-[11px] text-gray-500 dark:text-gray-400">Last Month</div>
+          <div className="font-semibold text-gray-900 dark:text-white">{formatCurrency(getLastMonthRevenue())}</div>
         </div>
         <div className="text-right">
           <div className="text-[11px] text-gray-500 dark:text-gray-400">Outstanding</div>
@@ -478,8 +490,8 @@ const ModernDashboard = () => {
 
         {/* 4️⃣ Revenue by Client - Show in both views but filtered by employee in Employee view */}
         {user?.role === "admin" && (
-          <div className="bg-cyan-50 dark:bg-[#1a202c] rounded-2xl shadow-sm p-5 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all duration-200 flex flex-col gap-4">
-      <div className="flex items-center justify-between">
+          <div className="bg-cyan-50 dark:bg-[#1a202c] rounded-2xl shadow-sm p-5 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all duration-200 flex flex-col gap-4 h-[280px]">
+      <div className="flex items-center justify-between flex-shrink-0">
         <h3 className="text-base font-semibold text-gray-800 dark:text-gray-100">
           {scope === "employee" ? "My Clients" : "Revenue by Client"}
         </h3>
@@ -488,20 +500,19 @@ const ModernDashboard = () => {
         </div>
       </div>
 
-      <div className="space-y-3">
+      {/* Scrollable container with fixed height */}
+      <div className="space-y-3 flex-1 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent">
         {revenueByClient.length > 0 ? (
           revenueByClient.map((client, index) => (
             <div
               key={client.id}
-              // Used a slightly lighter dark shade for inner list items
-              className="flex items-center justify-between bg-gray-50 dark:bg-[#2d3748] p-3 rounded-xl" 
+              className="flex items-center justify-between bg-gray-50 dark:bg-[#2d3748] p-3 rounded-xl hover:bg-gray-100 dark:hover:bg-[#374151] transition-colors" 
             >
-              {/* <div className="text-sm font-semibold text-gray-700 dark:text-gray-300">#{index + 1}</div> */}
-              <div className="flex flex-col">
-                <div className="font-medium dark:text-gray-100">{client.client_name}</div>
-                <div className="text-xs text-gray-500 dark:text-gray-400">{client.email}</div>
+              <div className="flex flex-col min-w-0 flex-1">
+                <div className="font-medium dark:text-gray-100 truncate">{client.client_name}</div>
+                <div className="text-xs text-gray-500 dark:text-gray-400 truncate">{client.email}</div>
               </div>
-              <div className="font-semibold text-gray-900 dark:text-white">
+              <div className="font-semibold text-gray-900 dark:text-white ml-3 flex-shrink-0">
                 {formatCurrency(client.total_revenue)}
               </div>
             </div>
@@ -540,7 +551,7 @@ const ModernDashboard = () => {
         </div>
         )}
 
-        {/* 8️⃣ Recent Activity - Show in both Company and Employee views */}
+        {/* 8️⃣ Recent Activity - Improved design matching Employee Dashboard */}
         <div className="bg-slate-100 dark:bg-[#1a202c] rounded-2xl shadow-sm p-5 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all duration-200 col-span-1 md:col-span-2 flex flex-col h-full">
 
     {/* Header */}
@@ -549,68 +560,87 @@ const ModernDashboard = () => {
         Recent Activity
       </h3>
       <div className="w-10 h-10 flex items-center justify-center rounded-xl 
-        bg-slate-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
-        <i className="fas fa-history"></i>
+        bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300">
+        <i className="fas fa-bell"></i>
       </div>
     </div>
 
-    <div className="space-y-2 overflow-y-auto pr-2"
-      style={{ maxHeight: "155px" }}>
+    {/* Scrollable activity list */}
+    <div className="space-y-3 overflow-y-auto pr-2 max-h-[300px] scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent">
 
       {recentActivity.length > 0 ? (
-        recentActivity.slice(0, 5).map((activity, index) => (
+        recentActivity.map((activity, index) => (
           <div
             key={`${activity.activity_type}-${activity.id}-${index}`}
-            // Used a slightly lighter dark shade for inner list items
-            className="flex items-center justify-between bg-gray-200 dark:bg-[#2d3748] 
-                   p-2.5 rounded-lg"
+            className="bg-white dark:bg-[#2d3748] p-4 rounded-xl border border-gray-200 dark:border-gray-600 hover:shadow-md transition-all duration-200"
           >
-            <div className="flex items-center gap-2">
-              <div className={`w-7 h-7 flex items-center justify-center rounded-full text-xs ${
-                activity.activity_type === 'login' 
-                  ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-300'
-                  : activity.activity_type === 'timesheet'
+            <div className="flex items-start gap-3">
+              {/* Icon */}
+              <div className={`w-12 h-12 flex items-center justify-center rounded-xl flex-shrink-0 ${
+                activity.activity_type === 'timesheet' && activity.status === 'approved'
+                  ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-300'
+                  : activity.activity_type === 'timesheet' && activity.status === 'submitted'
                     ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300'
-                    : 'bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-300'
+                    : activity.activity_type === 'leave' && activity.status === 'approved'
+                      ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-300'
+                      : activity.activity_type === 'leave' && activity.status === 'pending'
+                        ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-300'
+                        : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
               }`}>
-                <i className={`fas ${
-                  activity.activity_type === 'login' ? 'fa-sign-in-alt' :
-                  activity.activity_type === 'timesheet' ? 'fa-clock' : 
-                  'fa-calendar-times'
+                <i className={`fas text-lg ${
+                  activity.activity_type === 'timesheet' && activity.status === 'approved' ? 'fa-check-circle' :
+                  activity.activity_type === 'timesheet' ? 'fa-clock' :
+                  activity.activity_type === 'leave' && activity.status === 'approved' ? 'fa-check-circle' :
+                  activity.activity_type === 'leave' ? 'fa-calendar-times' :
+                  'fa-info-circle'
                 }`}></i>
               </div>
 
-              <div>
-                <div className="font-medium text-sm dark:text-gray-100">
-                  {activity.activity_type === 'login' 
-                    ? `${activity.employee_name} logged in`
-                    : `${activity.activity_type === 'timesheet' ? 'Timesheet' : 'Leave'} by ${activity.employee_name}`
+              {/* Content */}
+              <div className="flex-1 min-w-0">
+                <div className="font-semibold text-gray-900 dark:text-gray-100 mb-1">
+                  {activity.activity_type === 'timesheet' && activity.status === 'approved'
+                    ? 'Timesheet Approved'
+                    : activity.activity_type === 'timesheet' && activity.status === 'submitted'
+                      ? 'Timesheet Submitted'
+                      : activity.activity_type === 'leave' && activity.status === 'approved'
+                        ? 'Leave Request Approved'
+                        : activity.activity_type === 'leave' && activity.status === 'pending'
+                          ? 'Leave Request Submitted'
+                          : 'Activity Update'
                   }
                 </div>
-                <div className="text-[10px] text-gray-500 dark:text-gray-400">
-                  {formatRelativeTime(activity.created_at)}
+                <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                  {activity.activity_type === 'timesheet'
+                    ? `${activity.employee_name}'s timesheet has been ${activity.status}`
+                    : `${activity.employee_name} submitted a leave request`
+                  }
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="text-xs text-gray-500 dark:text-gray-400">
+                    {formatRelativeTime(activity.created_at)}
+                  </div>
+                  <span className={`px-3 py-1 rounded-full text-xs font-semibold uppercase ${
+                    activity.status === 'approved'
+                      ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
+                      : activity.status === 'submitted' || activity.status === 'pending'
+                        ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                        : activity.status === 'rejected'
+                          ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
+                          : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                  }`}>
+                    {activity.status}
+                  </span>
                 </div>
               </div>
             </div>
-
-            <span
-              className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
-                activity.activity_type === 'login'
-                  ? "bg-purple-200 dark:bg-purple-900 text-purple-700 dark:text-purple-300"
-                  : activity.status === "approved"
-                    ? "bg-green-200 dark:bg-green-900 text-green-700 dark:text-green-300"
-                    : activity.status === "submitted" || activity.status === "pending"
-                      ? "bg-yellow-200 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300"
-                      : "bg-red-200 dark:bg-red-900 text-red-700 dark:text-red-300"
-              }`}
-            >
-              {activity.status}
-            </span>
           </div>
         ))
       ) : (
-        <div className="text-center text-gray-500 dark:text-gray-400 py-4">
-          No recent activity
+        <div className="text-center text-gray-500 dark:text-gray-400 py-8">
+          <i className="fas fa-inbox text-4xl mb-3 opacity-50"></i>
+          <div className="font-medium">No recent activity</div>
+          <div className="text-sm mt-1">Activity will appear here when timesheets or leave requests are submitted</div>
         </div>
       )}
         </div>

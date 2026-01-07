@@ -227,11 +227,11 @@ const InvoiceSettings = () => {
       label: "Email Templates",
       icon: "fas fa-envelope",
       color: "maroon"},
-    {
-      id: "automation",
-      label: "Automation",
-      icon: "fas fa-robot",
-      color: "orangered"},
+    // {
+    //   id: "automation",
+    //   label: "Automation",
+    //   icon: "fas fa-robot",
+    //   color: "orangered"},
   ];
 
   if (loading && !invoiceSettings.companyName) {

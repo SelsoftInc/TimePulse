@@ -44,6 +44,17 @@ router.get("/", async (req, res) => {
       return res.status(400).json({ error: "Invalid to date" });
     }
 
+    // Log dashboard request details
+    console.log('📊 Dashboard API Request:', {
+      scope,
+      tenantId,
+      employeeId: employeeId || 'N/A',
+      dateRange: {
+        from: fromDate ? fromDate.toISOString().split('T')[0] : 'N/A',
+        to: toDate ? toDate.toISOString().split('T')[0] : 'N/A'
+      }
+    });
+
     // Set tenant context for RLS
     await sequelize.query(`SET app.current_tenant_id = '${tenantId}'`);
     if (scope === "employee" && employeeId) {
@@ -98,16 +109,39 @@ router.get("/", async (req, res) => {
           )
         : sequelize.query(
             `
+            WITH current_month_data AS (
+              SELECT 
+                COALESCE(SUM(CASE WHEN i.payment_status IN ('pending','paid','overdue') THEN i.total_amount END), 0) AS revenue
+              FROM invoices i
+              WHERE i.tenant_id = '${tenantId}'
+                AND i.payment_status IN ('pending','paid','overdue')
+                ${fromDate ? `AND i.invoice_date >= '${fromDate.toISOString().split("T")[0]}'` : ''}
+                ${toDate ? `AND i.invoice_date <= '${toDate.toISOString().split("T")[0]}'` : ''}
+            ),
+            last_month_data AS (
+              SELECT 
+                COALESCE(SUM(CASE WHEN i.payment_status IN ('pending','paid','overdue') THEN i.total_amount END), 0) AS revenue
+              FROM invoices i
+              WHERE i.tenant_id = '${tenantId}'
+                AND i.payment_status IN ('pending','paid','overdue')
+                AND DATE_TRUNC('month', i.invoice_date) = DATE_TRUNC('month', ${fromDate ? `DATE '${fromDate.toISOString().split("T")[0]}'` : 'CURRENT_DATE'} - INTERVAL '1 month')
+            ),
+            all_invoices AS (
+              SELECT 
+                COALESCE(SUM(CASE WHEN payment_status IN ('pending','paid','overdue') THEN total_amount END), 0) AS total_revenue,
+                COALESCE(SUM(CASE WHEN payment_status IN ('pending','overdue') THEN total_amount END), 0) AS ar_outstanding
+              FROM invoices
+              WHERE tenant_id = '${tenantId}'
+            )
             SELECT
-              COALESCE(SUM(CASE WHEN i.payment_status IN ('pending','paid','overdue') THEN i.total_amount END), 0) AS total_revenue,
-              COALESCE(SUM(CASE WHEN i.payment_status IN ('pending','overdue') THEN i.total_amount END), 0) AS ar_outstanding,
+              cmd.revenue AS current_month_revenue,
+              lmd.revenue AS last_month_revenue,
+              ai.total_revenue,
+              ai.ar_outstanding,
               (SELECT COUNT(*) FROM employees WHERE tenant_id = '${tenantId}' AND status = 'active') AS active_employees,
               (SELECT COUNT(*) FROM timesheets WHERE tenant_id = '${tenantId}' AND status = 'submitted' ${timesheetDateFilter}) AS ts_pending,
               (SELECT COUNT(*) FROM timesheets WHERE tenant_id = '${tenantId}' AND status = 'approved' ${timesheetDateFilter}) AS ts_approved
-            FROM invoices i
-            WHERE i.tenant_id = '${tenantId}'
-              ${fromDate ? `AND i.invoice_date >= '${fromDate.toISOString().split("T")[0]}'` : ''}
-              ${toDate ? `AND i.invoice_date <= '${toDate.toISOString().split("T")[0]}'` : ''}
+            FROM current_month_data cmd, last_month_data lmd, all_invoices ai
             `,
             {
               type: sequelize.QueryTypes.SELECT,
@@ -210,6 +244,17 @@ router.get("/", async (req, res) => {
       return obj;
     };
 
+    // Log calculated KPIs for debugging
+    const kpisData = convertToNumber(kpisResult[0] || {});
+    if (scope === "company") {
+      console.log('💰 Revenue Breakdown:', {
+        currentMonthRevenue: kpisData.current_month_revenue || 0,
+        lastMonthRevenue: kpisData.last_month_revenue || 0,
+        totalRevenue: kpisData.total_revenue || 0,
+        outstanding: kpisData.ar_outstanding || 0
+      });
+    }
+
     // Format response with type conversion
     const response = {
       scope,
@@ -218,7 +263,7 @@ router.get("/", async (req, res) => {
         from: fromDate?.toISOString().split("T")[0] || null,
         to: toDate?.toISOString().split("T")[0] || null,
       },
-      kpis: convertToNumber(kpisResult[0] || {}),
+      kpis: kpisData,
       arAging: scope === "company" ? convertToNumber(arAgingResult[0] || {}) : null,
       revenueByEmployee: scope === "company" ? convertToNumber(revenueByEmployeeResult) : null,
       revenueTrend: convertToNumber(revenueTrendResult),

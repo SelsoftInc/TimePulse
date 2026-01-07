@@ -32,8 +32,8 @@ router.get("/clients", async (req, res) => {
 
     console.log("🔍 Fetching client reports for:", {
       tenantId,
-      startDate: defaultStartDate,
-      endDate: defaultEndDate,
+      startDate: defaultStartDate.toISOString().split('T')[0],
+      endDate: defaultEndDate.toISOString().split('T')[0],
     });
 
     // Get all clients for the tenant
@@ -73,6 +73,19 @@ router.get("/clients", async (req, res) => {
       }
     );
 
+    console.log(`📊 Found ${timesheets.length} timesheets for date range`);
+    
+    // Log detailed timesheet breakdown
+    if (timesheets.length === 0) {
+      console.log('⚠️  WARNING: No timesheets found for the selected date range!');
+      console.log(`   Date range: ${defaultStartDate.toISOString().split('T')[0]} to ${defaultEndDate.toISOString().split('T')[0]}`);
+      console.log('   This will result in 0 Total Hours in the report.');
+    } else {
+      const totalHours = timesheets.reduce((sum, ts) => sum + (parseFloat(ts.total_hours) || 0), 0);
+      console.log(`   Total hours across all timesheets: ${totalHours.toFixed(2)}`);
+      console.log(`   Date range coverage: ${timesheets[timesheets.length - 1]?.week_start} to ${timesheets[0]?.week_end}`);
+    }
+
     // Decrypt client and employee names in timesheets
     const decryptedTimesheets = timesheets.map(ts => ({
       ...ts,
@@ -80,8 +93,6 @@ router.get("/clients", async (req, res) => {
       first_name: ts.first_name ? DataEncryptionService.decryptEmployeeData({ firstName: ts.first_name }).firstName : null,
       last_name: ts.last_name ? DataEncryptionService.decryptEmployeeData({ lastName: ts.last_name }).lastName : null,
     }));
-
-    console.log(`📊 Found ${decryptedTimesheets.length} timesheets`);
 
     // Get invoices for the date range
     const invoices = await Invoice.findAll({

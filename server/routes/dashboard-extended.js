@@ -43,6 +43,8 @@ router.get("/recent-activity", async (req, res) => {
 
     await sequelize.query(`SET app.current_tenant_id = '${tenantId}'`);
 
+    console.log('📋 Fetching Recent Activity for tenant:', tenantId);
+
     const query = `
       WITH timesheet_activity AS (
         SELECT 
@@ -92,6 +94,45 @@ router.get("/recent-activity", async (req, res) => {
     const activities = await sequelize.query(query, {
       type: sequelize.QueryTypes.SELECT,
     });
+
+    console.log(`📊 Found ${activities.length} activities`);
+    if (activities.length > 0) {
+      console.log('📋 Activities breakdown:');
+      const timesheetActivities = activities.filter(a => a.activity_type === 'timesheet');
+      const leaveActivities = activities.filter(a => a.activity_type === 'leave');
+      console.log(`   - Timesheets: ${timesheetActivities.length}`);
+      console.log(`   - Leave Requests: ${leaveActivities.length}`);
+      console.log('📋 Sample activity:', activities[0]);
+      if (leaveActivities.length > 0) {
+        console.log('📋 Sample leave activity:', leaveActivities[0]);
+      }
+    } else {
+      console.log('⚠️  No activities found - checking data:');
+      // Check if there are any timesheets
+      const timesheetCount = await sequelize.query(
+        `SELECT COUNT(*) as count FROM timesheets WHERE tenant_id = '${tenantId}'`,
+        { type: sequelize.QueryTypes.SELECT }
+      );
+      console.log('   Total timesheets:', timesheetCount[0]?.count || 0);
+      
+      const submittedCount = await sequelize.query(
+        `SELECT COUNT(*) as count FROM timesheets WHERE tenant_id = '${tenantId}' AND status IN ('submitted', 'approved', 'rejected')`,
+        { type: sequelize.QueryTypes.SELECT }
+      );
+      console.log('   Timesheets with activity status:', submittedCount[0]?.count || 0);
+      
+      const leaveCount = await sequelize.query(
+        `SELECT COUNT(*) as count FROM leave_requests WHERE tenant_id = '${tenantId}'`,
+        { type: sequelize.QueryTypes.SELECT }
+      );
+      console.log('   Total leave requests:', leaveCount[0]?.count || 0);
+      
+      const pendingLeaveCount = await sequelize.query(
+        `SELECT COUNT(*) as count FROM leave_requests WHERE tenant_id = '${tenantId}' AND status IN ('pending', 'approved', 'rejected')`,
+        { type: sequelize.QueryTypes.SELECT }
+      );
+      console.log('   Leave requests with activity status:', pendingLeaveCount[0]?.count || 0);
+    }
 
     // Decrypt employee names
     const decryptedActivities = activities.map(activity => {
@@ -198,7 +239,7 @@ router.get("/top-performers", async (req, res) => {
 // GET /api/dashboard-extended/revenue-by-client
 router.get("/revenue-by-client", async (req, res) => {
   try {
-    const { tenantId, from, to, limit = 5, employeeId, scope } = req.query;
+    const { tenantId, from, to, limit = 100, employeeId, scope } = req.query;
 
     if (!tenantId) {
       return res.status(400).json({ error: "Tenant ID is required" });
@@ -206,8 +247,13 @@ router.get("/revenue-by-client", async (req, res) => {
 
     await sequelize.query(`SET app.current_tenant_id = '${tenantId}'`);
 
-    const fromDate = from ? new Date(from) : null;
-    const toDate = to ? new Date(to) : null;
+    // Default to current month if no date range provided
+    const now = new Date();
+    const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const currentMonthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    
+    const fromDate = from ? new Date(from) : currentMonthStart;
+    const toDate = to ? new Date(to) : currentMonthEnd;
 
     let dateFilter = "";
     if (fromDate) {
@@ -216,6 +262,12 @@ router.get("/revenue-by-client", async (req, res) => {
     if (toDate) {
       dateFilter += ` AND i.invoice_date <= '${toDate.toISOString().split("T")[0]}'`;
     }
+    
+    console.log('📊 Revenue by Client - Date Filter:', {
+      from: fromDate.toISOString().split('T')[0],
+      to: toDate.toISOString().split('T')[0],
+      isCurrentMonth: !from && !to
+    });
 
     // Add employee filter for employee scope
     let employeeFilter = "";
@@ -229,28 +281,51 @@ router.get("/revenue-by-client", async (req, res) => {
         )`;
     }
 
+    // Build query to show all active clients including those with $0 revenue
     const query = `
       SELECT
         c.id,
         c.client_name AS client_name,
         c.email,
         c.legal_name AS company,
-        COALESCE(SUM(i.total_amount), 0) AS total_revenue,
-        COUNT(i.id) AS invoice_count
-      FROM invoices i
-      JOIN clients c ON c.id = i.client_id
-      WHERE i.tenant_id = '${tenantId}'
-        AND i.payment_status IN ('pending', 'paid', 'overdue')
-        ${dateFilter}
-        ${employeeFilter}
+        COALESCE(SUM(CASE 
+          WHEN i.payment_status IN ('pending', 'paid', 'overdue')
+            ${dateFilter}
+          THEN i.total_amount 
+          ELSE 0 
+        END), 0) AS total_revenue,
+        COUNT(CASE 
+          WHEN i.payment_status IN ('pending', 'paid', 'overdue')
+            ${dateFilter}
+          THEN i.id 
+        END) AS invoice_count
+      FROM clients c
+      LEFT JOIN invoices i ON i.client_id = c.id AND i.tenant_id = '${tenantId}'
+      WHERE c.tenant_id = '${tenantId}'
+        AND c.status = 'active'
+        ${scope === 'employee' && employeeId ? `
+        AND EXISTS (
+          SELECT 1 FROM timesheets t 
+          WHERE t.client_id = c.id 
+          AND t.employee_id = '${employeeId}'
+          AND t.tenant_id = '${tenantId}'
+        )` : ''}
       GROUP BY c.id, c.client_name, c.email, c.legal_name
-      ORDER BY total_revenue DESC
+      ORDER BY total_revenue DESC, c.client_name ASC
       LIMIT ${limit}
     `;
 
     const clients = await sequelize.query(query, {
       type: sequelize.QueryTypes.SELECT,
     });
+
+    console.log(`📊 Revenue by Client - Found ${clients.length} active clients`);
+    if (clients.length > 0) {
+      console.log('📋 Sample clients:', clients.slice(0, 3).map(c => ({
+        name: c.client_name,
+        revenue: c.total_revenue
+      })));
+    }
 
     // Decrypt client names and emails
     const decryptedClients = clients.map(client => {

@@ -716,7 +716,7 @@ const EmployeeList = () => {
     <div className="employeelist">
       <div className="container-fluid">
         {/* ================= EMPLOYEES HEADER ================= */}
-<div className="sticky top-4 z-30 mb-6">
+<div className="top-4 z-30 mb-6">
   <div
     className="
       rounded-3xl

@@ -12,9 +12,8 @@ jobs:
       - name: Pull latest code and restart application
         run: |
           # Navigate to the application directory
-          cd /home/ubuntu/timepulse_deploy/TimePulse
-
-        
+          cd /home/ubuntu/TimePulse
+          
           git pull
 
           export PATH=$PATH:/usr/local/bin

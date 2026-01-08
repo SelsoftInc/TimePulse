@@ -3,7 +3,7 @@ const router = express.Router();
 const { models } = require("../models");
 const { Op } = require("sequelize");
 
-const { Employee, Timesheet, User, Client } = models;
+const { Employee, Timesheet, User, Client, LeaveRequest } = models;
 const Invoice = models.Invoice || null;
 
 // Get employee dashboard data
@@ -44,29 +44,31 @@ router.get("/", async (req, res) => {
     // Get current date info
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    startOfMonth.setHours(0, 0, 0, 0);
     const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    endOfMonth.setHours(23, 59, 59, 999);
+    
     const startOfWeek = new Date(now);
     startOfWeek.setDate(now.getDate() - now.getDay());
+    startOfWeek.setHours(0, 0, 0, 0);
     const endOfWeek = new Date(startOfWeek);
     endOfWeek.setDate(startOfWeek.getDate() + 6);
+    endOfWeek.setHours(23, 59, 59, 999);
+    
+    console.log('📅 Date ranges:', {
+      currentWeek: { start: startOfWeek, end: endOfWeek },
+      currentMonth: { start: startOfMonth, end: endOfMonth }
+    });
 
-    // Get timesheets from last 3 months for better dashboard view
-    const threeMonthsAgo = new Date(now);
-    threeMonthsAgo.setMonth(now.getMonth() - 3);
-
-    // Get timesheet statistics
-    console.log("🔍 Fetching timesheets for:", {
+    // Get ALL timesheets for accurate pending count (not just last 3 months)
+    console.log("🔍 Fetching ALL timesheets for:", {
       employeeId,
       tenantId,
-      startDate: threeMonthsAgo,
     });
     const timesheets = await Timesheet.findAll({
       where: {
         employeeId,
         tenantId,
-        weekStart: {
-          [Op.gte]: threeMonthsAgo,
-        },
       },
       attributes: [
         "id",
@@ -121,27 +123,51 @@ router.get("/", async (req, res) => {
     console.log("💰 Total Hours All Time:", totalHoursAllTime);
 
     // Calculate total hours THIS MONTH only
+    // Check if timesheet period overlaps with current month
     const thisMonthTimesheets = timesheets.filter((t) => {
       const weekStart = new Date(t.weekStart);
-      return weekStart >= startOfMonth;
+      const weekEnd = new Date(t.weekEnd);
+      // Timesheet overlaps with current month if:
+      // weekStart is in current month OR weekEnd is in current month OR timesheet spans the entire month
+      return (weekStart <= endOfMonth && weekEnd >= startOfMonth);
     });
     console.log("📅 This Month Timesheets:", thisMonthTimesheets.length);
+    console.log("📋 This Month Details:", thisMonthTimesheets.map(t => ({
+      weekStart: t.weekStart,
+      weekEnd: t.weekEnd,
+      hours: t.totalHours,
+      status: t.status
+    })));
+    
     const totalHoursThisMonth = thisMonthTimesheets.reduce((sum, t) => {
       return sum + (parseFloat(t.totalHours) || 0);
     }, 0);
     console.log("💰 Total Hours This Month:", totalHoursThisMonth);
 
-    // Get current week timesheet
-    const currentWeekTimesheet = timesheets.find((t) => {
+    // Get current week timesheets
+    // Check if timesheet period overlaps with current week
+    const currentWeekTimesheets = timesheets.filter((t) => {
       const weekStart = new Date(t.weekStart);
-      return weekStart >= startOfWeek && weekStart <= endOfWeek;
+      const weekEnd = new Date(t.weekEnd);
+      // Timesheet overlaps with current week if:
+      // weekStart is in current week OR weekEnd is in current week OR timesheet spans the entire week
+      return (weekStart <= endOfWeek && weekEnd >= startOfWeek);
     });
+    console.log("📅 This Week Timesheets:", currentWeekTimesheets.length);
+    console.log("📋 This Week Details:", currentWeekTimesheets.map(t => ({
+      weekStart: t.weekStart,
+      weekEnd: t.weekEnd,
+      hours: t.totalHours,
+      status: t.status
+    })));
 
-    // Calculate this week's hours
-    const thisWeekHours = currentWeekTimesheet
-      ? parseFloat(currentWeekTimesheet.totalHours) || 0
-      : 0;
+    // Calculate this week's hours (sum all timesheets that overlap with current week)
+    const thisWeekHours = currentWeekTimesheets.reduce((sum, t) => {
+      return sum + (parseFloat(t.totalHours) || 0);
+    }, 0);
     console.log("💰 This Week Hours:", thisWeekHours);
+    
+    const currentWeekTimesheet = currentWeekTimesheets.length > 0 ? currentWeekTimesheets[0] : null;
 
     // Get recent timesheets (last 5)
     const recentTimesheets = timesheets.slice(0, 5).map((t) => ({
@@ -156,6 +182,31 @@ router.get("/", async (req, res) => {
       clientName: t.client?.clientName || "N/A",
       projectName: "N/A",
     }));
+
+    // Get pending leave requests count
+    let pendingLeaveRequests = 0;
+    try {
+      console.log('🔍 Fetching pending leave requests for:', { employeeId, tenantId });
+      const leaveRequests = await LeaveRequest.findAll({
+        where: {
+          employeeId,
+          tenantId,
+          status: 'pending'  // LeaveRequest model uses 'pending' status
+        },
+        attributes: ['id', 'status', 'leaveType', 'startDate', 'endDate']
+      });
+      pendingLeaveRequests = leaveRequests.length;
+      console.log('🏖️ Pending leave requests found:', pendingLeaveRequests);
+      console.log('🏖️ Leave request details:', leaveRequests.map(lr => ({
+        id: lr.id,
+        status: lr.status,
+        type: lr.leaveType,
+        dates: `${lr.startDate} to ${lr.endDate}`
+      })));
+    } catch (leaveError) {
+      console.error('❌ Leave request query error:', leaveError.message);
+      console.error('❌ Full error:', leaveError);
+    }
 
     // Get invoice statistics (if Invoice model exists)
     let invoices = [];
@@ -261,7 +312,24 @@ router.get("/", async (req, res) => {
               status: currentWeekTimesheet.status,
             }
           : null,
+        thisWeekTimesheets: currentWeekTimesheets.map(t => ({
+          id: t.id,
+          weekStart: t.weekStart,
+          weekEnd: t.weekEnd,
+          hours: t.totalHours,
+          status: t.status
+        })),
+        thisMonthTimesheets: thisMonthTimesheets.map(t => ({
+          id: t.id,
+          weekStart: t.weekStart,
+          weekEnd: t.weekEnd,
+          hours: t.totalHours,
+          status: t.status
+        })),
         recent: recentTimesheets,
+      },
+      leaveRequests: {
+        pending: pendingLeaveRequests,
       },
       invoices: {
         total: totalInvoices,
@@ -284,6 +352,8 @@ router.get("/", async (req, res) => {
     console.log("✅ Sending dashboard response:", {
       total: totalTimesheets,
       pending: pendingTimesheets,
+      pendingLeave: pendingLeaveRequests,
+      totalPending: pendingTimesheets + pendingLeaveRequests,
       approved: approvedTimesheets,
       rejected: rejectedTimesheets,
       totalHoursAllTime: totalHoursAllTime,

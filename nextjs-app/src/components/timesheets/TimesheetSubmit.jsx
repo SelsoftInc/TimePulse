@@ -15,6 +15,7 @@ import { API_BASE } from '@/config/api';
 import axios from 'axios';
 import { decryptApiResponse } from '@/utils/encryption';
 import OvertimeConfirmationModal from './OvertimeConfirmationModal';
+import WeekCalendar from './WeekCalendar';
 import "./Timesheet.css";
 
 const TimesheetSubmit = () => {
@@ -29,6 +30,7 @@ const TimesheetSubmit = () => {
   const [submitting, setSubmitting] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [showCalendarView, setShowCalendarView] = useState(false);
 
   // Check if mode is 'view' from query parameters
   const queryParams = new URLSearchParams(location.search);
@@ -289,23 +291,21 @@ const TimesheetSubmit = () => {
           const weeks = [];
           const today = new Date();
 
-          // Helper function to get the start of the week (Monday)
+          // Helper function to get the start of the week (Sunday)
           const getWeekStart = (date) => {
             const weekStart = new Date(date);
             const dayOfWeek = date.getDay();
-            const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
-            weekStart.setDate(weekStart.getDate() + mondayOffset);
+            // Sunday is 0, so subtract dayOfWeek to get to Sunday
+            weekStart.setDate(weekStart.getDate() - dayOfWeek);
             weekStart.setHours(0, 0, 0, 0);
             return weekStart;
           };
 
           const formatDate = (date) => {
-            const day = String(date.getDate()).padStart(2, "0");
-            const month = date
-              .toLocaleString("en-US", { month: "short" })
-              .toUpperCase();
-            const year = date.getFullYear();
-            return `${day}-${month}-${year}`;
+            const month = String(date.getMonth() + 1).padStart(2, "0"); // MM format
+            const day = String(date.getDate()).padStart(2, "0");        // DD format
+            const year = date.getFullYear();                            // YYYY format
+            return `${month}-${day}-${year}`; // MM-DD-YYYY format
           };
 
           const currentWeekStart = getWeekStart(today);
@@ -462,11 +462,11 @@ const TimesheetSubmit = () => {
               }
             } else {
               console.error('❌ Failed to load timesheet');
-              toast.error('Failed to load timesheet data');
+              // Don't show toast during initial load
             }
           } catch (error) {
             console.error('❌ Error loading timesheet:', error);
-            toast.error('Failed to load timesheet data');
+            // Don't show toast during initial load
           }
         } else {
           // Find and set current week from available weeks
@@ -510,7 +510,7 @@ const TimesheetSubmit = () => {
         }
       } catch (error) {
         console.error("Error loading timesheet data:", error);
-        toast.error("Failed to load timesheet data. Please try again.");
+        // Don't show toast during initial load
       } finally {
         setLoading(false);
       }
@@ -616,10 +616,10 @@ const TimesheetSubmit = () => {
 
   // Helper to parse week date string
   const parseWeekDate = (dateStr) => {
+    // Parse MM-DD-YYYY format
     const parts = dateStr.split("-");
-    const day = parseInt(parts[0]);
-    const monthNames = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
-    const month = monthNames.indexOf(parts[1]);
+    const month = parseInt(parts[0]) - 1; // Month is 0-indexed
+    const day = parseInt(parts[1]);
     const year = parseInt(parts[2]);
     return new Date(year, month, day);
   };
@@ -637,7 +637,8 @@ const TimesheetSubmit = () => {
       // Get timesheet for this week
       const employeeId = isEmployee() ? user.id : selectedEmployee;
       if (!employeeId) {
-        toast.error("Please select an employee first");
+        // Don't show error toast during week selection, just return silently
+        setLoading(false);
         return;
       }
       
@@ -648,8 +649,42 @@ const TimesheetSubmit = () => {
       
       if (response.data.success) {
         if (response.data.timesheet) {
-          // Navigate to existing timesheet
-          router.push(`/${subdomain}/timesheets/submit/${response.data.timesheet.id}`);
+          // Don't navigate - just update the form with existing timesheet data
+          const ts = response.data.timesheet;
+          console.log('✅ Loading existing timesheet data:', ts);
+          
+          // Update week
+          setSelectedWeek(weekValue);
+          setWeek(weekValue);
+          
+          // Set read-only based on status
+          setIsReadOnly(ts.status === 'approved' || ts.status === 'rejected');
+          
+          // Set notes
+          if (ts.notes) setNotes(ts.notes);
+          
+          // Load daily hours if available
+          if (ts.dailyHours) {
+            const parsedHours = typeof ts.dailyHours === 'string' 
+              ? JSON.parse(ts.dailyHours) 
+              : ts.dailyHours;
+            
+            const daysOfWeek = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+            const isDailyFormat = daysOfWeek.some(day => parsedHours.hasOwnProperty(day));
+            
+            if (isDailyFormat) {
+              const hoursArray = daysOfWeek.map(day => parseFloat(parsedHours[day] || 0));
+              if (clientHours.length > 0) {
+                const updatedClientHours = clientHours.map((client, index) => {
+                  if (index === 0) {
+                    return { ...client, hours: hoursArray };
+                  }
+                  return client;
+                });
+                setClientHours(updatedClientHours);
+              }
+            }
+          }
         } else {
           // New week - update selected week and clear form
           setSelectedWeek(weekValue);
@@ -671,16 +706,16 @@ const TimesheetSubmit = () => {
       }
     } catch (error) {
       console.error('Error loading week timesheet:', error);
-      toast.error('Failed to load week timesheet');
+      // Don't show toast error during date selection
     } finally {
       setLoading(false);
     }
   };
 
   const handleWeekChange = async (selectedWeekValue) => {
+    // Set the selected week
     setSelectedWeek(selectedWeekValue);
     setWeek(selectedWeekValue);
-    await loadWeekTimesheet(selectedWeekValue);
 
     // Clear AI processed data when week changes
     setAiProcessedData(null);
@@ -695,6 +730,11 @@ const TimesheetSubmit = () => {
     } else {
       setIsReadOnly(false);
     }
+    
+    console.log('📅 Week selected:', selectedWeekValue);
+    
+    // Load timesheet data for the selected week
+    await loadWeekTimesheet(selectedWeekValue);
   };
 
   const handleClientHourChange = (clientIndex, dayIndex, value) => {
@@ -1101,15 +1141,15 @@ const TimesheetSubmit = () => {
     console.log("Grand Total Hours:", getGrandTotal());
 
     // Validate approver selection
-    if (!selectedApprover) {
-      console.log("❌ No approver selected");
-      toast.error(
-        "Please select an approver/reviewer before submitting",
-        "error"
-      );
-      window.scrollTo({ top: 0, behavior: "smooth" });
-      return;
-    }
+    // if (!selectedApprover) {
+    //   console.log("❌ No approver selected");
+    //   toast.error(
+    //     "Please select an approver/reviewer before submitting",
+    //     "error"
+    //   );
+    //   window.scrollTo({ top: 0, behavior: "smooth" });
+    //   return;
+    // }
 
     // Check for overtime before submission
     const overtimeDaysDetected = checkForOvertime();
@@ -1131,10 +1171,10 @@ const TimesheetSubmit = () => {
       console.log("Total client hours:", totalClientHours);
       if (totalClientHours === 0) {
         console.log("❌ No hours entered");
-        toast.error(
-          "Please enter at least one hour for any client or holiday/time off",
-          "error"
-        );
+        // toast.error(
+        //   "Please enter at least one hour for any client or holiday/time off",
+        //   "error"
+        // );
         return;
       }
     } else {
@@ -1142,7 +1182,7 @@ const TimesheetSubmit = () => {
       console.log("External timesheet file:", externalTimesheetFile);
       if (!externalTimesheetFile) {
         console.log("❌ No file uploaded");
-        toast.error("Please upload the client submitted timesheet file", "error");
+        // toast.error("Please upload the client submitted timesheet file", "error");
         return;
       }
     }
@@ -1980,40 +2020,76 @@ const TimesheetSubmit = () => {
       )}
 
       <div className="form-group">
-        <label className="form-label mb-1 text-sm font-medium text-slate-800">
-          Select Week
-        </label>
-
-        <div className="form-control-wrap">
-          <select
-            className="
-              form-select timesheet-dropdown w-full rounded-lg
-              border border-slate-300 bg-white text-sm text-slate-800
-              focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200
-              placeholder:text-slate-400
-            "
-            value={selectedWeek}
-            onChange={(e) => handleWeekChange(e.target.value)}
+        <div className="mb-3 flex items-center justify-between">
+          <label className="form-label text-sm font-medium text-slate-800">
+            Select Week
+          </label>
+          <button
+            type="button"
+            onClick={() => setShowCalendarView(!showCalendarView)}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-50"
           >
-            <option value="">Select a week…</option>
-            {availableWeeks
-              .sort((a, b) => {
-                const dateA = new Date(a.value.split(" To ")[0])
-                const dateB = new Date(b.value.split(" To ")[0])
-                return dateB - dateA
-              })
-              .map((week) => (
-                <option key={week.value} value={week.value}>
-                  {week.label}
-                  {week.readonly ? " (Read Only - Invoice Raised)" : ""}
-                </option>
-              ))}
-          </select>
+            {showCalendarView ? (
+              <>
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+                Dropdown View
+              </>
+            ) : (
+              <>
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                Calendar View
+              </>
+            )}
+          </button>
         </div>
 
-        <p className="mt-1 text-xs text-slate-500">
-          Choose the week to create or edit a timesheet.
-        </p>
+        {showCalendarView ? (
+          <WeekCalendar
+            selectedWeek={selectedWeek}
+            onWeekSelect={handleWeekChange}
+            employeeId={user?.employeeId || user?.id}
+            tenantId={user?.tenantId}
+            availableWeeks={availableWeeks}
+            onClose={() => setShowCalendarView(false)}
+          />
+        ) : (
+          <>
+            <div className="form-control-wrap">
+              <select
+                className="
+                  form-select timesheet-dropdown w-full rounded-lg
+                  border border-slate-300 bg-white text-sm text-slate-800
+                  focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200
+                  placeholder:text-slate-400
+                "
+                value={selectedWeek}
+                onChange={(e) => handleWeekChange(e.target.value)}
+              >
+                <option value="">Select a week…</option>
+                {availableWeeks
+                  .sort((a, b) => {
+                    const dateA = new Date(a.value.split(" To ")[0])
+                    const dateB = new Date(b.value.split(" To ")[0])
+                    return dateB - dateA
+                  })
+                  .map((week) => (
+                    <option key={week.value} value={week.value}>
+                      {week.label}
+                      {week.readonly ? " (Read Only - Invoice Raised)" : ""}
+                    </option>
+                  ))}
+              </select>
+            </div>
+
+            <p className="mt-1 text-xs text-slate-500">
+              Choose the week to create or edit a timesheet.
+            </p>
+          </>
+        )}
       </div>
     </div>
 

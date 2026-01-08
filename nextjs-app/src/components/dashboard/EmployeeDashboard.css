@@ -97,15 +97,15 @@ body.dark-mode .btn-modern.btn-primary:hover {
   font-size: 16px;
 }
 
-/* Statistics Grid */
+/* Statistics Grid - Ensure all 4 cards in same row with consistent sizing */
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(4, 1fr);
   gap: 24px;
   margin-bottom: 32px;
 }
 
-/* Stats Card */
+/* Stats Card - Fixed height for consistency */
 .stats-card {
   background: white;
   border-radius: 16px;
@@ -113,6 +113,10 @@ body.dark-mode .btn-modern.btn-primary:hover {
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
   transition: all 0.3s ease;
   border: 1px solid #e2e8f0;
+  min-height: 180px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 
 body.dark-mode .stats-card {
@@ -944,6 +948,11 @@ body.dark-mode .notifications-empty p {
   .dashboard-bottom {
     grid-template-columns: 1fr;
   }
+  
+  /* 2 cards per row on tablets */
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 @media (max-width: 768px) {
@@ -961,6 +970,7 @@ body.dark-mode .notifications-empty p {
     text-align: center;
   }
   
+  /* 1 card per row on mobile */
   .stats-grid {
     grid-template-columns: 1fr;
     gap: 16px;

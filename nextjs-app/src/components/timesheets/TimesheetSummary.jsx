@@ -399,19 +399,24 @@ const TimesheetSummary = () => {
     // Date range filter
     if (filters.dateRange.from || filters.dateRange.to) {
       // Parse the week range to get the start date
-      // Format is like "Nov 23, 2025 To Nov 29, 2025"
+      // Format is now "MM-DD-YYYY To MM-DD-YYYY"
       const weekRangeParts = timesheet.weekRange.split(' To ');
       if (weekRangeParts.length === 2) {
         const weekStartStr = weekRangeParts[0].trim();
         const weekEndStr = weekRangeParts[1].trim();
         
-        // Parse dates
-        const weekStart = new Date(weekStartStr);
-        const weekEnd = new Date(weekEndStr);
+        // Parse MM-DD-YYYY format dates
+        const parseMMDDYYYY = (dateStr) => {
+          const [month, day, year] = dateStr.split('-').map(Number);
+          return new Date(year, month - 1, day);
+        };
+        
+        const weekStart = parseMMDDYYYY(weekStartStr);
+        const weekEnd = parseMMDDYYYY(weekEndStr);
         
         // Apply from filter
         if (filters.dateRange.from) {
-          const fromDate = new Date(filters.dateRange.from);
+          const fromDate = parseMMDDYYYY(filters.dateRange.from);
           if (weekEnd < fromDate) {
             return false;
           }
@@ -419,7 +424,7 @@ const TimesheetSummary = () => {
         
         // Apply to filter
         if (filters.dateRange.to) {
-          const toDate = new Date(filters.dateRange.to);
+          const toDate = parseMMDDYYYY(filters.dateRange.to);
           if (weekStart > toDate) {
             return false;
           }

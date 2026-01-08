@@ -154,14 +154,24 @@ const DataGridFilter = ({
                     px-2 text-xs text-slate-800
                     focus:outline-none focus:ring-1 focus:ring-indigo-500
                   "
-                  placeholder="From"
                   value={filter.value.from || ''}
-                  onChange={(e) =>
-                    handleFilterChange(filter.key, {
-                      ...filter.value,
-                      from: e.target.value,
-                    })
-                  }
+                  onChange={(e) => {
+                    // Convert YYYY-MM-DD to MM-DD-YYYY for storage
+                    const dateValue = e.target.value;
+                    if (dateValue) {
+                      const [year, month, day] = dateValue.split('-');
+                      const formattedDate = `${month}-${day}-${year}`;
+                      handleFilterChange(filter.key, {
+                        ...filter.value,
+                        from: formattedDate,
+                      });
+                    } else {
+                      handleFilterChange(filter.key, {
+                        ...filter.value,
+                        from: '',
+                      });
+                    }
+                  }}
                 />
 
                 <span className="text-xs text-slate-400">to</span>
@@ -175,14 +185,24 @@ const DataGridFilter = ({
                     px-2 text-xs text-slate-800
                     focus:outline-none focus:ring-1 focus:ring-indigo-500
                   "
-                  placeholder="To"
                   value={filter.value.to || ''}
-                  onChange={(e) =>
-                    handleFilterChange(filter.key, {
-                      ...filter.value,
-                      to: e.target.value,
-                    })
-                  }
+                  onChange={(e) => {
+                    // Convert YYYY-MM-DD to MM-DD-YYYY for storage
+                    const dateValue = e.target.value;
+                    if (dateValue) {
+                      const [year, month, day] = dateValue.split('-');
+                      const formattedDate = `${month}-${day}-${year}`;
+                      handleFilterChange(filter.key, {
+                        ...filter.value,
+                        to: formattedDate,
+                      });
+                    } else {
+                      handleFilterChange(filter.key, {
+                        ...filter.value,
+                        to: '',
+                      });
+                    }
+                  }}
                 />
               </div>
             )}

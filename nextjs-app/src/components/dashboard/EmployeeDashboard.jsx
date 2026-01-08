@@ -255,7 +255,8 @@ const UpcomingLeave = ({
   leaveRequests,
   user,
   checkPermission,
-  currentEmployer}) => {
+  currentEmployer,
+  subdomain}) => {
   const getLeaveIcon = (type) => {
     switch (type.toLowerCase()) {
       case "vacation":
@@ -297,7 +298,7 @@ const UpcomingLeave = ({
           user?.role === "approver" ||
           currentEmployer?.role === "approver"
         ) && (
-          <Link href="/leave-management" className="btn-modern btn-outline inline-flex items-center justify-center rounded-xl">
+          <Link href={`/${subdomain}/leave-management`} className="btn-modern btn-outline inline-flex items-center justify-center rounded-xl">
             + Request Leave
           </Link>
         )}
@@ -305,30 +306,32 @@ const UpcomingLeave = ({
 
       <div className="leave-content mt-4">
         {leaveRequests.length > 0 ? (
-          <div className="leave-list">
-            {leaveRequests.map((leave, index) => (
-              <div key={index} className="leave-item">
-                <div className="leave-icon">{getLeaveIcon(leave.type)}</div>
-                <div className="leave-details">
-                  <h4 className="leave-type">{leave.type}</h4>
-                  <p className="leave-dates">
-                    {leave.startDate} - {leave.endDate}
-                  </p>
-                  <div className="leave-meta">
-                    <span className="leave-days">{leave.days} days</span>
-                    <span
-                      className="leave-status inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold"
-                      style={{
-                        color: getStatusColor(leave.status),
-                        backgroundColor: `${getStatusColor(leave.status)}20`}}
-                    >
-                      {leave.status}
-                    </span>
+          <Link href={`/${subdomain}/leave-management`} className="block">
+            <div className="leave-list">
+              {leaveRequests.map((leave, index) => (
+                <div key={index} className="leave-item cursor-pointer hover:bg-slate-50 transition-colors">
+                  <div className="leave-icon">{getLeaveIcon(leave.type)}</div>
+                  <div className="leave-details">
+                    <h4 className="leave-type">{leave.type}</h4>
+                    <p className="leave-dates">
+                      {leave.startDate} - {leave.endDate}
+                    </p>
+                    <div className="leave-meta">
+                      <span className="leave-days">{leave.days} days</span>
+                      <span
+                        className="leave-status inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold"
+                        style={{
+                          color: getStatusColor(leave.status),
+                          backgroundColor: `${getStatusColor(leave.status)}20`}}
+                      >
+                        {leave.status}
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          </Link>
         ) : (
           <div className="leave-empty rounded-xl border border-dashed border-slate-200 bg-white/50 p-6 text-center">
             <div className="empty-icon">🌴</div>
@@ -351,8 +354,11 @@ const EmployeeDashboard = () => {
     regular: 0,
     overtime: 0,
     leave: 0});
+  const [thisWeekHours, setThisWeekHours] = useState(0);
+  const [thisMonthHours, setThisMonthHours] = useState(0);
   const [notifications, setNotifications] = useState([]);
   const [leaveRequests, setLeaveRequests] = useState([]);
+  const [dashboardData, setDashboardData] = useState(null);
 
   // Hydration fix: Track if component is mounted on client
   const [isMounted, setIsMounted] = useState(false);
@@ -398,14 +404,23 @@ const EmployeeDashboard = () => {
           throw new Error(`Failed to fetch dashboard data: ${dashboardResponse.status}`);
         }
 
-        const dashboardData = await dashboardResponse.json();
-        console.log('✅ Dashboard data received:', dashboardData);
+        const dashboardDataResponse = await dashboardResponse.json();
+        console.log('✅ Dashboard data received:', dashboardDataResponse);
+        console.log('📊 Full data object:', JSON.stringify(dashboardDataResponse, null, 2));
 
-        if (!dashboardData.success) {
-          throw new Error(dashboardData.error || "Failed to load dashboard");
+        if (!dashboardDataResponse.success) {
+          throw new Error(dashboardDataResponse.error || "Failed to load dashboard");
         }
 
-        const { data } = dashboardData;
+        // Store the full dashboard data for use in pending count
+        setDashboardData(dashboardDataResponse);
+
+        const { data } = dashboardDataResponse;
+        console.log('📋 Timesheets data:', data.timesheets);
+        console.log('⏰ This Week Hours:', data.timesheets.thisWeekHours);
+        console.log('📅 This Month Hours:', data.timesheets.totalHoursThisMonth);
+        console.log('📊 This Week Timesheets:', data.timesheets.thisWeekTimesheets);
+        console.log('📊 This Month Timesheets:', data.timesheets.thisMonthTimesheets);
 
         // Transform timesheet data to match component expectations
         const transformedTimesheets = data.timesheets.recent.map((ts) => ({
@@ -422,12 +437,27 @@ const EmployeeDashboard = () => {
 
         setTimesheets(transformedTimesheets);
 
-        // Set hours data from dashboard
-        setHoursData({
-          regular: data.summary.hoursThisMonth || 0,
-          overtime: 0, // Can be enhanced later
-          leave: 0, // Can be enhanced later
-        });
+        // Set This Week hours from API - ensure it's a number
+        const weekHours = Number(data.timesheets.thisWeekHours) || 0;
+        console.log('🔢 Setting This Week Hours to:', weekHours);
+        setThisWeekHours(weekHours);
+        
+        // Set This Month hours from API - ensure it's a number
+        const monthHours = Number(data.timesheets.totalHoursThisMonth) || 0;
+        console.log('🔢 Setting This Month Hours to:', monthHours);
+        setThisMonthHours(monthHours);
+        
+        // Set hours data from dashboard - cumulative monthly totals
+        // All hours are considered regular for now
+        const hoursBreakdown = {
+          regular: Number(data.timesheets.totalHoursThisMonth) || 0,
+          overtime: 0, // TODO: Add overtime tracking
+          leave: 0, // TODO: Add leave hours tracking
+        };
+        console.log('📊 Setting Hours Breakdown:', hoursBreakdown);
+        setHoursData(hoursBreakdown);
+        
+        console.log('✅ State updated - Week:', weekHours, 'Month:', monthHours, 'Breakdown:', hoursBreakdown);
 
         // Generate notifications based on timesheet and invoice status
         const generatedNotifications = [];
@@ -482,8 +512,69 @@ const EmployeeDashboard = () => {
 
         setNotifications(generatedNotifications);
 
-        // Leave requests placeholder - can be implemented later
-        setLeaveRequests([]);
+        // Fetch approved future leave requests
+        try {
+          console.log('🏖️ Fetching leave data for employee:', employeeId);
+          const leaveResponse = await apiFetch(
+            `/api/leave-management/my-requests?employeeId=${employeeId}&tenantId=${tenantId}&status=approved`,
+            {
+              method: "GET",
+              headers: {
+                Authorization: `Bearer ${localStorage.getItem("token")}`
+              }
+            }
+          );
+
+          if (leaveResponse.ok) {
+            const leaveData = await leaveResponse.json();
+            console.log('🏖️ Leave data received:', leaveData);
+            
+            // Filter for approved leave with future start dates
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            const upcomingLeave = (leaveData.requests || [])
+              .filter(leave => {
+                const startDate = new Date(leave.startDate);
+                startDate.setHours(0, 0, 0, 0);
+                const statusLower = (leave.status || '').toLowerCase();
+                const isApproved = statusLower === 'approved';
+                const isFuture = startDate >= today;
+                console.log('🏖️ Checking leave:', {
+                  type: leave.type,
+                  startDate: leave.startDate,
+                  status: leave.status,
+                  statusLower,
+                  isApproved,
+                  isFuture
+                });
+                return isApproved && isFuture;
+              })
+              .map(leave => ({
+                type: leave.type,
+                startDate: new Date(leave.startDate).toLocaleDateString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric"}),
+                endDate: new Date(leave.endDate).toLocaleDateString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric"}),
+                days: leave.days,
+                status: "Approved"
+              }))
+              .sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
+            
+            console.log('🏖️ Upcoming leave filtered:', upcomingLeave);
+            setLeaveRequests(upcomingLeave);
+          } else {
+            console.log('🏖️ Leave response not OK');
+            setLeaveRequests([]);
+          }
+        } catch (leaveError) {
+          console.error("Error fetching leave data:", leaveError);
+          setLeaveRequests([]);
+        }
       } catch (error) {
         console.error("Error loading dashboard data:", error);
         toast?.error("Failed to load dashboard data");
@@ -548,20 +639,10 @@ const EmployeeDashboard = () => {
           title: "Submit Timesheet",
           description: "Log your hours"},
         {
-          to: `/${subdomain}/timesheets/mobile-upload`,
-          icon: "📱",
-          title: "Mobile Upload",
-          description: "Quick photo upload"},
-        {
-          to: `/${subdomain}/leave`,
+          to: `/${subdomain}/leave-management`,
           icon: "🏖️",
           title: "Request Leave",
           description: "Plan time off"},
-        {
-          to: `/${subdomain}/profile`,
-          icon: "👤",
-          title: "Update Profile",
-          description: "Manage account"},
       ];
     }
   };
@@ -621,29 +702,25 @@ const EmployeeDashboard = () => {
         </div>
       </div>
 
-      {/* Statistics Cards */}
+      {/* Statistics Cards - All same height and width */}
       <div className="stats-grid grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatsCard
           title="This Week"
-          value={`${
-            timesheets.find((t) => t.week === "Jul 24, 2025")?.hours || 0
-          } h`}
+          value={`${thisWeekHours || 0} h`}
           subtitle="Current week progress"
           icon="📊"
           color="#3b82f6"
-          trend={{ type: "up", value: 12 }}
         />
         <StatsCard
           title="This Month"
-          value={`${hoursData.regular + hoursData.overtime} h`}
+          value={`${thisMonthHours || 0} h`}
           subtitle="Total hours logged"
           icon="📈"
           color="#10b981"
-          trend={{ type: "up", value: 8 }}
         />
         <StatsCard
           title="Pending"
-          value={timesheets.filter((t) => t.status === "Pending").length}
+          value={(dashboardData?.data?.timesheets?.pending || 0) + (dashboardData?.data?.leaveRequests?.pending || 0)}
           subtitle="Awaiting approval"
           icon="⏳"
           color="#f59e0b"
@@ -783,6 +860,7 @@ const EmployeeDashboard = () => {
         user={user}
         checkPermission={checkPermission}
         currentEmployer={currentEmployer}
+        subdomain={subdomain}
       />
     </div>
   </div>

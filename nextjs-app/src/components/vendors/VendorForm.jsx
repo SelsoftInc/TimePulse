@@ -873,7 +873,7 @@ const VendorForm = ({
                       </div>
                     </div>
                     <p className="mt-1.5 text-xs text-slate-500">
-                      Changing country will update the Phone country code
+                      Changing country will update the phone number country code
                     </p>
                   </div>
                 </div>

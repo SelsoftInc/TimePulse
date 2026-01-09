@@ -262,7 +262,7 @@ const ClientsList = () => {
     {/* ================= PAGE HEADER ================= */}
     <div
       className="
-        sticky top-4 z-30 mb-9
+        top-4 z-30 mb-9
         rounded-3xl
         bg-[#7cbdf2]
         dark:bg-gradient-to-br dark:from-[#0f1a25] dark:via-[#121f33] dark:to-[#162a45]
@@ -292,7 +292,7 @@ const ClientsList = () => {
             </h1>
 
             <p className="mt-0 text-sm text-white/80 dark:text-slate-300">
-              Manage end clients and their information
+              Manage clients and their information
             </p>
           </div>
 
@@ -316,7 +316,7 @@ const ClientsList = () => {
           "
         >
           <i className="fas fa-plus-circle text-base text-white" />
-          Add Client
+          Add New Client
         </Link>
       </PermissionGuard>
           </div>
@@ -354,14 +354,14 @@ const ClientsList = () => {
           <div className="overflow-x-auto">
             <table className="min-w-full border-collapse">
               <thead className="bg-slate-50">
-                <tr className="text-left text-s font-semibold uppercase tracking-wide text-slate-600">
-                  <th className="px-4 py-3 text-left uppercase text-sm font-bold tracking-wider">CLIENT</th>
-                  <th className="px-4 py-3 text-left uppercase text-sm font-bold tracking-wider">CONTACT PERSON</th>
-                  <th className="px-4 py-3 text-left uppercase text-sm font-bold tracking-wider">EMAIL</th>
-                  <th className="px-4 py-3 text-left uppercase text-sm font-bold tracking-wider">PHONE</th>
-                  <th className="px-4 py-3 text-left uppercase text-sm font-bold tracking-wider">STATUS</th>
-                  <th className="px-4 py-3 text-left uppercase text-sm font-bold tracking-wider">EMPLOYEES</th>
-                  <th className="px-4 py-3 text-center uppercase text-sm font-bold tracking-wider">ACTIONS</th>
+                <tr className="text-left text-xs font-semibold uppercase tracking-wide text-slate-600">
+                  <th className="px-4 py-3">Client</th>
+                  <th className="px-4 py-3">Client SPOC</th>
+                  <th className="px-4 py-3">Email</th>
+                  <th className="px-4 py-3">Phone</th>
+                  <th className="px-4 py-3">Status</th>
+                  <th className="px-4 py-3">Employees</th>
+                  <th className="px-4 py-3 text-right">Actions</th>
                 </tr>
               </thead>
 

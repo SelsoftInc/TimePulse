@@ -1,0 +1,28 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches: [ dev_app ]
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    
+    steps:
+      - name: Pull latest code and restart application
+        run: |
+          # Navigate to the application directory
+          /home/ubuntu/timepulse_dev_app/TimePulse
+          
+          git pull
+
+          export PATH=$PATH:/usr/local/bin
+          pm2 reload timepulse-frontend
+          pm2 reload timepulse-server
+          pm2 reload timepulse-engine
+          pm2 save
+          
+      - name: Check PM2 status
+        run: |
+          export PATH=$PATH:/usr/local/bin
+          pm2 status

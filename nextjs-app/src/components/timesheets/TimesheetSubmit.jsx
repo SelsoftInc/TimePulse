@@ -1936,8 +1936,8 @@ const TimesheetSubmit = () => {
           <div className="nk-content-inner">
             <div className="nk-content-body">
               <div className="nk-block">
-                <div className="mx-auto max-w-3xl rounded-xl border border-slate-200 bg-white p-8 text-center shadow-sm">
-                  <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-blue-50">
+                <div className="mx-auto max-w-xl rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
+                  <div className="mx-auto mb-8 flex h-10 w-10 items-center justify-center rounded-full bg-blue-50">
                     <div className="spinner-border text-primary" role="status">
                       <span className="visually-hidden">Loading...</span>
                     </div>
@@ -1958,14 +1958,14 @@ const TimesheetSubmit = () => {
   }
 
   return (
-  <div className="nk-content min-h-screen bg-slate-50">
-  <div className="container-fluid">
+   <div className="min-h-screen bg-slate-50 p-4 md:p-8">
+  {/* <div className="container-fluid"> */}
     {/* <div className="nk-content-inner"> */}
-      <div className="nk-content-body py-6">
-<div className="mb-6 rounded-xl border border-slate-200 bg-indigo-50 p-5 shadow-sm">
+       <div className="mx-auto max-w-8xl">
+<div className="mb-8 rounded-2xl border border-slate-200 bg-indigo-50 p-6 shadow-sm">
                       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                         <div>
-                          <h1 className="text-xl font-semibold text-slate-900">Submit Timesheet</h1>
+                          <h1 className="text-2xl font-bold text-slate-900">Submit Timesheet</h1>
                           <div className="mt-1 text-sm text-slate-600">
                             <span className="font-medium text-slate-700">Employee:</span>{" "}
                             <span className="text-slate-600">
@@ -2006,7 +2006,7 @@ const TimesheetSubmit = () => {
                 <div className="flex items-center gap-2"></div>
               </div>
             </div> */}
-              <div className="card card-bordered rounded-xl border-slate-200 shadow-sm">
+              {/* <div className="card card-bordered rounded-xl border-slate-200 shadow-sm"> */}
                 <div className="card-inner">
                   <div className="mx-auto w-full max-w-6xl">
                     
@@ -3129,7 +3129,7 @@ const TimesheetSubmit = () => {
               </div>
             </div>
           </div>
-        </div>
+        {/* </div> */}
       </div>
 
       {/* Overtime Confirmation Modal */}
@@ -3306,7 +3306,7 @@ const TimesheetSubmit = () => {
           </div>
         </div>
       )}
-    </div>
+    {/* </div> */}
   {/* </div> */}
   </div>
   );

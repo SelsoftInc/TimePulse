@@ -292,7 +292,7 @@ const ClientsList = () => {
             </h1>
 
             <p className="mt-0 text-sm text-white/80 dark:text-slate-300">
-              Manage end clients and their information
+              Manage clients and their information
             </p>
           </div>
 
@@ -316,7 +316,7 @@ const ClientsList = () => {
           "
         >
           <i className="fas fa-plus-circle text-base text-white" />
-          Add End Client
+          Add New Client
         </Link>
       </PermissionGuard>
           </div>
@@ -356,7 +356,7 @@ const ClientsList = () => {
               <thead className="bg-slate-50">
                 <tr className="text-left text-xs font-semibold uppercase tracking-wide text-slate-600">
                   <th className="px-4 py-3">Client</th>
-                  <th className="px-4 py-3">Contact Person</th>
+                  <th className="px-4 py-3">Client SPOC</th>
                   <th className="px-4 py-3">Email</th>
                   <th className="px-4 py-3">Phone</th>
                   <th className="px-4 py-3">Status</th>

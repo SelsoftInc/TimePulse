@@ -496,345 +496,381 @@ const ClientForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
 
   return (
     <PermissionGuard requiredPermission={mode === 'edit' ? PERMISSIONS.EDIT_CLIENT : PERMISSIONS.CREATE_CLIENT}>
-     <div className="nk-content min-h-screen bg-slate-50">
-        <div className="container-fluid">
-          <div className="nk-content-inner">
-      <div className="nk-content-body py-6">
-             <div className="mb-6 rounded-xl border border-slate-200 bg-indigo-50 p-5 shadow-sm">
-  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-    
-    {/* LEFT */}
-    <div>
-      <h1 className="text-xl font-semibold text-slate-900">
-        {mode === "edit" ? "Edit Client" : "Add New Client"}
-      </h1>
-
-      <p className="mt-1 text-sm text-slate-600">
-        {mode === "edit"
-          ? "Update client details, billing, and payment information"
-          : "Create a new client with contact, billing, and payment details"}
-      </p>
-    </div>
-    </div>
-    </div>
-
-              {/* <div className="px-6 py-6 sm:px-8"> */}
-                <div className="nk-block">
-                  <div className="space-y-6">
-                    <form onSubmit={handleSubmit}>
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                       {/* <div className="grid grid-cols-1 gap-6 lg:grid-cols-2"> */}
-
-  {/* ================= LEFT COLUMN ================= */}
-  <div className="space-y-6">
-
-    {/* CLIENT INFORMATION */}
-    <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
-      <header className="rounded-t-xl border-b border-slate-200 bg-slate-50 px-6 py-4">
-        <h4 className="text-sm font-semibold text-slate-900">
-          Client Information
-        </h4>
-      </header>
-
-      <div className="p-6 grid grid-cols-1 gap-5 sm:grid-cols-2">
-        {/* Client Name */}
-        <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">
-            Client Name <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="text"
-            name="name"
-            value={formData.name}
-            onChange={handleChange}
-            onBlur={handleBlur}
-            required
-            placeholder="e.g. Acme Corporation"
-            className={`w-full rounded-lg border px-3 py-2 text-sm
-                       focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 ${
-                         errors.name ? 'border-red-500 bg-red-50' : 'border-slate-300'
-                       }`}
-          />
-          {validationTouched.name && errors.name && (
-            <p className="mt-1 text-xs text-red-500">{errors.name}</p>
-          )}
-        </div>
-
-        {/* Contact Person */}
-        <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">
-            Contact Person <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="text"
-            name="contactPerson"
-            value={formData.contactPerson}
-            onChange={handleChange}
-            onBlur={handleBlur}
-            required
-            placeholder="John Doe"
-            className={`w-full rounded-lg border px-3 py-2 text-sm
-                       focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 ${
-                         errors.contactPerson ? 'border-red-500 bg-red-50' : 'border-slate-300'
-                       }`}
-          />
-          {validationTouched.contactPerson && errors.contactPerson && (
-            <p className="mt-1 text-xs text-red-500">{errors.contactPerson}</p>
-          )}
-        </div>
-
-        {/* Email */}
-        <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">
-            Email Address <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="email"
-            name="email"
-            value={formData.email}
-            onChange={handleChange}
-            onBlur={handleBlur}
-            required
-            placeholder="email@example.com"
-            className={`w-full rounded-lg border px-3 py-2 text-sm
-                       focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 ${
-                         errors.email ? 'border-red-500 bg-red-50' : 'border-slate-300'
-                       }`}
-          />
-          {validationTouched.email && errors.email && (
-            <p className="mt-1 text-xs text-red-500">{errors.email}</p>
-          )}
-        </div>
-
-        {/* Phone */}
-        <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">
-            Phone Number <span className="text-red-500">*</span>
-          </label>
-          <div className="flex items-stretch gap-2">
-            <input
-              type="text"
-              className="w-[70px] min-w-[70px] shrink-0 rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-center text-sm font-semibold text-slate-700 shadow-sm"
-              value={countryCode}
-              readOnly
-              maxLength="4"
-              title="Country code (auto-filled based on selected country)"
-            />
-            <input
-              type="tel"
-              className={`flex-1 min-w-0 rounded-lg border px-3 py-2 text-sm shadow-sm transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 ${
-                errors.phone ? 'border-red-500 bg-red-50' : 'border-slate-300'
-              }`}
-              value={phoneNumber}
-              onChange={handlePhoneNumberChange}
-              onBlur={handlePhoneBlur}
-              placeholder="Enter phone number"
-              maxLength="15"
-            />
-          </div>
-          <small className="mt-1 block text-xs text-slate-500">
-            Country code updates automatically based on selected country
-          </small>
-          {validationTouched.phone && errors.phone && (
-            <p className="mt-1 text-xs text-red-500">{errors.phone}</p>
-          )}
-        </div>
-
-        {/* Status */}
-        <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">
-            Status
-          </label>
-          <select
-            name="status"
-            value={formData.status}
-            onChange={handleChange}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm
-                       focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
-          >
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
-            <option value="pending">Pending</option>
-          </select>
-        </div>
-
-        {/* Client Type */}
-        <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">
-            Client Type <span className="text-red-500">*</span>
-          </label>
-          <select
-            name="clientType"
-            value={formData.clientType}
-            onChange={handleChange}
-            required
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm
-                       focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
-          >
-            {CLIENT_TYPES.map((ct) => (
-              <option key={ct.value} value={ct.value}>
-                {ct.label}
-              </option>
-            ))}
-          </select>
-          <p className="mt-1 text-xs text-slate-500">
-            {formData.clientType === "internal"
-              ? "Internal clients allow manual hours & AI upload"
-              : "External clients require uploaded timesheets"}
-          </p>
-        </div>
-      </div>
-    </section>
-
-    {/* NOTES */}
-    <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
-      <header className="rounded-t-xl border-b border-slate-200 bg-slate-50 px-6 py-4">
-        <h4 className="text-sm font-semibold text-slate-900">Notes</h4>
-      </header>
-      <div className="p-6">
-        <textarea
-          name="notes"
-          value={formData.notes}
-          onChange={handleChange}
-          rows={4}
-          placeholder="Any additional notes..."
-          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm
-                     focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
-        />
-      </div>
-    </section>
-  </div>
-
-  {/* ================= RIGHT COLUMN ================= */}
-  <div className="space-y-6">
-
-    {/* ADDRESS INFORMATION */}
-    <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
-      <header className="rounded-t-xl border-b border-slate-200 bg-slate-50 px-6 py-4">
-        <h4 className="text-sm font-semibold text-slate-900">
-          Address Information
-        </h4>
-      </header>
-
-      <div className="p-6 space-y-4">
-        <input
-          ref={addressInputRef}
-          name="address"
-          value={formData.address}
-          onChange={handleChange}
-          placeholder="Start typing address"
-          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm
-                     focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
-        />
-
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+  <div className="min-h-screen bg-slate-50 p-4 md:p-8">
+    <div className="mx-auto max-w-8xl">
+      
+      {/* ================= HEADER (Kept structure, polished styles) ================= */}
+      <div className="mb-8 rounded-2xl border border-slate-200 bg-indigo-50 p-6 shadow-sm">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <input
-              name="city"
-              value={formData.city}
-              onChange={handleChange}
-              placeholder="City"
-              className="rounded-lg border border-slate-300 px-3 py-2 text-sm
-                         focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
-            />
+            <h1 className="text-2xl font-bold text-slate-900">
+              {mode === "edit" ? "Edit Client" : "Add New Client"}
+            </h1>
+            <p className="mt-1 text-sm text-slate-600">
+              {mode === "edit"
+                ? "Update client details"
+                : "Create a new client with contact details"}
+            </p>
           </div>
-          <div>
-            <input
-              name="state"
-              value={formData.state}
-              onChange={handleChange}
-              placeholder="State"
-              className="rounded-lg border border-slate-300 px-3 py-2 text-sm
-                         focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
-            />
-          </div>
-          {formData.country !== "United Arab Emirates" && (
-            <div>
-              <input
-                type="text"
-                name="zip"
-                value={formData.zip}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                placeholder={getPostalPlaceholder(formData.country)}
-                className={`rounded-lg border border-slate-300 px-3 py-2 text-sm
-                           focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 ${
-                             errors.zip ? 'border-red-500' : ''
-                           }`}
-              />
-              {validationTouched.zip && errors.zip && (
-                <p className="mt-1 text-xs text-red-500">{errors.zip}</p>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Country Dropdown */}
-        <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">
-            Country <span className="text-red-500">*</span>
-          </label>
-          <select
-            name="country"
-            value={formData.country}
-            onChange={handleChange}
-            required
-            className="form-control w-full rounded-lg border border-slate-300 px-3 py-2 text-sm
-                       focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
-            style={{ color: '#000000', backgroundColor: '#ffffff' }}
-          >
-            {COUNTRY_OPTIONS.map((country) => (
-              <option key={country} value={country} style={{ color: '#000000', backgroundColor: '#ffffff' }}>
-                {country}
-              </option>
-            ))}
-          </select>
-          <p className="mt-1 text-xs text-slate-500">
-            Changing country will update the phone number country code
-          </p>
         </div>
       </div>
-    </section>
-  </div>
 
-  {/* ================= ACTION BUTTONS ================= */}
-  <div className="mt-6 flex flex-col gap-3 border-t border-slate-200 pt-6 sm:flex-row sm:items-center sm:justify-end">
-    <button
-      type="button"
-      className="rounded-lg border border-slate-200 bg-white px-5 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-blue-600 focus:z-10 focus:outline-none focus:ring-4 focus:ring-slate-100 w-full sm:w-auto"
-      onClick={() => router.push(`/${subdomain}/clients`)}
-    >
-      Cancel
-    </button>
+      {/* ================= MAIN FORM ================= */}
+      <div className="relative">
+        <form onSubmit={handleSubmit}>
+          <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
 
-    <button
-      type="submit"
-      className="inline-flex items-center justify-center rounded-lg bg-sky-800 px-5 py-2.5 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-300 disabled:opacity-70 w-full sm:w-auto"
-      disabled={loading}
-    >
-      {loading ? (
-        <>
-          <svg className="mr-2 h-4 w-4 animate-spin text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
-          {mode === 'edit' ? 'Saving...' : 'Creating...'}
-        </>
-      ) : (
-        submitLabel || (mode === 'edit' ? 'Save Changes' : 'Add New Client')
-      )}
-    </button>
-  </div>
+            {/* ================= LEFT COLUMN ================= */}
+            <div className="space-y-8">
 
+              {/* CLIENT INFORMATION CARD */}
+              <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-shadow hover:shadow-md">
+                <header className="border-b border-slate-100 bg-slate-50/50 px-6 py-4">
+                  <div className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-slate-800">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-indigo-100 text-xs text-indigo-600">1</span>
+                    Client Information
+                  </div>
+                </header>
+
+                <div className="p-6 grid grid-cols-1 gap-6">
+                  {/* Client Name */}
+                  <div>
+                    <label className="mb-2 block text-sm font-semibold text-slate-700">
+                      Client Name <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="name"
+                      value={formData.name}
+                      onChange={handleChange}
+                      onBlur={handleBlur}
+                      required
+                      placeholder="e.g. Acme Corporation"
+                      className={`block w-full rounded-lg border p-2.5 text-sm shadow-sm transition-all placeholder:text-slate-400 focus:bg-white focus:ring-4 ${
+                        errors.name 
+                          ? 'border-red-300 bg-red-50 text-red-900 focus:border-red-500 focus:ring-red-500/10' 
+                          : 'border-slate-200 bg-slate-50 text-slate-900 hover:bg-white hover:border-slate-300 focus:border-indigo-500 focus:ring-indigo-500/10'
+                      }`}
+                    />
+                    {validationTouched.name && errors.name && (
+                      <p className="mt-1.5 text-xs font-medium text-red-500">{errors.name}</p>
+                    )}
+                  </div>
+
+                  {/* Contact Person */}
+                  <div>
+                    <label className="mb-2 block text-sm font-semibold text-slate-700">
+                      Client SPOC <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="contactPerson"
+                      value={formData.contactPerson}
+                      onChange={handleChange}
+                      onBlur={handleBlur}
+                      required
+                      placeholder="John Doe"
+                      className={`block w-full rounded-lg border p-2.5 text-sm shadow-sm transition-all placeholder:text-slate-400 focus:bg-white focus:ring-4 ${
+                        errors.contactPerson 
+                          ? 'border-red-300 bg-red-50 text-red-900 focus:border-red-500 focus:ring-red-500/10' 
+                          : 'border-slate-200 bg-slate-50 text-slate-900 hover:bg-white hover:border-slate-300 focus:border-indigo-500 focus:ring-indigo-500/10'
+                      }`}
+                    />
+                    {validationTouched.contactPerson && errors.contactPerson && (
+                      <p className="mt-1.5 text-xs font-medium text-red-500">{errors.contactPerson}</p>
+                    )}
+                  </div>
+
+                  {/* Email */}
+                  <div>
+                    <label className="mb-2 block text-sm font-semibold text-slate-700">
+                      Email Address <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                        <svg className="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" /></svg>
                       </div>
-                    </form>
+                      <input
+                        type="email"
+                        name="email"
+                        value={formData.email}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                        required
+                        placeholder="email@example.com"
+                        className={`block w-full rounded-lg border p-2.5 pl-10 text-sm shadow-sm transition-all placeholder:text-slate-400 focus:bg-white focus:ring-4 ${
+                          errors.email 
+                            ? 'border-red-300 bg-red-50 text-red-900 focus:border-red-500 focus:ring-red-500/10' 
+                            : 'border-slate-200 bg-slate-50 text-slate-900 hover:bg-white hover:border-slate-300 focus:border-indigo-500 focus:ring-indigo-500/10'
+                        }`}
+                      />
+                    </div>
+                    {validationTouched.email && errors.email && (
+                      <p className="mt-1.5 text-xs font-medium text-red-500">{errors.email}</p>
+                    )}
+                  </div>
+
+                  {/* Phone */}
+                  <div>
+                    <label className="mb-2 block text-sm font-semibold text-slate-700">
+                      Phone Number <span className="text-red-500">*</span>
+                    </label>
+                    <div className="flex gap-3">
+                      <input
+                        type="text"
+                        className="w-[80px] min-w-[80px] shrink-0 rounded-lg border border-slate-200 bg-slate-100 p-2.5 text-center text-sm font-bold text-slate-600 shadow-sm cursor-not-allowed"
+                        value={countryCode}
+                        readOnly
+                        maxLength="4"
+                        title="Country code (auto-filled based on selected country)"
+                      />
+                      <input
+                        type="tel"
+                        name="phone"
+                        value={phoneNumber}
+                        onChange={handlePhoneNumberChange}
+                        onBlur={handlePhoneBlur}
+                        placeholder="Enter phone number"
+                        maxLength="15"
+                        className={`block flex-1 rounded-lg border p-2.5 text-sm shadow-sm transition-all placeholder:text-slate-400 focus:bg-white focus:ring-4 ${
+                          errors.phone 
+                            ? 'border-red-300 bg-red-50 text-red-900 focus:border-red-500 focus:ring-red-500/10' 
+                            : 'border-slate-200 bg-slate-50 text-slate-900 hover:bg-white hover:border-slate-300 focus:border-indigo-500 focus:ring-indigo-500/10'
+                        }`}
+                      />
+                    </div>
+                    <p className="mt-1.5 text-xs text-slate-500">
+                      Country code updates automatically based on selected country
+                    </p>
+                    {validationTouched.phone && errors.phone && (
+                      <p className="mt-1.5 text-xs font-medium text-red-500">{errors.phone}</p>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                    {/* Status */}
+                    <div>
+                      <label className="mb-2 block text-sm font-semibold text-slate-700">
+                        Status
+                      </label>
+                      <div className="relative">
+                        <select
+                          name="status"
+                          value={formData.status}
+                          onChange={handleChange}
+                          className="block w-full appearance-none rounded-lg border border-slate-200 bg-slate-50 p-2.5 text-sm text-slate-900 shadow-sm transition-all hover:bg-white hover:border-slate-300 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10"
+                        >
+                          <option value="active">Active</option>
+                          <option value="inactive">Inactive</option>
+                          <option value="pending">Pending</option>
+                        </select>
+                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-500">
+                          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Client Type */}
+                    <div>
+                      <label className="mb-2 block text-sm font-semibold text-slate-700">
+                        Client Type <span className="text-red-500">*</span>
+                      </label>
+                      <div className="relative">
+                        <select
+                          name="clientType"
+                          value={formData.clientType}
+                          onChange={handleChange}
+                          required
+                          className="block w-full appearance-none rounded-lg border border-slate-200 bg-slate-50 p-2.5 text-sm text-slate-900 shadow-sm transition-all hover:bg-white hover:border-slate-300 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10"
+                        >
+                          {CLIENT_TYPES.map((ct) => (
+                            <option key={ct.value} value={ct.value}>
+                              {ct.label}
+                            </option>
+                          ))}
+                        </select>
+                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-500">
+                          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Client Type Helper Text */}
+                  <div className="-mt-3 rounded-lg bg-blue-50/50 p-3 text-xs text-blue-700">
+                    <i className="fas fa-info-circle mr-1.5"></i>
+                    {formData.clientType === "internal"
+                      ? "Internal clients allow manual hours & AI upload"
+                      : "External clients require uploaded timesheets"}
                   </div>
                 </div>
-              </div>
+              </section>
+
+              {/* NOTES CARD */}
+              <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-shadow hover:shadow-md">
+                <header className="border-b border-slate-100 bg-slate-50/50 px-6 py-4">
+                  <div className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-slate-800">
+                     {/* <span className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-200 text-xs text-slate-600">
+                       <i className="fas fa-sticky-note text-[10px]"></i>
+                     </span> */}
+                     Additional Notes
+                  </div>
+                </header>
+                <div className="p-6">
+                  <textarea
+                    name="notes"
+                    value={formData.notes}
+                    onChange={handleChange}
+                    rows={4}
+                    placeholder="Any additional notes..."
+                    className="block w-full rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-900 shadow-sm transition-all placeholder:text-slate-400 hover:bg-white hover:border-slate-300 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10"
+                  />
+                </div>
+              </section>
             </div>
+
+            {/* ================= RIGHT COLUMN ================= */}
+            <div className="space-y-8">
+
+              {/* ADDRESS INFORMATION CARD */}
+              <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-shadow hover:shadow-md">
+                <header className="border-b border-slate-100 bg-slate-50/50 px-6 py-4">
+                  <div className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-slate-800">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-indigo-100 text-xs text-indigo-600">2</span>
+                    Address Information
+                  </div>
+                </header>
+
+                <div className="p-6 space-y-6">
+                  {/* Address */}
+                  <div>
+                    <label className="mb-2 block text-sm font-semibold text-slate-700">Address</label>
+                    <input
+                      ref={addressInputRef}
+                      name="address"
+                      value={formData.address}
+                      onChange={handleChange}
+                      placeholder="Start typing address"
+                      className="block w-full rounded-lg border border-slate-200 bg-slate-50 p-2.5 text-sm text-slate-900 shadow-sm transition-all placeholder:text-slate-400 hover:bg-white hover:border-slate-300 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                    {/* City */}
+                    <div>
+                      <label className="mb-2 block text-sm font-semibold text-slate-700">City</label>
+                      <input
+                        name="city"
+                        value={formData.city}
+                        onChange={handleChange}
+                        placeholder="City"
+                        className="block w-full rounded-lg border border-slate-200 bg-slate-50 p-2.5 text-sm text-slate-900 shadow-sm transition-all placeholder:text-slate-400 hover:bg-white hover:border-slate-300 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10"
+                      />
+                    </div>
+                    {/* State */}
+                    <div>
+                       <label className="mb-2 block text-sm font-semibold text-slate-700">State</label>
+                      <input
+                        name="state"
+                        value={formData.state}
+                        onChange={handleChange}
+                        placeholder="State"
+                        className="block w-full rounded-lg border border-slate-200 bg-slate-50 p-2.5 text-sm text-slate-900 shadow-sm transition-all placeholder:text-slate-400 hover:bg-white hover:border-slate-300 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10"
+                      />
+                    </div>
+                    
+                    {/* Zip Code - Conditional */}
+                    {formData.country !== "United Arab Emirates" && (
+                      <div>
+                        <label className="mb-2 block text-sm font-semibold text-slate-700">Zip / Postal Code</label>
+                        <input
+                          type="text"
+                          name="zip"
+                          value={formData.zip}
+                          onChange={handleChange}
+                          onBlur={handleBlur}
+                          placeholder={getPostalPlaceholder(formData.country)}
+                          className={`block w-full rounded-lg border p-2.5 text-sm shadow-sm transition-all placeholder:text-slate-400 focus:bg-white focus:ring-4 ${
+                            errors.zip 
+                              ? 'border-red-300 bg-red-50 text-red-900 focus:border-red-500 focus:ring-red-500/10' 
+                              : 'border-slate-200 bg-slate-50 text-slate-900 hover:bg-white hover:border-slate-300 focus:border-indigo-500 focus:ring-indigo-500/10'
+                          }`}
+                        />
+                        {validationTouched.zip && errors.zip && (
+                          <p className="mt-1.5 text-xs font-medium text-red-500">{errors.zip}</p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Country Dropdown */}
+                  <div>
+                    <label className="mb-2 block text-sm font-semibold text-slate-700">
+                      Country <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <select
+                        name="country"
+                        value={formData.country}
+                        onChange={handleChange}
+                        required
+                        className="block w-full appearance-none rounded-lg border border-slate-200 bg-slate-50 p-2.5 text-sm text-slate-900 shadow-sm transition-all hover:bg-white hover:border-slate-300 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10"
+                        style={{ color: '#0f172a', backgroundColor: '#f8fafc' }}
+                      >
+                        {COUNTRY_OPTIONS.map((country) => (
+                          <option key={country} value={country} style={{ color: '#0f172a', backgroundColor: '#ffffff' }}>
+                            {country}
+                          </option>
+                        ))}
+                      </select>
+                      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-500">
+                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                      </div>
+                    </div>
+                    <p className="mt-1.5 text-xs text-slate-500">
+                      Changing country will update the phone number country code
+                    </p>
+                  </div>
+                </div>
+              </section>
+            </div>
+
           </div>
-        </div>
-    </PermissionGuard>
+
+          {/* ================= ACTION BUTTONS ================= */}
+          <div className="mt-8 flex flex-col gap-4 border-t border-slate-200 pt-8 sm:flex-row sm:items-center sm:justify-end">
+            <button
+              type="button"
+              className="rounded-lg border border-slate-300 bg-white px-6 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 hover:text-indigo-600 focus:outline-none focus:ring-4 focus:ring-slate-100 w-full sm:w-auto"
+              onClick={() => router.push(`/${subdomain}/clients`)}
+            >
+              Cancel
+            </button>
+
+            <button
+              type="submit"
+              className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-medium text-white shadow-md transition-all hover:bg-indigo-700 hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-indigo-300 disabled:opacity-70 disabled:shadow-none w-full sm:w-auto"
+              disabled={loading}
+            >
+              {loading ? (
+                <>
+                  <svg className="mr-2 h-4 w-4 animate-spin text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  {mode === 'edit' ? 'Saving...' : 'Creating...'}
+                </>
+              ) : (
+                submitLabel || (mode === 'edit' ? 'Save Changes' : 'Add New Client')
+              )}
+            </button>
+          </div>
+        </form>
+      </div>
+
+    </div>
+  </div>
+</PermissionGuard>
   );
 };
 

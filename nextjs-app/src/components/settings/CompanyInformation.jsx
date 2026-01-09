@@ -153,6 +153,30 @@ const CompanyInformation = () => {
   const handleLogoUpload = (e) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
+      
+      // Validate file format - only accept PNG, JPG, JPEG
+      const allowedFormats = ['image/png', 'image/jpeg', 'image/jpg'];
+      const fileType = file.type.toLowerCase();
+      
+      if (!allowedFormats.includes(fileType)) {
+        toast.error('Invalid file format. Please upload PNG, JPG, or JPEG images only.', {
+          title: 'Invalid File Format'
+        });
+        // Clear the file input
+        e.target.value = '';
+        return;
+      }
+      
+      // Validate file size (max 2MB)
+      const maxSize = 2 * 1024 * 1024; // 2MB in bytes
+      if (file.size > maxSize) {
+        toast.error('File size exceeds 2MB. Please upload a smaller image.', {
+          title: 'File Too Large'
+        });
+        e.target.value = '';
+        return;
+      }
+      
       const reader = new FileReader();
 
       reader.onload = (event) => {
@@ -442,6 +466,9 @@ const CompanyInformation = () => {
                 Drag & drop your logo here or click to browse
               </div>
               <div className="file-upload-hint">
+                Accepted formats: PNG, JPG, JPEG only
+              </div>
+              <div className="file-upload-hint">
                 Recommended size: 200x200px. Max file size: 2MB
               </div>
             </div>
@@ -449,7 +476,7 @@ const CompanyInformation = () => {
           <input
             type="file"
             id="logoUpload"
-            accept="image/*"
+            accept=".png,.jpg,.jpeg,image/png,image/jpeg"
             style={{ display: "none" }}
             onChange={handleLogoUpload}
           />

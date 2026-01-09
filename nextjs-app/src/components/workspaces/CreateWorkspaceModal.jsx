@@ -88,7 +88,7 @@ const CreateWorkspaceModal = ({ onClose, onCreateWorkspace }) => {
     
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.contactEmail)) {
-      setError('Please enter a valid email address');
+      setError('Please enter a valid Email');
       return false;
     }
     

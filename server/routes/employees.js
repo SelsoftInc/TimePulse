@@ -140,7 +140,7 @@ router.get("/", async (req, res) => {
           
           // Log if vendor is missing email (critical for invoice generation)
           if (!decryptedVendor.email) {
-            console.warn(`⚠️ Vendor ${decryptedVendor.id} (${decryptedVendor.name}) is missing email address for employee ${emp.firstName} ${emp.lastName}`);
+            console.warn(`⚠️ Vendor ${decryptedVendor.id} (${decryptedVendor.name}) is missing Email for employee ${emp.firstName} ${emp.lastName}`);
           }
         } else {
           console.warn(`⚠️ Vendor data exists but missing ID for employee ${emp.firstName} ${emp.lastName}:`, decryptedVendor);
@@ -647,7 +647,7 @@ router.put("/:id", async (req, res) => {
         
         // Log if vendor is missing email (critical for invoice generation)
         if (!decryptedVendor.email) {
-          console.warn(`⚠️ PUT /employees/:id - Vendor ${decryptedVendor.id} (${decryptedVendor.name}) is missing email address`);
+          console.warn(`⚠️ PUT /employees/:id - Vendor ${decryptedVendor.id} (${decryptedVendor.name}) is missing Email`);
         }
       } else {
         console.warn(`⚠️ PUT /employees/:id - Vendor data exists but missing ID:`, decryptedVendor);

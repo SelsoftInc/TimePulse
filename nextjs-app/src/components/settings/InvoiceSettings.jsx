@@ -140,7 +140,7 @@ const InvoiceSettings = () => {
     if (selectedCountry) {
       // Update country and automatically set phone code
       setInvoiceSettings((prev) => {
-        // Get the current phone number without country code
+        // Get the current Phone without country code
         let phoneWithoutCode = prev.companyPhone;
         
         // Remove existing country code if present

@@ -68,9 +68,9 @@ export const getPhonePlaceholder = (country) => {
   return COUNTRY_PHONE_CODES[country]?.placeholder || '(555) 456-7890';
 };
 
-// Validate phone number for a specific country
+// Validate Phone for a specific country
 export const validatePhoneForCountry = (phone, country) => {
-  if (!phone) return { isValid: false, message: 'Phone number is required' };
+  if (!phone) return { isValid: false, message: 'Phone is required' };
   
   const countryConfig = COUNTRY_PHONE_CODES[country];
   if (!countryConfig) {
@@ -109,7 +109,7 @@ export const validatePhoneForCountry = (phone, country) => {
   return { isValid: true, message: '' };
 };
 
-// Format phone number with country code
+// Format Phone with country code
 export const formatPhoneWithCountryCode = (phone, country) => {
   if (!phone) return '';
   
@@ -131,7 +131,7 @@ export const formatPhoneWithCountryCode = (phone, country) => {
   return `${countryCode}${digits}`;
 };
 
-// Extract phone number without country code for display
+// Extract Phone without country code for display
 export const extractPhoneNumber = (phone, country) => {
   if (!phone) return '';
   

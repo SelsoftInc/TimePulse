@@ -11,7 +11,7 @@ const PYTHON_ENGINE_URL = process.env.PYTHON_ENGINE_URL || 'http://localhost:800
 /**
  * Send notification email via Python engine
  * @param {Object} options - Email options
- * @param {string} options.toEmail - Recipient email address
+ * @param {string} options.toEmail - Recipient Email
  * @param {string} options.recipientName - Recipient's name
  * @param {string} options.subject - Email subject
  * @param {string} options.body - Email body content
@@ -70,7 +70,7 @@ const sendNotificationEmail = async ({ toEmail, recipientName, subject, body }) 
 /**
  * Send forgot password email via Python engine
  * @param {Object} options - Email options
- * @param {string} options.toEmail - Recipient email address
+ * @param {string} options.toEmail - Recipient Email
  * @param {string} options.recipientName - Recipient's name
  * @param {string} options.resetLink - Password reset link with token
  * @returns {Promise<Object>} Response with success status

@@ -288,7 +288,7 @@ const ClientDetails = () => {
                   
                   <div>
                     <label className="mb-1 block text-sm font-medium text-slate-700">
-                      Email Address
+                      Email
                     </label>
                     <p className="rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900">
                       {client?.email || 'N/A'}
@@ -297,7 +297,7 @@ const ClientDetails = () => {
                   
                   <div>
                     <label className="mb-1 block text-sm font-medium text-slate-700">
-                      Phone Number
+                      Phone
                     </label>
                     <p className="rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900">
                       {client?.phone || 'N/A'}

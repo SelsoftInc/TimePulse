@@ -689,7 +689,7 @@ const EmployeeList = () => {
       options: [
         { value: "active", label: "Active" },
         { value: "inactive", label: "Inactive" },
-        { value: "all", label: "All Statuses" },
+        { value: "all", label: "All Status" },
       ]},
     {
       key: "search",

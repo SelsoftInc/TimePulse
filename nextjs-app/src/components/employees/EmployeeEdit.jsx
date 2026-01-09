@@ -154,7 +154,7 @@ const EmployeeEdit = () => {
         
         setFormData(employeeData);
         
-        // Split phone into country code and phone number for UI
+        // Split phone into country code and Phone for UI
         if (employeeData.phone) {
           // Get the expected country code for the selected country
           const expectedCode = getCountryCode(employeeData.country);
@@ -289,7 +289,7 @@ const EmployeeEdit = () => {
     fetchData();
   }, [isMounted, tenantId]);
 
-  // Get expected phone number length for a country
+  // Get expected Phone length for a country
   const getPhoneNumberLength = (country) => {
     const lengthMap = {
       'United States': 10,
@@ -313,7 +313,7 @@ const EmployeeEdit = () => {
     return lengthMap[country] || 10;
   };
 
-  // UI-only: Handle phone number input change
+  // UI-only: Handle Phone input change
   const handlePhoneNumberChange = (e) => {
     const value = e.target.value;
     const maxLength = getPhoneNumberLength(formData.country);
@@ -338,7 +338,7 @@ const EmployeeEdit = () => {
     if (phoneNumber.length !== expectedLength) {
       setErrors((prev) => ({
         ...prev,
-        phone: `Phone number must be ${expectedLength} digits for ${formData.country}`
+        phone: `Phone must be ${expectedLength} digits for ${formData.country}`
       }));
       return;
     }
@@ -667,7 +667,7 @@ const EmployeeEdit = () => {
 
                   <div>
                     <label className="mb-1 block text-xs font-semibold text-slate-600">
-                      Phone Number
+                      Phone
                     </label>
                     <div className="flex items-stretch gap-2">
                       <input
@@ -689,7 +689,7 @@ const EmployeeEdit = () => {
                         value={phoneNumber}
                         onChange={handlePhoneNumberChange}
                         onBlur={handlePhoneBlur}
-                        placeholder="Enter phone number"
+                        placeholder="Enter Phone"
                         maxLength="15"
                       />
                     </div>

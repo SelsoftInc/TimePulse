@@ -3,7 +3,7 @@
  */
 
 // --- Phone ---
-// Validates phone number based on country-specific digit counts
+// Validates Phone based on country-specific digit counts
 // Accepts digits only (without country code prefix)
 export const validatePhoneNumber = (phone, country = 'United States') => {
   // Phone is optional - if empty, it's valid
@@ -56,7 +56,7 @@ export const validatePhoneNumber = (phone, country = 'United States') => {
     if (cleaned.length < 7 || cleaned.length > 15) {
       return { 
         isValid: false, 
-        message: 'Phone number must be between 7 and 15 digits' 
+        message: 'Phone must be between 7 and 15 digits' 
       };
     }
     return { isValid: true, message: 'Valid' };
@@ -66,14 +66,14 @@ export const validatePhoneNumber = (phone, country = 'United States') => {
   if (cleaned.length !== rule.length) {
     return { 
       isValid: false, 
-      message: `Phone number must be exactly ${rule.length} digits for ${country}` 
+      message: `Phone must be exactly ${rule.length} digits for ${country}` 
     };
   }
 
   return { isValid: true, message: 'Valid' };
 };
 
-// Format phone number for display (XXX) XXX-XXXX
+// Format Phone for display (XXX) XXX-XXXX
 export const formatPhoneNumber = (phone) => {
   const cleanPhone = phone.replace(/\D/g, "");
   if (cleanPhone.length === 10) {

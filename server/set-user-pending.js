@@ -10,7 +10,7 @@ async function setUserPending() {
     const email = process.argv[2];
     
     if (!email) {
-      console.error('❌ Please provide an email address');
+      console.error('❌ Please provide an Email');
       console.log('Usage: node set-user-pending.js <email>');
       process.exit(1);
     }

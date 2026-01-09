@@ -1,6 +1,6 @@
 /**
  * Link Employees to Users
- * Links employee records to their corresponding user accounts by matching email addresses
+ * Links employee records to their corresponding user accounts by matching Emailes
  */
 
 const { models, connectDB } = require('./models');

@@ -95,7 +95,7 @@ const CreateAccount = () => {
     setError('');
 
     if (name === 'country') {
-      // Re-validate phone number when country changes
+      // Re-validate Phone when country changes
       if (formData.phone) {
         const validation = validatePhoneNumber(formData.phone, value);
         setPhoneError(validation.error || '');
@@ -160,7 +160,7 @@ const CreateAccount = () => {
       console.log('✅ Password is strong');
 
       // Validate phone
-      console.log('✅ Validating phone number:', formData.phone, 'for country:', formData.country);
+      console.log('✅ Validating Phone:', formData.phone, 'for country:', formData.country);
       const phoneValidation = validatePhoneNumber(formData.phone, formData.country);
       console.log('📞 Phone validation result:', phoneValidation);
       if (!phoneValidation.isValid) {
@@ -169,7 +169,7 @@ const CreateAccount = () => {
         setLoading(false);
         return;
       }
-      console.log('✅ Phone number is valid');
+      console.log('✅ Phone is valid');
 
       // Prepare submission data
       const countryCode = getCountryCode(formData.country);

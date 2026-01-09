@@ -15,7 +15,7 @@ async def send_notification(request: NotificationEmailRequest):
     """
     Send a notification email to a specified user.
     
-    - **to_email**: Recipient's email address
+    - **to_email**: Recipient's Email
     - **recipient_name**: Name of the recipient for personalization
     - **subject**: Email subject line (optional, defaults to "TimePulse Notification")
     - **body**: The main message content of the email
@@ -46,7 +46,7 @@ async def send_forgot_password(request: ForgotPasswordEmailRequest):
     """
     Send a forgot password email with a reset link.
     
-    - **to_email**: Recipient's email address
+    - **to_email**: Recipient's Email
     - **recipient_name**: Name of the recipient for personalization
     - **reset_link**: The URL link for password reset
     """

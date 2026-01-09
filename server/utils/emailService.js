@@ -45,7 +45,7 @@ const generateTemporaryPassword = () => {
 /**
  * Send welcome email with temporary password to new employee
  * @param {Object} options - Email options
- * @param {string} options.to - Recipient email address
+ * @param {string} options.to - Recipient Email
  * @param {string} options.employeeName - Employee's full name
  * @param {string} options.temporaryPassword - Temporary password
  * @param {string} options.companyName - Company/tenant name
@@ -217,7 +217,7 @@ ${companyName} Team
 /**
  * Send password reset email
  * @param {Object} options - Email options
- * @param {string} options.to - Recipient email address
+ * @param {string} options.to - Recipient Email
  * @param {string} options.employeeName - Employee's full name
  * @param {string} options.resetToken - Password reset token
  * @param {string} options.companyName - Company/tenant name

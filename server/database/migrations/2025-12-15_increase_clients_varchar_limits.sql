@@ -26,5 +26,5 @@ ALTER TABLE clients
   ALTER COLUMN email TYPE VARCHAR(500);
 
 -- Add comment to document the change
-COMMENT ON COLUMN clients.phone IS 'Stores encrypted phone number (VARCHAR(500) to accommodate encryption)';
+COMMENT ON COLUMN clients.phone IS 'Stores encrypted Phone (VARCHAR(500) to accommodate encryption)';
 COMMENT ON COLUMN clients.tax_id IS 'Stores encrypted tax ID (VARCHAR(500) to accommodate encryption)';

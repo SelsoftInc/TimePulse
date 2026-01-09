@@ -301,7 +301,7 @@ const UserManagement = () => {
           <div className="filter-group">
             <label>Status</label>
             <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
-              <option value="all">All Statuses</option>
+              <option value="all">All Status</option>
               {statusOptions.map(status => (
                 <option key={status.value} value={status.value}>{status.label}</option>
               ))}

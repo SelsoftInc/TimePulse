@@ -209,7 +209,7 @@ const TimesheetHistory = () => {
                 value={filters.status}
                 onChange={(e) => handleFilterChange("status", e.target.value)}
               >
-                <option value="">All Statuses</option>
+                <option value="">All Status</option>
                 <option value="draft">Draft</option>
                 <option value="submitted">Submitted</option>
                 <option value="approved">Approved</option>

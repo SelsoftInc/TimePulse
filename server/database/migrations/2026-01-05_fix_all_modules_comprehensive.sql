@@ -209,10 +209,10 @@ CREATE INDEX IF NOT EXISTS idx_impl_partners_tenant_status ON implementation_par
 -- 7. ADD COMMENTS FOR DOCUMENTATION
 -- =====================================================
 
-COMMENT ON COLUMN employees.phone IS 'Employee phone number (encrypted, VARCHAR(500))';
-COMMENT ON COLUMN vendors.phone IS 'Vendor phone number (encrypted, VARCHAR(500))';
-COMMENT ON COLUMN clients.phone IS 'Client phone number (encrypted, VARCHAR(500))';
-COMMENT ON COLUMN implementation_partners.phone IS 'Implementation partner phone number (encrypted, VARCHAR(500))';
+COMMENT ON COLUMN employees.phone IS 'Employee Phone (encrypted, VARCHAR(500))';
+COMMENT ON COLUMN vendors.phone IS 'Vendor Phone (encrypted, VARCHAR(500))';
+COMMENT ON COLUMN clients.phone IS 'Client Phone (encrypted, VARCHAR(500))';
+COMMENT ON COLUMN implementation_partners.phone IS 'Implementation partner Phone (encrypted, VARCHAR(500))';
 
 COMMENT ON COLUMN employees.client_id IS 'Reference to client if employee works for a client';
 COMMENT ON COLUMN employees.vendor_id IS 'Reference to vendor if employee is from a vendor';

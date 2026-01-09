@@ -36,7 +36,7 @@ class EmailService {
   /**
    * Send invoice notification to vendor
    * @param {Object} params - Email parameters
-   * @param {string} params.vendorEmail - Vendor email address
+   * @param {string} params.vendorEmail - Vendor Email
    * @param {string} params.vendorName - Vendor name
    * @param {string} params.employeeName - Employee name
    * @param {string} params.invoiceNumber - Invoice number
@@ -298,7 +298,7 @@ TimePulse Timesheet Management System
   /**
    * Send timesheet submission notification to reviewer
    * @param {Object} params - Email parameters
-   * @param {string} params.reviewerEmail - Reviewer email address
+   * @param {string} params.reviewerEmail - Reviewer Email
    * @param {string} params.reviewerName - Reviewer name
    * @param {string} params.employeeName - Employee name
    * @param {string} params.weekRange - Timesheet week range
@@ -378,7 +378,7 @@ TimePulse Timesheet Management System
   /**
    * Send timesheet approval notification to employee
    * @param {Object} params - Email parameters
-   * @param {string} params.employeeEmail - Employee email address
+   * @param {string} params.employeeEmail - Employee Email
    * @param {string} params.employeeName - Employee name
    * @param {string} params.reviewerName - Reviewer name
    * @param {string} params.weekRange - Timesheet week range
@@ -457,7 +457,7 @@ TimePulse Timesheet Management System
   /**
    * Send timesheet rejection notification to employee
    * @param {Object} params - Email parameters
-   * @param {string} params.employeeEmail - Employee email address
+   * @param {string} params.employeeEmail - Employee Email
    * @param {string} params.employeeName - Employee name
    * @param {string} params.reviewerName - Reviewer name
    * @param {string} params.weekRange - Timesheet week range
@@ -886,7 +886,7 @@ TimePulse Timesheet Management System
   /**
    * Send timesheet submission reminder to employee
    * @param {Object} params - Email parameters
-   * @param {string} params.employeeEmail - Employee email address
+   * @param {string} params.employeeEmail - Employee Email
    * @param {string} params.employeeName - Employee name
    * @param {string} params.weekRange - Timesheet week range (e.g., "Dec 23 - Dec 29, 2024")
    * @param {string} params.weekEndDate - Week end date (e.g., "December 29, 2024")
@@ -1235,7 +1235,7 @@ TimePulse Timesheet Management System
   /**
    * Send reminder to manager about employees with missing timesheets
    * @param {Object} params - Email parameters
-   * @param {string} params.managerEmail - Manager email address
+   * @param {string} params.managerEmail - Manager Email
    * @param {string} params.managerName - Manager name
    * @param {Array} params.missingEmployees - Array of employees who haven't submitted
    * @param {string} params.weekRange - Timesheet week range
@@ -1327,7 +1327,7 @@ TimePulse Timesheet Management System
   /**
    * Send pending approval reminder to manager
    * @param {Object} params - Email parameters
-   * @param {string} params.managerEmail - Manager email address
+   * @param {string} params.managerEmail - Manager Email
    * @param {string} params.managerName - Manager name
    * @param {Array} params.pendingTimesheets - Array of pending timesheets
    * @param {string} params.tenantName - Tenant/Company name

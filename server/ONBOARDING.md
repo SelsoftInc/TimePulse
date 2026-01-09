@@ -59,7 +59,7 @@ Place Excel files in the `Onboard/` folder. Each file should contain three sheet
 |--------|-------------|----------|
 | First Name | User's first name | Yes |
 | Last Name | User's last name | Yes |
-| Email | User's email address | Yes |
+| Email | User's Email | Yes |
 | Role | User role (admin, manager, employee, etc.) | No |
 | Department | Department name | No |
 | Title | Job title | No |
@@ -70,7 +70,7 @@ Place Excel files in the `Onboard/` folder. Each file should contain three sheet
 | Employee ID | Unique employee identifier | No |
 | First Name | Employee's first name | Yes |
 | Last Name | Employee's last name | Yes |
-| Email | Employee's email address | No |
+| Email | Employee's Email | No |
 | Department | Department name | No |
 | Title | Job title | No |
 | Start Date | Employment start date | No |

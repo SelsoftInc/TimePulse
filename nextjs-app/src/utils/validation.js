@@ -34,7 +34,7 @@ export const formatPhoneInput = (raw) => {
 export const validatePhoneDigits = (raw) => {
   const s = String(raw || '');
   const digits = s.startsWith('+') ? s.slice(1).replace(/\D/g, '') : s.replace(/\D/g, '');
-  if (digits.length === 0) return 'Phone number is required';
+  if (digits.length === 0) return 'Phone is required';
   if (digits.length < 10) return 'Enter at least 10 digits';
   if (digits.length > 15) return 'Enter no more than 15 digits';
   return '';

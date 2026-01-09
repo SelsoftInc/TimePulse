@@ -170,7 +170,7 @@ const EmployeeRegister = () => {
           {step === 1 ? (
             <>
               <div className="form-group">
-                <label htmlFor="email">Email Address</label>
+                <label htmlFor="email">Email</label>
                 <input
                   type="email"
                   id="email"
@@ -261,14 +261,14 @@ const EmployeeRegister = () => {
           ) : (
             <>
               <div className="form-group">
-                <label htmlFor="phone">Phone Number</label>
+                <label htmlFor="phone">Phone</label>
                 <input
                   type="tel"
                   id="phone"
                   name="phone"
                   value={formData.phone}
                   onChange={handleChange}
-                  placeholder="Phone number"
+                  placeholder="Phone"
                   className="form-control"
                 />
               </div>

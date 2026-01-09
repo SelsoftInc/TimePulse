@@ -32,7 +32,7 @@ class UserApprovalEmailService {
   /**
    * Send user approval notification email
    * @param {Object} params - Email parameters
-   * @param {string} params.userEmail - User email address
+   * @param {string} params.userEmail - User Email
    * @param {string} params.userName - User full name
    * @param {string} params.userRole - User role
    * @param {string} params.approvedBy - Admin who approved
@@ -118,7 +118,7 @@ TimePulse Team
   /**
    * Send user rejection notification email
    * @param {Object} params - Email parameters
-   * @param {string} params.userEmail - User email address
+   * @param {string} params.userEmail - User Email
    * @param {string} params.userName - User full name
    * @param {string} params.rejectionReason - Reason for rejection
    * @param {string} params.rejectedBy - Admin who rejected

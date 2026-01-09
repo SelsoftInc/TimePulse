@@ -510,7 +510,7 @@ const TimesheetSummary = () => {
       value: filters.status,
       defaultValue: "all",
       options: [
-        { value: "all", label: "All Statuses" },
+        { value: "all", label: "All Status" },
         { value: "pending", label: "Pending" },
         { value: "submitted for approval", label: "Submitted for Approval" },
         { value: "approved", label: "Approved" },
@@ -947,7 +947,7 @@ const TimesheetSummary = () => {
       showModal({
         type: 'error',
         title: 'Email Required',
-        message: 'Please enter a valid email address.'
+        message: 'Please enter a valid Email.'
       });
       return;
     }
@@ -957,7 +957,7 @@ const TimesheetSummary = () => {
       showModal({
         type: 'error',
         title: 'Invalid Email',
-        message: 'Please enter a valid email address format.'
+        message: 'Please enter a valid Email format.'
       });
       return;
     }
@@ -1354,7 +1354,7 @@ const TimesheetSummary = () => {
         return;
       }
 
-      // Step 4: Validate that vendor/client has email address
+      // Step 4: Validate that vendor/client has Email
       // Email is required to send invoice
       if (!vendorClientInfo.email) {
         console.error('❌ Validation failed: Vendor/Client email missing from Employee API data');
@@ -1470,8 +1470,8 @@ const TimesheetSummary = () => {
           type: 'error',
           title: errorMessage.includes('vendor') ? 'Vendor Configuration Issue' : 'Employee Not Found',
           message: isEmailIssue 
-            ? `${errorMessage}\n\nAction Required:\n1. Go to Vendors menu\n2. Find and edit the vendor assigned to this employee\n3. Add a valid email address for the vendor\n4. Save and try generating invoice again`
-            : `${errorMessage}\n\nAction Required:\n1. Go to Employees menu\n2. Edit the employee record: ${timesheet.employeeName || 'Unknown'}\n3. Assign a vendor with email address\n4. Save and try generating invoice again`,
+            ? `${errorMessage}\n\nAction Required:\n1. Go to Vendors menu\n2. Find and edit the vendor assigned to this employee\n3. Add a valid Email for the vendor\n4. Save and try generating invoice again`
+            : `${errorMessage}\n\nAction Required:\n1. Go to Employees menu\n2. Edit the employee record: ${timesheet.employeeName || 'Unknown'}\n3. Assign a vendor with Email\n4. Save and try generating invoice again`,
           details: errorDetails ? {
             'Employee': timesheet.employeeName || 'Unknown',
             'Timesheet ID': timesheet.id,
@@ -2093,7 +2093,7 @@ const TimesheetSummary = () => {
           
           <div className="modal-body" style={{ padding: '24px' }}>
             <p style={{ marginBottom: '20px', color: 'var(--text-secondary, #4b5563)', lineHeight: '1.6' }}>
-              {emailMissingInfo.type} <strong>"{emailMissingInfo.name}"</strong> does not have an email address configured.
+              {emailMissingInfo.type} <strong>"{emailMissingInfo.name}"</strong> does not have an Email configured.
             </p>
             
             <div style={{ 
@@ -2142,13 +2142,13 @@ const TimesheetSummary = () => {
             
             <div style={{ marginBottom: '20px' }}>
               <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: 'var(--text-primary, #1f2937)' }}>
-                Add Email Address: <span style={{ color: '#dc2626' }}>*</span>
+                Add Email: <span style={{ color: '#dc2626' }}>*</span>
               </label>
               <input
                 type="email"
                 value={newEmail}
                 onChange={(e) => setNewEmail(e.target.value)}
-                placeholder={`Enter ${emailMissingInfo.type.toLowerCase()} email address`}
+                placeholder={`Enter ${emailMissingInfo.type.toLowerCase()} Email`}
                 style={{
                   width: '100%',
                   padding: '12px 14px',

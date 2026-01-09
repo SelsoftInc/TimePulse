@@ -32,8 +32,8 @@ Data encryption and decryption has been successfully implemented across **ALL** 
 **Encrypted Fields:**
 - `firstName` - Employee first name
 - `lastName` - Employee last name
-- `email` - Employee email address
-- `phone` - Employee phone number
+- `email` - Employee Email
+- `phone` - Employee Phone
 - `contactInfo` - Additional contact information
 - `hourlyRate` - Hourly rate (numeric, encrypted)
 - `salaryAmount` - Salary amount (numeric, encrypted)
@@ -47,8 +47,8 @@ Data encryption and decryption has been successfully implemented across **ALL** 
 ### 2. Vendor Module
 **Encrypted Fields:**
 - `name` - Vendor name
-- `email` - Vendor email address
-- `phone` - Vendor phone number
+- `email` - Vendor Email
+- `phone` - Vendor Phone
 - `contactPerson` - Contact person name
 - `address` - Vendor address
 - `taxId` - Tax identification number
@@ -65,8 +65,8 @@ Data encryption and decryption has been successfully implemented across **ALL** 
 - `name` - Alternative name field
 - `legalName` - Legal name
 - `contactPerson` - Contact person name
-- `email` - Client email address
-- `phone` - Client phone number
+- `email` - Client Email
+- `phone` - Client Phone
 - `billingAddress` - Billing address
 - `shippingAddress` - Shipping address
 - `taxId` - Tax identification number
@@ -81,8 +81,8 @@ Data encryption and decryption has been successfully implemented across **ALL** 
 ### 4. Implementation Partner Module
 **Encrypted Fields:**
 - `name` - Partner name
-- `email` - Partner email address
-- `phone` - Partner phone number
+- `email` - Partner Email
+- `phone` - Partner Phone
 - `contactPerson` - Contact person name
 - `address` - Partner address
 

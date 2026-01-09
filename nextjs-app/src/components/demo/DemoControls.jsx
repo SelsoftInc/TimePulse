@@ -53,7 +53,7 @@
 //   };
 
 //   const triggerValidationError = () => {
-//     toast.error('📋 Validation Error: Email is required. Please provide a valid email address.');
+//     toast.error('📋 Validation Error: Email is required. Please provide a valid Email.');
 //   };
 
 //   const triggerServerError = () => {

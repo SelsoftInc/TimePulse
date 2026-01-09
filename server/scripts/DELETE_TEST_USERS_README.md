@@ -163,7 +163,7 @@ If you get connection errors:
 ### User Not Found
 If a user is not found:
 - The user may have already been deleted
-- Check the email address spelling
+- Check the Email spelling
 - Verify you're connected to the correct database
 
 ### Permission Errors

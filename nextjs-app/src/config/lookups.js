@@ -11,7 +11,7 @@ export const COUNTRY_OPTIONS = [
   'United Arab Emirates'
 ];
 
-// Country code mapping for phone numbers (E.164 format)
+// Country code mapping for Phones (E.164 format)
 export const COUNTRY_CODES = {
   'United States': '+1',
   'India': '+91',
@@ -28,7 +28,7 @@ export const getCountryCode = (country) => {
   return COUNTRY_CODES[country] || '+1';
 };
 
-// Phone number max length by country
+// Phone max length by country
 export const PHONE_MAX_LENGTH = {
   'United States': 10,
   'India': 10,
@@ -55,7 +55,7 @@ export const getTaxIdPlaceholder = (country) => {
   return TAX_ID_PLACEHOLDERS[country] || 'Enter Tax ID';
 };
 
-// Helper to parse phone number and extract country code intelligently
+// Helper to parse Phone and extract country code intelligently
 // Tries to match against known country codes first
 export const parsePhoneNumber = (phoneString, fallbackCountry = 'United States') => {
   if (!phoneString || phoneString.length === 0) {

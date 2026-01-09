@@ -97,7 +97,7 @@ const EmployeeInvite = () => {
                         </div>
                         <form onSubmit={handleGenerateLink}>
                           <div className="form-group">
-                            <label className="form-label" htmlFor="email">Email Address</label>
+                            <label className="form-label" htmlFor="email">Email</label>
                             <div className="form-control-wrap">
                               <input 
                                 type="email" 

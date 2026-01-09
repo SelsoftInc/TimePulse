@@ -84,7 +84,7 @@ def send_notification_email(to_email: str, recipient_name: str, subject: str, bo
     Send a notification email to a user.
     
     Args:
-        to_email: Recipient's email address
+        to_email: Recipient's Email
         recipient_name: Recipient's name
         subject: Email subject
         body: Email body content
@@ -143,7 +143,7 @@ def send_forgot_password_email(to_email: str, recipient_name: str, reset_link: s
     Send a forgot password email with a reset link.
     
     Args:
-        to_email: Recipient's email address
+        to_email: Recipient's Email
         recipient_name: Recipient's name
         reset_link: Password reset link URL
         

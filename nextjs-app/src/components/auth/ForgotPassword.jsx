@@ -19,7 +19,7 @@ const ForgotPassword = () => {
     setMessage('');
 
     if (!email) {
-      setError('Please enter your email address');
+      setError('Please enter your Email');
       setLoading(false);
       return;
     }
@@ -69,7 +69,7 @@ const ForgotPassword = () => {
         {!emailSent ? (
           <form onSubmit={handleSubmit} className="auth-form">
             <div className="form-group">
-              <label htmlFor="email">Email Address</label>
+              <label htmlFor="email">Email</label>
               <input
                 type="email"
                 id="email"
@@ -77,7 +77,7 @@ const ForgotPassword = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                placeholder="Enter your email address"
+                placeholder="Enter your Email"
                 className="form-control"
               />
             </div>

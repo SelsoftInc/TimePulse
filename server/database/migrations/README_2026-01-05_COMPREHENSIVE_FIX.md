@@ -16,7 +16,7 @@ This document describes the complete end-to-end fix for all four modules: Employ
 - ❌ **Country Code Only**: Failed validation when phone was just country code (e.g., `+1`)
 
 ### 3. **Backend Issues**
-- ❌ **Phone Normalization**: `toE164()` created invalid phone numbers for incomplete inputs
+- ❌ **Phone Normalization**: `toE164()` created invalid Phones for incomplete inputs
 - ❌ **Inconsistent Validation**: Different validation logic across routes
 
 ### 4. **Frontend Issues**
@@ -241,7 +241,7 @@ ALTER TABLE vendors ALTER COLUMN phone TYPE VARCHAR(50);
 ALTER TABLE implementation_partners ALTER COLUMN phone TYPE VARCHAR(20);
 -- clients already has VARCHAR(500) from previous migration
 
--- Note: This will cause data loss if encrypted phone numbers are longer than the new limit
+-- Note: This will cause data loss if encrypted Phones are longer than the new limit
 ```
 
 ## Key Points

@@ -101,7 +101,7 @@ class HealthResponse(BaseModel):
 # Email schemas
 class NotificationEmailRequest(BaseModel):
     """Request model for sending notification emails"""
-    to_email: str = Field(..., description="Recipient's email address")
+    to_email: str = Field(..., description="Recipient's Email")
     recipient_name: str = Field(..., description="Recipient's name for personalization")
     subject: str = Field(default="TimePulse Notification", description="Email subject line")
     body: str = Field(..., description="Email body content/message")
@@ -119,7 +119,7 @@ class NotificationEmailRequest(BaseModel):
 
 class ForgotPasswordEmailRequest(BaseModel):
     """Request model for sending forgot password emails"""
-    to_email: str = Field(..., description="Recipient's email address")
+    to_email: str = Field(..., description="Recipient's Email")
     recipient_name: str = Field(..., description="Recipient's name for personalization")
     reset_link: str = Field(..., description="Password reset link URL")
     

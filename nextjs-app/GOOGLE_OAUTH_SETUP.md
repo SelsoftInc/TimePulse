@@ -158,7 +158,7 @@ app.use("/api/oauth", require("./routes/oauth"));
    - Email (disabled, from Google)
    - **Role Selection** (Admin/Approver/Employee)
    - Company Name (optional)
-   - Phone Number (optional)
+   - Phone (optional)
    - Department (optional)
 7. **Click "Complete Registration"**
 8. **Account created** in database:

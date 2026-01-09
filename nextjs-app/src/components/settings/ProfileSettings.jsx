@@ -88,13 +88,31 @@ const ProfileSettings = () => {
         const userData = data.user;
         const employeeData = userData.employee;
         
+        // Parse Phone to extract just the number without country code
+        let phoneNumber = userData.phone || '';
+        const expectedCountryCode = getCountryCode(userData.country || 'United States');
+        
+        // If phone starts with country code, remove it
+        if (phoneNumber.startsWith(expectedCountryCode)) {
+          phoneNumber = phoneNumber.substring(expectedCountryCode.length);
+        }
+        
+        // Parse alternative mobile number
+        let altMobileNumber = userData.alternativeMobile || '';
+        const altCountryCode = getCountryCode(userData.alternativeCountry || 'United States');
+        
+        // If alternative mobile starts with country code, remove it
+        if (altMobileNumber.startsWith(altCountryCode)) {
+          altMobileNumber = altMobileNumber.substring(altCountryCode.length);
+        }
+        
         const realProfile = {
           firstName: userData.firstName || '',
           lastName: userData.lastName || '',
           email: userData.email || '',
-          phone: userData.phone || '',
+          phone: phoneNumber,
           country: userData.country || 'United States',
-          alternativeMobile: userData.alternativeMobile || '',
+          alternativeMobile: altMobileNumber,
           alternativeCountry: userData.alternativeCountry || 'United States',
           panNumber: userData.panNumber || '',
           department: employeeData?.department || '',
@@ -118,7 +136,9 @@ const ProfileSettings = () => {
           alternativeMobile: realProfile.alternativeMobile,
           alternativeCountry: realProfile.alternativeCountry,
           panNumber: realProfile.panNumber,
-          position: realProfile.position
+          position: realProfile.position,
+          originalPhone: userData.phone,
+          expectedCountryCode: expectedCountryCode
         });
         setProfileData(realProfile);
       } else {
@@ -211,15 +231,15 @@ const ProfileSettings = () => {
         return;
       }
       if (!profileData.email || !profileData.email.trim()) {
-        toast.error('Email Address is required');
+        toast.error('Email is required');
         return;
       }
       if (!profileData.phone || !profileData.phone.trim()) {
-        toast.error('Phone Number is required');
+        toast.error('Phone is required');
         return;
       }
       if (!validatePhone(profileData.phone, profileData.country)) {
-        toast.error(phoneError || 'Please enter a valid phone number');
+        toast.error(phoneError || 'Please enter a valid Phone');
         return;
       }
       if (!profileData.department || !profileData.department.trim()) {
@@ -475,7 +495,7 @@ const ProfileSettings = () => {
         
         <div className="form-row">
           <div className="form-group">
-            <label className="form-label">Phone Number *</label>
+            <label className="form-label">Phone *</label>
             <div className="phone-input-wrapper">
               <span className="country-code">{getCountryCode(profileData.country)}</span>
               <input

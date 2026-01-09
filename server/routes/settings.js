@@ -333,29 +333,50 @@ router.get('/profile/:userId', async (req, res) => {
             ],
             tenantId: user.tenantId
           },
-          attributes: ['id', 'employeeId', 'phone', 'country', 'alternativeMobile', 'alternativeCountry', 'panNumber', 'department', 'position', 'startDate']
+          attributes: ['id', 'employeeId', 'phone', 'contactInfo', 'department', 'position', 'startDate']
         });
         
         if (employee) {
-          phone = employee.phone;
-          country = employee.country;
-          alternativeMobile = employee.alternativeMobile;
-          alternativeCountry = employee.alternativeCountry;
-          panNumber = employee.panNumber;
+          // Parse contactInfo JSON to get country, country code, and Phone
+          let contactInfo = null;
+          try {
+            contactInfo = employee.contactInfo ? JSON.parse(employee.contactInfo) : null;
+          } catch (parseError) {
+            console.log('⚠️ Failed to parse contactInfo:', parseError.message);
+          }
+
+          // Extract country from contactInfo
+          country = contactInfo?.country || 'United States';
+          
+          // Extract Phone with country code from employee.phone
+          phone = employee.phone || '';
+          
+          // If contactInfo has separate countryCode and phoneNumber, use them
+          if (contactInfo?.countryCode && contactInfo?.phoneNumber) {
+            phone = `${contactInfo.countryCode}${contactInfo.phoneNumber}`;
+            console.log('✅ Using contactInfo for phone:', phone);
+          }
+
+          alternativeMobile = contactInfo?.alternativeMobile || '';
+          alternativeCountry = contactInfo?.alternativeCountry || 'United States';
+          panNumber = contactInfo?.panNumber || '';
           employeeId = employee.employeeId;
+          
           employeeInfo = {
             employeeId: employee.id,
             department: employee.department || user.department,
             position: employee.position || user.title,
             startDate: employee.startDate
           };
-          console.log('✅ Employee info found:', {
+          
+          console.log('✅ Employee info found and parsed:', {
             phone,
             country,
             alternativeMobile,
             alternativeCountry,
             panNumber,
-            position: employee.position
+            position: employee.position,
+            contactInfo: contactInfo
           });
         } else {
           console.log('⚠️ No employee record found, using User data');

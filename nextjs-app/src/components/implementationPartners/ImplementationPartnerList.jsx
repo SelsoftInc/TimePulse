@@ -13,24 +13,6 @@ import "../common/Pagination.css";
 import "../common/TableScroll.css";
 
  const MOCK_IMPLEMENTATION_PARTNERS = [
-   {
-     id: "mock-ip-001",
-     name: "Acme Implementation Co.",
-     contactPerson: "Riya Sharma",
-     email: "riya.sharma@acme-impl.example",
-     phone: "+1 415 555 0123",
-     status: "active",
-     specialization: "Payroll Integrations",
-   },
-   {
-     id: "mock-ip-002",
-     name: "Northwind Delivery Partners",
-     contactPerson: "Arjun Mehta",
-     email: "arjun.mehta@northwind-impl.example",
-     phone: "+91 98765 43210",
-     status: "inactive",
-     specialization: "HRIS Implementation",
-   },
  ];
 
 const ImplementationPartnerList = () => {

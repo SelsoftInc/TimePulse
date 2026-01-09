@@ -1298,7 +1298,7 @@ const Invoice = () => {
   {/* Total Invoiced */}
   <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
     <p className="text-xs font-medium text-slate-500">
-      Total Invoiced
+      Total Invoice
     </p>
 
     <p className="mt-1 text-lg font-bold text-slate-900">
@@ -1316,7 +1316,7 @@ const Invoice = () => {
   {/* Payments Received */}
   <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
     <p className="text-xs font-medium text-slate-500">
-      Payments Received
+      Paid
     </p>
 
     <p className="mt-1 text-lg font-bold text-emerald-600">
@@ -1408,15 +1408,15 @@ const Invoice = () => {
   <div className="overflow-x-auto">
     <table className="w-full border-collapse">
       <thead className="bg-slate-50">
-        <tr className="text-left text-xs font-semibold uppercase tracking-wide text-slate-600">
-          <th className="px-6 py-3">Invoice ID</th>
-          <th className="px-6 py-3">Vendor</th>
-          <th className="px-6 py-3">Week</th>
-          <th className="px-6 py-3">Issue Date</th>
-          <th className="px-6 py-3">Hours</th>
-          <th className="px-6 py-3">Amount</th>
-          <th className="px-6 py-3">Status</th>
-          <th className="px-6 py-3 text-right">Actions</th>
+        <tr className="text-slate-700 dark:text-slate-300 border-b border-slate-200 dark:border-white/5">
+          <th className="px-4 py-3 text-left uppercase text-sm font-bold tracking-wider">INVOICE ID</th>
+          <th className="px-4 py-3 text-left uppercase text-sm font-bold tracking-wider">VENDOR</th>
+          <th className="px-4 py-3 text-left uppercase text-sm font-bold tracking-wider">WEEK</th>
+          <th className="px-4 py-3 text-left uppercase text-sm font-bold tracking-wider">ISSUE DATE</th>
+          <th className="px-4 py-3 text-center uppercase text-sm font-bold tracking-wider">HOURS</th>
+          <th className="px-4 py-3 text-center uppercase text-sm font-bold tracking-wider">AMOUNT</th>
+          <th className="px-4 py-3 text-center uppercase text-sm font-bold tracking-wider">STATUS</th>
+          <th className="px-4 py-3 text-center uppercase text-sm font-bold tracking-wider">ACTIONS</th>
         </tr>
       </thead>
 
@@ -1427,7 +1427,7 @@ const Invoice = () => {
               key={invoice.id}
               className="transition hover:bg-slate-50"
             >
-              <td className="px-6 py-4 font-medium text-slate-900">
+              <td className="px-6 py-4 text-slate-700">
                 {invoice.invoiceNumber}
               </td>
 
@@ -1459,7 +1459,7 @@ const Invoice = () => {
                 {invoice.hours || 0}
               </td>
 
-              <td className="px-6 py-4 font-semibold text-slate-900">
+              <td className="px-6 py-4 text-slate-700">
                 ${invoice.total.toLocaleString()}
               </td>
 

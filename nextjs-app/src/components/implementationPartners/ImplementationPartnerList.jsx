@@ -394,34 +394,34 @@ const ImplementationPartnerList = () => {
             <div className="bg-white rounded-xl shadow-sm border border-gray-200">
               <div className="overflow-x-auto" style={{ overflow: 'visible' }}>
                 <table className="w-full relative" style={{ overflow: 'visible' }}>
-                  <thead className="bg-gray-50 border-b border-gray-200">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                        Implementation Partner
+                  <thead className="bg-slate-50">
+                    <tr className="text-left text-s font-semibold uppercase tracking-wide text-slate-600">
+                      <th className="px-6 py-3 text-left uppercase text-sm font-bold tracking-wider">
+                        IMPLEMENTATION PARTNER
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                        Contact Person
+                      <th className="px-6 py-3 text-left uppercase text-sm font-bold tracking-wider">
+                        CONTACT PERSON
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                        Email
+                      <th className="px-6 py-3 text-left uppercase text-sm font-bold tracking-wider">
+                        EMAIL
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                        Phone
+                      <th className="px-6 py-3 text-left uppercase text-sm font-bold tracking-wider">
+                        PHONE
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                        Status
+                      <th className="px-6 py-3 text-left uppercase text-sm font-bold tracking-wider">
+                        STATUS
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                        Specialization
+                      <th className="px-6 py-3 text-left uppercase text-sm font-bold tracking-wider">
+                        SPECIALIZATION
                       </th>
-                      <th className="px-6 py-3 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider" style={{ overflow: 'visible' }}>
-                        Actions
+                      <th className="px-6 py-3 text-center uppercase text-sm font-bold tracking-wider" style={{ overflow: 'visible' }}>
+                        ACTIONS
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200" style={{ overflow: 'visible' }}>
+                  <tbody style={{ overflow: 'visible' }}>
                     {currentImplementationPartners.map((partner) => (
-                      <tr key={partner.id} className="hover:bg-gray-50 transition-colors relative" style={{ overflow: 'visible' }}>
+                      <tr key={partner.id} className="border-b border-slate-200 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-[#1a2736] transition-colors relative" style={{ overflow: 'visible' }}>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <Link 
                             href={`/${subdomain}/implementation-partners/${partner.id}`}

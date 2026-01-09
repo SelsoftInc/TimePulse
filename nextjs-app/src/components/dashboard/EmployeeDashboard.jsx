@@ -664,7 +664,7 @@ const EmployeeDashboard = () => {
         <div className="header-content flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="header-info">
             <h1 className="dashboard-title text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
-              Welcome back, {user?.name || "Employee"}! 👋
+              Welcome, {user?.name || "Employee"}! 👋
             </h1>
             <p className="dashboard-subtitle mt-1 text-sm text-slate-600">
               Here's what's happening with your work today

@@ -443,7 +443,7 @@ const ProfileSettings = () => {
         
         <div className="form-row">
           <div className="form-group">
-            <label className="form-label">Email Address *</label>
+            <label className="form-label">Email *</label>
             <input
               type="email"
               className="form-control"

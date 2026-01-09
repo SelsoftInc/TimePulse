@@ -230,19 +230,19 @@ const InvoiceDashboard = () => {
   {/* TABLE */}
   <div className="overflow-x-auto">
     <table className="w-full border-collapse text-sm">
-      <thead className="bg-slate-100 text-slate-600">
+      <thead className="text-slate-700 dark:text-slate-300 border-b border-slate-200 dark:border-white/5">
         <tr>
-          <th className="px-4 py-3 text-left font-semibold">Invoice ID</th>
-          <th className="px-4 py-3 text-left font-semibold">Vendor</th>
-          <th className="px-4 py-3 text-left font-semibold">Week</th>
-          <th className="px-4 py-3 text-center font-semibold">Hours</th>
-          <th className="px-4 py-3 text-right font-semibold">Amount</th>
-          <th className="px-4 py-3 text-center font-semibold">Status</th>
-          <th className="px-4 py-3 text-right font-semibold">Actions</th>
+          <th className="px-4 py-3 text-left uppercase text-sm font-bold tracking-wider">INVOICE ID</th>
+          <th className="px-4 py-3 text-left uppercase text-sm font-bold tracking-wider">VENDOR</th>
+          <th className="px-4 py-3 text-left uppercase text-sm font-bold tracking-wider">WEEK</th>
+          <th className="px-4 py-3 text-center uppercase text-sm font-bold tracking-wider">HOURS</th>
+          <th className="px-4 py-3 text-right uppercase text-sm font-bold tracking-wider">AMOUNT</th>
+          <th className="px-4 py-3 text-center uppercase text-sm font-bold tracking-wider">STATUS</th>
+          <th className="px-4 py-3 text-center uppercase text-sm font-bold tracking-wider">ACTIONS</th>
         </tr>
       </thead>
 
-      <tbody className="divide-y divide-slate-200">
+      <tbody>
         {loading ? (
           <tr>
             <td colSpan="7" className="px-4 py-10 text-center text-slate-500">
@@ -265,25 +265,25 @@ const InvoiceDashboard = () => {
           filteredInvoices.map((invoice) => (
             <tr
               key={invoice.id}
-              className="hover:bg-slate-50 transition"
+              className="border-b border-slate-200 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-[#1a2736] transition-colors"
             >
-              <td className="px-4 py-3 font-medium text-slate-900">
+              <td className="px-4 py-3 text-slate-800 dark:text-slate-100">
                 {invoice.invoiceNumber || invoice.id}
               </td>
 
-              <td className="px-4 py-3 text-slate-700">
+              <td className="px-4 py-3 text-slate-700 dark:text-slate-300">
                 {invoice.vendor || 'N/A'}
               </td>
 
-              <td className="px-4 py-3 text-slate-700">
+              <td className="px-4 py-3 text-slate-700 dark:text-slate-300">
                 {invoice.week || 'N/A'}
               </td>
 
-              <td className="px-4 py-3 text-center text-slate-700">
+              <td className="px-4 py-3 text-center text-slate-700 dark:text-slate-300">
                 {invoice.totalHours || invoice.timesheet?.totalHours || 0}
               </td>
 
-              <td className="px-4 py-3 text-right font-semibold text-slate-900">
+              <td className="px-4 py-3 text-right text-slate-800 dark:text-slate-100">
                 ${(invoice.amount || invoice.total || 0).toFixed(2)}
               </td>
 
@@ -303,7 +303,7 @@ const InvoiceDashboard = () => {
                 </span>
               </td>
 
-              <td className="px-4 py-3 text-right">
+              <td className="px-4 py-3 text-center">
                 <div className="relative inline-block">
                   <button
                     className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm hover:bg-slate-100"

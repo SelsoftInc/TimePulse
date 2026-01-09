@@ -31,3 +31,7 @@ dist/
 *.swo
 
 /generated/prisma
+
+# OAuth tokens and sensitive credentials
+engine/utils/token/token.json
+**/token.json

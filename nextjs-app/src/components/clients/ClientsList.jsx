@@ -316,7 +316,7 @@ const ClientsList = () => {
           "
         >
           <i className="fas fa-plus-circle text-base text-white" />
-          Add End Client
+          Add Client
         </Link>
       </PermissionGuard>
           </div>
@@ -354,22 +354,22 @@ const ClientsList = () => {
           <div className="overflow-x-auto">
             <table className="min-w-full border-collapse">
               <thead className="bg-slate-50">
-                <tr className="text-left text-xs font-semibold uppercase tracking-wide text-slate-600">
-                  <th className="px-4 py-3">Client</th>
-                  <th className="px-4 py-3">Contact Person</th>
-                  <th className="px-4 py-3">Email</th>
-                  <th className="px-4 py-3">Phone</th>
-                  <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3">Employees</th>
-                  <th className="px-4 py-3 text-right">Actions</th>
+                <tr className="text-left text-s font-semibold uppercase tracking-wide text-slate-600">
+                  <th className="px-4 py-3 text-left uppercase text-sm font-bold tracking-wider">CLIENT</th>
+                  <th className="px-4 py-3 text-left uppercase text-sm font-bold tracking-wider">CONTACT PERSON</th>
+                  <th className="px-4 py-3 text-left uppercase text-sm font-bold tracking-wider">EMAIL</th>
+                  <th className="px-4 py-3 text-left uppercase text-sm font-bold tracking-wider">PHONE</th>
+                  <th className="px-4 py-3 text-left uppercase text-sm font-bold tracking-wider">STATUS</th>
+                  <th className="px-4 py-3 text-left uppercase text-sm font-bold tracking-wider">EMPLOYEES</th>
+                  <th className="px-4 py-3 text-center uppercase text-sm font-bold tracking-wider">ACTIONS</th>
                 </tr>
               </thead>
 
-              <tbody className="divide-y divide-slate-200">
+              <tbody>
                 {paginatedClients.map((client) => (
                   <tr
                     key={client.id}
-                    className="hover:bg-slate-50"
+                    className="border-b border-slate-200 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-[#1a2736] transition-colors"
                   >
                     <td className="px-4 py-3 font-medium text-indigo-600">
                       <Link href={`/${subdomain}/clients/${client.id}`}>

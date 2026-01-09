@@ -905,13 +905,13 @@ const LeaveManagement = () => {
                         <table className="table table-bordered mb-0">
                           <thead>
                             <tr>
-                              <th>TYPE</th>
-                              <th>START DATE</th>
-                              <th>END DATE</th>
-                              <th>DAYS</th>
-                              <th>STATUS</th>
-                              <th>REQUESTED ON</th>
-                              <th>ACTION</th>
+                              <th className="text-base font-bold">TYPE</th>
+                              <th className="text-base font-bold">START DATE</th>
+                              <th className="text-base font-bold">END DATE</th>
+                              <th className="text-base font-bold">DAYS</th>
+                              <th className="text-base font-bold">STATUS</th>
+                              <th className="text-base font-bold">REQUESTED ON</th>
+                              <th className="text-base font-bold">ACTION</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -1050,13 +1050,13 @@ const LeaveManagement = () => {
                         <table className="table table-bordered mb-0">
                           <thead>
                             <tr>
-                              <th>TYPE</th>
-                              <th>START DATE</th>
-                              <th>END DATE</th>
-                              <th>DAYS</th>
-                              <th>STATUS</th>
-                              <th>APPROVED BY</th>
-                              <th>APPROVED ON</th>
+                              <th className="text-base font-bold">TYPE</th>
+                              <th className="text-base font-bold">START DATE</th>
+                              <th className="text-base font-bold">END DATE</th>
+                              <th className="text-base font-bold">DAYS</th>
+                              <th className="text-base font-bold">STATUS</th>
+                              <th className="text-base font-bold">APPROVED BY</th>
+                              <th className="text-base font-bold">APPROVED ON</th>
                             </tr>
                           </thead>
                           <tbody>

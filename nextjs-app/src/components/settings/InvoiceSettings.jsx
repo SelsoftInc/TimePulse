@@ -253,8 +253,7 @@ const InvoiceSettings = () => {
           Invoice Settings
         </h2>
         <p className="settings-subtitle">
-          Configure your invoice preferences, company information, and
-          automation settings
+          Configure your invoice preferences, company information
           <span
             style={{
               color: "red",
@@ -298,7 +297,7 @@ const InvoiceSettings = () => {
             <div className="form-grid">
               <div className="form-group">
                 <label className="form-label" htmlFor="companyName">
-                  Company Name *
+                  Name *
                 </label>
                 <input
                   type="text"
@@ -314,7 +313,7 @@ const InvoiceSettings = () => {
 
               <div className="form-group">
                 <label className="form-label" htmlFor="companyEmail">
-                  Company Email *
+                  Email *
                 </label>
                 <input
                   type="email"

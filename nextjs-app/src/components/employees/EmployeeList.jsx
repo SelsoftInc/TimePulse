@@ -814,31 +814,31 @@ const EmployeeList = () => {
             <div className="card card-bordered">
               <div className="card-inner p-0">
                 <div className="nk-tb-list nk-tb-orders">
-                  <div className="nk-tb-item nk-tb-head">
-                    <div className="nk-tb-col text-center"><span>NAME</span></div>
-                    <div className="nk-tb-col tb-col-md text-center"><span>VENDOR</span></div>
-                    <div className="nk-tb-col tb-col-md text-center"><span>CLIENT</span></div>
+                  <div className="nk-tb-item nk-tb-head text-slate-700 dark:text-slate-300 border-b border-slate-200 dark:border-white/5">
+                    <div className="nk-tb-col text-center"><span className="uppercase text-sm font-bold tracking-wider">NAME</span></div>
+                    <div className="nk-tb-col tb-col-md text-center"><span className="uppercase text-sm font-bold tracking-wider">VENDOR</span></div>
+                    <div className="nk-tb-col tb-col-md text-center"><span className="uppercase text-sm font-bold tracking-wider">CLIENT</span></div>
                     <div className="nk-tb-col text-center">
                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                        <div style={{ fontSize: '11px', fontWeight: '600', lineHeight: '1.2' }}>EMPLOYMENT</div>
-                        <div style={{ fontSize: '11px', fontWeight: '600', lineHeight: '1.2' }}>TYPE</div>
+                        <div style={{ fontSize: '14px', fontWeight: '700', lineHeight: '1.2' }}>EMPLOYMENT</div>
+                        <div style={{ fontSize: '14px', fontWeight: '700', lineHeight: '1.2' }}>TYPE</div>
                       </div>
                     </div>
                     {checkPermission(PERMISSIONS.MANAGE_SETTINGS) && (
                       <div className="nk-tb-col text-center">
                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                          <div style={{ fontSize: '11px', fontWeight: '600', lineHeight: '1.2' }}>HOURLY</div>
-                          <div style={{ fontSize: '11px', fontWeight: '600', lineHeight: '1.2' }}>RATE</div>
+                          <div style={{ fontSize: '14px', fontWeight: '700', lineHeight: '1.2' }}>HOURLY</div>
+                          <div style={{ fontSize: '14px', fontWeight: '700', lineHeight: '1.2' }}>RATE</div>
                         </div>
                       </div>
                     )}
-                    <div className="nk-tb-col text-center"><span>EMAIL</span></div>
-                    <div className="nk-tb-col tb-col-md text-center"><span>PHONE</span></div>
-                    <div className="nk-tb-col text-center"><span>STATUS</span></div>
-                    <div className="nk-tb-col nk-tb-col-tools text-center"><span className="sub-text">ACTIONS</span></div>
+                    <div className="nk-tb-col text-center"><span className="uppercase text-sm font-bold tracking-wider">EMAIL</span></div>
+                    <div className="nk-tb-col tb-col-md text-center"><span className="uppercase text-sm font-bold tracking-wider">PHONE</span></div>
+                    <div className="nk-tb-col text-center"><span className="uppercase text-sm font-bold tracking-wider">STATUS</span></div>
+                    <div className="nk-tb-col nk-tb-col-tools text-center"><span className="uppercase text-sm font-bold tracking-wider">ACTIONS</span></div>
                   </div>
                   {paginatedEmployees.map((employee) => (
-                    <div key={employee.id} className={`nk-tb-item ${openMenuFor === employee.id ? 'dropdown-open' : ''}`}>
+                    <div key={employee.id} className={`nk-tb-item border-b border-slate-200 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-[#1a2736] transition-colors ${openMenuFor === employee.id ? 'dropdown-open' : ''}`}>
                       <div className="nk-tb-col" style={{ maxWidth: '200px' }}>
                         <Link href={`/${subdomain}/employees/${employee.id}`}
                           className="tb-lead"

@@ -320,38 +320,38 @@ const VendorList = () => {
               <div className="overflow-x-auto">
                 <table className="min-w-full border-collapse">
                   <thead className="bg-slate-50">
-                    <tr className="text-left text-xs font-semibold uppercase tracking-wide text-slate-600">
-                      <th className="px-4 py-3">Vendor</th>
-                      <th className="px-4 py-3">Contact Person</th>
-                      <th className="px-4 py-3">Category</th>
-                      <th className="px-4 py-3">Email</th>
-                      <th className="px-4 py-3">Phone</th>
-                      <th className="px-4 py-3">Status</th>
-                      <th className="px-4 py-3 text-right">Actions</th>
+                    <tr className="text-left text-s font-semibold uppercase tracking-wide text-slate-600">
+                      <th className="px-6 py-3">Vendor</th>
+                      <th className="px-6 py-3">Contact Person</th>
+                      <th className="px-6 py-3">Category</th>
+                      <th className="px-6 py-3">Email</th>
+                      <th className="px-6 py-3">Phone</th>
+                      <th className="px-6 py-3">Status</th>
+                      <th className="px-6 py-3 text-center">Actions</th>
                     </tr>
                   </thead>
 
                   <tbody className="divide-y divide-slate-200">
                     {paginatedVendors.map((vendor) => (
-                      <tr key={vendor.id} className="hover:bg-slate-50">
-                        <td className="px-4 py-3 font-medium text-indigo-600">
+                      <tr key={vendor.id} className="transition hover:bg-slate-50">
+                        <td className="px-6 py-4 text-slate-700">
                           <Link href={`/${subdomain}/vendors/${vendor.id}`}>
                             {vendor.name}
                           </Link>
                         </td>
-                        <td className="px-4 py-3 text-sm text-slate-700">
+                        <td className="px-6 py-4 text-slate-700">
                           {vendor.contactPerson}
                         </td>
-                        <td className="px-4 py-3 text-sm text-slate-700">
+                        <td className="px-6 py-4 text-slate-700">
                           {vendor.category}
                         </td>
-                        <td className="px-4 py-3 text-sm text-slate-700">
+                        <td className="px-6 py-4 text-slate-700">
                           {vendor.email}
                         </td>
-                        <td className="px-4 py-3 text-sm text-slate-700">
+                        <td className="px-6 py-4 text-slate-700">
                           {vendor.phone}
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="px-6 py-4">
                           <span
                             className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${
                               vendor.status === "active"
@@ -370,7 +370,7 @@ const VendorList = () => {
                         </td>
 
                         {/* ACTIONS */}
-                        <td className="px-4 py-3 text-right">
+                        <td className="px-6 py-4 text-center">
                           <div className="relative inline-block" data-dropdown-id={vendor.id}>
                             <button
                               ref={(el) => {

@@ -586,7 +586,7 @@ const ClientForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
         {/* Email */}
         <div>
           <label className="mb-1 block text-sm font-medium text-slate-700">
-            Email Address <span className="text-red-500">*</span>
+            Email <span className="text-red-500">*</span>
           </label>
           <input
             type="email"
@@ -609,7 +609,7 @@ const ClientForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
         {/* Phone */}
         <div>
           <label className="mb-1 block text-sm font-medium text-slate-700">
-            Phone Number <span className="text-red-500">*</span>
+            Phone <span className="text-red-500">*</span>
           </label>
           <div className="flex items-stretch gap-2">
             <input

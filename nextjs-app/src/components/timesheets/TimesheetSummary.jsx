@@ -1702,12 +1702,12 @@ const TimesheetSummary = () => {
             "
           >
             <tr>
-              <th className="px-4 py-3 text-left">Week Range</th>
-              <th className="px-4 py-3 text-left">Status</th>
-              <th className="px-4 py-3 text-center">Hours</th>
-              <th className="px-4 py-3 text-center">Time Off</th>
-              <th className="px-4 py-3 text-center">Total</th>
-              <th className="px-4 py-3 text-center">Actions</th>
+              <th className="px-4 py-3 text-left uppercase text-sm font-bold tracking-wider">WEEK RANGE</th>
+              <th className="px-4 py-3 text-left uppercase text-sm font-bold tracking-wider">STATUS</th>
+              <th className="px-4 py-3 text-center uppercase text-sm font-bold tracking-wider">HOURS</th>
+              <th className="px-4 py-3 text-center uppercase text-sm font-bold tracking-wider">TIME OFF</th>
+              <th className="px-4 py-3 text-center uppercase text-sm font-bold tracking-wider">TOTAL</th>
+              <th className="px-4 py-3 text-center uppercase text-sm font-bold tracking-wider">ACTIONS</th>
             </tr>
           </thead>
 
@@ -1721,7 +1721,7 @@ const TimesheetSummary = () => {
                   transition-colors
                 "
               >
-                <td className="px-4 py-3 font-medium text-slate-800 dark:text-slate-100">
+                <td className="px-4 py-3 text-slate-800 dark:text-slate-100">
                   {timesheet.weekRange}
                 </td>
 

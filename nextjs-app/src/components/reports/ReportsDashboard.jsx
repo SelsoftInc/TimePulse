@@ -586,7 +586,7 @@ const ReportsDashboard = () => {
               <div className="card-inne position-relative">
                 <div className="card-title-group">
                   <div className="card-title">
-                    <h5 className="title">Client-wise Monthly Report</h5>
+                    <h5 className="title"> Client Monthly Report</h5>
                   </div>
                 </div>
               </div>
@@ -595,26 +595,26 @@ const ReportsDashboard = () => {
                 <div className="nk-tb-list nk-tb-ulist">
                   <div className="nk-tb-item nk-tb-head">
                     <div className="nk-tb-col text-center">
-                      <span className="sub-text">CLIENT NAME</span>
+                      <span className="text-s font-bold">CLIENT NAME</span>
                     </div>
                     <div className="nk-tb-col tb-col-md text-center">
-                      <span className="sub-text">TOTAL HOURS</span>
+                      <span className="text-s font-bold ">TOTAL HOURS</span>
                     </div>
                     <div className="nk-tb-col tb-col-md text-center">
-                      <span className="sub-text">TOTAL EMPLOYEES</span>
+                      <span className="text-s font-bold">TOTAL EMPLOYEES</span>
                     </div>
                     <div className="nk-tb-col text-center">
-                      <span className="sub-text">TOTAL BILLED ($)</span>
+                      <span className="text-s font-bold">TOTAL BILLED ($)</span>
                     </div>
                     <div className="nk-tb-col nk-tb-col-tools text-center">
-                      <span className="sub-text">ACTIONS</span>
+                      <span className="text-s font-bold">ACTIONS</span>
                     </div>
                   </div>
 
                   {paginatedClients.map((client) => (
                     <div key={client.id} className="nk-tb-item">
                       <div className="nk-tb-col text-center">
-                        <span className="tb-lead">{client.name}</span>
+                        <span className="">{client.name}</span>
                       </div>
                       <div className="nk-tb-col tb-col-md text-center">
                         <span>{client.totalHours}</span>
@@ -760,7 +760,7 @@ const ReportsDashboard = () => {
                                   {project.name}
                                 </span>
                                 <div className="project-details">
-                                  <span>{project.hours} hrs</span>
+                                  <span>{Number(project.hours).toFixed(2)} hrs</span>
                                   <span>{project.employees} employees</span>
                                 </div>
                               </div>
@@ -808,7 +808,7 @@ const ReportsDashboard = () => {
               <div className="card-inne position-relative">
                 <div className="card-title-group">
                   <div className="card-title">
-                    <h5 className="title">Employee-wise Timesheet Report</h5>
+                    <h5 className="title"> Employee Timesheet Report</h5>
                   </div>
                 </div>
               </div>
@@ -817,29 +817,29 @@ const ReportsDashboard = () => {
                 <div className="nk-tb-list nk-tb-ulist">
                   <div className="nk-tb-item nk-tb-head">
                     <div className="nk-tb-col text-center">
-                      <span className="sub-text">EMPLOYEE NAME</span>
+                      <span className="text-s font-bold">EMPLOYEE NAME</span>
                     </div>
                     <div className="nk-tb-col tb-col-md text-center">
-                      <span className="sub-text">CLIENT</span>
+                      <span className="text-s font-bold">CLIENT</span>
                     </div>
                     <div className="nk-tb-col tb-col-md text-center">
-                      <span className="sub-text">PROJECT</span>
+                      <span className="text-s font-bold">PROJECT</span>
                     </div>
                     <div className="nk-tb-col text-center">
-                      <span className="sub-text">TOTAL HOURS</span>
+                      <span className="text-s font-bold">TOTAL HOURS</span>
                     </div>
                     <div className="nk-tb-col tb-col-md text-center">
-                      <span className="sub-text">UTILIZATION %</span>
+                      <span className="text-s font-bold">UTILIZATION %</span>
                     </div>
                     <div className="nk-tb-col nk-tb-col-tools text-center">
-                      <span className="sub-text">ACTIONS</span>
+                      <span className="text-s font-bold">ACTIONS</span>
                     </div>
                   </div>
 
                   {paginatedEmployees.map((employee) => (
                     <div key={employee.id} className="nk-tb-item">
                       <div className="nk-tb-col text-center">
-                        <span className="tb-lead">{employee.name}</span>
+                        <span className="">{employee.name}</span>
                       </div>
                       <div className="nk-tb-col tb-col-md text-center">
                         <span>{employee.clientName && employee.clientName !== 'N/A' ? employee.clientName : 'Internal'}</span>
@@ -1062,34 +1062,34 @@ const ReportsDashboard = () => {
               <div className="nk-tb-list nk-tb-orders">
                 <div className="nk-tb-item nk-tb-head">
                   <div className="nk-tb-col">
-                    <span>INVOICE ID</span>
+                    <span className="text-s font-bold">INVOICE ID</span>
                   </div>
                   <div className="nk-tb-col tb-col-md">
-                    <span>CLIENT</span>
+                    <span className="text-s font-bold">CLIENT</span>
                   </div>
                   <div className="nk-tb-col tb-col-md">
-                    <span>MONTH</span>
+                    <span className="text-s font-bold">MONTH</span>
                   </div>
                   <div className="nk-tb-col tb-col-md">
-                    <span>ISSUE DATE</span>
+                    <span className="text-s font-bold">ISSUE DATE</span>
                   </div>
                   <div className="nk-tb-col tb-col-md">
-                    <span>HOURS</span>
+                    <span className="text-s font-bold">HOURS</span>
                   </div>
                   <div className="nk-tb-col">
-                    <span>AMOUNT</span>
+                    <span className="text-s font-bold">AMOUNT</span>
                   </div>
                   <div className="nk-tb-col">
-                    <span>STATUS</span>
+                    <span className="text-s font-bold">STATUS</span>
                   </div>
                   <div className="nk-tb-col nk-tb-col-tools text-end">
-                    <span className="sub-text">ACTIONS</span>
+                    <span className="text-s font-bold">ACTIONS</span>
                   </div>
                 </div>
                 {paginatedInvoices.map((invoice) => (
                   <div key={invoice.id} className={`nk-tb-item ${openActionsId === invoice.id ? 'dropdown-open' : ''}`}>
                     <div className="nk-tb-col">
-                      <span className="tb-lead">{invoice.invoiceNumber || invoice.id}</span>
+                      <span className="">{invoice.invoiceNumber || invoice.id}</span>
                     </div>
                     <div className="nk-tb-col tb-col-md">
                       <span>{invoice.clientName}</span>
@@ -1121,7 +1121,7 @@ const ReportsDashboard = () => {
                       <span>{invoice.totalHours}</span>
                     </div>
                     <div className="nk-tb-col">
-                      <span className="tb-amount">
+                      <span className="">
                         ${invoice.amount.toLocaleString()}
                       </span>
                     </div>
@@ -1648,9 +1648,9 @@ const ReportsDashboard = () => {
                 Viewing:{" "}
                 <strong className="text-slate-900">
                   {activeTab === "client"
-                    ? "Client-wise Report"
+                    ? "Client Report"
                     : activeTab === "employee"
-                    ? "Employee-wise Report"
+                    ? "Employee Report"
                     : "Invoice Report"}
                 </strong>
               </div>

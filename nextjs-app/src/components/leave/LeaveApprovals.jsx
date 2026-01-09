@@ -365,14 +365,14 @@ const LeaveApprovals = () => {
                     <table className="table table-bordered mb-0 w-full">
                       <thead className="sticky top-0 z-10 bg-slate-50/70">
                       <tr>
-                        <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">Employee</th>
-                        <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">Employee Email</th>
-                        <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">Leave Type</th>
-                        <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">Dates</th>
-                        <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">Days</th>
-                        <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">Status</th>
-                        <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">Submitted</th>
-                        <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">Action</th>
+                        <th className="whitespace-nowrap px-4 py-3 text-center text-m font-bold uppercase tracking-wide text-slate-700">Employee</th>
+                        <th className="whitespace-nowrap px-4 py-3 text-center text-m font-bold uppercase tracking-wide text-slate-700">Email</th>
+                        <th className="whitespace-nowrap px-4 py-3 text-center text-m font-bold uppercase tracking-wide text-slate-700">Leave Type</th>
+                        <th className="whitespace-nowrap px-4 py-3 text-center text-m font-bold uppercase tracking-wide text-slate-700">Dates</th>
+                        <th className="whitespace-nowrap px-4 py-3 text-center text-m font-bold uppercase tracking-wide text-slate-700">No. of Days</th>
+                        <th className="whitespace-nowrap px-4 py-3 text-center text-m font-bold uppercase tracking-wide text-slate-700">Status</th>
+                        <th className="whitespace-nowrap px-4 py-3 text-center text-m font-bold uppercase tracking-wide text-slate-700">Submitted</th>
+                        <th className="whitespace-nowrap px-4 py-3 text-center text-m font-bold uppercase tracking-wide text-slate-700">Action</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
@@ -390,7 +390,7 @@ const LeaveApprovals = () => {
                             <td>
                               {formatDate(request.startDate)} - {formatDate(request.endDate)}
                             </td>
-                            <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-700">{request.days}</td>
+                            <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-700 text-center">{request.days}</td>
                             <td>
                               <span className="badge badge-warning">
                                 Pending
@@ -466,13 +466,13 @@ const LeaveApprovals = () => {
               <table className="table table-bordered mb-0 w-full">
                 <thead className="sticky top-0 z-10 bg-slate-50/70">
                   <tr>
-                    <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">Employee</th>
-                    <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">Employee Email</th>
-                    <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">Leave Type</th>
-                    <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">Dates</th>
-                    <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">Days</th>
-                    <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">Status</th>
-                    <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">Submitted</th>
+                    <th className="whitespace-nowrap px-4 py-3 text-center text-m font-bold uppercase tracking-wide text-slate-900">Employee</th>
+                    <th className="whitespace-nowrap px-4 py-3 text-center text-m font-bold uppercase tracking-wide text-slate-900">Email</th>
+                    <th className="whitespace-nowrap px-4 py-3 text-center text-m font-bold uppercase tracking-wide text-slate-900">Leave Type</th>
+                    <th className="whitespace-nowrap px-4 py-3 text-center text-m font-bold uppercase tracking-wide text-slate-900">Dates</th>
+                    <th className="whitespace-nowrap px-4 py-3 text-center text-m font-bold uppercase tracking-wide text-slate-900">No. of Days</th>
+                    <th className="whitespace-nowrap px-4 py-3 text-center text-m font-bold uppercase tracking-wide text-slate-900">Status</th>
+                    <th className="whitespace-nowrap px-4 py-3 text-center text-m font-bold uppercase tracking-wide text-slate-900">Submitted</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -490,7 +490,7 @@ const LeaveApprovals = () => {
                         <td>
                           {formatDate(request.startDate)} - {formatDate(request.endDate)}
                         </td>
-                        <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-700">{request.totalDays || request.days}</td>
+                        <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-700 text-center">{request.totalDays || request.days}</td>
                         <td>
                           <span className={`badge ${getStatusBadgeClass(request.status)}`}>
                             {request.status.charAt(0).toUpperCase() + request.status.slice(1)}

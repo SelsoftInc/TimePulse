@@ -148,9 +148,9 @@ const ImplementationPartnerForm = ({
     // Mark field as touched
     setValidationTouched((prev) => ({ ...prev, phone: true }));
     
-    // Allow empty (optional field)
+    // Phone is now required
     if (!phoneNumber || phoneNumber.trim() === '') {
-      setErrors((prev) => ({ ...prev, phone: "" }));
+      setErrors((prev) => ({ ...prev, phone: "Phone number is required" }));
       return;
     }
     
@@ -169,6 +169,19 @@ const ImplementationPartnerForm = ({
     const { name, value } = e.target;
     let processedValue = value;
     let updates = { [name]: processedValue };
+
+    // Restrict name fields to letters, spaces, hyphens, and apostrophes only
+    if (name === "legalName" || name === "contactPerson") {
+      // Only allow letters (including international), spaces, hyphens, and apostrophes
+      processedValue = value.replace(/[^a-zA-Z\s'-]/g, '');
+      updates[name] = processedValue;
+    }
+
+    // Restrict city to letters, spaces, hyphens, and apostrophes only
+    if (name === "city") {
+      processedValue = value.replace(/[^a-zA-Z\s'-]/g, '');
+      updates[name] = processedValue;
+    }
 
     // Auto-update country code when country is selected
     if (name === "country") {
@@ -237,16 +250,61 @@ const ImplementationPartnerForm = ({
 
     switch (name) {
       case "name":
-        validation = validateName(value, "Implementation Partner name");
+        if (!value.trim()) {
+          validation = { isValid: false, message: "Implementation Partner name is required" };
+        } else {
+          validation = validateName(value, "Implementation Partner name");
+        }
         break;
-      case "email":
-        if (value) {
-          validation = validateEmail(value);
+      case "legalName":
+        if (!value.trim()) {
+          validation = { isValid: false, message: "First Name is required" };
+        } else {
+          validation = validateName(value, "First Name");
         }
         break;
       case "contactPerson":
-        if (value) {
-          validation = validateName(value, "Contact Person", { requireAtLeastTwoWords: true });
+        if (!value.trim()) {
+          validation = { isValid: false, message: "Last Name is required" };
+        } else {
+          validation = validateName(value, "Last Name");
+        }
+        break;
+      case "email":
+        if (!value.trim()) {
+          validation = { isValid: false, message: "Email is required" };
+        } else {
+          validation = validateEmail(value);
+        }
+        break;
+      case "address":
+        if (!value.trim()) {
+          validation = { isValid: false, message: "Address is required" };
+        }
+        break;
+      case "city":
+        if (!value.trim()) {
+          validation = { isValid: false, message: "City is required" };
+        }
+        break;
+      case "state":
+        if (!value.trim()) {
+          validation = { isValid: false, message: "State/Province is required" };
+        }
+        break;
+      case "zip":
+        if (!value.trim()) {
+          validation = { isValid: false, message: `${getPostalLabel(formData.country)} is required` };
+        } else {
+          const zipValidation = validateZipCode(value, formData.country);
+          if (!zipValidation.isValid) {
+            validation = zipValidation;
+          }
+        }
+        break;
+      case "specialization":
+        if (!value.trim()) {
+          validation = { isValid: false, message: "Specialization is required" };
         }
         break;
       default:
@@ -270,7 +328,7 @@ const ImplementationPartnerForm = ({
   const validateForm = () => {
     const newErrors = {};
 
-    // Required fields
+    // All fields are now required
     if (!formData.name.trim()) {
       newErrors.name = "Implementation Partner name is required";
     } else {
@@ -281,24 +339,54 @@ const ImplementationPartnerForm = ({
       if (!nameValidation.isValid) newErrors.name = nameValidation.message;
     }
 
-    // Optional but validated fields
-    if (formData.contactPerson) {
-      const contactValidation = validateName(formData.contactPerson, "Contact Person", { requireAtLeastTwoWords: true });
+    if (!formData.legalName.trim()) {
+      newErrors.legalName = "First Name is required";
+    } else {
+      const legalNameValidation = validateName(formData.legalName, "First Name");
+      if (!legalNameValidation.isValid) newErrors.legalName = legalNameValidation.message;
+    }
+
+    if (!formData.contactPerson.trim()) {
+      newErrors.contactPerson = "Last Name is required";
+    } else {
+      const contactValidation = validateName(formData.contactPerson, "Last Name");
       if (!contactValidation.isValid) newErrors.contactPerson = contactValidation.message;
     }
 
-    if (formData.email) {
+    if (!formData.specialization.trim()) {
+      newErrors.specialization = "Specialization is required";
+    }
+
+    if (!formData.email.trim()) {
+      newErrors.email = "Email is required";
+    } else {
       const emailValidation = validateEmail(formData.email);
       if (!emailValidation.isValid) newErrors.email = emailValidation.message;
     }
 
-    // Phone is optional
-    if (formData.phone) {
+    // Phone is required and must be valid
+    if (!phoneNumber || phoneNumber.trim() === '') {
+      newErrors.phone = "Phone number is required";
+    } else if (formData.phone) {
       const phoneValidation = validatePhoneNumber(formData.phone, formData.country);
       if (!phoneValidation.isValid) newErrors.phone = phoneValidation.message;
     }
 
-    if (formData.zip) {
+    if (!formData.address.trim()) {
+      newErrors.address = "Address is required";
+    }
+
+    if (!formData.city.trim()) {
+      newErrors.city = "City is required";
+    }
+
+    if (!formData.state.trim()) {
+      newErrors.state = "State/Province is required";
+    }
+
+    if (!formData.zip.trim()) {
+      newErrors.zip = `${getPostalLabel(formData.country)} is required`;
+    } else {
       const zipValidation = validateZipCode(formData.zip, formData.country);
       if (!zipValidation.isValid) newErrors.zip = zipValidation.message;
     }
@@ -316,7 +404,12 @@ const ImplementationPartnerForm = ({
       zip: true,
       email: true,
       name: true,
-      contactPerson: true
+      legalName: true,
+      contactPerson: true,
+      specialization: true,
+      address: true,
+      city: true,
+      state: true
     });
 
     // Validate form fields - only validate phone if it has a value beyond country code
@@ -472,21 +565,28 @@ const ImplementationPartnerForm = ({
 
                     <div>
                       <label className="mb-1 block text-sm font-medium text-slate-700">
-                        Legal Name
+                        Legal Name <span className="text-danger">*</span>
                       </label>
                       <input
                         type="text"
                         name="legalName"
                         value={formData.legalName}
                         onChange={handleChange}
+                        onBlur={handleBlur}
                         maxLength={255}
-                        className="form-control rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500"
+                        required
+                        className={`form-control rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500 ${
+                          errors.legalName ? "is-invalid" : ""
+                        }`}
                       />
+                      {validationTouched.legalName && errors.legalName && (
+                        <p className="mt-1 text-xs text-red-600">{errors.legalName}</p>
+                      )}
                     </div>
 
                     <div>
                       <label className="mb-1 block text-sm font-medium text-slate-700">
-                        Contact Person
+                        Name <span className="text-danger">*</span>
                       </label>
                       <input
                         type="text"
@@ -495,6 +595,7 @@ const ImplementationPartnerForm = ({
                         onChange={handleChange}
                         onBlur={handleBlur}
                         maxLength={255}
+                        required
                         className={`form-control rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500 ${
                           errors.contactPerson ? "is-invalid" : ""
                         }`}
@@ -506,17 +607,24 @@ const ImplementationPartnerForm = ({
 
                     <div>
                       <label className="mb-1 block text-sm font-medium text-slate-700">
-                        Specialization
+                        Specialization <span className="text-danger">*</span>
                       </label>
                       <input
                         type="text"
                         name="specialization"
                         value={formData.specialization}
                         onChange={handleChange}
+                        onBlur={handleBlur}
                         maxLength={255}
+                        required
                         placeholder="Cloud Migration, Analytics, Security"
-                        className="form-control rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500"
+                        className={`form-control rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500 ${
+                          errors.specialization ? "is-invalid" : ""
+                        }`}
                       />
+                      {validationTouched.specialization && errors.specialization && (
+                        <p className="mt-1 text-xs text-red-600">{errors.specialization}</p>
+                      )}
                     </div>
                   </div>
                 </section>
@@ -531,7 +639,7 @@ const ImplementationPartnerForm = ({
                   <div className="p-6 grid grid-cols-1 gap-5 sm:grid-cols-2">
                     <div>
                       <label className="mb-1 block text-sm font-medium text-slate-700">
-                        Email
+                        Email <span className="text-danger">*</span>
                       </label>
                       <input
                         type="email"
@@ -540,16 +648,19 @@ const ImplementationPartnerForm = ({
                         onChange={handleChange}
                         onBlur={handleBlur}
                         maxLength={255}
+                        required
                         className={`form-control rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500 ${
                           errors.email ? "is-invalid" : ""
                         }`}
                       />
-                      {errors.email && <div className="invalid-feedback">{errors.email}</div>}
+                      {validationTouched.email && errors.email && (
+                        <p className="mt-1 text-xs text-red-600">{errors.email}</p>
+                      )}
                     </div>
 
                     <div>
                       <label className="mb-1 block text-sm font-medium text-slate-700">
-                        Phone
+                        Phone <span className="text-danger">*</span>
                       </label>
                       <div className="flex items-stretch gap-2">
                         <input
@@ -570,12 +681,15 @@ const ImplementationPartnerForm = ({
                           onBlur={handlePhoneBlur}
                           placeholder="Enter phone number"
                           maxLength="15"
+                          required
                         />
                       </div>
                       <small className="mt-1 block text-xs text-slate-500">
                         Country code updates automatically based on selected country
                       </small>
-                      {errors.phone && <div className="invalid-feedback">{errors.phone}</div>}
+                      {validationTouched.phone && errors.phone && (
+                        <p className="mt-1 text-xs text-red-600">{errors.phone}</p>
+                      )}
                     </div>
                   </div>
                 </section>
@@ -590,53 +704,91 @@ const ImplementationPartnerForm = ({
                   <div className="p-6 grid grid-cols-1 gap-5">
                     <div>
                       <label className="mb-1 block text-sm font-medium text-slate-700">
-                        Address
+                        Country <span className="text-danger">*</span>
+                      </label>
+                      <select
+                        name="country"
+                        value={formData.country}
+                        onChange={handleChange}
+                        required
+                        className="form-control rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500"
+                      >
+                        {COUNTRY_OPTIONS.map(country => (
+                          <option key={country} value={country}>{country}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="mb-1 block text-sm font-medium text-slate-700">
+                        Address <span className="text-danger">*</span>
                       </label>
                       <input
                         type="text"
                         name="address"
                         value={formData.address}
                         onChange={handleChange}
+                        onBlur={handleBlur}
                         maxLength={255}
-                        className="form-control rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500"
+                        required
+                        className={`form-control rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500 ${
+                          errors.address ? "is-invalid" : ""
+                        }`}
                       />
+                      {validationTouched.address && errors.address && (
+                        <p className="mt-1 text-xs text-red-600">{errors.address}</p>
+                      )}
                     </div>
 
-                    <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
-                      <div>
+                    <div className="grid grid-cols-1 gap-8 sm:grid-cols-3">
+                      <div className="min-w-0">
                         <label className="mb-1 block text-sm font-medium text-slate-700">
-                          City
+                          City <span className="text-danger">*</span>
                         </label>
                         <input
                           type="text"
                           name="city"
                           value={formData.city}
                           onChange={handleChange}
+                          onBlur={handleBlur}
                           maxLength={100}
-                          className="form-control rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500"
+                          required
+                          className={`form-control w-full rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500 ${
+                            errors.city ? "is-invalid" : ""
+                          }`}
                         />
+                        {validationTouched.city && errors.city && (
+                          <p className="mt-1 text-xs text-red-600">{errors.city}</p>
+                        )}
                       </div>
 
-                      <div>
+                      <div className="min-w-0">
                         <label className="mb-1 block text-sm font-medium text-slate-700">
-                          State / Province
+                          State / Province <span className="text-danger">*</span>
                         </label>
                         <select
                           name="state"
                           value={formData.state}
                           onChange={handleChange}
-                          className="form-control rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500"
+                          onBlur={handleBlur}
+                          required
+                          className={`form-control w-full rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500 ${
+                            errors.state ? "is-invalid" : ""
+                          }`}
                         >
                           <option value="">Select</option>
                           {STATES_BY_COUNTRY[formData.country]?.map(state => (
                             <option key={state} value={state}>{state}</option>
                           ))}
                         </select>
+                        {validationTouched.state && errors.state && (
+                          <p className="mt-1 text-xs text-red-600">{errors.state}</p>
+                        )}
                       </div>
 
-                      <div>
+                      <div className="min-w-0">
                         <label className="mb-1 block text-sm font-medium text-slate-700">
-                          {getPostalLabel(formData.country)}
+                          {getPostalLabel(formData.country)} <span className="text-danger">*</span>
                         </label>
                         {formData.country !== "United Arab Emirates" ? (
                           <>
@@ -647,11 +799,14 @@ const ImplementationPartnerForm = ({
                               onChange={handleChange}
                               onBlur={handleBlur}
                               placeholder={getPostalPlaceholder(formData.country)}
-                              className={`form-control rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500 ${
+                              required
+                              className={`form-control w-full rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500 ${
                                 errors.zip ? "is-invalid" : ""
                               }`}
                             />
-                            {errors.zip && <div className="invalid-feedback">{errors.zip}</div>}
+                            {validationTouched.zip && errors.zip && (
+                              <p className="mt-1 text-xs text-red-600">{errors.zip}</p>
+                            )}
                           </>
                         ) : (
                           <input
@@ -659,26 +814,10 @@ const ImplementationPartnerForm = ({
                             name="zip"
                             value=""
                             disabled
-                            className="form-control rounded-lg border-slate-300 bg-slate-100"
+                            className="form-control w-full rounded-lg border-slate-300 bg-slate-100"
                           />
                         )}
                       </div>
-                    </div>
-
-                    <div>
-                      <label className="mb-1 block text-sm font-medium text-slate-700">
-                        Country
-                      </label>
-                      <select
-                        name="country"
-                        value={formData.country}
-                        onChange={handleChange}
-                        className="form-control rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500"
-                      >
-                        {COUNTRY_OPTIONS.map(country => (
-                          <option key={country} value={country}>{country}</option>
-                        ))}
-                      </select>
                     </div>
                   </div>
                 </section>
@@ -707,7 +846,7 @@ const ImplementationPartnerForm = ({
                       </select>
                     </div>
 
-                    <div className="sm:col-span-2">
+                    <div>
                       <label className="mb-1 block text-sm font-medium text-slate-700">
                         Notes
                       </label>
@@ -717,7 +856,7 @@ const ImplementationPartnerForm = ({
                         value={formData.notes}
                         onChange={handleChange}
                         placeholder="Additional notes about this implementation partner..."
-                        className="form-control rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500"
+                        className="form-control rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500 w-full"
                       />
                     </div>
                   </div>
@@ -726,12 +865,12 @@ const ImplementationPartnerForm = ({
 
 
               {/* ================= ACTIONS ================= */}
-              <div className="mt-6 flex flex-wrap justify-end gap-3">
+              <div className="mt-8 flex flex-wrap items-center justify-end gap-4 border-t border-slate-200 bg-slate-50 px-6 py-4 rounded-b-xl">
                 <button
                   type="button"
                   onClick={handleCancel}
                   disabled={loading}
-                  className="btn btn-outline-light"
+                  className="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-6 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition-all hover:bg-slate-50 hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Cancel
                 </button>
@@ -746,7 +885,7 @@ const ImplementationPartnerForm = ({
                   <button
                     type="submit"
                     disabled={loading}
-                    className="btn btn-primary"
+                    className="inline-flex items-center justify-center rounded-lg bg-indigo-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {loading ? (
                       <>
@@ -758,10 +897,13 @@ const ImplementationPartnerForm = ({
                         {mode === "create" ? "Creating..." : "Updating..."}
                       </>
                     ) : (
-                      submitLabel ||
-                      (mode === "create"
-                        ? "Add Implementation Partner"
-                        : "Update Implementation Partner")
+                      <>
+                        <i className="fas fa-plus-circle me-2"></i>
+                        {submitLabel ||
+                          (mode === "create"
+                            ? "Add Implementation Partner"
+                            : "Update Implementation Partner")}
+                      </>
                     )}
                   </button>
                 </PermissionGuard>

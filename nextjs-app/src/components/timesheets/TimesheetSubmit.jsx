@@ -83,6 +83,9 @@ const TimesheetSubmit = () => {
   const [showCameraModal, setShowCameraModal] = useState(false);
   const [cameraStream, setCameraStream] = useState(null);
 
+  // Employee start date for validation
+  const [employeeStartDate, setEmployeeStartDate] = useState(null);
+
   // Function to determine current client type based on clients with hours
   const getCurrentClientType = () => {
     // Always show internal form (full timesheet table) for all users
@@ -223,23 +226,33 @@ const TimesheetSubmit = () => {
           setClientHours([]);
         }
 
-        // Load available employees for non-employee roles
-        if (!isEmployee()) {
-          try {
-            console.log("🔍 Fetching employees...");
-            const employeesResponse = await axios.get(
-              `${API_BASE}/api/employees?tenantId=${tenantId}`
-            );
-            console.log("📥 Employees API raw response:", employeesResponse.data);
-            
-            // Decrypt the response if encrypted
-            const decryptedData = decryptApiResponse(employeesResponse.data);
-            console.log("🔓 Decrypted employees data:", decryptedData);
+        // Fetch employee data to get start date for validation
+        try {
+          console.log("🔍 Fetching employee data for start date validation...");
+          const employeesResponse = await axios.get(
+            `${API_BASE}/api/employees?tenantId=${tenantId}`
+          );
+          console.log("📥 Employees API raw response:", employeesResponse.data);
+          
+          // Decrypt the response if encrypted
+          const decryptedData = decryptApiResponse(employeesResponse.data);
+          console.log("🔓 Decrypted employees data:", decryptedData);
 
-            if (
-              decryptedData.success &&
-              decryptedData.employees
-            ) {
+          if (
+            decryptedData.success &&
+            decryptedData.employees
+          ) {
+            // Get current user's employee data to extract start date
+            const currentEmployee = decryptedData.employees.find(
+              emp => emp.userId === user?.id || emp.email === user?.email
+            );
+            if (currentEmployee && currentEmployee.startDate) {
+              setEmployeeStartDate(currentEmployee.startDate);
+              console.log('📅 Employee start date:', currentEmployee.startDate);
+            }
+
+            // Load available employees for non-employee roles
+            if (!isEmployee()) {
               // Filter out admin users - they don't submit timesheets
               const employees = decryptedData.employees
                 .filter((emp) => emp.role !== "admin")
@@ -254,12 +267,16 @@ const TimesheetSubmit = () => {
                 "✅ Loaded employees (excluding admins):",
                 employees.length
               );
-            } else {
-              console.warn("⚠️ No employees found in response");
+            }
+          } else {
+            console.warn("⚠️ No employees found in response");
+            if (!isEmployee()) {
               setAvailableEmployees([]);
             }
-          } catch (error) {
-            console.error("❌ Error fetching employees:", error);
+          }
+        } catch (error) {
+          console.error("❌ Error fetching employees:", error);
+          if (!isEmployee()) {
             setAvailableEmployees([]);
           }
         }
@@ -713,6 +730,35 @@ const TimesheetSubmit = () => {
   };
 
   const handleWeekChange = async (selectedWeekValue) => {
+    // Validate week selection against employee start date
+    if (employeeStartDate && selectedWeekValue) {
+      try {
+        // Parse the selected week start date
+        const [startStr] = selectedWeekValue.split(" To ");
+        const weekStartDate = new Date(startStr);
+        const empStartDate = new Date(employeeStartDate);
+        
+        // Check if selected week is before employee start date
+        if (weekStartDate < empStartDate) {
+          const formattedStartDate = empStartDate.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+          });
+          
+          toast.error(
+            `Invalid week selection. You joined on ${formattedStartDate}. Please select a week after your joining date.`,
+            { duration: 5000 }
+          );
+          
+          console.warn('⚠️ Selected week is before employee start date');
+          return; // Don't proceed with week change
+        }
+      } catch (error) {
+        console.error('❌ Error validating week against start date:', error);
+      }
+    }
+
     // Set the selected week
     setSelectedWeek(selectedWeekValue);
     setWeek(selectedWeekValue);

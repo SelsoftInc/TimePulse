@@ -403,3 +403,33 @@
   background-color: var(--btn-outline-hover);
   color: var(--danger-color);
 }
+
+/* ----------------- Phone Input with Country Code ----------------- */
+.phone-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.phone-input-wrapper .country-code {
+  position: absolute;
+  left: 1rem;
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--text-dark);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.phone-input-wrapper .phone-input {
+  padding-left: 4rem;
+  font-weight: 400;
+}
+
+.form-error {
+  display: block;
+  color: #dc3545;
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+  font-weight: 500;
+}

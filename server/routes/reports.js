@@ -283,8 +283,8 @@ router.get("/employees", async (req, res) => {
 
       // Get client and project info from most recent timesheet
       const latestTimesheet = employeeTimesheets[0];
-      const clientName = latestTimesheet?.client_name || "N/A";
-      const projectName = clientName; // Using client name as project for now
+      const clientName = latestTimesheet?.client_name || null;
+      const projectName = latestTimesheet?.client_name || null; // Using client name as project for now
 
       // Calculate weekly breakdown (last 4 weeks)
       const weeklyBreakdown = [];

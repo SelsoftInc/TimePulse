@@ -321,7 +321,7 @@ const VendorList = () => {
                 <table className="min-w-full border-collapse">
                   <thead className="bg-slate-50">
                     <tr className="text-left text-xs font-semibold uppercase tracking-wide text-slate-600">
-                      <th className="px-4 py-3">Vendor Name</th>
+                      <th className="px-4 py-3">Vendor</th>
                       <th className="px-4 py-3">Contact Person</th>
                       <th className="px-4 py-3">Category</th>
                       <th className="px-4 py-3">Email</th>

@@ -60,7 +60,16 @@ const InvoiceView = () => {
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `Invoice-${invoice.invoiceNumber}.pdf`);
+      
+      // Get employee name from invoice data
+      const employeeName = invoice.employeeName || 
+                          invoice.employee?.firstName + ' ' + invoice.employee?.lastName || 
+                          invoice.lineItems?.[0]?.employeeName || 
+                          'Employee';
+      const sanitizedEmployeeName = employeeName.replace(/[^a-zA-Z0-9]/g, '_');
+      const filename = `${sanitizedEmployeeName}_${invoice.invoiceNumber}.pdf`;
+      
+      link.setAttribute('download', filename);
       document.body.appendChild(link);
       link.click();
       link.remove();

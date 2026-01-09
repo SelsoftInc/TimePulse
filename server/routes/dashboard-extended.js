@@ -194,7 +194,7 @@ router.get("/top-performers", async (req, res) => {
         e.email,
         e.department,
         COALESCE(SUM(t.total_hours), 0) AS total_hours,
-        COALESCE(SUM(t.total_hours * COALESCE(c.hourly_rate, 0)), 0) AS revenue_generated
+        COALESCE(SUM(t.total_hours * COALESCE(e.hourly_rate, 0)), 0) AS revenue_generated
       FROM timesheets t
       JOIN employees e ON e.id = t.employee_id
       LEFT JOIN clients c ON c.id = t.client_id
@@ -202,7 +202,7 @@ router.get("/top-performers", async (req, res) => {
         AND t.status = 'approved'
         ${dateFilter}
       GROUP BY e.id, e.first_name, e.last_name, e.email, e.department
-      ORDER BY total_hours DESC
+      ORDER BY revenue_generated DESC
       LIMIT ${limit}
     `;
 
@@ -352,6 +352,122 @@ router.get("/revenue-by-client", async (req, res) => {
   }
 });
 
+// GET /api/dashboard-extended/revenue-by-vendor
+// Fetches vendor revenue from invoices (not timesheets)
+// Revenue is calculated client-wise for each vendor from invoice amounts
+router.get("/revenue-by-vendor", async (req, res) => {
+  try {
+    const { tenantId, from, to, limit = 100, employeeId, scope } = req.query;
+
+    if (!tenantId) {
+      return res.status(400).json({ error: "Tenant ID is required" });
+    }
+
+    await sequelize.query(`SET app.current_tenant_id = '${tenantId}'`);
+
+    // Default to current month if no date range provided
+    const now = new Date();
+    const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const currentMonthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    
+    const fromDate = from ? new Date(from) : currentMonthStart;
+    const toDate = to ? new Date(to) : currentMonthEnd;
+
+    let dateFilter = "";
+    if (fromDate) {
+      dateFilter += ` AND i.invoice_date >= '${fromDate.toISOString().split("T")[0]}'`;
+    }
+    if (toDate) {
+      dateFilter += ` AND i.invoice_date <= '${toDate.toISOString().split("T")[0]}'`;
+    }
+    
+    console.log('📊 Revenue by Vendor (from Invoices) - Date Filter:', {
+      from: fromDate.toISOString().split('T')[0],
+      to: toDate.toISOString().split('T')[0],
+      isCurrentMonth: !from && !to,
+      scope,
+      employeeId
+    });
+
+    // Build query to show all active vendors including those with $0 revenue
+    // Revenue = sum of invoice amounts for that vendor
+    // Use LEFT JOIN to include vendors without invoices
+    // For employee scope, filter to show only vendors assigned to that employee
+    const query = `
+      SELECT
+        v.id,
+        v.name AS vendor_name,
+        v.email,
+        v.contact_person AS company,
+        COALESCE(SUM(CASE 
+          WHEN i.payment_status IN ('pending', 'paid', 'overdue')
+            AND i.status = 'active'
+            ${dateFilter}
+          THEN i.total_amount 
+          ELSE 0 
+        END), 0) AS total_revenue,
+        COUNT(CASE 
+          WHEN i.payment_status IN ('pending', 'paid', 'overdue')
+            AND i.status = 'active'
+            ${dateFilter}
+          THEN i.id 
+        END) AS invoice_count
+      FROM vendors v
+      LEFT JOIN invoices i ON i.vendor_id = v.id AND i.tenant_id = '${tenantId}'
+      WHERE v.tenant_id = '${tenantId}'
+        AND v.status = 'active'
+        ${scope === 'employee' && employeeId ? `
+        AND EXISTS (
+          SELECT 1 FROM timesheets t 
+          WHERE t.vendor_id = v.id 
+          AND t.employee_id = '${employeeId}'
+          AND t.tenant_id = '${tenantId}'
+        )` : ''}
+      GROUP BY v.id, v.name, v.email, v.contact_person
+      ORDER BY total_revenue DESC, v.name ASC
+      LIMIT ${limit}
+    `;
+
+    const vendors = await sequelize.query(query, {
+      type: sequelize.QueryTypes.SELECT,
+    });
+
+    // Decrypt vendor data
+    const decryptedVendors = vendors.map(vendor => {
+      const decryptedData = DataEncryptionService.decryptVendorData({
+        vendorName: vendor.vendor_name,
+        email: vendor.email,
+        companyName: vendor.company
+      });
+      return {
+        ...vendor,
+        vendor_name: decryptedData.vendorName || vendor.vendor_name,
+        email: decryptedData.email || vendor.email,
+        company: decryptedData.companyName || vendor.company
+      };
+    });
+
+    console.log('📊 Revenue by Vendor (from Invoices) - Results:', {
+      count: decryptedVendors.length,
+      totalRevenue: decryptedVendors.reduce((sum, v) => sum + parseFloat(v.total_revenue || 0), 0),
+      totalInvoices: decryptedVendors.reduce((sum, v) => sum + parseInt(v.invoice_count || 0), 0),
+      sampleVendors: decryptedVendors.slice(0, 3).map(v => ({
+        name: v.vendor_name,
+        revenue: v.total_revenue,
+        invoiceCount: v.invoice_count
+      }))
+    });
+
+    res.json({ vendors: convertToNumber(decryptedVendors) });
+  } catch (error) {
+    console.error("Revenue by Vendor API Error:", error);
+    res.status(500).json({
+      error: "Internal server error",
+      message: error.message,
+    });
+  }
+});
+
 // GET /api/dashboard-extended/monthly-revenue-trend
 router.get("/monthly-revenue-trend", async (req, res) => {
   try {
@@ -392,28 +508,52 @@ router.get("/monthly-revenue-trend", async (req, res) => {
         ORDER BY m.month_start ASC
       `;
     } else {
-      // Company scope - show all revenue
+      // Company scope - show cumulative revenue from both client and vendor invoices
       query = `
         WITH months AS (
           SELECT 
             DATE_TRUNC('month', CURRENT_DATE - INTERVAL '11 months' + (n || ' months')::INTERVAL)::date AS month_start
           FROM generate_series(0, 11) AS n
         ),
-        monthly_revenue AS (
+        client_revenue AS (
           SELECT 
             DATE_TRUNC('month', i.invoice_date)::date AS month_start,
             SUM(i.total_amount) AS revenue
           FROM invoices i
+          JOIN clients c ON c.id = i.client_id
           WHERE i.tenant_id = '${tenantId}'
             AND i.payment_status IN ('pending', 'paid', 'overdue')
             AND i.invoice_date >= CURRENT_DATE - INTERVAL '11 months'
           GROUP BY DATE_TRUNC('month', i.invoice_date)
+        ),
+        vendor_revenue AS (
+          SELECT 
+            DATE_TRUNC('month', i.invoice_date)::date AS month_start,
+            SUM(i.total_amount) AS revenue
+          FROM invoices i
+          JOIN vendors v ON v.id = i.vendor_id
+          WHERE i.tenant_id = '${tenantId}'
+            AND i.payment_status IN ('pending', 'paid', 'overdue')
+            AND i.status = 'active'
+            AND i.invoice_date >= CURRENT_DATE - INTERVAL '11 months'
+          GROUP BY DATE_TRUNC('month', i.invoice_date)
+        ),
+        combined_revenue AS (
+          SELECT 
+            month_start,
+            SUM(revenue) AS revenue
+          FROM (
+            SELECT month_start, revenue FROM client_revenue
+            UNION ALL
+            SELECT month_start, revenue FROM vendor_revenue
+          ) AS all_revenue
+          GROUP BY month_start
         )
         SELECT 
           TO_CHAR(m.month_start, 'Mon') AS month_label,
-          COALESCE(mr.revenue, 0) AS revenue
+          COALESCE(cr.revenue, 0) AS revenue
         FROM months m
-        LEFT JOIN monthly_revenue mr ON m.month_start = mr.month_start
+        LEFT JOIN combined_revenue cr ON m.month_start = cr.month_start
         ORDER BY m.month_start ASC
       `;
     }

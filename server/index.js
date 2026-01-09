@@ -42,6 +42,7 @@ const dashboardRoutes = require("./routes/dashboard");
 const passwordResetRoutes = require("./routes/passwordReset");
 const dashboardExtendedRoutes = require("./routes/dashboard-extended");
 const settingsRoutes = require("./routes/settings");
+const emailNotificationsRoutes = require("./routes/emailNotifications");
 
 // Middleware
 // Configure CORS - allow specific origins from environment variable or default to open
@@ -170,6 +171,8 @@ console.log('📍 Loading password-reset routes...');
 app.use("/api/password-reset", passwordResetRoutes);
 console.log('📍 Loading settings routes...');
 app.use("/api/settings", settingsRoutes);
+console.log('📍 Loading email-notifications routes...');
+app.use("/api/email-notifications", emailNotificationsRoutes);
 console.log('📍 Loading search routes...');
 app.use("/api/search", require("./routes/search"));
 console.log('📍 Loading account-request routes...');

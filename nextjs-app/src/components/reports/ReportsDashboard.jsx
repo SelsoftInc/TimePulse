@@ -594,40 +594,40 @@ const ReportsDashboard = () => {
               <div className="card-inner p-0">
                 <div className="nk-tb-list nk-tb-ulist">
                   <div className="nk-tb-item nk-tb-head">
-                    <div className="nk-tb-col">
+                    <div className="nk-tb-col text-center">
                       <span className="sub-text">CLIENT NAME</span>
                     </div>
-                    <div className="nk-tb-col tb-col-md">
+                    <div className="nk-tb-col tb-col-md text-center">
                       <span className="sub-text">TOTAL HOURS</span>
                     </div>
-                    <div className="nk-tb-col tb-col-md">
+                    <div className="nk-tb-col tb-col-md text-center">
                       <span className="sub-text">TOTAL EMPLOYEES</span>
                     </div>
-                    <div className="nk-tb-col">
+                    <div className="nk-tb-col text-center">
                       <span className="sub-text">TOTAL BILLED ($)</span>
                     </div>
-                    <div className="nk-tb-col nk-tb-col-tools text-end">
+                    <div className="nk-tb-col nk-tb-col-tools text-center">
                       <span className="sub-text">ACTIONS</span>
                     </div>
                   </div>
 
                   {paginatedClients.map((client) => (
                     <div key={client.id} className="nk-tb-item">
-                      <div className="nk-tb-col">
+                      <div className="nk-tb-col text-center">
                         <span className="tb-lead">{client.name}</span>
                       </div>
-                      <div className="nk-tb-col tb-col-md">
+                      <div className="nk-tb-col tb-col-md text-center">
                         <span>{client.totalHours}</span>
                       </div>
-                      <div className="nk-tb-col tb-col-md">
+                      <div className="nk-tb-col tb-col-md text-center">
                         <span>{client.totalEmployees}</span>
                       </div>
-                      <div className="nk-tb-col">
+                      <div className="nk-tb-col text-center">
                         <span className="tb-amount">
                           ${client.totalBilled.toLocaleString()}
                         </span>
                       </div>
-                      <div className="nk-tb-col nk-tb-col-tools">
+                      <div className="nk-tb-col nk-tb-col-tools text-center">
                         <div className="actions-dropdown">
                           <div className="dropdown">
                             <button
@@ -816,42 +816,42 @@ const ReportsDashboard = () => {
               <div className="card-inner p-0">
                 <div className="nk-tb-list nk-tb-ulist">
                   <div className="nk-tb-item nk-tb-head">
-                    <div className="nk-tb-col">
+                    <div className="nk-tb-col text-center">
                       <span className="sub-text">EMPLOYEE NAME</span>
                     </div>
-                    <div className="nk-tb-col tb-col-md">
+                    <div className="nk-tb-col tb-col-md text-center">
                       <span className="sub-text">CLIENT</span>
                     </div>
-                    <div className="nk-tb-col tb-col-md">
+                    <div className="nk-tb-col tb-col-md text-center">
                       <span className="sub-text">PROJECT</span>
                     </div>
-                    <div className="nk-tb-col">
+                    <div className="nk-tb-col text-center">
                       <span className="sub-text">TOTAL HOURS</span>
                     </div>
-                    <div className="nk-tb-col tb-col-md">
+                    <div className="nk-tb-col tb-col-md text-center">
                       <span className="sub-text">UTILIZATION %</span>
                     </div>
-                    <div className="nk-tb-col nk-tb-col-tools text-end">
+                    <div className="nk-tb-col nk-tb-col-tools text-center">
                       <span className="sub-text">ACTIONS</span>
                     </div>
                   </div>
 
                   {paginatedEmployees.map((employee) => (
                     <div key={employee.id} className="nk-tb-item">
-                      <div className="nk-tb-col">
+                      <div className="nk-tb-col text-center">
                         <span className="tb-lead">{employee.name}</span>
                       </div>
-                      <div className="nk-tb-col tb-col-md">
-                        <span>{employee.clientName}</span>
+                      <div className="nk-tb-col tb-col-md text-center">
+                        <span>{employee.clientName && employee.clientName !== 'N/A' ? employee.clientName : 'Internal'}</span>
                       </div>
-                      <div className="nk-tb-col tb-col-md">
-                        <span>{employee.projectName}</span>
+                      <div className="nk-tb-col tb-col-md text-center">
+                        <span>{employee.projectName && employee.projectName !== 'N/A' ? employee.projectName : '-'}</span>
                       </div>
-                      <div className="nk-tb-col">
+                      <div className="nk-tb-col text-center">
                         <span>{employee.totalHours} hrs</span>
                       </div>
-                      <div className="nk-tb-col tb-col-md">
-                        <div className="d-flex align-items-center">
+                      <div className="nk-tb-col tb-col-md text-center">
+                        <div className="d-flex align-items-center justify-content-center">
                           <div className="progress-status">
                             {employee.utilization}%
                           </div>
@@ -873,7 +873,7 @@ const ReportsDashboard = () => {
                           </div>
                         </div>
                       </div>
-                      <div className="nk-tb-col nk-tb-col-tools">
+                      <div className="nk-tb-col nk-tb-col-tools text-center">
                         <div className="actions-dropdown">
                           <div className="dropdown">
                             <button

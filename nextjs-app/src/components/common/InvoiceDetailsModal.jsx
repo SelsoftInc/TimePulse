@@ -101,7 +101,16 @@ const InvoiceDetailsModal = ({ invoice, onClose }) => {
           const url = window.URL.createObjectURL(blob);
           const a = document.createElement('a');
           a.href = url;
-          a.download = `${fullInvoiceData.invoiceNumber || 'invoice'}.pdf`;
+          
+          // Get employee name from invoice data
+          const employeeName = fullInvoiceData.employeeName || 
+                              fullInvoiceData.employee?.firstName + ' ' + fullInvoiceData.employee?.lastName || 
+                              fullInvoiceData.lineItems?.[0]?.employeeName || 
+                              'Employee';
+          const sanitizedEmployeeName = employeeName.replace(/[^a-zA-Z0-9]/g, '_');
+          const filename = `${sanitizedEmployeeName}_${fullInvoiceData.invoiceNumber || 'invoice'}.pdf`;
+          
+          a.download = filename;
           document.body.appendChild(a);
           a.click();
           window.URL.revokeObjectURL(url);

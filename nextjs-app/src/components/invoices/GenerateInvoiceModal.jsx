@@ -209,6 +209,25 @@ const GenerateInvoiceModal = ({ isOpen, onClose, onInvoiceGenerated }) => {
 
       console.log('📋 Selected timesheets data:', selectedTimesheetsData);
 
+      // Validate hourly rates for all selected timesheets
+      const timesheetsWithZeroRate = selectedTimesheetsData.filter(ts => {
+        const rate = parseFloat(ts.billRate || ts.hourlyRate || ts.rate || 0);
+        return rate === 0;
+      });
+
+      if (timesheetsWithZeroRate.length > 0) {
+        const employeeNames = timesheetsWithZeroRate
+          .map(ts => ts.employeeName || 'Unknown Employee')
+          .join(', ');
+        
+        toast.error(
+          `Cannot generate invoice: The following employee(s) do not have an hourly rate set: ${employeeNames}. Please set hourly rates before generating invoices.`,
+          { duration: 6000 }
+        );
+        setGenerating(false);
+        return;
+      }
+
       // Extract client information
       const firstTimesheet = selectedTimesheetsData[0];
       const clientId = firstTimesheet?.clientId;

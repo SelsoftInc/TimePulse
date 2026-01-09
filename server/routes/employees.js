@@ -503,14 +503,26 @@ router.post("/", async (req, res) => {
 router.put("/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const { tenantId } = req.query;
-    let updateData = req.body;
+    // Accept tenantId from either query parameter or request body
+    const tenantId = req.query.tenantId || req.body.tenantId;
+    let updateData = { ...req.body };
+    
+    // Remove tenantId from updateData if it was in the body
+    delete updateData.tenantId;
     
     console.log('📝 Updating employee:', {
       id,
       tenantId,
       updateData
     });
+    
+    if (!tenantId) {
+      console.error('❌ Missing tenantId');
+      return res.status(400).json({ 
+        success: false, 
+        error: "tenantId is required" 
+      });
+    }
     
     // Encrypt employee data before updating in database
     updateData = DataEncryptionService.encryptEmployeeData(updateData);

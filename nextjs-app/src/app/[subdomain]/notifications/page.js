@@ -136,12 +136,13 @@ export default function NotificationsPage() {
     if (!date) return 'N/A';
     const d = new Date(date);
     if (isNaN(d.getTime())) return 'Invalid Date';
-    return d.toLocaleDateString('en-US', {
+    return d.toLocaleString('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
+      hour12: true
     });
   };
 

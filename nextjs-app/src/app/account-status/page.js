@@ -203,10 +203,13 @@ export default function AccountStatusPage() {
               <div className="flex justify-between items-center">
                 <span className="text-gray-600 font-semibold">Submitted:</span>
                 <span className="text-gray-900 font-bold">
-                  {status.createdAt ? new Date(status.createdAt).toLocaleDateString('en-US', {
+                  {status.createdAt ? new Date(status.createdAt).toLocaleString('en-US', {
                     year: 'numeric',
                     month: 'short',
-                    day: 'numeric'
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: true
                   }) : 'N/A'}
                 </span>
               </div>

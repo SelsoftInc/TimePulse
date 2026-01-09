@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import './Auth.css';
+import './ForgotPasswordStyles.css';
 import { API_BASE } from '@/config/api';
 const ForgotPassword = () => {
   const [email, setEmail] = useState('');
@@ -57,13 +58,13 @@ const ForgotPassword = () => {
 
       <div className="auth-card">
         <div className="auth-header">
-          <img src="/assets/images/jsTree/TimePulseLogoAuth.png" alt="TimePulse Logo" className="auth-logo" />
+          <img src="/assets/images/jsTree/TimePulse4.png" alt="TimePulse Logo" className="auth-logo" />
           <h2>Forgot Password?</h2>
-          <p>Enter your email address and we'll send you a link to reset your password</p>
+         
         </div>
 
         {error && <div className="auth-error">{error}</div>}
-        {message && <div className="auth-success">{message}</div>}
+        {/* {message && <div className="auth-success">{message}</div>} */}
 
         {!emailSent ? (
           <form onSubmit={handleSubmit} className="auth-form">
@@ -93,18 +94,18 @@ const ForgotPassword = () => {
             </div>
           </form>
         ) : (
-          <div style={{ textAlign: 'center', padding: '20px 0' }}>
-            <div style={{ fontSize: '48px', color: '#10b981', marginBottom: '20px' }}>
+          <div className="email-sent-container">
+            <div className="success-icon">
               <i className="fas fa-check-circle"></i>
             </div>
-            <h3 style={{ marginBottom: '15px', color: '#333' }}>Check Your Email</h3>
-            <p style={{ color: '#666', marginBottom: '20px' }}>
+            <h3 className="email-sent-title">Check Your Email</h3>
+            <p className="email-sent-message">
               If an account exists with the email <strong>{email}</strong>, you will receive a password reset link shortly.
             </p>
-            <p style={{ color: '#666', fontSize: '14px', marginBottom: '20px' }}>
+            <p className="email-sent-note">
               The link will expire in 1 hour for security reasons.
             </p>
-            <Link href="/login" className="btn-primary" style={{ display: 'inline-block', textDecoration: 'none' }}>
+            <Link href="/login" className="btn-primary btn-block">
               Return to Login
             </Link>
           </div>

@@ -348,8 +348,33 @@ models.Employee = sequelize.define(
       type: DataTypes.STRING(500),
       allowNull: true,
     },
+    country: {
+      type: DataTypes.STRING(100),
+      allowNull: true,
+      defaultValue: 'United States',
+    },
+    alternativeMobile: {
+      type: DataTypes.STRING(500),
+      allowNull: true,
+      field: "alternative_mobile",
+    },
+    alternativeCountry: {
+      type: DataTypes.STRING(100),
+      allowNull: true,
+      defaultValue: 'United States',
+      field: "alternative_country",
+    },
+    panNumber: {
+      type: DataTypes.STRING(50),
+      allowNull: true,
+      field: "pan_number",
+    },
     department: {
       type: DataTypes.STRING(100),
+    },
+    position: {
+      type: DataTypes.STRING(100),
+      allowNull: true,
     },
     title: {
       type: DataTypes.STRING(100),

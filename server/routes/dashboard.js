@@ -54,6 +54,18 @@ router.get("/", async (req, res) => {
         to: toDate ? toDate.toISOString().split('T')[0] : 'N/A'
       }
     });
+    
+    // Calculate and log last month date range for debugging
+    if (fromDate) {
+      const lastMonthStartSQL = `DATE_TRUNC('month', DATE '${fromDate.toISOString().split("T")[0]}' - INTERVAL '1 month')`;
+      const lastMonthEndSQL = `DATE_TRUNC('month', DATE '${fromDate.toISOString().split("T")[0]}')`;
+      console.log('🗓️ Last Month SQL Calculation:', {
+        fromDateInput: fromDate.toISOString().split('T')[0],
+        lastMonthStartSQL,
+        lastMonthEndSQL,
+        expectedRange: `${new Date(fromDate.getFullYear(), fromDate.getMonth() - 1, 1).toISOString().split('T')[0]} to ${new Date(fromDate.getFullYear(), fromDate.getMonth(), 0).toISOString().split('T')[0]}`
+      });
+    }
 
     // Set tenant context for RLS
     await sequelize.query(`SET app.current_tenant_id = '${tenantId}'`);
@@ -120,11 +132,32 @@ router.get("/", async (req, res) => {
             ),
             last_month_data AS (
               SELECT 
-                COALESCE(SUM(CASE WHEN i.payment_status IN ('pending','paid','overdue') THEN i.total_amount END), 0) AS revenue
+                COALESCE(
+                  (SELECT SUM(i.total_amount) 
+                   FROM invoices i
+                   JOIN clients c ON c.id = i.client_id
+                   WHERE i.tenant_id = '${tenantId}'
+                     AND i.payment_status IN ('pending','paid','overdue')
+                     AND i.invoice_date >= (${fromDate ? `DATE '${fromDate.toISOString().split("T")[0]}'` : 'CURRENT_DATE'} - INTERVAL '1 month')
+                     AND i.invoice_date < ${fromDate ? `DATE '${fromDate.toISOString().split("T")[0]}'` : 'CURRENT_DATE'})
+                  +
+                  (SELECT SUM(i.total_amount) 
+                   FROM invoices i
+                   JOIN vendors v ON v.id = i.vendor_id
+                   WHERE i.tenant_id = '${tenantId}'
+                     AND i.payment_status IN ('pending','paid','overdue')
+                     AND i.status = 'active'
+                     AND i.invoice_date >= (${fromDate ? `DATE '${fromDate.toISOString().split("T")[0]}'` : 'CURRENT_DATE'} - INTERVAL '1 month')
+                     AND i.invoice_date < ${fromDate ? `DATE '${fromDate.toISOString().split("T")[0]}'` : 'CURRENT_DATE'})
+                , 0) AS revenue,
+                MIN(i.invoice_date) AS first_invoice_date,
+                MAX(i.invoice_date) AS last_invoice_date,
+                COUNT(i.id) AS invoice_count
               FROM invoices i
               WHERE i.tenant_id = '${tenantId}'
                 AND i.payment_status IN ('pending','paid','overdue')
-                AND DATE_TRUNC('month', i.invoice_date) = DATE_TRUNC('month', ${fromDate ? `DATE '${fromDate.toISOString().split("T")[0]}'` : 'CURRENT_DATE'} - INTERVAL '1 month')
+                AND i.invoice_date >= (${fromDate ? `DATE '${fromDate.toISOString().split("T")[0]}'` : 'CURRENT_DATE'} - INTERVAL '1 month')
+                AND i.invoice_date < ${fromDate ? `DATE '${fromDate.toISOString().split("T")[0]}'` : 'CURRENT_DATE'}
             ),
             all_invoices AS (
               SELECT 
@@ -139,8 +172,22 @@ router.get("/", async (req, res) => {
               ai.total_revenue,
               ai.ar_outstanding,
               (SELECT COUNT(*) FROM employees WHERE tenant_id = '${tenantId}' AND status = 'active') AS active_employees,
-              (SELECT COUNT(*) FROM timesheets WHERE tenant_id = '${tenantId}' AND status = 'submitted' ${timesheetDateFilter}) AS ts_pending,
-              (SELECT COUNT(*) FROM timesheets WHERE tenant_id = '${tenantId}' AND status = 'approved' ${timesheetDateFilter}) AS ts_approved
+              (SELECT COUNT(*) FROM timesheets WHERE tenant_id = '${tenantId}' AND status = 'submitted') AS ts_pending,
+              (SELECT COUNT(*) FROM timesheets WHERE tenant_id = '${tenantId}' AND status = 'approved') AS ts_approved,
+              (SELECT COALESCE(SUM(total_hours), 0) 
+               FROM timesheets 
+               WHERE tenant_id = '${tenantId}' 
+                 AND status IN ('submitted', 'approved')
+                 AND DATE_TRUNC('month', week_end) = DATE_TRUNC('month', CURRENT_DATE)) AS total_hours_current_month,
+              (SELECT CASE 
+                 WHEN COUNT(*) > 0 
+                 THEN ROUND((COALESCE(SUM(total_hours), 0) / (COUNT(DISTINCT employee_id) * 160.0)) * 100, 1)
+                 ELSE 0 
+               END
+               FROM timesheets 
+               WHERE tenant_id = '${tenantId}' 
+                 AND status IN ('submitted', 'approved')
+                 AND DATE_TRUNC('month', week_end) = DATE_TRUNC('month', CURRENT_DATE)) AS utilization_percentage
             FROM current_month_data cmd, last_month_data lmd, all_invoices ai
             `,
             {
@@ -247,9 +294,28 @@ router.get("/", async (req, res) => {
     // Log calculated KPIs for debugging
     const kpisData = convertToNumber(kpisResult[0] || {});
     if (scope === "company") {
+      // Calculate expected last month date range
+      const lastMonthStart = fromDate 
+        ? new Date(fromDate.getFullYear(), fromDate.getMonth() - 1, 1)
+        : new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1);
+      const lastMonthEnd = fromDate
+        ? new Date(fromDate.getFullYear(), fromDate.getMonth(), 0)
+        : new Date(new Date().getFullYear(), new Date().getMonth(), 0);
+      
       console.log('💰 Revenue Breakdown:', {
+        dateRange: {
+          from: fromDate ? fromDate.toISOString().split('T')[0] : 'N/A',
+          to: toDate ? toDate.toISOString().split('T')[0] : 'N/A'
+        },
+        lastMonthDateRange: {
+          start: lastMonthStart.toISOString().split('T')[0],
+          end: lastMonthEnd.toISOString().split('T')[0]
+        },
         currentMonthRevenue: kpisData.current_month_revenue || 0,
         lastMonthRevenue: kpisData.last_month_revenue || 0,
+        lastMonthInvoiceCount: kpisData.invoice_count || 0,
+        lastMonthFirstInvoice: kpisData.first_invoice_date || 'N/A',
+        lastMonthLastInvoice: kpisData.last_invoice_date || 'N/A',
         totalRevenue: kpisData.total_revenue || 0,
         outstanding: kpisData.ar_outstanding || 0
       });

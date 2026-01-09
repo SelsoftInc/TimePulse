@@ -4,6 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
 import { API_BASE } from '@/config/api';
+import { COUNTRY_OPTIONS, getCountryCode, getPhoneMaxLength } from '@/config/lookups';
+import { validatePhoneNumber } from '@/utils/validations';
 import './ProfileSettings.css';
 
 const ProfileSettings = () => {
@@ -14,7 +16,9 @@ const ProfileSettings = () => {
     lastName: '',
     email: '',
     phone: '',
+    country: 'United States',
     alternativeMobile: '',
+    alternativeCountry: 'United States',
     panNumber: '',
     department: '',
     position: '',
@@ -35,6 +39,8 @@ const ProfileSettings = () => {
 
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [phoneError, setPhoneError] = useState('');
+  const [altPhoneError, setAltPhoneError] = useState('');
 
   useEffect(() => {
     loadProfileData();
@@ -70,7 +76,14 @@ const ProfileSettings = () => {
       const data = await response.json();
       
       if (data.success && data.user) {
-        console.log('✅ Profile data received:', data.user);
+        console.log('✅ Profile data received from backend:', {
+          phone: data.user.phone,
+          country: data.user.country,
+          alternativeMobile: data.user.alternativeMobile,
+          alternativeCountry: data.user.alternativeCountry,
+          panNumber: data.user.panNumber,
+          position: data.user.employee?.position
+        });
         
         const userData = data.user;
         const employeeData = userData.employee;
@@ -80,7 +93,9 @@ const ProfileSettings = () => {
           lastName: userData.lastName || '',
           email: userData.email || '',
           phone: userData.phone || '',
+          country: userData.country || 'United States',
           alternativeMobile: userData.alternativeMobile || '',
+          alternativeCountry: userData.alternativeCountry || 'United States',
           panNumber: userData.panNumber || '',
           department: employeeData?.department || '',
           position: employeeData?.position || '',
@@ -97,7 +112,14 @@ const ProfileSettings = () => {
           }
         };
         
-        console.log('✅ Setting profile data:', realProfile);
+        console.log('✅ Mapped profile data to state:', {
+          phone: realProfile.phone,
+          country: realProfile.country,
+          alternativeMobile: realProfile.alternativeMobile,
+          alternativeCountry: realProfile.alternativeCountry,
+          panNumber: realProfile.panNumber,
+          position: realProfile.position
+        });
         setProfileData(realProfile);
       } else {
         console.error('Failed to fetch profile data:', data.error);
@@ -121,10 +143,38 @@ const ProfileSettings = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setProfileData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    
+    // Update state with new value
+    setProfileData(prev => {
+      const newData = {
+        ...prev,
+        [name]: value
+      };
+
+      // Validate phone when country or phone changes (using newData to avoid stale state)
+      if (name === 'country' || name === 'phone') {
+        const phoneToValidate = name === 'phone' ? value : newData.phone;
+        const countryToUse = name === 'country' ? value : newData.country;
+        if (phoneToValidate) {
+          const validation = validatePhoneNumber(phoneToValidate, countryToUse);
+          setPhoneError(validation.error || '');
+        }
+      }
+
+      // Validate alternative mobile (using newData to avoid stale state)
+      if (name === 'alternativeCountry' || name === 'alternativeMobile') {
+        const phoneToValidate = name === 'alternativeMobile' ? value : newData.alternativeMobile;
+        const countryToUse = name === 'alternativeCountry' ? value : newData.alternativeCountry;
+        if (phoneToValidate) {
+          const validation = validatePhoneNumber(phoneToValidate, countryToUse);
+          setAltPhoneError(validation.error || '');
+        } else {
+          setAltPhoneError('');
+        }
+      }
+
+      return newData;
+    });
   };
 
   const handleNotificationChange = (e) => {
@@ -143,10 +193,10 @@ const ProfileSettings = () => {
     return panRegex.test(pan);
   };
 
-  const validatePhone = (phone) => {
-    // Basic phone validation - at least 10 digits
-    const phoneRegex = /^[0-9]{10,}$/;
-    return phoneRegex.test(phone.replace(/[^0-9]/g, ''));
+  const validatePhone = (phone, country) => {
+    if (!phone) return false;
+    const validation = validatePhoneNumber(phone, country);
+    return validation.isValid;
   };
 
   const handleSave = async () => {
@@ -168,8 +218,8 @@ const ProfileSettings = () => {
         toast.error('Phone Number is required');
         return;
       }
-      if (!validatePhone(profileData.phone)) {
-        toast.error('Please enter a valid phone number');
+      if (!validatePhone(profileData.phone, profileData.country)) {
+        toast.error(phoneError || 'Please enter a valid phone number');
         return;
       }
       if (!profileData.department || !profileData.department.trim()) {
@@ -189,8 +239,8 @@ const ProfileSettings = () => {
         return;
       }
       // Validate alternative mobile if provided
-      if (profileData.alternativeMobile && profileData.alternativeMobile.trim() && !validatePhone(profileData.alternativeMobile)) {
-        toast.error('Please enter a valid alternative mobile number');
+      if (profileData.alternativeMobile && profileData.alternativeMobile.trim() && !validatePhone(profileData.alternativeMobile, profileData.alternativeCountry)) {
+        toast.error(altPhoneError || 'Please enter a valid alternative mobile number');
         return;
       }
 
@@ -203,13 +253,15 @@ const ProfileSettings = () => {
         return;
       }
 
-      // Prepare update payload
+      // Prepare update payload - capture current state at time of save
       const updatePayload = {
         firstName: profileData.firstName,
         lastName: profileData.lastName,
         email: profileData.email,
         phone: profileData.phone,
+        country: profileData.country,
         alternativeMobile: profileData.alternativeMobile,
+        alternativeCountry: profileData.alternativeCountry,
         panNumber: profileData.panNumber,
         department: profileData.department,
         position: profileData.position,
@@ -220,7 +272,14 @@ const ProfileSettings = () => {
         }
       };
 
-      console.log('💾 Saving profile data:', updatePayload);
+      console.log('💾 Saving profile data to backend:', {
+        phone: updatePayload.phone,
+        country: updatePayload.country,
+        alternativeMobile: updatePayload.alternativeMobile,
+        alternativeCountry: updatePayload.alternativeCountry,
+        panNumber: updatePayload.panNumber,
+        position: updatePayload.position
+      });
 
       // Save profile data to settings API
       const response = await fetch(`${API_BASE}/api/settings/profile/${userId}`, {
@@ -240,16 +299,31 @@ const ProfileSettings = () => {
       const result = await response.json();
       console.log('✅ Profile updated successfully:', result);
       
+      // Update localStorage with new data
+      const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+      userInfo.firstName = profileData.firstName;
+      userInfo.lastName = profileData.lastName;
+      userInfo.email = profileData.email;
+      userInfo.phone = profileData.phone;
+      userInfo.department = profileData.department;
+      localStorage.setItem('userInfo', JSON.stringify(userInfo));
+      
+      // IMPORTANT: Keep the state as-is (don't reload from backend)
+      // The profileData already contains the values we just saved
+      // Reloading from backend causes race condition with stale data
+      console.log('✅ Keeping current state - data already reflects saved values:', {
+        phone: profileData.phone,
+        country: profileData.country,
+        panNumber: profileData.panNumber
+      });
+      
       setIsEditing(false);
       setLoading(false);
       
-      // Show success message
+      // Show success message AFTER state is updated
       toast.success('Your profile has been updated successfully!', {
         title: 'Profile Updated'
       });
-      
-      // Reload the profile data to reflect changes
-      await loadProfileData();
       
     } catch (error) {
       console.error('Error saving profile:', error);
@@ -381,30 +455,76 @@ const ProfileSettings = () => {
             />
           </div>
           <div className="form-group">
-            <label className="form-label">Phone Number *</label>
-            <input
-              type="tel"
+            <label className="form-label">Country *</label>
+            <select
               className="form-control"
-              name="phone"
-              value={profileData.phone}
+              name="country"
+              value={profileData.country}
               onChange={handleInputChange}
               disabled={!isEditing}
               required
-            />
+            >
+              {COUNTRY_OPTIONS.map(country => (
+                <option key={country} value={country}>
+                  {country}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+        
+        <div className="form-row">
+          <div className="form-group">
+            <label className="form-label">Phone Number *</label>
+            <div className="phone-input-wrapper">
+              <span className="country-code">{getCountryCode(profileData.country)}</span>
+              <input
+                type="tel"
+                className="form-control phone-input"
+                name="phone"
+                value={profileData.phone}
+                onChange={handleInputChange}
+                disabled={!isEditing}
+                maxLength={getPhoneMaxLength(profileData.country)}
+                required
+              />
+            </div>
+            {phoneError && <small className="form-error">{phoneError}</small>}
+          </div>
+          <div className="form-group">
+            <label className="form-label">Alternative Country</label>
+            <select
+              className="form-control"
+              name="alternativeCountry"
+              value={profileData.alternativeCountry}
+              onChange={handleInputChange}
+              disabled={!isEditing}
+            >
+              {COUNTRY_OPTIONS.map(country => (
+                <option key={country} value={country}>
+                  {country}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
         
         <div className="form-row">
           <div className="form-group">
             <label className="form-label">Alternative Mobile Number</label>
-            <input
-              type="tel"
-              className="form-control"
-              name="alternativeMobile"
-              value={profileData.alternativeMobile}
-              onChange={handleInputChange}
-              disabled={!isEditing}
-            />
+            <div className="phone-input-wrapper">
+              <span className="country-code">{getCountryCode(profileData.alternativeCountry)}</span>
+              <input
+                type="tel"
+                className="form-control phone-input"
+                name="alternativeMobile"
+                value={profileData.alternativeMobile}
+                onChange={handleInputChange}
+                disabled={!isEditing}
+                maxLength={getPhoneMaxLength(profileData.alternativeCountry)}
+              />
+            </div>
+            {altPhoneError && <small className="form-error">{altPhoneError}</small>}
           </div>
           <div className="form-group">
             <label className="form-label">PAN Number *</label>

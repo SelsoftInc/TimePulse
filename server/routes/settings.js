@@ -315,6 +315,10 @@ router.get('/profile/:userId', async (req, res) => {
     // Try to get employee information
     let employeeInfo = null;
     let phone = null;
+    let country = null;
+    let alternativeMobile = null;
+    let alternativeCountry = null;
+    let panNumber = null;
     let employeeId = null;
 
     if (models.Employee) {
@@ -325,15 +329,19 @@ router.get('/profile/:userId', async (req, res) => {
           where: {
             [Op.or]: [
               { email: user.email },
-              { id: userId }
+              { userId: userId }
             ],
             tenantId: user.tenantId
           },
-          attributes: ['id', 'employeeId', 'phone', 'department', 'position', 'startDate']
+          attributes: ['id', 'employeeId', 'phone', 'country', 'alternativeMobile', 'alternativeCountry', 'panNumber', 'department', 'position', 'startDate']
         });
         
         if (employee) {
           phone = employee.phone;
+          country = employee.country;
+          alternativeMobile = employee.alternativeMobile;
+          alternativeCountry = employee.alternativeCountry;
+          panNumber = employee.panNumber;
           employeeId = employee.employeeId;
           employeeInfo = {
             employeeId: employee.id,
@@ -341,7 +349,14 @@ router.get('/profile/:userId', async (req, res) => {
             position: employee.position || user.title,
             startDate: employee.startDate
           };
-          console.log('✅ Employee info found');
+          console.log('✅ Employee info found:', {
+            phone,
+            country,
+            alternativeMobile,
+            alternativeCountry,
+            panNumber,
+            position: employee.position
+          });
         } else {
           console.log('⚠️ No employee record found, using User data');
           employeeInfo = {
@@ -371,6 +386,10 @@ router.get('/profile/:userId', async (req, res) => {
       lastName: user.lastName,
       email: user.email,
       phone: phone || '',
+      country: country || 'United States',
+      alternativeMobile: alternativeMobile || '',
+      alternativeCountry: alternativeCountry || 'United States',
+      panNumber: panNumber || '',
       role: user.role,
       tenantId: user.tenantId,
       employeeId: employeeId || '',
@@ -378,7 +397,14 @@ router.get('/profile/:userId', async (req, res) => {
       settings: {}
     };
 
-    console.log('📤 Sending profile response');
+    console.log('📤 Sending profile response:', JSON.stringify({
+      phone: response.phone,
+      country: response.country,
+      alternativeMobile: response.alternativeMobile,
+      alternativeCountry: response.alternativeCountry,
+      panNumber: response.panNumber,
+      position: employeeInfo?.position
+    }, null, 2));
     res.json({ success: true, user: response });
 
   } catch (error) {
@@ -400,6 +426,16 @@ router.put('/profile/:userId', async (req, res) => {
     console.log('📝 Updating profile for user:', userId);
     console.log('📦 Update data:', updateData);
 
+    console.log('📥 Received profile update request for user:', userId);
+    console.log('📦 Update data received:', JSON.stringify({
+      phone: updateData.phone,
+      country: updateData.country,
+      alternativeMobile: updateData.alternativeMobile,
+      alternativeCountry: updateData.alternativeCountry,
+      panNumber: updateData.panNumber,
+      position: updateData.position
+    }, null, 2));
+
     const user = await User.findByPk(userId);
 
     if (!user) {
@@ -420,16 +456,16 @@ router.put('/profile/:userId', async (req, res) => {
     console.log('✅ User updated successfully');
 
     // Update employee information if Employee model exists
-    if (updateData.phone !== undefined || updateData.department !== undefined || updateData.position !== undefined) {
+    if (updateData.phone !== undefined || updateData.country !== undefined || updateData.alternativeMobile !== undefined || updateData.alternativeCountry !== undefined || updateData.panNumber !== undefined || updateData.department !== undefined || updateData.position !== undefined) {
       try {
         if (models.Employee) {
           const { Employee } = models;
-          // Find employee by user email or ID
+          // Find employee by user email or userId
           let employee = await Employee.findOne({
             where: {
               [Op.or]: [
                 { email: user.email },
-                { id: userId }
+                { userId: userId }
               ],
               tenantId: user.tenantId
             }
@@ -438,11 +474,25 @@ router.put('/profile/:userId', async (req, res) => {
           if (employee) {
             const employeeUpdate = {};
             if (updateData.phone !== undefined) employeeUpdate.phone = updateData.phone;
+            if (updateData.country !== undefined) employeeUpdate.country = updateData.country;
+            if (updateData.alternativeMobile !== undefined) employeeUpdate.alternativeMobile = updateData.alternativeMobile;
+            if (updateData.alternativeCountry !== undefined) employeeUpdate.alternativeCountry = updateData.alternativeCountry;
+            if (updateData.panNumber !== undefined) employeeUpdate.panNumber = updateData.panNumber;
             if (updateData.department !== undefined) employeeUpdate.department = updateData.department;
             if (updateData.position !== undefined) employeeUpdate.position = updateData.position;
             console.log('💾 Updating employee with:', employeeUpdate);
             await employee.update(employeeUpdate);
-            console.log('✅ Employee updated successfully');
+            
+            // Force reload to verify data was saved
+            await employee.reload();
+            console.log('✅ Employee updated and reloaded. Saved values:', {
+              phone: employee.phone,
+              country: employee.country,
+              alternativeMobile: employee.alternativeMobile,
+              alternativeCountry: employee.alternativeCountry,
+              panNumber: employee.panNumber,
+              position: employee.position
+            });
           } else {
             console.log('⚠️ No employee record found, data updated in User table only');
           }

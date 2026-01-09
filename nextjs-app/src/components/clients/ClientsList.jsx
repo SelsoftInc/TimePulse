@@ -355,7 +355,7 @@ const ClientsList = () => {
             <table className="min-w-full border-collapse">
               <thead className="bg-slate-50">
                 <tr className="text-left text-xs font-semibold uppercase tracking-wide text-slate-600">
-                  <th className="px-4 py-3">End Client Name</th>
+                  <th className="px-4 py-3">Client</th>
                   <th className="px-4 py-3">Contact Person</th>
                   <th className="px-4 py-3">Email</th>
                   <th className="px-4 py-3">Phone</th>

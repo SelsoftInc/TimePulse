@@ -146,7 +146,7 @@ const DataGridFilter = ({
             {filter.type === 'dateRange' && (
               <div className="flex items-center gap-2">
                 <input
-                  type="date"
+                  type="text"
                   className="
                     w-full h-9
                     rounded-md
@@ -154,22 +154,45 @@ const DataGridFilter = ({
                     px-2 text-xs text-slate-800
                     focus:outline-none focus:ring-1 focus:ring-indigo-500
                   "
+                  placeholder="dd-mm-yyyy"
                   value={filter.value.from || ''}
                   onChange={(e) => {
-                    // Convert YYYY-MM-DD to MM-DD-YYYY for storage
-                    const dateValue = e.target.value;
-                    if (dateValue) {
-                      const [year, month, day] = dateValue.split('-');
-                      const formattedDate = `${month}-${day}-${year}`;
+                    let value = e.target.value;
+                    // Remove non-numeric and non-dash characters
+                    value = value.replace(/[^\d-]/g, '');
+                    
+                    // Auto-format as user types: DD-MM-YYYY
+                    if (value.length === 2 && !value.includes('-')) {
+                      value = value + '-';
+                    } else if (value.length === 5 && value.split('-').length === 2) {
+                      value = value + '-';
+                    }
+                    
+                    // Limit to DD-MM-YYYY format (10 characters)
+                    if (value.length <= 10) {
                       handleFilterChange(filter.key, {
                         ...filter.value,
-                        from: formattedDate,
+                        from: value,
                       });
-                    } else {
-                      handleFilterChange(filter.key, {
-                        ...filter.value,
-                        from: '',
-                      });
+                    }
+                  }}
+                  onBlur={(e) => {
+                    // Validate on blur
+                    const value = e.target.value;
+                    if (value && value.length === 10) {
+                      const [day, month, year] = value.split('-');
+                      const d = parseInt(day);
+                      const m = parseInt(month);
+                      const y = parseInt(year);
+                      
+                      // Basic validation - DD-MM-YYYY format
+                      if (d < 1 || d > 31 || m < 1 || m > 12 || y < 1900 || y > 2100) {
+                        alert('Invalid date format. Please use DD-MM-YYYY (e.g., 15-01-2026)');
+                        handleFilterChange(filter.key, {
+                          ...filter.value,
+                          from: '',
+                        });
+                      }
                     }
                   }}
                 />
@@ -177,7 +200,7 @@ const DataGridFilter = ({
                 <span className="text-xs text-slate-400">to</span>
 
                 <input
-                  type="date"
+                  type="text"
                   className="
                     w-full h-9
                     rounded-md
@@ -185,22 +208,45 @@ const DataGridFilter = ({
                     px-2 text-xs text-slate-800
                     focus:outline-none focus:ring-1 focus:ring-indigo-500
                   "
+                  placeholder="dd-mm-yyyy"
                   value={filter.value.to || ''}
                   onChange={(e) => {
-                    // Convert YYYY-MM-DD to MM-DD-YYYY for storage
-                    const dateValue = e.target.value;
-                    if (dateValue) {
-                      const [year, month, day] = dateValue.split('-');
-                      const formattedDate = `${month}-${day}-${year}`;
+                    let value = e.target.value;
+                    // Remove non-numeric and non-dash characters
+                    value = value.replace(/[^\d-]/g, '');
+                    
+                    // Auto-format as user types: DD-MM-YYYY
+                    if (value.length === 2 && !value.includes('-')) {
+                      value = value + '-';
+                    } else if (value.length === 5 && value.split('-').length === 2) {
+                      value = value + '-';
+                    }
+                    
+                    // Limit to DD-MM-YYYY format (10 characters)
+                    if (value.length <= 10) {
                       handleFilterChange(filter.key, {
                         ...filter.value,
-                        to: formattedDate,
+                        to: value,
                       });
-                    } else {
-                      handleFilterChange(filter.key, {
-                        ...filter.value,
-                        to: '',
-                      });
+                    }
+                  }}
+                  onBlur={(e) => {
+                    // Validate on blur
+                    const value = e.target.value;
+                    if (value && value.length === 10) {
+                      const [day, month, year] = value.split('-');
+                      const d = parseInt(day);
+                      const m = parseInt(month);
+                      const y = parseInt(year);
+                      
+                      // Basic validation - DD-MM-YYYY format
+                      if (d < 1 || d > 31 || m < 1 || m > 12 || y < 1900 || y > 2100) {
+                        alert('Invalid date format. Please use DD-MM-YYYY (e.g., 15-01-2026)');
+                        handleFilterChange(filter.key, {
+                          ...filter.value,
+                          to: '',
+                        });
+                      }
                     }
                   }}
                 />

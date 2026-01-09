@@ -9,7 +9,7 @@ from pathlib import Path
 
 from config import get_settings
 from models import HealthResponse, ErrorResponse
-from routers import timesheet
+from routers import timesheet, gmail
 
 # Configure logging
 settings = get_settings()
@@ -60,6 +60,7 @@ app.add_middleware(
 
 # Include routers
 app.include_router(timesheet.router)
+app.include_router(gmail.router)
 
 # Serve static files for frontend
 frontend_dir = Path(__file__).parent / "frontend"

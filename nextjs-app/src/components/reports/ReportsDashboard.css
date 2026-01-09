@@ -1508,6 +1508,18 @@ body.dark-mode .reports-dashboard-scope .nk-tb-item.dropdown-open .dropdown-menu
   border-right: none;
 }
 
+/* Center alignment for table cells */
+.reports-dashboard-scope .nk-tb-col.text-center {
+  text-align: center;
+}
+
+.reports-dashboard-scope .nk-tb-col.text-center .tb-lead,
+.reports-dashboard-scope .nk-tb-col.text-center .tb-amount,
+.reports-dashboard-scope .nk-tb-col.text-center span {
+  display: inline-block;
+  text-align: center;
+}
+
 /* Responsive medium columns */
 .reports-dashboard-scope .tb-col-md {
   width: 140px;

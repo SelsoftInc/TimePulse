@@ -7,6 +7,7 @@ import DataGridFilter from '../common/DataGridFilter';
 import Modal from '../common/Modal';
 import InvoicePDFPreviewModal from '../common/InvoicePDFPreviewModal';
 import InvoiceDetailsModal from '../common/InvoiceDetailsModal';
+import HourlyRateModal from './HourlyRateModal';
 import { useAuth } from '@/contexts/AuthContext';
 import axios from 'axios';
 import { API_BASE } from '@/config/api';
@@ -99,6 +100,14 @@ const TimesheetSummary = () => {
   const [assigningVendor, setAssigningVendor] = useState(false);
   const [currentEmployeeForAssignment, setCurrentEmployeeForAssignment] = useState(null);
   const [currentTimesheetForRetry, setCurrentTimesheetForRetry] = useState(null);
+  
+  // Hourly rate modal state
+  const [showHourlyRateModal, setShowHourlyRateModal] = useState(false);
+  const [hourlyRateInput, setHourlyRateInput] = useState('45.00');
+  const [updatingHourlyRate, setUpdatingHourlyRate] = useState(false);
+  const [currentEmployeeForRate, setCurrentEmployeeForRate] = useState(null);
+  const [currentTimesheetForRateRetry, setCurrentTimesheetForRateRetry] = useState(null);
+  const [providedVendorForRetry, setProvidedVendorForRetry] = useState(null);
   
   // Email missing modal state
   const [showEmailMissingModal, setShowEmailMissingModal] = useState(false);
@@ -204,24 +213,46 @@ const TimesheetSummary = () => {
           ];
 
           // Format timesheets to match UI expectations
-          const formattedTimesheets = allTimesheets.map(ts => ({
-            id: ts.id,
-            weekRange: ts.weekRange || `${new Date(ts.weekStart).toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' })} To ${new Date(ts.weekEnd).toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' })}`,
-            employeeName: ts.employeeName || 'Unknown',
-            status: ts.status === 'submitted' ? 'Submitted for Approval' :
-                    ts.status === 'approved' ? 'Approved' :
-                    ts.status === 'rejected' ? 'Rejected' :
-                    ts.status === 'draft' ? 'Pending' : ts.status,
-            billableProjectHrs: ts.billableProjectHrs || ts.totalTimeHours || '0.00',
-            timeOffHolidayHrs: ts.timeOffHolidayHrs || '0.00',
-            totalTimeHours: ts.totalTimeHours || ts.billableProjectHrs || '0.00',
-            weekStart: ts.weekStart,
-            weekEnd: ts.weekEnd,
-            dailyHours: ts.dailyHours || {},
-            notes: ts.notes || '',
-            attachments: ts.attachments || [],
-            reviewer: ts.reviewer
-          }));
+          const formattedTimesheets = allTimesheets.map(ts => {
+            // Parse dates as local dates to avoid timezone issues
+            const parseLocalDate = (dateStr) => {
+              if (!dateStr) return null;
+              const [datePart] = dateStr.split('T');
+              const [year, month, day] = datePart.split('-').map(Number);
+              return new Date(year, month - 1, day);
+            };
+            
+            const weekStartDate = parseLocalDate(ts.weekStart);
+            const weekEndDate = parseLocalDate(ts.weekEnd);
+            
+            const formatLocalDate = (date) => {
+              if (!date) return 'N/A';
+              // Format as DD-MM-YYYY (date-month-year)
+              const day = String(date.getDate()).padStart(2, '0');
+              const month = String(date.getMonth() + 1).padStart(2, '0');
+              const year = date.getFullYear();
+              return `${day}-${month}-${year}`;
+            };
+            
+            return {
+              id: ts.id,
+              weekRange: ts.weekRange || `${formatLocalDate(weekStartDate)} To ${formatLocalDate(weekEndDate)}`,
+              employeeName: ts.employeeName || 'Unknown',
+              status: ts.status === 'submitted' ? 'Submitted for Approval' :
+                      ts.status === 'approved' ? 'Approved' :
+                      ts.status === 'rejected' ? 'Rejected' :
+                      ts.status === 'draft' ? 'Pending' : ts.status,
+              billableProjectHrs: ts.billableProjectHrs || ts.totalTimeHours || '0.00',
+              timeOffHolidayHrs: ts.timeOffHolidayHrs || '0.00',
+              totalTimeHours: ts.totalTimeHours || ts.billableProjectHrs || '0.00',
+              weekStart: ts.weekStart,
+              weekEnd: ts.weekEnd,
+              dailyHours: ts.dailyHours || {},
+              notes: ts.notes || '',
+              attachments: ts.attachments || [],
+              reviewer: ts.reviewer
+            };
+          });
 
           console.log('📊 Formatted timesheets:', formattedTimesheets);
           setTimesheets(formattedTimesheets);
@@ -399,33 +430,52 @@ const TimesheetSummary = () => {
     // Date range filter
     if (filters.dateRange.from || filters.dateRange.to) {
       // Parse the week range to get the start date
-      // Format is now "MM-DD-YYYY To MM-DD-YYYY"
+      // Supports both "Jan 03, 2026 To Jan 09, 2026" and "01-03-2026 To 01-09-2026" formats
       const weekRangeParts = timesheet.weekRange.split(' To ');
       if (weekRangeParts.length === 2) {
         const weekStartStr = weekRangeParts[0].trim();
         const weekEndStr = weekRangeParts[1].trim();
         
-        // Parse MM-DD-YYYY format dates
-        const parseMMDDYYYY = (dateStr) => {
-          const [month, day, year] = dateStr.split('-').map(Number);
-          return new Date(year, month - 1, day);
+        // Universal date parser - handles multiple formats
+        const parseDate = (dateStr) => {
+          // Try DD-MM-YYYY format (e.g., "15-01-2026")
+          if (dateStr.includes('-')) {
+            const parts = dateStr.split('-');
+            if (parts.length === 3 && parts[0].length <= 2) {
+              const [day, month, year] = parts.map(Number);
+              // First value is day, second is month, third is year
+              return new Date(year, month - 1, day);
+            }
+          }
+          
+          // Try "Jan 03, 2026" format (fallback for old data)
+          const dateObj = new Date(dateStr);
+          if (!isNaN(dateObj.getTime())) {
+            return dateObj;
+          }
+          
+          return null;
         };
         
-        const weekStart = parseMMDDYYYY(weekStartStr);
-        const weekEnd = parseMMDDYYYY(weekEndStr);
+        const weekStart = parseDate(weekStartStr);
+        const weekEnd = parseDate(weekEndStr);
+        
+        if (!weekStart || !weekEnd) {
+          return true; // Skip filtering if dates can't be parsed
+        }
         
         // Apply from filter
         if (filters.dateRange.from) {
-          const fromDate = parseMMDDYYYY(filters.dateRange.from);
-          if (weekEnd < fromDate) {
+          const fromDate = parseDate(filters.dateRange.from);
+          if (fromDate && weekEnd < fromDate) {
             return false;
           }
         }
         
         // Apply to filter
         if (filters.dateRange.to) {
-          const toDate = parseMMDDYYYY(filters.dateRange.to);
-          if (weekStart > toDate) {
+          const toDate = parseDate(filters.dateRange.to);
+          if (toDate && weekStart > toDate) {
             return false;
           }
         }
@@ -740,6 +790,87 @@ const TimesheetSummary = () => {
     }
   };
   
+  const handleSaveHourlyRate = async () => {
+    if (!currentEmployeeForRate || !hourlyRateInput) {
+      showModal({
+        type: 'error',
+        title: 'Rate Required',
+        message: 'Please enter a valid hourly rate.'
+      });
+      return;
+    }
+
+    const rate = parseFloat(hourlyRateInput);
+    if (isNaN(rate) || rate <= 0) {
+      showModal({
+        type: 'error',
+        title: 'Invalid Rate',
+        message: 'Please enter a valid hourly rate greater than 0.'
+      });
+      return;
+    }
+
+    setUpdatingHourlyRate(true);
+
+    try {
+      console.log('📤 Updating hourly rate for employee:', {
+        employeeId: currentEmployeeForRate.id,
+        hourlyRate: rate
+      });
+
+      // Update employee hourly rate via API
+      const response = await apiClient.put(
+        `/api/employees/${currentEmployeeForRate.id}`,
+        {
+          hourlyRate: rate,
+          tenantId: user.tenantId
+        }
+      );
+
+      if (!response.success) {
+        throw new Error(response.error || 'Failed to update hourly rate');
+      }
+
+      console.log('✅ Hourly rate updated successfully');
+
+      // Close the modal
+      setShowHourlyRateModal(false);
+      setCurrentEmployeeForRate(null);
+      setHourlyRateInput('45.00');
+
+      // Show success message
+      showModal({
+        type: 'success',
+        title: 'Rate Updated',
+        message: `Hourly rate set to $${rate.toFixed(2)}. Generating invoice...`
+      });
+
+      // Retry invoice generation with updated rate
+      if (currentTimesheetForRateRetry) {
+        console.log('🔄 Retrying invoice generation after hourly rate update...');
+        const timesheetToRetry = currentTimesheetForRateRetry;
+        const vendorToUse = providedVendorForRetry;
+        setCurrentTimesheetForRateRetry(null);
+        setProvidedVendorForRetry(null);
+
+        // Small delay to let the success message show
+        setTimeout(() => {
+          closeModal();
+          generateInvoice(timesheetToRetry, vendorToUse);
+        }, 1500);
+      }
+    } catch (error) {
+      console.error('❌ Error updating hourly rate:', error);
+      showModal({
+        type: 'error',
+        title: 'Update Failed',
+        message: `Failed to update hourly rate: ${error.message}`
+      });
+    } finally {
+      setUpdatingHourlyRate(false);
+    }
+  };
+  
   const handleAssignVendor = async () => {
     if (!selectedVendor || !currentEmployeeForAssignment) {
       showModal({
@@ -760,14 +891,15 @@ const TimesheetSummary = () => {
 
       // Update the employee record with the vendorId
       const updateResponse = await apiClient.put(
-        `/api/employees/${currentEmployeeForAssignment.id}?tenantId=${user.tenantId}`,
+        `/api/employees/${currentEmployeeForAssignment.id}`,
         {
-          vendorId: selectedVendor
+          vendorId: selectedVendor,
+          tenantId: user.tenantId
         }
       );
 
       if (!updateResponse.success) {
-        throw new Error('Failed to update employee with vendor');
+        throw new Error(updateResponse.error || 'Failed to update employee with vendor');
       }
 
       console.log('✅ Employee updated with vendor successfully');
@@ -1018,8 +1150,30 @@ const TimesheetSummary = () => {
           vendorData: employeeData.vendor,
           clientData: employeeData.client,
           vendorId: employeeData.vendorId,
-          clientId: employeeData.clientId
+          clientId: employeeData.clientId,
+          hourlyRate: employeeData.hourlyRate
         });
+        
+        // ============================================================
+        // VALIDATION: Check if employee has hourly rate
+        // ============================================================
+        const hourlyRate = parseFloat(employeeData.hourlyRate) || 0;
+        if (hourlyRate === 0) {
+          console.error('❌ Employee has no hourly rate set');
+          setGeneratingInvoiceId(null);
+          closeModal();
+          
+          // Show custom modal to enter hourly rate
+          setTimeout(() => {
+            setCurrentEmployeeForRate(employeeData);
+            setCurrentTimesheetForRateRetry(timesheet);
+            setProvidedVendorForRetry(providedVendor);
+            setHourlyRateInput('45.00');
+            setShowHourlyRateModal(true);
+          }, 100);
+          return;
+        }
+        console.log('✅ Employee has valid hourly rate:', hourlyRate);
         
         // CRITICAL DEBUG: Log detailed vendor structure
         console.log('🔍 VENDOR DETECTION DEBUG:');
@@ -2072,6 +2226,23 @@ const TimesheetSummary = () => {
         </div>
       </div>
     )}
+
+    {/* Hourly Rate Modal */}
+    <HourlyRateModal
+      isOpen={showHourlyRateModal}
+      employee={currentEmployeeForRate}
+      hourlyRate={hourlyRateInput}
+      onHourlyRateChange={setHourlyRateInput}
+      onSave={handleSaveHourlyRate}
+      onCancel={() => {
+        setShowHourlyRateModal(false);
+        setCurrentEmployeeForRate(null);
+        setCurrentTimesheetForRateRetry(null);
+        setProvidedVendorForRetry(null);
+        setHourlyRateInput('45.00');
+      }}
+      isSaving={updatingHourlyRate}
+    />
   </div>
   );
 };

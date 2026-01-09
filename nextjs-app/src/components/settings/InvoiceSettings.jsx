@@ -403,7 +403,7 @@ const InvoiceSettings = () => {
                   >
                     {countries.map((country) => (
                       <option key={country.code} value={country.code}>
-                        {country.flag} {country.name} ({country.phoneCode})
+                        {country.flag} {country.name}
                       </option>
                     ))}
                   </select>

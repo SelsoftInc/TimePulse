@@ -991,13 +991,29 @@ const InvoicePDFPreviewModal = ({ invoice, onClose, onUpdate, show }) => {
     const doc = await generatePDF();
     const pdfBlob = doc.output('blob');
     const pdfUrl = URL.createObjectURL(pdfBlob);
-    window.open(pdfUrl, '_blank');
+    
+    // Get employee name from first line item or invoice
+    const employeeName = formData.lineItems?.[0]?.employeeName || invoice?.employeeName || 'Employee';
+    const sanitizedEmployeeName = employeeName.replace(/[^a-zA-Z0-9]/g, '_');
+    const filename = `${sanitizedEmployeeName}_${formData.invoiceNumber}.pdf`;
+    
+    // Create a new window with the filename in the title
+    const newWindow = window.open(pdfUrl, '_blank');
+    if (newWindow) {
+      newWindow.document.title = filename;
+    }
   };
 
   // Download PDF
   const handleDownload = async () => {
     const doc = await generatePDF();
-    doc.save(`${formData.invoiceNumber}.pdf`);
+    
+    // Get employee name from first line item or invoice
+    const employeeName = formData.lineItems?.[0]?.employeeName || invoice?.employeeName || 'Employee';
+    const sanitizedEmployeeName = employeeName.replace(/[^a-zA-Z0-9]/g, '_');
+    const filename = `${sanitizedEmployeeName}_${formData.invoiceNumber}.pdf`;
+    
+    doc.save(filename);
   };
 
   // Don't render if show is false or invoice is null

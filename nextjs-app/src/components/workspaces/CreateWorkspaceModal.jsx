@@ -190,7 +190,7 @@ const CreateWorkspaceModal = ({ onClose, onCreateWorkspace }) => {
             </div>
             
             <div className="form-group">
-              <label htmlFor="contactEmail">Contact Email</label>
+              <label htmlFor="contactEmail">Email</label>
               <input
                 type="email"
                 id="contactEmail"

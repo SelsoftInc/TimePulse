@@ -815,23 +815,39 @@ const EmployeeList = () => {
               <div className="card-inner p-0">
                 <div className="nk-tb-list nk-tb-orders">
                   <div className="nk-tb-item nk-tb-head">
-                    <div className="nk-tb-col"><span>Name</span></div>
-                    <div className="nk-tb-col tb-col-md"><span>Vendor</span></div>
-                    <div className="nk-tb-col tb-col-md"><span>Client</span></div>
-                    <div className="nk-tb-col"><span>Employment Type</span></div>
+                    <div className="nk-tb-col text-center"><span>NAME</span></div>
+                    <div className="nk-tb-col tb-col-md text-center"><span>VENDOR</span></div>
+                    <div className="nk-tb-col tb-col-md text-center"><span>CLIENT</span></div>
+                    <div className="nk-tb-col text-center">
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                        <div style={{ fontSize: '11px', fontWeight: '600', lineHeight: '1.2' }}>EMPLOYMENT</div>
+                        <div style={{ fontSize: '11px', fontWeight: '600', lineHeight: '1.2' }}>TYPE</div>
+                      </div>
+                    </div>
                     {checkPermission(PERMISSIONS.MANAGE_SETTINGS) && (
-                      <div className="nk-tb-col"><span>Hourly Rate</span></div>
+                      <div className="nk-tb-col text-center">
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                          <div style={{ fontSize: '11px', fontWeight: '600', lineHeight: '1.2' }}>HOURLY</div>
+                          <div style={{ fontSize: '11px', fontWeight: '600', lineHeight: '1.2' }}>RATE</div>
+                        </div>
+                      </div>
                     )}
-                    <div className="nk-tb-col"><span>Email</span></div>
-                    <div className="nk-tb-col tb-col-md"><span>Phone</span></div>
-                    <div className="nk-tb-col"><span>Status</span></div>
-                    <div className="nk-tb-col nk-tb-col-tools text-end"><span className="sub-text">ACTIONS</span></div>
+                    <div className="nk-tb-col text-center"><span>EMAIL</span></div>
+                    <div className="nk-tb-col tb-col-md text-center"><span>PHONE</span></div>
+                    <div className="nk-tb-col text-center"><span>STATUS</span></div>
+                    <div className="nk-tb-col nk-tb-col-tools text-center"><span className="sub-text">ACTIONS</span></div>
                   </div>
                   {paginatedEmployees.map((employee) => (
                     <div key={employee.id} className={`nk-tb-item ${openMenuFor === employee.id ? 'dropdown-open' : ''}`}>
-                      <div className="nk-tb-col">
+                      <div className="nk-tb-col" style={{ maxWidth: '200px' }}>
                         <Link href={`/${subdomain}/employees/${employee.id}`}
                           className="tb-lead"
+                          style={{ 
+                            wordWrap: 'break-word',
+                            whiteSpace: 'normal',
+                            display: 'block',
+                            lineHeight: '1.4'
+                          }}
                         >
                           {employee.name}
                         </Link>
@@ -844,7 +860,7 @@ const EmployeeList = () => {
                             {employee.vendor.name}
                           </Link>
                         ) : (
-                          <span className="tb-sub text-soft">Not assigned</span>
+                          <span className="tb-sub text-soft">Internal</span>
                         )}
                       </div>
                       <div className="nk-tb-col tb-col-md">
@@ -855,10 +871,10 @@ const EmployeeList = () => {
                             {employee.client.name}
                           </Link>
                         ) : (
-                          <span className="tb-sub text-soft">Not assigned</span>
+                          <span className="tb-sub text-soft">Internal</span>
                         )}
                       </div>
-                      <div className="nk-tb-col">
+                      <div className="nk-tb-col" style={{ textAlign: 'center' }}>
                         <span
                           className={`badge badge-dim bg-outline-${
                             employee.employmentType === "W2" ? "primary" : "info"
@@ -877,9 +893,9 @@ const EmployeeList = () => {
                       <div className="nk-tb-col">
                         <span className="tb-sub">{employee.email}</span>
                       </div>
-                      <div className="nk-tb-col tb-col-md">
+                      <div className="nk-tb-col tb-col-md" style={{ textAlign: 'center' }}>
                         <span className="tb-sub">
-                          {employee.phone || <span className="text-soft">Not provided</span>}
+                          {employee.phone || '-'}
                         </span>
                       </div>
                       <div className="nk-tb-col">

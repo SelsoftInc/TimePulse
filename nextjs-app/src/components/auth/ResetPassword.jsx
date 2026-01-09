@@ -7,7 +7,7 @@ import './Auth.css';
 import { API_BASE } from '@/config/api';
 const ResetPassword = () => {
   const router = useRouter();
-  const [searchParams] = useSearchParams();
+  const searchParams = useSearchParams();
   const [formData, setFormData] = useState({
     newPassword: '',
     confirmPassword: ''});

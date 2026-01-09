@@ -233,7 +233,7 @@ export const validateEmail = (email) => {
 };
 
 // Name validation (supports first/middle/last formats)
-// Allowed: letters, numbers, spaces, hyphens, apostrophes, periods, commas
+// Allowed: letters and spaces only (no special characters, numbers, or symbols)
 export const validateName = (value, fieldName = 'Name', options = {}) => {
   const { requireAtLeastTwoWords = false } = options;
   
@@ -247,9 +247,9 @@ export const validateName = (value, fieldName = 'Name', options = {}) => {
     return { isValid: false, message: `${fieldName} cannot be empty` };
   }
 
-  // Check for valid characters (letters, spaces, hyphens, apostrophes, numbers, periods, commas)
-  if (!/^[a-zA-Z0-9\s\-'.,]+$/.test(trimmed)) {
-    return { isValid: false, message: `${fieldName} contains invalid characters` };
+  // Check for valid characters (letters and spaces only - no special characters, numbers, or symbols)
+  if (!/^[a-zA-Z\s]+$/.test(trimmed)) {
+    return { isValid: false, message: `${fieldName} can only contain letters and spaces` };
   }
 
   // Prevent consecutive spaces

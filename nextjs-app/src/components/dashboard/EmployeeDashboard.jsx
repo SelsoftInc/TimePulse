@@ -156,7 +156,7 @@ const HoursChart = ({ regularHours, overtimeHours, leaveHours }) => {
           <div className="donut-chart mx-auto">
             <div className="donut-center">
               <span className="donut-total">{totalHours}</span>
-              <span className="donut-label">Hours</span>
+              <span className="donut-label"> Hours</span>
             </div>
           </div>
         </div>

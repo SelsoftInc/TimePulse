@@ -96,3 +96,58 @@ class HealthResponse(BaseModel):
     app_name: str
     version: str
     timestamp: datetime = Field(default_factory=datetime.utcnow)
+
+
+# Email schemas
+class NotificationEmailRequest(BaseModel):
+    """Request model for sending notification emails"""
+    to_email: str = Field(..., description="Recipient's email address")
+    recipient_name: str = Field(..., description="Recipient's name for personalization")
+    subject: str = Field(default="TimePulse Notification", description="Email subject line")
+    body: str = Field(..., description="Email body content/message")
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "to_email": "user@example.com",
+                "recipient_name": "John Doe",
+                "subject": "Your Weekly Timesheet Reminder",
+                "body": "This is a friendly reminder to submit your weekly timesheet before the deadline."
+            }
+        }
+
+
+class ForgotPasswordEmailRequest(BaseModel):
+    """Request model for sending forgot password emails"""
+    to_email: str = Field(..., description="Recipient's email address")
+    recipient_name: str = Field(..., description="Recipient's name for personalization")
+    reset_link: str = Field(..., description="Password reset link URL")
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "to_email": "user@example.com",
+                "recipient_name": "John Doe",
+                "reset_link": "https://qa.timepulse.io/reset-password?token=abc123xyz"
+            }
+        }
+
+
+class EmailResponse(BaseModel):
+    """Response model for email operations"""
+    success: bool = Field(..., description="Whether the email was sent successfully")
+    message: str = Field(..., description="Status message or error details")
+    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    
+    class Config:
+        json_encoders = {
+            datetime: lambda v: v.isoformat()
+        }
+        json_schema_extra = {
+            "example": {
+                "success": True,
+                "message": "Email sent successfully. Message ID: 12345abc",
+                "timestamp": "2026-01-08T10:30:00Z"
+            }
+        }
+

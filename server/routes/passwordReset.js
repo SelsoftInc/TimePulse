@@ -9,6 +9,7 @@ const bcrypt = require('bcrypt');
 const crypto = require('crypto');
 const { models } = require('../models');
 const { sendPasswordResetEmail } = require('../utils/emailService');
+const pythonEmailService = require('../services/pythonEmailService');
 
 const { User, Tenant } = models;
 
@@ -67,19 +68,32 @@ router.post('/request', async (req, res) => {
     const companyName = user.tenant ? user.tenant.tenantName : 'Your Company';
     const subdomain = user.tenant ? user.tenant.subdomain : 'selsoft';
     
-    // Construct reset URL
-    const resetUrl = `${process.env.APP_URL || 'http://localhost:3000'}/reset-password`;
+    // Construct reset URL with token
+    const baseUrl = process.env.APP_URL || 'http://localhost:3000';
+    const resetUrl = `${baseUrl}/reset-password?token=${resetToken}`;
 
-    // Send password reset email
+    // Try Python engine email service first, fallback to Node.js email service
     try {
-      await sendPasswordResetEmail({
-        to: user.email,
-        employeeName: `${user.firstName} ${user.lastName}`,
-        resetToken: resetToken,
-        companyName: companyName,
-        resetUrl: resetUrl
+      console.log('🔄 Attempting to send password reset email via Python engine...');
+      const pythonResult = await pythonEmailService.sendForgotPasswordEmail({
+        toEmail: user.email,
+        recipientName: `${user.firstName} ${user.lastName}`,
+        resetLink: resetUrl
       });
-      console.log('✅ Password reset email sent to:', user.email);
+
+      if (pythonResult.success) {
+        console.log('✅ Password reset email sent via Python engine to:', user.email);
+      } else {
+        console.log('⚠️ Python engine failed, trying Node.js email service...');
+        await sendPasswordResetEmail({
+          to: user.email,
+          employeeName: `${user.firstName} ${user.lastName}`,
+          resetToken: resetToken,
+          companyName: companyName,
+          resetUrl: baseUrl + '/reset-password'
+        });
+        console.log('✅ Password reset email sent via Node.js service to:', user.email);
+      }
     } catch (emailError) {
       console.error('❌ Failed to send password reset email:', emailError);
       return res.status(500).json({

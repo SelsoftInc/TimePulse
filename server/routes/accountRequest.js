@@ -9,6 +9,7 @@ const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const { body, validationResult } = require('express-validator');
 const { models } = require('../models');
+const pythonEmailService = require('../services/pythonEmailService');
 
 const { AccountRequest, User, Tenant, Employee } = models;
 
@@ -183,6 +184,51 @@ const { AccountRequest, User, Tenant, Employee } = models;
         });
 
         console.log('✅ Account request created:', accountRequest.id);
+
+        // Send email notification to the user about pending status
+        try {
+          console.log('📧 Sending pending status email to user:', email);
+          const pendingEmailResult = await pythonEmailService.sendNotificationEmail({
+            toEmail: email,
+            recipientName: `${firstName} ${lastName}`,
+            subject: 'TimePulse Account Request Received',
+            body: `
+              <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+                <h2 style="color: #667eea;">Account Request Received</h2>
+                <p>Dear ${firstName} ${lastName},</p>
+                <p>Thank you for requesting an account with TimePulse. Your account request has been received and is currently <strong>pending approval</strong>.</p>
+                <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                  <h3 style="margin-top: 0; color: #667eea;">Request Details:</h3>
+                  <ul style="list-style: none; padding: 0;">
+                    <li><strong>Email:</strong> ${email}</li>
+                    <li><strong>Requested Role:</strong> ${requestedRole}</li>
+                    ${department ? `<li><strong>Department:</strong> ${department}</li>` : ''}
+                    ${companyName ? `<li><strong>Company:</strong> ${companyName}</li>` : ''}
+                    ${approver ? `<li><strong>Approver:</strong> ${approver.firstName} ${approver.lastName}</li>` : ''}
+                  </ul>
+                </div>
+                <p>Your request will be reviewed by ${approver ? approver.firstName + ' ' + approver.lastName : 'an administrator'}. You will receive another email once your account has been approved or if any additional information is needed.</p>
+                <p style="color: #6c757d; font-size: 14px; margin-top: 30px;">
+                  <strong>What happens next?</strong><br>
+                  • Your request is being reviewed<br>
+                  • You'll receive an email notification when approved<br>
+                  • Once approved, you can log in to TimePulse
+                </p>
+                <p>If you have any questions, please contact your administrator.</p>
+                <p>Best regards,<br><strong>TimePulse Team</strong></p>
+              </div>
+            `
+          });
+
+          if (pendingEmailResult.success) {
+            console.log('✅ Pending status email sent successfully to:', email);
+          } else {
+            console.error('⚠️ Failed to send pending status email:', pendingEmailResult.message);
+          }
+        } catch (emailError) {
+          console.error('❌ Error sending pending status email:', emailError);
+          // Don't fail the request if email fails
+        }
 
         // Create notification for the selected approver only
         try {
@@ -593,6 +639,67 @@ const { AccountRequest, User, Tenant, Employee } = models;
 
       console.log('✅ Account approved and user created:', newUser.id);
 
+      // Send approval notification email to the user
+      try {
+        console.log('📧 Sending approval notification email to:', accountRequest.email);
+        const loginUrl = process.env.APP_URL || 'http://localhost:3000';
+        const subdomain = tenant?.subdomain || 'selsoft';
+        
+        const approvalEmailResult = await pythonEmailService.sendNotificationEmail({
+          toEmail: accountRequest.email,
+          recipientName: `${accountRequest.firstName} ${accountRequest.lastName}`,
+          subject: 'TimePulse Account Approved - Welcome!',
+          body: `
+            <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+              <h2 style="color: #28a745;">🎉 Your Account Has Been Approved!</h2>
+              <p>Dear ${accountRequest.firstName} ${accountRequest.lastName},</p>
+              <p>Great news! Your TimePulse account request has been <strong style="color: #28a745;">approved</strong>. You can now access the platform and start using all available features.</p>
+              
+              <div style="background-color: #d4edda; border-left: 4px solid #28a745; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                <h3 style="margin-top: 0; color: #155724;">Account Details:</h3>
+                <ul style="list-style: none; padding: 0;">
+                  <li><strong>Email:</strong> ${accountRequest.email}</li>
+                  <li><strong>Role:</strong> ${accountRequest.requestedRole}</li>
+                  ${accountRequest.department ? `<li><strong>Department:</strong> ${accountRequest.department}</li>` : ''}
+                  ${tenant ? `<li><strong>Company:</strong> ${tenant.tenantName}</li>` : ''}
+                </ul>
+              </div>
+
+              <div style="text-align: center; margin: 30px 0;">
+                <a href="${loginUrl}/login" style="background-color: #667eea; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
+                  Login to TimePulse
+                </a>
+              </div>
+
+              <p style="color: #6c757d; font-size: 14px; margin-top: 30px;">
+                <strong>Getting Started:</strong><br>
+                • Use your registered email and password to log in<br>
+                • Complete your profile information<br>
+                • Explore the dashboard and available features<br>
+                • Contact your administrator if you need any assistance
+              </p>
+
+              <p>If the button above doesn't work, copy and paste this link into your browser:</p>
+              <p style="background-color: #f8f9fa; padding: 10px; border-radius: 4px; word-break: break-all;">
+                ${loginUrl}/login
+              </p>
+
+              <p>Welcome to TimePulse! We're excited to have you on board.</p>
+              <p>Best regards,<br><strong>TimePulse Team</strong></p>
+            </div>
+          `
+        });
+
+        if (approvalEmailResult.success) {
+          console.log('✅ Approval notification email sent successfully to:', accountRequest.email);
+        } else {
+          console.error('⚠️ Failed to send approval notification email:', approvalEmailResult.message);
+        }
+      } catch (emailError) {
+        console.error('❌ Error sending approval notification email:', emailError);
+        // Don't fail the approval if email fails
+      }
+
       res.json({
         success: true,
         message: 'Account request approved successfully',
@@ -644,6 +751,63 @@ const { AccountRequest, User, Tenant, Employee } = models;
       });
 
       console.log('✅ Account request rejected');
+
+      // Send rejection notification email to the user
+      try {
+        console.log('📧 Sending rejection notification email to:', accountRequest.email);
+        const createAccountUrl = process.env.APP_URL || 'http://localhost:3000';
+        
+        const rejectionEmailResult = await pythonEmailService.sendNotificationEmail({
+          toEmail: accountRequest.email,
+          recipientName: `${accountRequest.firstName} ${accountRequest.lastName}`,
+          subject: 'TimePulse Account Request Update',
+          body: `
+            <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+              <h2 style="color: #dc3545;">Account Request Status Update</h2>
+              <p>Dear ${accountRequest.firstName} ${accountRequest.lastName},</p>
+              <p>Thank you for your interest in TimePulse. After careful review, we regret to inform you that your account request has not been approved at this time.</p>
+              
+              <div style="background-color: #f8d7da; border-left: 4px solid #dc3545; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                <h3 style="margin-top: 0; color: #721c24;">Request Details:</h3>
+                <ul style="list-style: none; padding: 0;">
+                  <li><strong>Email:</strong> ${accountRequest.email}</li>
+                  <li><strong>Requested Role:</strong> ${accountRequest.requestedRole}</li>
+                  ${accountRequest.department ? `<li><strong>Department:</strong> ${accountRequest.department}</li>` : ''}
+                  ${reason ? `<li><strong>Reason:</strong> ${reason}</li>` : ''}
+                </ul>
+              </div>
+
+              <p style="color: #6c757d; font-size: 14px; margin-top: 30px;">
+                <strong>What you can do:</strong><br>
+                • Review the reason provided above<br>
+                • Contact your administrator for more information<br>
+                • You may submit a new request if circumstances change<br>
+                • Ensure all required information is accurate in future requests
+              </p>
+
+              ${reason ? '' : '<p>For more information about this decision, please contact your administrator.</p>'}
+
+              <div style="text-align: center; margin: 30px 0;">
+                <a href="${createAccountUrl}/create-account" style="background-color: #667eea; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
+                  Submit New Request
+                </a>
+              </div>
+
+              <p>If you have any questions or believe this decision was made in error, please reach out to your administrator.</p>
+              <p>Best regards,<br><strong>TimePulse Team</strong></p>
+            </div>
+          `
+        });
+
+        if (rejectionEmailResult.success) {
+          console.log('✅ Rejection notification email sent successfully to:', accountRequest.email);
+        } else {
+          console.error('⚠️ Failed to send rejection notification email:', rejectionEmailResult.message);
+        }
+      } catch (emailError) {
+        console.error('❌ Error sending rejection notification email:', emailError);
+        // Don't fail the rejection if email fails
+      }
 
       res.json({
         success: true,

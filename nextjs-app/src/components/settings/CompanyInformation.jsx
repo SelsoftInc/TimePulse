@@ -388,7 +388,7 @@ const CompanyInformation = () => {
 
         <div className="form-group">
           <label className="form-label" htmlFor="contactEmail">
-            Contact Email
+            Email
           </label>
           <input
             type="email"
@@ -403,7 +403,7 @@ const CompanyInformation = () => {
 
         <div className="form-group">
           <label className="form-label" htmlFor="contactPhone">
-            Contact Phone
+            Phone
           </label>
           <input
             type="tel"

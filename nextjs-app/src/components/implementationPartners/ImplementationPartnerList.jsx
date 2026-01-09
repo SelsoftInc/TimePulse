@@ -277,7 +277,7 @@ const ImplementationPartnerList = () => {
         {/* ================= IMPLEMENTATION PARTNERS HEADER ================= */}
 <div
   className="
-    sticky top-4 z-30 mb-9
+    top-4 z-30 mb-9
     rounded-3xl
     bg-[#7cbdf2]
     dark:bg-gradient-to-br dark:from-[#0f1a25] dark:via-[#121f33] dark:to-[#162a45]

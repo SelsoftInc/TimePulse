@@ -12,7 +12,7 @@ jobs:
       - name: Pull latest code and restart application
         run: |
           # Navigate to the application directory
-          /home/ubuntu/timepulse_dev_app/TimePulse
+          cd /home/ubuntu/timepulse_dev_app/TimePulse
           
           git pull
 

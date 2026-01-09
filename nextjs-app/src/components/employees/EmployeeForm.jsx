@@ -855,7 +855,7 @@ useEffect(() => {
                     {/* Phone Number */}
                    {/* Phone Number */}
 <div className="md:col-span-2">
-  <label className="mb-2 block text-sm font-semibold text-slate-700">Phone Number</label>
+  <label className="mb-2 block text-sm font-semibold text-slate-700">Phone <span className="text-red-500">*</span></label>
   <div className="flex gap-3">
     
     {/* Country Code Dropdown */}

@@ -7,6 +7,7 @@ import { API_BASE } from '@/config/api';
 import { isServerConnectedCached } from '@/utils/serverCheck';
 import MonthlyRevenueChart from "./MonthlyRevenueChart";
 import "./ModernDashboard.css";
+import Loader from '../common/Loader';
 
 const ModernDashboard = () => {
   const { user } = useAuth();
@@ -307,12 +308,12 @@ const ModernDashboard = () => {
   if (!isMounted || loading) {
     return (
       <div
-        className="d-flex justify-content-center align-items-center"
-        style={{ height: "400px" }}
+        className="flex h-screen w-full items-center justify-center bg-gray-50"
       >
-        <div className="spinner-border text-primary" role="status">
+        <Loader/>
+        {/* <div className="spinner-border text-primary" role="status">
           <span className="visually-hidden">Loading...</span>
-        </div>
+        </div> */}
       </div>
     );
   }
@@ -338,7 +339,7 @@ const ModernDashboard = () => {
             <span className="absolute left-0 top-1 h-12 w-1 rounded-full bg-purple-900"></span>
 
             <h1 className="text-[2rem] font-bold text-white leading-[1.15] tracking-tight drop-shadow-[0_2px_8px_rgba(0,0,0,0.2)]">
-              Welcome back, {user?.firstName || 'User'}! 👋
+              Welcome {user?.firstName || 'User'}! 👋
             </h1>
 
             <div className="mt-2 flex flex-wrap items-center gap-4 text-xs font-medium text-slate-900/90">

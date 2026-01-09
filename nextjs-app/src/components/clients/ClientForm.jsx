@@ -584,7 +584,7 @@ const ClientForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
                   {/* Email */}
                   <div>
                     <label className="mb-2 block text-sm font-semibold text-slate-700">
-                      Email Address <span className="text-red-500">*</span>
+                      Email <span className="text-red-500">*</span>
                     </label>
                     <div className="relative">
                       <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
@@ -613,7 +613,7 @@ const ClientForm = ({ mode = 'create', initialData = null, onSubmitOverride = nu
                   {/* Phone */}
                   <div>
                     <label className="mb-2 block text-sm font-semibold text-slate-700">
-                      Phone Number <span className="text-red-500">*</span>
+                      Phone <span className="text-red-500">*</span>
                     </label>
                     <div className="flex gap-3">
                       <input

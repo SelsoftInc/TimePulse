@@ -365,12 +365,12 @@ const GenerateInvoiceModal = ({ isOpen, onClose, onInvoiceGenerated }) => {
       <div className="generate-invoice-modal-overlay">
         <div className="generate-invoice-modal">
           {/* Header */}
-          <div className="modal-header">
+          <div className="modal-header !bg-cyan-900">
             <div className="modal-header-content">
-              <h2>Generate Invoice</h2>
-              <p>Select approved timesheets to generate invoice</p>
+              <h2 className='!text-white'>Generate Invoice</h2>
+              <p className='!text-white'>Select approved timesheets to generate invoice</p>
             </div>
-            <button onClick={onClose} className="modal-close-btn">
+            <button onClick={onClose} className="modal-close-btn !text-white">
               <i className="fas fa-times"></i>
             </button>
           </div>
@@ -530,7 +530,7 @@ const GenerateInvoiceModal = ({ isOpen, onClose, onInvoiceGenerated }) => {
               <button
                 onClick={handleGenerateInvoice}
                 disabled={selectedTimesheets.length === 0 || generating}
-                className="btn btn-primary"
+                className="btn btn-primary !bg-cyan-900"
               >
                 {generating ? (
                   <>

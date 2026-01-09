@@ -366,7 +366,41 @@ const EmployeeForm = () => {
     };
     return lengthMap[country] || 10;
   };
+// --- ADD THIS AT THE TOP OF YOUR COMPONENT ---
+const [dialCodes, setDialCodes] = useState([]);
 
+useEffect(() => {
+  const fetchCountryCodes = async () => {
+    try {
+      const response = await fetch('https://restcountries.com/v3.1/all?fields=name,idd,cca2');
+      const data = await response.json();
+
+      const formattedCodes = data
+        .filter((c) => c.idd?.root) // Filter valid codes
+        .map((c) => {
+          const root = c.idd.root;
+          const suffix = c.idd.suffixes?.[0] || "";
+          return {
+            label: `${c.cca2} (${root}${suffix})`, // e.g., "US (+1)"
+            code: `${root}${suffix}`,              // e.g., "+1"
+            name: c.name.common
+          };
+        })
+        .sort((a, b) => a.name.localeCompare(b.name)); // Sort alphabetically
+
+      setDialCodes(formattedCodes);
+    } catch (error) {
+      console.error("Error fetching codes:", error);
+      // Fallback if API fails
+      setDialCodes([
+        { label: "US (+1)", code: "+1" }, 
+        { label: "IN (+91)", code: "+91" }
+      ]);
+    }
+  };
+
+  fetchCountryCodes();
+}, []);
   // UI-only: Handle phone number input change
   const handlePhoneNumberChange = (e) => {
     const value = e.target.value;
@@ -718,820 +752,633 @@ const EmployeeForm = () => {
   }
 
   return (
-   <PermissionGuard requiredPermission={PERMISSIONS.CREATE_EMPLOYEE}>
-  <div className="nk-content min-h-screen bg-slate-50">
-    <div className="container-fluid">
-      {/* <div className="nk-content-inner">
-      <div className="nk-content-body py-6"> */}
-        <div className="mb-6 rounded-2xl border border-slate-200 bg-indigo-50 p-5 shadow-sm">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              <h1 className="text-xl font-semibold text-slate-900">
-                {isEditMode ? "Edit Employee" : "Add Employee"}
-              </h1>
-              <p className="mt-1 text-sm text-slate-600">
-                {isEditMode ? "Update employee details" : "Enter employee details"}
-              </p>
-            </div>
+  <PermissionGuard requiredPermission={PERMISSIONS.CREATE_EMPLOYEE}>
+  <div className="min-h-screen bg-slate-50 p-4 md:p-8">
+    <div className="mx-auto max-w-8xl">
+      
+      {/* Header */}
+      <div className="mb-8 rounded-2xl border border-slate-200 bg-indigo-50 p-6 shadow-sm">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900">
+              {isEditMode ? "Edit Employee" : "Add Employee"}
+            </h1>
+            <p className="mt-1 text-sm text-slate-500">
+              {isEditMode ? "Update the employee's information below." : "Fill in the details to onboard a new employee."}
+            </p>
           </div>
         </div>
+      </div>
 
-        {/* <div className="nk-block nk-block-lg"> */}
-          <div className="card card-bordered rounded-2xl border-slate-200 shadow-sm">
-            <div className="card-inner card-inner-lg">
-
-            {employeeLoading ? (
-              <div className="d-flex justify-content-center py-5">
-                <div className="spinner-border text-primary" role="status" />
-              </div>
-            ) : (
-              <form onSubmit={handleSubmit}>
-                <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                  <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-                    <div className="border-b border-slate-200 bg-slate-50 px-5 py-3">
-                      <div className="text-sm font-semibold text-slate-900">Personal Information</div>
-                    </div>
-                    <div className="p-4">
-                      <div className="row g-4">
-                        <div className="col-lg-6">
-                          <div className="form-group">
-                            <label className="form-label" htmlFor="firstName">
-                              First Name
-                            </label>
-                            <input
-                              type="text"
-                              className="form-control rounded-lg border-slate-300 bg-white shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
-                              id="firstName"
-                              name="firstName"
-                              value={formData.firstName}
-                              onChange={handleChange}
-                              onBlur={handleBlur}
-                              placeholder="Enter first name"
-                              required
-                            />
-                            {validationTouched.firstName && errors.firstName && (
-                              <div className="mt-1">
-                                <small className="text-danger">
-                                  {errors.firstName}
-                                </small>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-
-                        <div className="col-lg-6">
-                          <div className="form-group">
-                            <label className="form-label" htmlFor="lastName">
-                              Last Name*
-                            </label>
-                            <input
-                              type="text"
-                              className="form-control rounded-lg border-slate-300 bg-white shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
-                              id="lastName"
-                              name="lastName"
-                              value={formData.lastName}
-                              onChange={handleChange}
-                              onBlur={handleBlur}
-                              placeholder="Enter last name"
-                              required
-                            />
-                            {validationTouched.lastName && errors.lastName && (
-                              <div className="mt-1">
-                                <small className="text-danger">
-                                  {errors.lastName}
-                                </small>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-
-                        <div className="col-lg-6">
-                          <div className="form-group">
-                            <label className="form-label" htmlFor="email">
-                              Email Address*
-                            </label>
-                            <input
-                              type="email"
-                              className="form-control rounded-lg border-slate-300 bg-white shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
-                              id="email"
-                              name="email"
-                              value={formData.email}
-                              onChange={handleChange}
-                              onBlur={handleBlur}
-                              placeholder="Enter email address"
-                              required
-                            />
-                            {validationTouched.email && errors.email && (
-                              <div className="mt-1">
-                                <small className="text-danger">
-                                  {errors.email}
-                                </small>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-
-                        <div className="col-lg-6">
-                          <div className="form-group">
-                            <label className="form-label" htmlFor="phone">
-                              Phone Number
-                            </label>
-                            <div className="d-flex align-items-stretch gap-2">
-                              <input
-                                type="text"
-                                className="form-control rounded-lg border-slate-300 bg-slate-50 text-slate-700 font-semibold text-center shadow-sm"
-                                style={{ width: '70px', minWidth: '70px', flexShrink: 0 }}
-                                value={countryCode}
-                                readOnly
-                                maxLength="4"
-                                title="Country code (auto-filled based on selected country)"
-                              />
-                              <input
-                                type="tel"
-                                className="form-control rounded-lg border-slate-300 bg-white shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all"
-                                style={{ flex: 1, minWidth: 0 }}
-                                id="phoneNumber"
-                                value={phoneNumber}
-                                onChange={handlePhoneNumberChange}
-                                onBlur={handlePhoneBlur}
-                                placeholder="Enter phone number"
-                                maxLength="15"
-                              />
-                            </div>
-                            <small className="text-muted d-block mt-1">
-                              Country code updates automatically based on selected country
-                            </small>
-                            {validationTouched.phone && errors.phone && (
-                              <div className="mt-1">
-                                <small className="text-danger">
-                                  {errors.phone}
-                                </small>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-
-                        <div className="col-lg-12">
-                          <div className="form-group">
-                            <label className="form-label" htmlFor="address">
-                              Address
-                            </label>
-                            <input
-                              type="text"
-                              className="form-control rounded-lg border-slate-300 bg-white shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
-                              id="address"
-                              name="address"
-                              value={formData.address}
-                              onChange={handleChange}
-                              placeholder="Enter street address"
-                            />
-                          </div>
-                        </div>
-
-                        <div className="col-lg-4">
-                          <div className="form-group">
-                            <label className="form-label" htmlFor="city">
-                              City
-                            </label>
-                            <input
-                              type="text"
-                              className="form-control rounded-lg border-slate-300 bg-white shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
-                              id="city"
-                              name="city"
-                              value={formData.city}
-                              onChange={handleChange}
-                              placeholder="Enter city"
-                            />
-                          </div>
-                        </div>
-
-                        <div className="col-lg-4">
-                          <div className="form-group">
-                            <label className="form-label" htmlFor="state">
-                              State/Province
-                            </label>
-                            {STATES_BY_COUNTRY[formData.country] &&
-                            STATES_BY_COUNTRY[formData.country].length > 0 ? (
-                              <select
-                                className="form-select rounded-lg border-slate-300 bg-white shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
-                                id="state"
-                                name="state"
-                                value={formData.state}
-                                onChange={handleChange}
-                              >
-                                <option value="">Select state</option>
-                                {STATES_BY_COUNTRY[formData.country].map((st) => (
-                                  <option key={st} value={st}>
-                                    {st}
-                                  </option>
-                                ))}
-                              </select>
-                            ) : (
-                              <input
-                                type="text"
-                                className="form-control rounded-lg border-slate-300 bg-white shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
-                                id="state"
-                                name="state"
-                                value={formData.state}
-                                onChange={handleChange}
-                                placeholder="Enter state"
-                              />
-                            )}
-                          </div>
-                        </div>
-
-                        {formData.country !== 'United Arab Emirates' && (
-                          <div className="col-lg-4">
-                            <div className="form-group">
-                              <label className="form-label" htmlFor="zip">
-                                {getPostalLabel(formData.country)}
-                              </label>
-                              <input
-                                type="text"
-                                className="form-control rounded-lg border-slate-300 bg-white shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
-                                id="zip"
-                                name="zip"
-                                value={formData.zip}
-                                onChange={handleChange}
-                                onBlur={handleBlur}
-                                placeholder={getPostalPlaceholder(formData.country)}
-                                maxLength={
-                                  formData.country === 'United States'
-                                    ? 10
-                                    : formData.country === 'India'
-                                      ? 6
-                                      : formData.country === 'Canada'
-                                        ? 7
-                                        : formData.country === 'United Kingdom'
-                                          ? 8
-                                          : formData.country === 'Australia'
-                                            ? 4
-                                            : formData.country === 'Singapore'
-                                              ? 6
-                                              : formData.country === 'Germany'
-                                                ? 5
-                                                : 20
-                                }
-                              />
-                              {errors.zip && (
-                                <div className="mt-1">
-                                  <small className="text-danger">
-                                    {errors.zip}
-                                  </small>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        )}
-
-                        <div className="col-lg-4">
-                          <div className="form-group">
-                            <label className="form-label" htmlFor="country">
-                              Country
-                            </label>
-                            <select
-                              className="form-select rounded-lg border-slate-300 bg-white shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
-                              id="country"
-                              name="country"
-                              value={formData.country}
-                              onChange={handleChange}
-                            >
-                              {COUNTRY_OPTIONS.map((c) => (
-                                <option key={c} value={c}>
-                                  {c}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </section>
-
-                  <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-                    <div className="border-b border-slate-200 bg-slate-50 px-5 py-3">
-                      <div className="text-sm font-semibold text-slate-900">Job & Assignment Details</div>
-                    </div>
-                    <div className="p-4">
-                      <div className="row g-4">
-                        <div className="col-lg-6">
-                          <div className="form-group">
-                            <label className="form-label" htmlFor="position">
-                              Position*
-                            </label>
-                            <input
-                              type="text"
-                              className="form-control rounded-lg border-slate-300 bg-white shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
-                              id="position"
-                              name="position"
-                              value={formData.position}
-                              onChange={handleChange}
-                              placeholder="Enter position"
-                              required
-                            />
-                          </div>
-                        </div>
-
-                        <div className="col-lg-6">
-                          <div className="form-group">
-                            <label className="form-label" htmlFor="department">
-                              Department
-                            </label>
-                            <input
-                              type="text"
-                              className="form-control rounded-lg border-slate-300 bg-white shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
-                              id="department"
-                              name="department"
-                              value={formData.department}
-                              onChange={handleChange}
-                              placeholder="Enter department"
-                            />
-                          </div>
-                        </div>
-
-                        <div className="col-lg-6">
-                          <div className="form-group">
-                            <label className="form-label" htmlFor="startDate">
-                              Start Date*
-                            </label>
-                            <input
-                              type="date"
-                              className="form-control rounded-lg border-slate-300 bg-white shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
-                              id="startDate"
-                              name="startDate"
-                              value={formData.startDate}
-                              onChange={handleChange}
-                              min="1990-01-01"
-                              max="2026-12-31"
-                              required
-                            />
-                          </div>
-                        </div>
-
-                        <div className="col-lg-6">
-                          <div className="form-group">
-                            <label className="form-label" htmlFor="status">
-                              Status
-                            </label>
-                            <select
-                              className="form-select rounded-lg border-slate-300 bg-white shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
-                              id="status"
-                              name="status"
-                              value={formData.status}
-                              onChange={handleChange}
-                            >
-                              <option value="active">Active</option>
-                              <option value="inactive">Inactive</option>
-                              <option value="onleave">On Leave</option>
-                            </select>
-                          </div>
-                        </div>
-
-                        {checkPermission(PERMISSIONS.MANAGE_SETTINGS) && (
-                          <div className="col-lg-12">
-                            <div className="form-group mt-3">
-                              <div className="custom-control custom-switch">
-                                <input
-                                  type="checkbox"
-                                  className="custom-control-input"
-                                  id="enableOvertime"
-                                  name="enableOvertime"
-                                  checked={formData.enableOvertime}
-                                  onChange={(e) =>
-                                    setFormData({
-                                      ...formData,
-                                      enableOvertime: e.target.checked})
-                                  }
-                                />
-                                <label
-                                  className="custom-control-label"
-                                  htmlFor="enableOvertime"
-                                >
-                                  Enable Overtime
-                                </label>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </section>
-
-                  <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-                    <div className="border-b border-slate-200 bg-slate-50 px-5 py-3">
-                      <div className="text-sm font-semibold text-slate-900">Client & Approval Details</div>
-                    </div>
-                    <div className="p-4">
-                      <div className="row g-4">
-                        <div className="col-lg-6">
-                          <div className="form-group">
-                            <label className="form-label" htmlFor="clientId">
-                              Assigned Client*
-                            </label>
-                            <select
-                              className="form-select rounded-lg border-slate-300 bg-white shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
-                              id="clientId"
-                              name="clientId"
-                              value={formData.clientId}
-                              onChange={handleClientChange}
-                              required
-                            >
-                              <option value="">Select Client</option>
-                              {clients.map((client) => (
-                                <option key={client.id} value={client.id}>
-                                  {client.clientName || client.name}
-                                  {client.clientType || client.type
-                                    ? ` (${client.clientType || client.type})`
-                                    : ""}
-                                </option>
-                              ))}
-                            </select>
-                            {clientsLoading && (
-                              <div className="form-note mt-1">
-                                <small className="text-soft">
-                                  Loading clients…
-                                </small>
-                              </div>
-                            )}
-                            {clientsError && (
-                              <div className="form-note mt-1">
-                                <small className="text-danger">
-                                  {clientsError}
-                                </small>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-
-                        <div className="col-lg-6">
-                          <div className="form-group">
-                            <label className="form-label" htmlFor="clientType">
-                              Client Type
-                            </label>
-                            <input
-                              type="text"
-                              className="form-control rounded-lg border-slate-300 bg-slate-100 text-slate-700 shadow-sm"
-                              id="clientType"
-                              name="clientType"
-                              value={formData.clientType}
-                              readOnly
-                              placeholder="Auto-filled based on client selection"
-                            />
-                            <div className="form-note mt-1">
-                              <small className="text-soft">
-                                Automatically set based on selected client
-                              </small>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="col-lg-6">
-                          <div className="form-group">
-                            <label className="form-label" htmlFor="vendorId">
-                              Vendor
-                            </label>
-                            <select
-                              className="form-select rounded-lg border-slate-300 bg-white shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
-                              id="vendorId"
-                              name="vendorId"
-                              value={formData.vendorId}
-                              onChange={handleChange}
-                            >
-                              <option value="">-- Unassigned --</option>
-                              {vendors.map((vendor) => (
-                                <option key={vendor.id} value={vendor.id}>
-                                  {vendor.name}
-                                </option>
-                              ))}
-                            </select>
-                            {vendorsLoading && (
-                              <div className="form-note mt-1">
-                                <small className="text-soft">
-                                  Loading vendors…
-                                </small>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-
-                        <div className="col-lg-6">
-                          <div className="form-group">
-                            <label className="form-label" htmlFor="implPartnerId">
-                              Implementation Partner 
-                            </label>
-                            <select
-                              className="form-select rounded-lg border-slate-300 bg-white shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
-                              id="implPartnerId"
-                              name="implPartnerId"
-                              value={formData.implPartnerId}
-                              onChange={handleChange}
-                            >
-                              <option value="">-- Unassigned --</option>
-                              {implPartners.map((partner) => (
-                                <option key={partner.id} value={partner.id}>
-                                  {partner.name}
-                                </option>
-                              ))}
-                            </select>
-                            {implPartnersLoading && (
-                              <div className="form-note mt-1">
-                                <small className="text-soft">
-                                  Loading implementation partners…
-                                </small>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-
-                        <div className="col-lg-6">
-                          <div className="form-group">
-                            <label className="form-label" htmlFor="approver">
-                              Assigned Approver*
-                            </label>
-                            <select
-                              className="form-select rounded-lg border-slate-300 bg-white shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
-                              id="approver"
-                              name="approver"
-                              value={formData.approver}
-                              onChange={handleChange}
-                              required
-                            >
-                              <option value="">Select Approver</option>
-                              {approvers.map((approver) => (
-                                <option key={approver.id} value={approver.id}>
-                                  {approver.firstName} {approver.lastName} - {approver.department || approver.role}
-                                </option>
-                              ))}
-                            </select>
-                            {approversLoading && (
-                              <div className="form-note mt-1">
-                                <small className="text-soft">
-                                  Loading approvers…
-                                </small>
-                              </div>
-                            )}
-                            {approversError && (
-                              <div className="form-note mt-1">
-                                <small className="text-danger">
-                                  {approversError}
-                                </small>
-                              </div>
-                            )}
-                            <div className="form-note mt-1">
-                              <small className="text-soft">
-                                This person will approve/reject employee
-                                timesheets
-                              </small>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </section>
-
-                  {checkPermission(PERMISSIONS.MANAGE_SETTINGS) && (
-                    <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-                      <div className="border-b border-slate-200 bg-slate-50 px-5 py-3">
-                        <div className="text-sm font-semibold text-slate-900">Compensation (Admin Only)</div>
-                      </div>
-                      <div className="p-4">
-                        <div className="row g-4">
-                          <div className="col-lg-6">
-                            <div className="form-group">
-                              <label className="form-label" htmlFor="hourlyRate">
-                                Hourly Rate ($)*
-                              </label>
-                              <input
-                                type="number"
-                                className="form-control rounded-lg border-slate-300 bg-white shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                id="hourlyRate"
-                                name="hourlyRate"
-                                value={formData.hourlyRate}
-                                onChange={handleChange}
-                                onBlur={handleBlur}
-                                placeholder="Enter hourly rate"
-                                min="0"
-                                max="999"
-                                step="0.01"
-                                required
-                              />
-                              <small className="text-muted d-block">
-                                This information is only visible to administrators
-                              </small>
-                              {errors.hourlyRate && (
-                                <small className="text-danger d-block mt-1">
-                                  {errors.hourlyRate}
-                                </small>
-                              )}
-                            </div>
-                          </div>
-
-                          {formData.enableOvertime && (
-                            <div className="col-lg-6">
-                              <div className="form-group">
-                                <label
-                                  className="form-label"
-                                  htmlFor="overtimeMultiplier"
-                                >
-                                  Overtime Multiplier
-                                </label>
-                                <input
-                                  type="number"
-                                  className="form-control"
-                                  id="overtimeMultiplier"
-                                  name="overtimeMultiplier"
-                                  value={formData.overtimeMultiplier}
-                                  onChange={handleChange}
-                                  placeholder="1"
-                                  min="1"
-                                  step="1"
-                                />
-                                <small className="text-muted">
-                                  Standard rate × multiplier = overtime rate
-                                </small>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </section>
-                  )}
-
-                  {checkPermission(PERMISSIONS.MANAGE_SETTINGS) && (
-                    <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm lg:col-span-2">
-                      <div className="border-b border-slate-200 bg-slate-50 px-5 py-3">
-                        <div className="text-sm font-semibold text-slate-900">Work Order / SOW</div>
-                      </div>
-                      <div className="p-4">
-                        <div className="row g-4">
-                          <div className="col-lg-12">
-                            <div className="form-group">
-                              <label className="form-label">
-                                Work Order / SOW{" "}
-                                <span className="text-muted">(Optional)</span>
-                              </label>
-                              <div className="form-control-wrap">
-                                <div className="custom-file">
-                                  <input
-                                    type="file"
-                                    className="custom-file-input rounded-lg"
-                                    id="workOrder"
-                                    onChange={handleFileChange}
-                                    accept=".pdf,.doc,.docx"
-                                  />
-                                  <label
-                                    className="custom-file-label rounded-lg"
-                                    htmlFor="workOrder"
-                                  >
-                                    {workOrder ? workOrder.name : "Choose file"}
-                                  </label>
-                                </div>
-                              </div>
-                              <small className="form-hint">
-                                Upload the Statement of Work or Work Order
-                                document
-                              </small>
-
-                              {workOrderPreview && (
-                                <div className="document-preview mt-3">
-                                  <div className="document-preview-header">
-                                    <span className="document-name">
-                                      {workOrder?.name}
-                                    </span>
-                                    <span className="document-size">
-                                      {Math.round((workOrder?.size || 0) / 1024)}{" "}
-                                      KB
-                                    </span>
-                                  </div>
-                                  <div className="document-preview-content">
-                                    {workOrder?.type.includes("image") ? (
-                                      <img
-                                        src={workOrderPreview}
-                                        alt="Preview"
-                                        className="preview-image"
-                                      />
-                                    ) : (
-                                      <div className="document-icon">
-                                        <i className="fas fa-file-pdf"></i>
-                                        <span>
-                                          Document uploaded successfully
-                                        </span>
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-
-                          <div className="col-lg-12">
-                            <div className="form-group mt-3">
-                              <label className="form-label">
-                                SOW Approval Workflow
-                              </label>
-                              <select
-                                className="form-select rounded-lg border-slate-300 bg-white shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
-                                id="approvalWorkflow"
-                                name="approvalWorkflow"
-                                value={formData.approvalWorkflow || "manual"}
-                                onChange={handleChange}
-                              >
-                                <option value="auto">Auto-approve</option>
-                                <option value="manual">Manual approval</option>
-                                <option value="manager">Manager approval</option>
-                                <option value="client">Client approval</option>
-                              </select>
-                              <small className="form-hint">
-                                Select how work hours for this employee should be
-                                approved
-                              </small>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </section>
-                  )}
-
-                  <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm lg:col-span-2">
-                    <div className="border-b border-slate-200 bg-slate-50 px-5 py-3">
-                      <div className="text-sm font-semibold text-slate-900">Notes</div>
-                    </div>
-                    <div className="p-4">
-                      <div className="row g-4">
-                        <div className="col-lg-12">
-                          <div className="form-group">
-                            <label className="form-label" htmlFor="notes">
-                              Notes
-                            </label>
-                            <textarea
-                              className="form-control rounded-lg border-slate-300 bg-white shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
-                              id="notes"
-                              name="notes"
-                              value={formData.notes}
-                              onChange={handleChange}
-                              placeholder="Enter any additional notes"
-                              rows="4"
-                            ></textarea>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </section>
+      {/* Main Content */}
+      <div className="relative">
+        {employeeLoading ? (
+          <div className="flex h-64 items-center justify-center rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <div className="h-10 w-10 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent" />
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit}>
+            
+            {/* Master Grid */}
+            <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+              
+              {/* --- SECTION 1: Personal Information --- */}
+              <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-shadow hover:shadow-md">
+                <div className="border-b border-slate-100 bg-slate-50/50 px-6 py-4">
+                  <div className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-slate-800">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-indigo-100 text-xs text-indigo-600">1</span>
+                    Personal Information
+                  </div>
                 </div>
+                <div className="p-6">
+                  <div className="grid grid-cols-1 gap-x-6 gap-y-6 md:grid-cols-2">
+                    
+                    {/* First Name */}
+                    <div>
+                      <label className="mb-2 block text-sm font-semibold text-slate-700">First Name <span className="text-red-500">*</span></label>
+                      <input
+                        type="text"
+                        className="block w-full rounded-lg border border-slate-200 bg-slate-50 p-2.5 text-sm text-slate-900 shadow-sm transition-all placeholder:text-slate-400 hover:bg-white hover:border-slate-300 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10"
+                        name="firstName"
+                        value={formData.firstName}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                        placeholder="e.g. John"
+                        required
+                      />
+                      {validationTouched.firstName && errors.firstName && (
+                        <p className="mt-1.5 text-xs font-medium text-red-500">{errors.firstName}</p>
+                      )}
+                    </div>
 
-                <div className="sticky bottom-0 z-10 mt-3 rounded-2xl border border-slate-200 bg-white/90 p-3 shadow-sm backdrop-blur">
-                  <div className="d-flex flex-wrap align-items-center justify-content-between gap-3">
-                    <div className="d-flex align-items-center gap-3">
-                      <button
-                        type="submit"
-                        className="btn btn-primary btn-create-employee !bg-sky-600"
-                        disabled={loading}
-                      >
-                        {loading ? (
-                          <>
-                            <span
-                              className="spinner-border spinner-border-sm mr-1"
-                              role="status"
-                              aria-hidden="true"
-                            ></span>
-                            {isEditMode ? "Updating..." : "Creating..."}
-                          </>
-                        ) : isEditMode ? (
-                          "Update Employee"
+                    {/* Last Name */}
+                    <div>
+                      <label className="mb-2 block text-sm font-semibold text-slate-700">Last Name <span className="text-red-500">*</span></label>
+                      <input
+                        type="text"
+                        className="block w-full rounded-lg border border-slate-200 bg-slate-50 p-2.5 text-sm text-slate-900 shadow-sm transition-all placeholder:text-slate-400 hover:bg-white hover:border-slate-300 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10"
+                        name="lastName"
+                        value={formData.lastName}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                        placeholder="e.g. Doe"
+                        required
+                      />
+                      {validationTouched.lastName && errors.lastName && (
+                        <p className="mt-1.5 text-xs font-medium text-red-500">{errors.lastName}</p>
+                      )}
+                    </div>
+
+                    {/* Email */}
+                    <div className="md:col-span-2">
+                      <label className="mb-2 block text-sm font-semibold text-slate-700">Email <span className="text-red-500">*</span></label>
+                      <div className="relative">
+                        <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                          <svg className="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" /></svg>
+                        </div>
+                        <input
+                          type="email"
+                          className="block w-full rounded-lg border border-slate-200 bg-slate-50 p-2.5 pl-10 text-sm text-slate-900 shadow-sm transition-all placeholder:text-slate-400 hover:bg-white hover:border-slate-300 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10"
+                          name="email"
+                          value={formData.email}
+                          onChange={handleChange}
+                          onBlur={handleBlur}
+                          placeholder="john.doe@company.com"
+                          required
+                        />
+                      </div>
+                      {validationTouched.email && errors.email && (
+                        <p className="mt-1.5 text-xs font-medium text-red-500">{errors.email}</p>
+                      )}
+                    </div>
+
+                    {/* Phone Number */}
+                   {/* Phone Number */}
+<div className="md:col-span-2">
+  <label className="mb-2 block text-sm font-semibold text-slate-700">Phone Number</label>
+  <div className="flex gap-3">
+    
+    {/* Country Code Dropdown */}
+    <div className="relative w-[140px]">
+      <select
+        className="block w-full appearance-none rounded-lg border border-slate-200 bg-slate-50 p-2.5 pr-8 text-sm font-bold text-slate-700 shadow-sm transition-all hover:bg-white hover:border-slate-300 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10 truncate"
+        value={countryCode}
+        onChange={(e) => setCountryCode(e.target.value)}
+      >
+        {dialCodes.length === 0 && <option value="">Loading...</option>}
+        {dialCodes.map((item) => (
+          <option key={`${item.name}-${item.code}`} value={item.code}>
+            {item.label}
+          </option>
+        ))}
+      </select>
+      
+      {/* Custom Dropdown Arrow */}
+      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-500">
+        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+      </div>
+    </div>
+
+    {/* Phone Input */}
+    <input
+      type="tel"
+      className="block flex-1 rounded-lg border border-slate-200 bg-slate-50 p-2.5 text-sm text-slate-900 shadow-sm transition-all placeholder:text-slate-400 hover:bg-white hover:border-slate-300 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10"
+      id="phoneNumber"
+      value={phoneNumber}
+      onChange={handlePhoneNumberChange}
+      onBlur={handlePhoneBlur}
+      placeholder="e.g. 9876543210"
+      maxLength="15"
+    />
+  </div>
+  
+  {validationTouched.phone && errors.phone && (
+    <p className="mt-1.5 text-xs font-medium text-red-500">{errors.phone}</p>
+  )}
+</div>
+
+                    {/* Address */}
+                    <div className="md:col-span-2">
+                      <label className="mb-2 block text-sm font-semibold text-slate-700">Residential Address <span className="text-red-500">*</span></label>
+                      <input
+                        type="text"
+                        className="block w-full rounded-lg border border-slate-200 bg-slate-50 p-2.5 text-sm text-slate-900 shadow-sm transition-all placeholder:text-slate-400 hover:bg-white hover:border-slate-300 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10"
+                        name="address"
+                        value={formData.address}
+                        onChange={handleChange}
+                        placeholder="Street address, Apt, Suite"
+                      />
+                    </div>
+
+                    {/* City */}
+                    <div>
+                        <label className="mb-2 block text-sm font-semibold text-slate-700">City <span className="text-red-500">*</span></label>
+                        <input
+                        type="text"
+                        className="block w-full rounded-lg border border-slate-200 bg-slate-50 p-2.5 text-sm text-slate-900 shadow-sm transition-all placeholder:text-slate-400 hover:bg-white hover:border-slate-300 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10"
+                        name="city"
+                        value={formData.city}
+                        onChange={handleChange}
+                        placeholder="City"
+                        />
+                    </div>
+
+                    {/* State */}
+                    <div>
+                        <label className="mb-2 block text-sm font-semibold text-slate-700">State/Province</label>
+                        {STATES_BY_COUNTRY[formData.country] && STATES_BY_COUNTRY[formData.country].length > 0 ? (
+                        <select
+                            className="block w-full rounded-lg border border-slate-200 bg-slate-50 p-2.5 text-sm text-slate-900 shadow-sm transition-all hover:bg-white hover:border-slate-300 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10"
+                            name="state"
+                            value={formData.state}
+                            onChange={handleChange}
+                        >
+                            <option value="">Select state</option>
+                            {STATES_BY_COUNTRY[formData.country].map((st) => (
+                            <option key={st} value={st}>{st}</option>
+                            ))}
+                        </select>
                         ) : (
-                          "Create Employee"
+                        <input
+                            type="text"
+                            className="block w-full rounded-lg border border-slate-200 bg-slate-50 p-2.5 text-sm text-slate-900 shadow-sm transition-all placeholder:text-slate-400 hover:bg-white hover:border-slate-300 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10"
+                            name="state"
+                            value={formData.state}
+                            onChange={handleChange}
+                            placeholder="State"
+                        />
                         )}
-                      </button>
-                      <button
-                        type="button"
-                        className="btn btn-outline-light ml-3"
-                        onClick={() => {
-                          const params = new URLSearchParams(
-                            location.search
-                          );
-                          const qpClientId = params.get("clientId");
-                          if (qpClientId) {
-                            router.push(`/${subdomain}/clients/${qpClientId}`);
-                          } else {
-                            router.push(`/${subdomain}/employees`);
-                          }
-                        }}
-                      >
-                        Cancel
-                      </button>
+                    </div>
+
+                    {/* Zip */}
+                    {formData.country !== 'United Arab Emirates' && (
+                        <div>
+                            <label className="mb-2 block text-sm font-semibold text-slate-700">{getPostalLabel(formData.country)} <span className="text-red-500">*</span></label>
+                            <input
+                            type="text"
+                            className="block w-full rounded-lg border border-slate-200 bg-slate-50 p-2.5 text-sm text-slate-900 shadow-sm transition-all placeholder:text-slate-400 hover:bg-white hover:border-slate-300 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10"
+                            name="zip"
+                            value={formData.zip}
+                            onChange={handleChange}
+                            onBlur={handleBlur}
+                            placeholder={getPostalPlaceholder(formData.country)}
+                            maxLength={20}
+                            />
+                            {errors.zip && <p className="mt-1.5 text-xs font-medium text-red-500">{errors.zip}</p>}
+                        </div>
+                    )}
+                    
+                      {/* Country */}
+                      <div className={formData.country === 'United Arab Emirates' ? "md:col-span-2" : ""}>
+                        <label className="mb-2 block text-sm font-semibold text-slate-700">Country</label>
+                        <select
+                            className="block w-full rounded-lg border border-slate-200 bg-slate-50 p-2.5 text-sm text-slate-900 shadow-sm transition-all hover:bg-white hover:border-slate-300 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10"
+                            name="country"
+                            value={formData.country}
+                            onChange={handleChange}
+                        >
+                            {COUNTRY_OPTIONS.map((c) => (
+                            <option key={c} value={c}>{c}</option>
+                            ))}
+                        </select>
                     </div>
                   </div>
                 </div>
-                  </form>
-                )}
+              </section>
+
+              {/* --- SECTION 2: Job Details --- */}
+              <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-shadow hover:shadow-md">
+                <div className="border-b border-slate-100 bg-slate-50/50 px-6 py-4">
+                  <div className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-slate-800">
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-indigo-100 text-xs text-indigo-600">2</span>
+                    Job & Assignment
+                  </div>
+                </div>
+                <div className="p-6">
+                  <div className="grid grid-cols-1 gap-x-6 gap-y-6 md:grid-cols-2">
+                    
+                    {/* Position */}
+                    <div>
+                      <label className="mb-2 block text-sm font-semibold text-slate-700">Position <span className="text-red-500">*</span></label>
+                      <input
+                        type="text"
+                        className="block w-full rounded-lg border border-slate-200 bg-slate-50 p-2.5 text-sm text-slate-900 shadow-sm transition-all placeholder:text-slate-400 hover:bg-white hover:border-slate-300 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10"
+                        name="position"
+                        value={formData.position}
+                        onChange={handleChange}
+                        placeholder="e.g. Senior Consultant"
+                        required
+                      />
+                    </div>
+
+                    {/* Department */}
+                    <div>
+                      <label className="mb-2 block text-sm font-semibold text-slate-700">Department</label>
+                      <input
+                        type="text"
+                        className="block w-full rounded-lg border border-slate-200 bg-slate-50 p-2.5 text-sm text-slate-900 shadow-sm transition-all placeholder:text-slate-400 hover:bg-white hover:border-slate-300 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10"
+                        name="department"
+                        value={formData.department}
+                        onChange={handleChange}
+                        placeholder="e.g. Engineering"
+                      />
+                    </div>
+
+                    {/* Start Date */}
+                    <div>
+                      <label className="mb-2 block text-sm font-semibold text-slate-700">Start Date <span className="text-red-500">*</span></label>
+                      <input
+                        type="date"
+                        className="block w-full rounded-lg border border-slate-200 bg-slate-50 p-2.5 text-sm text-slate-900 shadow-sm transition-all hover:bg-white hover:border-slate-300 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10"
+                        name="startDate"
+                        value={formData.startDate}
+                        onChange={handleChange}
+                        required
+                      />
+                    </div>
+
+                    {/* Status */}
+                    <div>
+                      <label className="mb-2 block text-sm font-semibold text-slate-700">Status</label>
+                      <div className="relative">
+                        <select
+                            className="block w-full rounded-lg border border-slate-200 bg-slate-50 p-2.5 text-sm text-slate-900 shadow-sm transition-all hover:bg-white hover:border-slate-300 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10 appearance-none"
+                            name="status"
+                            value={formData.status}
+                            onChange={handleChange}
+                        >
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                            <option value="onleave">On Leave</option>
+                        </select>
+                         {/* Custom Arrow because appearance-none removes it */}
+                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-500">
+                          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Overtime Checkbox */}
+                    {checkPermission(PERMISSIONS.MANAGE_SETTINGS) && (
+                      <div className="md:col-span-2 mt-1">
+                        <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-slate-200 p-4 transition-colors hover:bg-slate-50">
+                          <div className="flex h-5 items-center">
+                            <input
+                                type="checkbox"
+                                className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                                id="enableOvertime"
+                                name="enableOvertime"
+                                checked={formData.enableOvertime}
+                                onChange={(e) => setFormData({ ...formData, enableOvertime: e.target.checked })}
+                            />
+                          </div>
+                          <div>
+                            <span className="text-sm font-medium text-slate-900">Enable Overtime</span>
+                            <p className="text-xs text-slate-500">Allow this employee to log overtime hours</p>
+                          </div>
+                        </label>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </section>
+
+              {/* --- SECTION 3: Client Details --- */}
+              <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-shadow hover:shadow-md">
+                <div className="border-b border-slate-100 bg-slate-50/50 px-6 py-4">
+                  <div className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-slate-800">
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-indigo-100 text-xs text-indigo-600">3</span>
+                    Client & Approval
+                  </div>
+                </div>
+                <div className="p-6">
+                  <div className="grid grid-cols-1 gap-x-6 gap-y-6 md:grid-cols-2">
+                    
+                    {/* Client */}
+                    <div>
+                      <label className="mb-2 block text-sm font-semibold text-slate-700">Assigned Client <span className="text-red-500">*</span></label>
+                      <select
+                        className="block w-full rounded-lg border border-slate-200 bg-slate-50 p-2.5 text-sm text-slate-900 shadow-sm transition-all hover:bg-white hover:border-slate-300 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10"
+                        name="clientId"
+                        value={formData.clientId}
+                        onChange={handleClientChange}
+                        required
+                      >
+                        <option value="">Select Client</option>
+                        {clients.map((client) => (
+                          <option key={client.id} value={client.id}>
+                            {client.clientName || client.name}
+                            {client.clientType || client.type ? ` (${client.clientType || client.type})` : ""}
+                          </option>
+                        ))}
+                      </select>
+                      {clientsLoading && <p className="mt-1.5 text-xs text-slate-500">Loading clients...</p>}
+                      {clientsError && <p className="mt-1.5 text-xs text-red-600">{clientsError}</p>}
+                    </div>
+
+                    {/* Client Type */}
+                    <div>
+                      <label className="mb-2 block text-sm font-semibold text-slate-700">Client Type</label>
+                      <input
+                        type="text"
+                        className="block w-full cursor-not-allowed rounded-lg border border-slate-200 bg-slate-100 p-2.5 text-sm text-slate-500 shadow-sm"
+                        value={formData.clientType}
+                        readOnly
+                        placeholder="Auto-filled"
+                      />
+                    </div>
+
+                    {/* Vendor */}
+                    <div>
+                      <label className="mb-2 block text-sm font-semibold text-slate-700">Vendor</label>
+                      <select
+                        className="block w-full rounded-lg border border-slate-200 bg-slate-50 p-2.5 text-sm text-slate-900 shadow-sm transition-all hover:bg-white hover:border-slate-300 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10"
+                        name="vendorId"
+                        value={formData.vendorId}
+                        onChange={handleChange}
+                      >
+                        <option value="">-- Unassigned --</option>
+                        {vendors.map((vendor) => (
+                          <option key={vendor.id} value={vendor.id}>{vendor.name}</option>
+                        ))}
+                      </select>
+                      {vendorsLoading && <p className="mt-1.5 text-xs text-slate-500">Loading vendors...</p>}
+                    </div>
+
+                    {/* Implementation Partner */}
+                    <div>
+                      <label className="mb-2 block text-sm font-semibold text-slate-700">Implementation Partner</label>
+                      <select
+                        className="block w-full rounded-lg border border-slate-200 bg-slate-50 p-2.5 text-sm text-slate-900 shadow-sm transition-all hover:bg-white hover:border-slate-300 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10"
+                        name="implPartnerId"
+                        value={formData.implPartnerId}
+                        onChange={handleChange}
+                      >
+                        <option value="">-- Unassigned --</option>
+                        {implPartners.map((partner) => (
+                          <option key={partner.id} value={partner.id}>{partner.name}</option>
+                        ))}
+                      </select>
+                      {implPartnersLoading && <p className="mt-1.5 text-xs text-slate-500">Loading partners...</p>}
+                    </div>
+
+                    {/* Approver */}
+                    <div className="md:col-span-2">
+                      <label className="mb-2 block text-sm font-semibold text-slate-700">Assigned Approver <span className="text-red-500">*</span></label>
+                      <select
+                        className="block w-full rounded-lg border border-slate-200 bg-slate-50 p-2.5 text-sm text-slate-900 shadow-sm transition-all hover:bg-white hover:border-slate-300 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10"
+                        name="approver"
+                        value={formData.approver}
+                        onChange={handleChange}
+                        required
+                      >
+                        <option value="">Select Approver</option>
+                        {approvers.map((approver) => (
+                          <option key={approver.id} value={approver.id}>
+                            {approver.firstName} {approver.lastName} - {approver.department || approver.role}
+                          </option>
+                        ))}
+                      </select>
+                      {approversLoading && <p className="mt-1.5 text-xs text-slate-500">Loading approvers...</p>}
+                      {approversError && <p className="mt-1.5 text-xs text-red-600">{approversError}</p>}
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              {/* --- SECTION 4: Compensation (Admin Only) --- */}
+              {checkPermission(PERMISSIONS.MANAGE_SETTINGS) && (
+                <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-shadow hover:shadow-md">
+                  <div className="border-b border-slate-100 bg-slate-50/50 px-6 py-4">
+                    <div className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-slate-800">
+                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-yellow-100 text-xs text-yellow-700">4</span>
+                      Compensation
+                    </div>
+                  </div>
+                  <div className="p-6">
+                    <div className="grid grid-cols-1 gap-x-6 gap-y-6 md:grid-cols-2">
+                      <div>
+                        <label className="mb-2 block text-sm font-semibold text-slate-700">Hourly Rate ($) <span className="text-red-500">*</span></label>
+                        <div className="relative">
+                          <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                            <span className="text-slate-500">$</span>
+                          </div>
+                          <input
+                            type="number"
+                            className="block w-full rounded-lg border border-slate-200 bg-slate-50 p-2.5 pl-8 text-sm text-slate-900 shadow-sm transition-all placeholder:text-slate-400 hover:bg-white hover:border-slate-300 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10"
+                            name="hourlyRate"
+                            value={formData.hourlyRate}
+                            onChange={handleChange}
+                            onBlur={handleBlur}
+                            placeholder="0.00"
+                            min="0"
+                            max="999"
+                            step="0.01"
+                            required
+                          />
+                        </div>
+                        {errors.hourlyRate && <p className="mt-1.5 text-xs font-medium text-red-500">{errors.hourlyRate}</p>}
+                      </div>
+
+                      {formData.enableOvertime && (
+                        <div>
+                          <label className="mb-2 block text-sm font-semibold text-slate-700">Overtime Multiplier</label>
+                          <input
+                            type="number"
+                            className="block w-full rounded-lg border border-slate-200 bg-slate-50 p-2.5 text-sm text-slate-900 shadow-sm transition-all placeholder:text-slate-400 hover:bg-white hover:border-slate-300 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10"
+                            name="overtimeMultiplier"
+                            value={formData.overtimeMultiplier}
+                            onChange={handleChange}
+                            placeholder="1.5"
+                            min="1"
+                            step="0.1"
+                          />
+                          <p className="mt-1.5 text-xs text-slate-500">Usually 1.5x or 2.0x</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </section>
+              )}
+
+              {/* --- SECTION 5: Work Order / SOW --- */}
+              {checkPermission(PERMISSIONS.MANAGE_SETTINGS) && (
+                <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-shadow hover:shadow-md lg:col-span-2">
+                  <div className="border-b border-slate-100 bg-slate-50/50 px-6 py-4">
+                    <div className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-slate-800">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-indigo-100 text-xs text-indigo-600">5</span>
+                      Documents
+                    </div>
+                  </div>
+                  <div className="p-6">
+                    <div className="grid grid-cols-1 gap-6">
+                      {/* File Upload */}
+                      <div>
+                        <label className="mb-2 block text-sm font-semibold text-slate-700">Work Order / SOW (Optional)</label>
+                        
+                        {/* Styled Upload Area */}
+                        <label className="flex w-full cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 p-6 transition-all hover:border-indigo-400 hover:bg-slate-100">
+                            <div className="flex flex-col items-center justify-center text-center">
+                                <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-indigo-50 text-indigo-500">
+                                   <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
+                                </div>
+                                <p className="mb-1 text-sm text-slate-700">
+                                    <span className="font-semibold text-indigo-600">Click to upload</span> or drag and drop
+                                </p>
+                                <p className="text-xs text-slate-500">PDF, DOC or DOCX (MAX. 10MB)</p>
+                            </div>
+                            <input 
+                                id="workOrder" 
+                                type="file" 
+                                className="hidden" 
+                                onChange={handleFileChange} 
+                                accept=".pdf,.doc,.docx"
+                            />
+                        </label>
+
+                        {/* File Preview Card */}
+                        {workOrder ? (
+                            <div className="mt-4 flex items-center justify-between rounded-lg border border-slate-200 bg-white p-3 shadow-sm">
+                                <div className="flex items-center gap-3">
+                                    {workOrder.type.includes("image") || workOrderPreview ? (
+                                        <img src={workOrderPreview || ""} alt="Preview" className="h-10 w-10 rounded-md object-cover" />
+                                    ) : (
+                                        <div className="flex h-10 w-10 items-center justify-center rounded-md bg-red-50 text-red-500">
+                                            <i className="fas fa-file-pdf text-lg"></i>
+                                        </div>
+                                    )}
+                                    <div>
+                                        <p className="text-sm font-medium text-slate-900">{workOrder.name}</p>
+                                        <p className="text-xs text-slate-500">{Math.round((workOrder.size || 0) / 1024)} KB</p>
+                                    </div>
+                                </div>
+                                <button type="button" onClick={() => {/* Logic to clear if needed */}} className="text-slate-400 hover:text-red-500">
+                                    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                                </button>
+                            </div>
+                        ) : null}
+                      </div>
+
+                      {/* Approval Workflow */}
+                      <div className="max-w-md">
+                        <label className="mb-2 block text-sm font-semibold text-slate-700">Approval Workflow</label>
+                        <select
+                          className="block w-full rounded-lg border border-slate-200 bg-slate-50 p-2.5 text-sm text-slate-900 shadow-sm transition-all hover:bg-white hover:border-slate-300 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10"
+                          name="approvalWorkflow"
+                          value={formData.approvalWorkflow || "manual"}
+                          onChange={handleChange}
+                        >
+                          <option value="auto">Auto-approve (No intervention)</option>
+                          <option value="manual">Manual (Admin approves)</option>
+                          <option value="manager">Manager (Reporting Mgr approves)</option>
+                          <option value="client">Client (Client Email approves)</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+              )}
+
+              {/* --- SECTION 6: Notes --- */}
+              <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-shadow hover:shadow-md lg:col-span-2">
+                <div className="border-b border-slate-100 bg-slate-50/50 px-6 py-4">
+                  <div className="text-sm font-semibold uppercase tracking-wider text-slate-800">Additional Notes</div>
+                </div>
+                <div className="p-6">
+                  <textarea
+                    className="block w-full rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-900 shadow-sm transition-all placeholder:text-slate-400 hover:bg-white hover:border-slate-300 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10"
+                    name="notes"
+                    value={formData.notes}
+                    onChange={handleChange}
+                    placeholder="Enter any additional information about this employee..."
+                    rows="4"
+                  ></textarea>
+                </div>
+              </section>
+
             </div>
-          </div>
-        </div>
-      {/* </div> */}
-    {/* </div>
-    </div> */}
+
+            {/* --- FOOTER ACTIONS --- */}
+            <div className="mt-10 flex items-center justify-end gap-4 border-t border-slate-200 pt-8">
+                <button
+                type="button"
+                className="rounded-lg border border-slate-300 bg-white px-6 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-slate-200"
+                onClick={() => {
+                    const params = new URLSearchParams(location.search);
+                    const qpClientId = params.get("clientId");
+                    if (qpClientId) {
+                    router.push(`/${subdomain}/clients/${qpClientId}`);
+                    } else {
+                    router.push(`/${subdomain}/employees`);
+                    }
+                }}
+                >
+                Cancel
+                </button>
+                <button
+                type="submit"
+                className="inline-flex items-center rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-medium text-white shadow-md transition-all hover:bg-indigo-700 hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-indigo-300 disabled:opacity-50 disabled:shadow-none"
+                disabled={loading}
+                >
+                {loading ? (
+                    <>
+                    <svg className="-ml-1 mr-2 h-4 w-4 animate-spin text-white" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                    {isEditMode ? "Updating..." : "Creating..."}
+                    </>
+                ) : isEditMode ? (
+                    "Update Employee"
+                ) : (
+                    "Add Employee"
+                )}
+                </button>
+            </div>
+
+          </form>
+        )}
+      </div>
+    </div>
   </div>
-    </PermissionGuard>
+</PermissionGuard>
   );
 };
 
